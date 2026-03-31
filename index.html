@@ -590,9 +590,7 @@ function fetchWx(icao,cb){
   var base='https://aviationweather.gov/api/data/';
   var done=0,metar='',taf='';
   function fin(){if(++done===2)cb(metar,taf);}
-  function clean(t){return (t||'').split('
-').map(function(l){return l.trim();}).filter(function(l){return l.length>4&&l.charAt(0)!=='<'&&l.indexOf('</')<0;}).join('
-');}
+  function clean(t){return (t||'').split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>4&&l.charAt(0)!=='<'&&l.indexOf('</')<0;}).join('\n');}
   fetch(base+'metar?ids='+icao+'&format=raw&hours=3').then(function(r){return r.text();}).then(function(t){metar=clean(t);fin();}).catch(function(){fin();});
   fetch(base+'taf?ids='+icao+'&format=raw').then(function(r){return r.text();}).then(function(t){taf=clean(t);fin();}).catch(function(){fin();});
 }
@@ -902,11 +900,9 @@ function emailFlight(f){
     'Surface Wind: '+(f.wxSurfDir&&f.wxSurfSpd?f.wxSurfDir+'deg / '+f.wxSurfSpd+' kt':'--'),
     'Runways: '+(f.rwy1?'RWY '+f.rwy1:'--')+(f.rwy2?' and RWY '+f.rwy2:''),
     (f.wxMetarDep?'DEP METAR: '+f.wxMetarDep:''),
-    (f.wxTafDep  ?'DEP TAF:'+'
-'+f.wxTafDep:''),
+    (f.wxTafDep  ?'DEP TAF: '+f.wxTafDep:''),
     (f.wxMetarDest?'DEST METAR: '+f.wxMetarDest:''),
-    (f.wxTafDest  ?'DEST TAF:'+'
-'+f.wxTafDest:''),
+    (f.wxTafDest  ?'DEST TAF: '+f.wxTafDest:''),
 
     '','TIMES (UTC)','Chocks Off: '+(f.chocksOff||'--'),'Takeoff:    '+(f.takeoff||'--'),'Landing:    '+(f.landing||'--'),'Chocks On:  '+(f.chocksOn||'--'),
     '','CALCULATED','Block Time: '+decToHM(c.block)+' ('+dec2(c.block)+' hrs)','Air Time:   '+decToHM(c.air)+' ('+dec2(c.air)+' hrs)',
@@ -937,11 +933,9 @@ function exportFlight(f){
     'Surface Wind: '+(f.wxSurfDir&&f.wxSurfSpd?f.wxSurfDir+'deg / '+f.wxSurfSpd+' kt':'--'),
     'Runways: '+(f.rwy1?'RWY '+f.rwy1:'--')+(f.rwy2?' and RWY '+f.rwy2:''),
     (f.wxMetarDep?'DEP METAR: '+f.wxMetarDep:''),
-    (f.wxTafDep  ?'DEP TAF:'+'
-'+f.wxTafDep:''),
+    (f.wxTafDep  ?'DEP TAF: '+f.wxTafDep:''),
     (f.wxMetarDest?'DEST METAR: '+f.wxMetarDest:''),
-    (f.wxTafDest  ?'DEST TAF:'+'
-'+f.wxTafDest:''),
+    (f.wxTafDest  ?'DEST TAF: '+f.wxTafDest:''),
 
     '','TIMES (UTC)','Chocks Off: '+(f.chocksOff||'--'),'Takeoff: '+(f.takeoff||'--'),'Landing: '+(f.landing||'--'),'Chocks On: '+(f.chocksOn||'--'),
     '','CALCULATED','Block: '+decToHM(c.block)+' ('+dec2(c.block)+' hrs)','Air: '+decToHM(c.air)+' ('+dec2(c.air)+' hrs)',
