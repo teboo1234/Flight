@@ -9,20 +9,20 @@
 <title>FlightDeck</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=B612:wght@400;700&family=B612+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
-:root{--bg:#020617;--sur:#0f172a;--card:#1e293b;--bdr:#334155;--txt:#e2e8f0;--mut:#64748b;--sky:#0ea5e9;--em:#10b981;--amb:#f59e0b;--ros:#f43f5e;--vio:#8b5cf6;}
+:root{--bg:#f0f4f8;--sur:#ffffff;--card:#e8edf2;--bdr:#c8d4e0;--txt:#1a2332;--mut:#5a6a7a;--sky:#0077cc;--em:#0a8a4a;--amb:#cc7700;--ros:#cc2244;--vio:#6644aa;}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'B612',sans-serif;font-size:14px}
-::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'B612',sans-serif;font-size:16px}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#b0bec8;border-radius:2px}
 button{cursor:pointer;font-family:inherit}input,textarea,select{font-family:inherit}
 #app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
-header{flex-shrink:0;background:rgba(2,6,23,.97);border-bottom:1px solid var(--bdr);z-index:50}
+header{flex-shrink:0;background:rgba(240,244,248,.97);border-bottom:1px solid var(--bdr);box-shadow:0 1px 4px rgba(0,0,0,.08);z-index:50}
 .hdr{max-width:1280px;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:8px;height:52px}
 .logo{display:flex;align-items:center;gap:8px;margin-right:auto}
 .logo-icon{width:26px;height:26px;background:linear-gradient(135deg,var(--sky),var(--vio));border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px}
 .logo-name{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff}
 nav{display:flex;gap:2px}
 .tb{padding:5px 11px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--mut);font-size:12px;font-weight:500;transition:all .15s;white-space:nowrap}
-.tb.on{border-color:var(--sky);background:rgba(14,165,233,.12);color:#38bdf8}
+.tb.on{border-color:var(--sky);background:rgba(0,119,204,.12);color:#0066bb}
 .tb:hover:not(.on){background:var(--card);color:var(--txt)}
 .pwa-btn{padding:4px 10px;border-radius:6px;border:1px solid var(--em);background:rgba(16,185,129,.12);color:#34d399;font-size:11px;display:none;cursor:pointer}
 main{flex:1;overflow:hidden;max-width:1280px;width:100%;margin:0 auto;padding:14px 16px;display:flex;flex-direction:column}
@@ -33,12 +33,12 @@ main{flex:1;overflow:hidden;max-width:1280px;width:100%;margin:0 auto;padding:14
 .sidebar{width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:7px;overflow:hidden}
 .slist{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding-right:2px}
 .detail{flex:1;min-width:0;overflow:hidden}
-.dbox{background:rgba(15,23,42,.45);border:1px solid var(--bdr);border-radius:14px;padding:16px;height:100%;display:flex;flex-direction:column;overflow-y:auto}
+.dbox{background:#ffffff;border:1px solid var(--bdr);border-radius:14px;padding:16px;height:100%;display:flex;flex-direction:column;overflow-y:auto}
 .empty{height:100%;display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:13px;flex-direction:column;gap:8px}
 .empty-icon{font-size:34px;opacity:.3}
 /* cards */
-.card{background:rgba(30,41,59,.45);border:1px solid var(--bdr);border-radius:10px;padding:10px;cursor:pointer;transition:all .15s}
-.card:hover{border-color:#475569}
+.card{background:#edf1f5;border:1px solid var(--bdr);border-radius:10px;padding:10px;cursor:pointer;transition:all .15s}
+.card:hover{border-color:#8899aa}
 .card.sel-sky{border-color:var(--sky)!important;background:rgba(14,165,233,.08)!important}
 .card.sel-em{border-color:var(--em)!important;background:rgba(16,185,129,.08)!important}
 .card.sel-am{border-color:var(--amb)!important;background:rgba(245,158,11,.08)!important}
@@ -75,25 +75,25 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
 /* stats */
 .stat-row{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap}
-.stat{background:rgba(14,165,233,.07);border:1px solid rgba(14,165,233,.2);border-radius:9px;padding:8px 12px;text-align:center;min-width:80px}
-.stat-v{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;color:#38bdf8}
+.stat{background:rgba(0,119,204,.08);border:1px solid rgba(0,119,204,.25);border-radius:9px;padding:8px 12px;text-align:center;min-width:80px}
+.stat-v{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;color:#0077cc}
 .stat-l{font-size:10px;color:var(--mut);margin-top:1px}
 /* section blocks */
 .sec{margin-bottom:10px}
 .sec-lbl{font-family:'B612 Mono',monospace;font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
-.sec-box{background:rgba(2,6,23,.45);border:1px solid rgba(51,65,85,.5);border-radius:8px;padding:10px;font-size:13px;color:#cbd5e1;line-height:1.7;white-space:pre-wrap}
+.sec-box{background:#f7f9fb;border:1px solid var(--bdr);border-radius:8px;padding:10px;font-size:13px;color:#1a2332;line-height:1.7;white-space:pre-wrap}
 /* calc cards */
 .calc-card{border-radius:10px;padding:12px;margin-bottom:12px}
-.cc-blue{background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.2)}
-.cc-amber{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2)}
-.cc-purple{background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.25)}
+.cc-blue{background:rgba(0,119,204,.07);border:1px solid rgba(0,119,204,.25)}
+.cc-amber{background:rgba(204,119,0,.07);border:1px solid rgba(204,119,0,.25)}
+.cc-purple{background:rgba(102,68,170,.07);border:1px solid rgba(102,68,170,.25)}
 .cc-title{font-family:'B612 Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:9px}
 .cv{font-family:'B612 Mono',monospace;font-size:17px;font-weight:700;color:#38bdf8}
 .cv-sub{font-size:10px;color:var(--mut);margin-top:1px}
 /* checklist */
 .cli{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid;transition:all .15s}
-.cli.done{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.3)}
-.cli.undone{background:rgba(30,41,59,.45);border-color:var(--bdr)}
+.cli.done{background:rgba(10,138,74,.08);border-color:rgba(10,138,74,.3)}
+.cli.undone{background:rgba(232,237,242,.8);border-color:var(--bdr)}
 .cli-chk{width:16px;height:16px;border-radius:4px;border:2px solid;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
 .cli-chk.on{background:var(--em);border-color:var(--em)}
 .cli-chk.off{border-color:var(--mut)}.cli-chk.off:hover{border-color:var(--em)}
@@ -109,8 +109,8 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 .fchip.on{background:var(--sky);border-color:var(--sky);color:#fff}
 .fchip:hover:not(.on){color:var(--txt)}
 /* modal */
-.overlay{position:fixed;inset:0;background:rgba(2,6,23,.9);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:center;justify-content:center;padding:12px}
-.mbox{background:var(--sur);border:1px solid var(--bdr);border-radius:16px;width:100%;max-width:560px;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 30px 60px rgba(0,0,0,.7)}
+.overlay{position:fixed;inset:0;background:rgba(100,130,160,.5);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:center;justify-content:center;padding:12px}
+.mbox{background:#ffffff;border:1px solid var(--bdr);border-radius:16px;width:100%;max-width:560px;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 30px 60px rgba(0,0,0,.7)}
 .mbox.wide{max-width:800px}
 /* modal inner tabs */
 .mtabs{display:flex;gap:0;border-bottom:1px solid var(--bdr);flex-shrink:0;padding:0 16px}
@@ -130,7 +130,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 .fuel-pair-lbl{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--mut);pointer-events:none;font-family:'B612 Mono',monospace}
 .fuel-pair-eq{color:var(--mut);font-size:13px;flex-shrink:0}
 /* toast */
-.toast{position:fixed;bottom:18px;right:18px;background:var(--card);border:1px solid var(--em);border-radius:9px;padding:8px 14px;font-size:12px;color:#6ee7b7;z-index:300;transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none}
+.toast{position:fixed;bottom:18px;right:18px;background:#ffffff;border:1px solid var(--em);border-radius:9px;padding:8px 14px;font-size:12px;color:#0a8a4a;z-index:300;transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none}
 .toast.show{transform:translateY(0);opacity:1}
 @media(max-width:640px){
   .panes{flex-direction:column}.sidebar{width:100%;max-height:190px}
@@ -545,7 +545,7 @@ function renderFlDetail(){
   fhtml+='<div class="g3" style="gap:9px;margin-bottom:9px">';
   fhtml+='<div><div class="sec-lbl">Fuel on Board</div><div class="sec-box" style="color:#fcd34d;font-weight:700">'+(fob2.fob!==null?dec2(fob2.fob)+' USG':'--')+'</div></div>';
   fhtml+='<div><div class="sec-lbl">Litres</div><div class="sec-box">'+(fob2.litres!==null?dec2(fob2.litres)+' L':'--')+'</div></div>';
-  fhtml+='<div><div class="sec-lbl">Endurance</div><div class="sec-box" style="color:#38bdf8;font-weight:700">'+(fob2.endurance!==null?decToHM(fob2.endurance):'--')+'</div></div>';
+  fhtml+='<div><div class="sec-lbl">Endurance</div><div class="sec-box" style="color:#0077cc;font-weight:700">'+(fob2.endurance!==null?decToHM(fob2.endurance):'--')+'</div></div>';
   fhtml+='</div>';
   fhtml+='<div style="font-family:B612 Mono,monospace;font-size:10px;color:#fcd34d;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Fuel Required</div>';
   fhtml+='<div class="g3" style="gap:8px;margin-bottom:8px">';
@@ -586,13 +586,89 @@ function renderFlDetail(){
 }
 
 // ── Flight Modal ──────────────────────────────────────────
-function fetchWx(icao,cb){
+// Clean raw text from NOAA - strip HTML artifacts
+function cleanWx(t){
+  return (t||'').split('\n')
+    .map(function(l){return l.trim();})
+    .filter(function(l){return l.length>4&&l.charAt(0)!=='<'&&l.indexOf('</')<0&&l.indexOf('404')<0&&l.indexOf('No data')<0;})
+    .join('\n');
+}
+
+// Get airport lat/lon from NOAA airport API
+function getAirportCoords(icao, cb){
+  fetch('https://aviationweather.gov/api/data/airport?ids='+icao)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d&&d[0]&&d[0].lat!=null){cb(d[0].lat, d[0].lon);}
+      else cb(null,null);
+    })
+    .catch(function(){cb(null,null);});
+}
+
+// Fetch nearest METAR/TAF - tries direct ICAO first,
+// then falls back to searching a bounding box for nearest station
+function fetchWx(icao, cb){
   var base='https://aviationweather.gov/api/data/';
-  var done=0,metar='',taf='';
-  function fin(){if(++done===2)cb(metar,taf);}
-  function clean(t){return (t||'').split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>4&&l.charAt(0)!=='<'&&l.indexOf('</')<0;}).join('\n');}
-  fetch(base+'metar?ids='+icao+'&format=raw&hours=3').then(function(r){return r.text();}).then(function(t){metar=clean(t);fin();}).catch(function(){fin();});
-  fetch(base+'taf?ids='+icao+'&format=raw').then(function(r){return r.text();}).then(function(t){taf=clean(t);fin();}).catch(function(){fin();});
+
+  function tryDirect(onEmpty){
+    var done=0, metar='', taf='';
+    function fin(){if(++done===2){if(metar||taf)cb(metar,taf);else onEmpty();}}
+    fetch(base+'metar?ids='+icao+'&format=raw&hours=6')
+      .then(function(r){return r.text();})
+      .then(function(t){metar=cleanWx(t);fin();})
+      .catch(function(){fin();});
+    fetch(base+'taf?ids='+icao+'&format=raw')
+      .then(function(r){return r.text();})
+      .then(function(t){taf=cleanWx(t);fin();})
+      .catch(function(){fin();});
+  }
+
+  function tryNearest(lat, lon){
+    // Search 3-degree bounding box for nearest stations with METAR
+    var d=3;
+    var bbox=(lat-d)+','+(lon-d)+','+(lat+d)+','+(lon+d);
+    fetch(base+'metar?bbox='+bbox+'&format=raw&hours=6')
+      .then(function(r){return r.text();})
+      .then(function(t){
+        var lines=cleanWx(t).split('\n').filter(function(l){return l.length>10;});
+        if(!lines.length){cb('No METAR found near '+icao,'');return;}
+        // Find closest station by picking first result (NOAA returns sorted by proximity)
+        var metar=lines[0];
+        var station=metar.split(' ')[0];
+        // Now get TAF for that station
+        fetch(base+'taf?ids='+station+'&format=raw')
+          .then(function(r){return r.text();})
+          .then(function(t2){cb(metar, cleanWx(t2));})
+          .catch(function(){cb(metar,'');});
+      })
+      .catch(function(){cb('Fetch failed for '+icao,'');});
+  }
+
+  // Step 1: try direct lookup
+  tryDirect(function(){
+    // Step 2: get coords and search nearby
+    getAirportCoords(icao, function(lat,lon){
+      if(lat!==null){
+        tryNearest(lat,lon);
+      } else {
+        // Step 3: try common alternate ICAO formats
+        // Australian airports: YSSY -> YSSY, also try without leading Y
+        var alt=icao.length===4?icao.slice(1):null;
+        if(alt){
+          fetch(base+'metar?ids='+alt+'&format=raw&hours=6')
+            .then(function(r){return r.text();})
+            .then(function(t){
+              var m=cleanWx(t);
+              if(m){cb(m,'');}
+              else{cb('No data found for '+icao,'');}
+            })
+            .catch(function(){cb('No data found for '+icao,'');});
+        } else {
+          cb('No data found for '+icao,'');
+        }
+      }
+    });
+  });
 }
 
 function openFlModal(ex){
@@ -646,12 +722,12 @@ function openFlModal(ex){
     '</div>'+
     '<div class="g2">'+
       '<div>'+
-        '<div class="sec-lbl" style="margin-bottom:4px">Departure: <span id="wx-dep-lbl" style="color:#38bdf8">--</span></div>'+
+        '<div class="sec-lbl" style="margin-bottom:4px">Departure: <span id="wx-dep-lbl" style="color:#0077cc">--</span></div>'+
         '<textarea class="inp" id="m-wxMetarDep" rows="3" placeholder="METAR (auto-fetched or type manually)...">'+(f.wxMetarDep||'')+'</textarea>'+
         '<textarea class="inp" id="m-wxTafDep" rows="4" placeholder="TAF..." style="margin-top:5px">'+(f.wxTafDep||'')+'</textarea>'+
       '</div>'+
       '<div>'+
-        '<div class="sec-lbl" style="margin-bottom:4px">Destination: <span id="wx-dest-lbl" style="color:#38bdf8">--</span></div>'+
+        '<div class="sec-lbl" style="margin-bottom:4px">Destination: <span id="wx-dest-lbl" style="color:#0077cc">--</span></div>'+
         '<textarea class="inp" id="m-wxMetarDest" rows="3" placeholder="METAR (auto-fetched or type manually)...">'+(f.wxMetarDest||'')+'</textarea>'+
         '<textarea class="inp" id="m-wxTafDest" rows="4" placeholder="TAF..." style="margin-top:5px">'+(f.wxTafDest||'')+'</textarea>'+
       '</div>'+
