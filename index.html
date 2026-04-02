@@ -435,9 +435,9 @@ var flActive=null;
 function flSave(){save(FL_KEY,flights);}
 
 function newFlight(){
-  return {id:uid(),date:'',aircraft:'',departure:'',destination:'',pic:'',student:'',category:'Dual',
+  return {id:uid(),date:'',aircraft:'G-XXXX',departure:'',destination:'',pic:'',student:'',category:'Dual',
     etot:'',rwy1:'',rwy2:'',wxSurfDir:'',wxSurfSpd:'',wxTAS:'',wxFreezFL:'',wxMetarDep:'',wxTafDep:'',wxMetarDest:'',wxTafDest:'',
-    fob:'',burnRate:'',fuelTaxi:'',fuelTrip:'',fuelContPct:'10',fuelAlt:'',fuelFinal:'',fuelExtra:'',
+    fob:'',burnRate:'',fuelTaxi:'',fuelTrip:'',fuelContPct:'5',fuelAlt:'',fuelFinal:'',fuelExtra:'',
     fuelUplifted:'',oil:'',
     chocksOff:'',takeoff:'',landing:'',chocksOn:'',
     tachoStart:'',tachoEnd:'',hobbsStart:'',hobbsEnd:'',
@@ -768,14 +768,14 @@ function openFlModal(ex){
     '<div class="g4">'+
       field('Tacho Start',ninp('m-tachoStart','1234.5',f.tachoStart))+
       field('Hobbs Start',ninp('m-hobbsStart','2345.6',f.hobbsStart))+
-      field('Chocks Off (UTC)',timeSpinnerHtml('m-chocksOff',f.chocksOff))+
-      field('Takeoff (UTC)',timeSpinnerHtml('m-takeoff',f.takeoff))+
-    '</div>'+
-    '<div class="g4">'+
-      field('Landing (UTC)',timeSpinnerHtml('m-landing',f.landing))+
-      field('Chocks On (UTC)',timeSpinnerHtml('m-chocksOn',f.chocksOn))+
       field('Tacho End',ninp('m-tachoEnd','1235.2',f.tachoEnd))+
       field('Hobbs End',ninp('m-hobbsEnd','2346.4',f.hobbsEnd))+
+    '</div>'+
+    '<div class="g4">'+
+      field('Chocks Off (UTC)',timeSpinnerHtml('m-chocksOff',f.chocksOff))+
+      field('Takeoff (UTC)',timeSpinnerHtml('m-takeoff',f.takeoff))+
+      field('Landing (UTC)',timeSpinnerHtml('m-landing',f.landing))+
+      field('Chocks On (UTC)',timeSpinnerHtml('m-chocksOn',f.chocksOn))+
     '</div>'+
     '<div class="calc-card cc-blue">'+
       '<div class="cc-title" style="color:#7dd3fc">Calculated Times (auto)</div>'+
@@ -809,7 +809,7 @@ function openFlModal(ex){
 
   var box2=openTabModal({
     title:ex?'Edit Flight Record':'Log New Flight', wide:true,
-    tabs:[{label:'Weather',body:t1},{label:'Fuel',body:t2},{label:'Times',body:t3},{label:'Details',body:t4}],
+    tabs:[{label:'Details',body:t4},{label:'Weather',body:t1},{label:'Fuel',body:t2},{label:'Times',body:t3}],
     saveLabel:ex?'Save Changes':'Log Flight',
     onSave:function(){
       var g=function(id,ctx){var e=qs('#'+id,ctx||box2);return e?e.value.trim():'';};
@@ -879,36 +879,58 @@ function openFlModal(ex){
   }
 
   function doWxFetch(){
-    var depEl=qs('#m-dep',t4),destEl=qs('#m-dest',t4);
-    var dep=depEl?depEl.value.trim().toUpperCase():'';
-    var dest=destEl?destEl.value.trim().toUpperCase():'';
-    var depLbl=qs('#wx-dep-lbl',t1),destLbl=qs('#wx-dest-lbl',t1);
+    // Read ICAO from Details tab fields - get current values
+    var depEl=qs('#m-dep',t4), destEl=qs('#m-dest',t4);
+    var dep=(depEl?depEl.value:'').trim().toUpperCase();
+    var dest=(destEl?destEl.value:'').trim().toUpperCase();
+    // Update labels
+    var depLbl=qs('#wx-dep-lbl',t1), destLbl=qs('#wx-dest-lbl',t1);
     var status=qs('#wx-fetch-status',t1);
-    if(depLbl)depLbl.textContent=dep||'--';
-    if(destLbl)destLbl.textContent=dest||'--';
+    if(depLbl) depLbl.textContent=dep||'--';
+    if(destLbl) destLbl.textContent=dest||'--';
     var toFetch=[];
-    if(dep.length===4)toFetch.push({icao:dep,sfx:'Dep'});
-    if(dest.length===4&&dest!==dep)toFetch.push({icao:dest,sfx:'Dest'});
-    if(!toFetch.length)return;
-    if(status)status.textContent='Fetching...';
+    if(dep.length>=3) toFetch.push({icao:dep, sfx:'Dep'});
+    if(dest.length>=3 && dest!==dep) toFetch.push({icao:dest, sfx:'Dest'});
+    if(!toFetch.length){
+      if(status) status.textContent='Enter departure/destination ICAO in Details tab';
+      return;
+    }
+    if(status) status.textContent='Fetching '+toFetch.map(function(x){return x.icao;}).join(' & ')+'...';
     var done=0;
     toFetch.forEach(function(item){
-      fetchWx(item.icao,function(metar,taf){
-        var mEl=qs('#m-wxMetar'+item.sfx,t1);
-        var tEl=qs('#m-wxTaf'+item.sfx,t1);
-        if(mEl)mEl.value=metar||'Not found';
-        if(tEl)tEl.value=taf||'Not found';
-        if(++done===toFetch.length&&status)status.textContent='Done';
+      fetchWx(item.icao, function(metar, taf){
+        var mEl=qs('#m-wxMetar'+item.sfx, t1);
+        var tEl=qs('#m-wxTaf'+item.sfx, t1);
+        if(mEl) mEl.value=metar||'No METAR found for '+item.icao;
+        if(tEl) tEl.value=taf||'No TAF found for '+item.icao;
+        if(++done===toFetch.length && status) status.textContent='Done';
       });
     });
   }
 
+  // Wire surface wind inputs
   ['m-wxSurfDir','m-wxSurfSpd','m-rwy1','m-rwy2'].forEach(function(id){
-    var e=qs('#'+id,t1);if(e)e.addEventListener('input',wxCalc);
+    var e=qs('#'+id,t1); if(e) e.addEventListener('input',wxCalc);
   });
-  var fbtn=qs('#wx-fetch-btn',t1);if(fbtn)fbtn.addEventListener('click',doWxFetch);
-  if(ex){setTimeout(function(){wxCalc();if(f.departure||f.destination)doWxFetch();},0);}
-  else{setTimeout(doWxFetch,400);}
+
+  // Wire fetch button
+  var fbtn=qs('#wx-fetch-btn',t1);
+  if(fbtn) fbtn.addEventListener('click', doWxFetch);
+
+  // Also re-fetch when departure/destination changes in Details tab
+  [qs('#m-dep',t4), qs('#m-dest',t4)].forEach(function(el){
+    if(el) el.addEventListener('change', function(){
+      // Small delay so value is committed
+      setTimeout(doWxFetch, 300);
+    });
+  });
+
+  // Auto-fetch on open if we have dep/dest
+  if(ex && (f.departure||f.destination)){
+    setTimeout(function(){ wxCalc(); doWxFetch(); }, 100);
+  } else {
+    setTimeout(wxCalc, 0);
+  }
 
   // Weather wired
 
