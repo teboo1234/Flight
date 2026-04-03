@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>METAR Test</title>
+<style>
+body{font-family:monospace;padding:20px;background:#f5f5f5;font-size:16px}
+input{font-size:16px;padding:8px;width:120px;border:1px solid #ccc;border-radius:4px}
+button{font-size:16px;padding:8px 16px;background:#0077cc;color:white;border:none;border-radius:4px;cursor:pointer;margin:4px}
+.box{background:white;border:1px solid #ccc;border-radius:6px;padding:12px;margin:10px 0;white-space:pre-wrap;word-break:break-all;min-height:40px}
+.ok{border-color:green;color:#004400}
+.err{border-color:red;color:#440000}
+.pending{border-color:orange;color:#664400}
+</style>
+</head>
+<body>
+<h2>METAR Fetch Test</h2>
+<p>Protocol: <strong id="proto"></strong></p>
+<p>
+  ICAO: <input id="icao" value="EGLL" maxlength="4" style="text-transform:uppercase"/>
+  <button onclick="test1()">Direct NOAA</button>
+  <button onclick="test2()">NOAA JSON</button>
+  <button onclick="test3()">Nearest (bbox)</button>
+  <button onclick="testAll()">Test All</button>
+</p>
+
+<h3>1. Direct METAR (raw text)</h3>
+<div class="box pending" id="r1">Not tested</div>
+
+<h3>2. Direct TAF (raw text)</h3>
+<div class="box pending" id="r2">Not tested</div>
+
+<h3>3. NOAA JSON format</h3>
+<div class="box pending" id="r3">Not tested</div>
+
+<h3>4. Airport coords lookup</h3>
+<div class="box pending" id="r4">Not tested</div>
+
+<h3>5. Nearest by bounding box</h3>
+<div class="box pending" id="r5">Not tested</div>
+
+<script>
+document.getElementById('proto').textContent = window.location.protocol + '//' + window.location.hostname;
+
+function show(id, text, ok) {
+  var el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'box ' + (ok === true ? 'ok' : ok === false ? 'err' : 'pending');
+}
+
+function icao() { return document.getElementById('icao').value.trim().toUpperCase(); }
+
+function test1() {
+  var id = icao();
+  show('r1', 'Fetching...', null);
+  show('r2', 'Fetching...', null);
+  fetch('https://aviationweather.gov/api/data/metar?ids=' + id + '&format=raw&hours=6')
+    .then(function(r) {
+      show('r1', 'HTTP ' + r.status + '\n' + (r.ok ? '' : 'Bad status'), r.ok);
+      return r.text();
+    })
+    .then(function(t) { show('r1', 'HTTP OK\n' + t.slice(0, 500), t.length > 5); })
+    .catch(function(e) { show('r1', 'FAILED: ' + e.toString(), false); });
+
+  fetch('https://aviationweather.gov/api/data/taf?ids=' + id + '&format=raw')
+    .then(function(r) { return r.text(); })
+    .then(function(t) { show('r2', t.length > 5 ? t.slice(0, 500) : 'Empty response', t.length > 5); })
+    .catch(function(e) { show('r2', 'FAILED: ' + e.toString(), false); });
+}
+
+function test2() {
+  var id = icao();
+  show('r3', 'Fetching...', null);
+  fetch('https://aviationweather.gov/api/data/metar?ids=' + id + '&format=json')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      show('r3', d && d.length ? JSON.stringify(d[0], null, 2).slice(0, 600) : 'Empty array returned', d && d.length > 0);
+    })
+    .catch(function(e) { show('r3', 'FAILED: ' + e.toString(), false); });
+}
+
+function test3() {
+  var id = icao();
+  show('r4', 'Fetching airport coords...', null);
+  show('r5', 'Waiting for coords...', null);
+  fetch('https://aviationweather.gov/api/data/airport?ids=' + id)
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d || !d[0]) { show('r4', 'No airport data returned: ' + JSON.stringify(d), false); return; }
+      var lat = d[0].lat, lon = d[0].lon;
+      show('r4', 'Lat: ' + lat + '  Lon: ' + lon + '\nFull: ' + JSON.stringify(d[0]).slice(0, 300), true);
+      // Now search nearby
+      var margin = 3;
+      var bbox = (lat-margin) + ',' + (lon-margin) + ',' + (lat+margin) + ',' + (lon+margin);
+      show('r5', 'Searching bbox: ' + bbox, null);
+      fetch('https://aviationweather.gov/api/data/metar?bbox=' + bbox + '&format=raw&hours=6')
+        .then(function(r) { return r.text(); })
+        .then(function(t) {
+          show('r5', t.length > 5 ? 'Found stations:\n' + t.slice(0, 600) : 'Empty - no stations in bbox', t.length > 5);
+        })
+        .catch(function(e) { show('r5', 'bbox fetch failed: ' + e.toString(), false); });
+    })
+    .catch(function(e) { show('r4', 'Airport lookup FAILED: ' + e.toString(), false); });
+}
+
+function testAll() { test1(); test2(); test3(); }
+</script>
+</body>
+</html>
