@@ -1218,12 +1218,44 @@ window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();dP=
 qs('#install-btn').addEventListener('click',function(){if(!dP)return;dP.prompt();dP.userChoice.then(function(r){if(r.outcome==='accepted')toast('App installed!');dP=null;qs('#install-btn').style.display='none';});});
 
 // ============================================================
-// INIT
+// INIT - with diagnostics
 // ============================================================
-renderFlFilters(); renderFlStats(); renderFlList();
-renderClFilter(); renderClList();
-renderLsFilter(); renderLsList();
-renderRfFilter(); renderRfList();
+var dbg = document.createElement('div');
+dbg.id = 'dbg-panel';
+dbg.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:11px;padding:6px;max-height:120px;overflow-y:auto;z-index:9999;display:none';
+document.body.appendChild(dbg);
+function dbgLog(msg){
+  dbg.style.display='block';
+  dbg.innerHTML += msg + '<br/>';
+  dbg.scrollTop = dbg.scrollHeight;
+  console.log('[INIT] ' + msg);
+}
+
+try {
+  dbgLog('1. renderFlFilters...');
+  renderFlFilters();
+  dbgLog('2. renderFlStats...');
+  renderFlStats();
+  dbgLog('3. renderFlList...');
+  renderFlList();
+  dbgLog('4. renderClFilter...');
+  renderClFilter();
+  dbgLog('5. renderClList...');
+  renderClList();
+  dbgLog('6. renderLsFilter...');
+  renderLsFilter();
+  dbgLog('7. renderLsList...');
+  renderLsList();
+  dbgLog('8. renderRfFilter...');
+  renderRfFilter();
+  dbgLog('9. renderRfList...');
+  renderRfList();
+  dbgLog('INIT COMPLETE - tap here to dismiss');
+  setTimeout(function(){ dbg.style.display='none'; }, 4000);
+} catch(e) {
+  dbgLog('ERROR: ' + e.toString());
+  dbgLog('Stack: ' + (e.stack||'').slice(0,200));
+}
 </script>
 </body>
 </html>
