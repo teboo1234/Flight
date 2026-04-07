@@ -524,12 +524,12 @@ function renderFlDetail(){
     whtml+='</div>';
     if(f.wxMetarDep||f.wxTafDep){
       whtml+='<div style="font-family:B612 Mono,monospace;font-size:10px;color:#a5b4fc;text-transform:uppercase;margin:6px 0 3px">Departure: '+(f.departure||'')+'</div>';
-      if(f.wxMetarDep)whtml+='<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:4px">'+f.wxMetarDep+'</div>';
+      if(f.wxMetarDep)whtml+='<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:4px">'+filterMetarsByFlight(f.wxMetarDep,f.chocksOff,f.chocksOn)+'</div>';
       if(f.wxTafDep)whtml+='<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px">'+f.wxTafDep+'</div>';
     }
     if(f.wxMetarDest||f.wxTafDest){
       whtml+='<div style="font-family:B612 Mono,monospace;font-size:10px;color:#a5b4fc;text-transform:uppercase;margin:6px 0 3px">Destination: '+(f.destination||'')+'</div>';
-      if(f.wxMetarDest)whtml+='<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:4px">'+f.wxMetarDest+'</div>';
+      if(f.wxMetarDest)whtml+='<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:4px">'+filterMetarsByFlight(f.wxMetarDest,f.chocksOff,f.chocksOn)+'</div>';
       if(f.wxTafDest)whtml+='<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px">'+f.wxTafDest+'</div>';
     }
     if(f.wxFreezFL)whtml+='<div class="sec"><div class="sec-lbl">Freezing Level</div><div class="sec-box">'+f.wxFreezFL+' ft</div></div>';
@@ -597,6 +597,49 @@ function renderFlDetail(){
 }
 
 // ── Flight Modal ──────────────────────────────────────────
+// Filter a multi-line METAR string to only observations within
+// ±30 min of the flight window (chocksOff -> chocksOn, HH:MM UTC)
+// METAR timestamp format: ICAO DDHHMMz e.g. EGLL 071220Z
+function filterMetarsByFlight(metarText, chocksOff, chocksOn){
+  if(!metarText || !chocksOff) return metarText;
+
+  var offDec  = parseUTC(chocksOff);
+  var onDec   = parseUTC(chocksOn || chocksOff);
+  if(offDec === null) return metarText;
+
+  // Window: 30 min before chocks off to 30 min after chocks on
+  var MARGIN = 0.5; // 0.5 hrs = 30 min
+  var winStart = offDec - MARGIN;
+  var winEnd   = onDec  + MARGIN;
+  // Handle midnight wrap
+  if(winStart < 0)  winStart += 24;
+  if(winEnd   > 24) winEnd   -= 24;
+
+  var lines = metarText.split('\n');
+  var filtered = lines.filter(function(line){
+    // Extract time from METAR: second token is DDHHMMz or HHMMz
+    var parts = line.trim().split(/\s+/);
+    var tok = parts.length > 1 ? parts[1] : '';
+    // Match DDHHMMz (6 digits + Z) or HHMMz (4 digits + Z)
+    var m6 = tok.match(/^\d{2}(\d{2})(\d{2})[Zz]/);  // DDHHMMz
+    var m4 = tok.match(/^(\d{2})(\d{2})[Zz]/);        // HHMMz
+    var metarH = null;
+    if(m6) metarH = parseInt(m6[1]) + parseInt(m6[2])/60;
+    else if(m4) metarH = parseInt(m4[1]) + parseInt(m4[2])/60;
+    if(metarH === null) return true; // can't parse time - keep it
+
+    // Check if within window (accounting for midnight wrap)
+    if(winStart <= winEnd){
+      return metarH >= winStart && metarH <= winEnd;
+    } else {
+      // Wraps midnight
+      return metarH >= winStart || metarH <= winEnd;
+    }
+  });
+
+  return filtered.length > 0 ? filtered.join('\n') : lines[0] || metarText;
+}
+
 // Fetch METAR and TAF - tries multiple sources
 function fetchWx(icao, cb){
   var tried = 0;
@@ -985,9 +1028,9 @@ function emailFlight(f){
     'ETOT: '+(f.etot||'--')+' UTC  TAS: '+(f.wxTAS||'--')+' kt  Freezing: '+(f.wxFreezFL||'--')+' ft',
     'Surface Wind: '+(f.wxSurfDir&&f.wxSurfSpd?f.wxSurfDir+'deg / '+f.wxSurfSpd+' kt':'--'),
     'Runways: '+(f.rwy1?'RWY '+f.rwy1:'--')+(f.rwy2?' and RWY '+f.rwy2:''),
-    (f.wxMetarDep?'DEP METAR: '+f.wxMetarDep:''),
+    (f.wxMetarDep?'DEP METAR (flight window): '+filterMetarsByFlight(f.wxMetarDep,f.chocksOff,f.chocksOn):''),
     (f.wxTafDep  ?'DEP TAF: '+f.wxTafDep:''),
-    (f.wxMetarDest?'DEST METAR: '+f.wxMetarDest:''),
+    (f.wxMetarDest?'DEST METAR (flight window): '+filterMetarsByFlight(f.wxMetarDest,f.chocksOff,f.chocksOn):''),
     (f.wxTafDest  ?'DEST TAF: '+f.wxTafDest:''),
 
     '','TIMES (UTC)','Chocks Off: '+(f.chocksOff||'--'),'Takeoff:    '+(f.takeoff||'--'),'Landing:    '+(f.landing||'--'),'Chocks On:  '+(f.chocksOn||'--'),
@@ -1018,9 +1061,9 @@ function exportFlight(f){
     'ETOT: '+(f.etot||'--')+' UTC  TAS: '+(f.wxTAS||'--')+' kt  Freezing: '+(f.wxFreezFL||'--')+' ft',
     'Surface Wind: '+(f.wxSurfDir&&f.wxSurfSpd?f.wxSurfDir+'deg / '+f.wxSurfSpd+' kt':'--'),
     'Runways: '+(f.rwy1?'RWY '+f.rwy1:'--')+(f.rwy2?' and RWY '+f.rwy2:''),
-    (f.wxMetarDep?'DEP METAR: '+f.wxMetarDep:''),
+    (f.wxMetarDep?'DEP METAR (flight window): '+filterMetarsByFlight(f.wxMetarDep,f.chocksOff,f.chocksOn):''),
     (f.wxTafDep  ?'DEP TAF: '+f.wxTafDep:''),
-    (f.wxMetarDest?'DEST METAR: '+f.wxMetarDest:''),
+    (f.wxMetarDest?'DEST METAR (flight window): '+filterMetarsByFlight(f.wxMetarDest,f.chocksOff,f.chocksOn):''),
     (f.wxTafDest  ?'DEST TAF: '+f.wxTafDest:''),
 
     '','TIMES (UTC)','Chocks Off: '+(f.chocksOff||'--'),'Takeoff: '+(f.takeoff||'--'),'Landing: '+(f.landing||'--'),'Chocks On: '+(f.chocksOn||'--'),
