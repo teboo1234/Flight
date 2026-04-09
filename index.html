@@ -217,14 +217,6 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 <div id="modal-root"></div>
 <div class="toast" id="toast"></div>
 <script>
-// Global error handler - shows errors visibly on screen
-window.onerror = function(msg, src2, line, col, err) {
-  var div = document.createElement('div');
-  div.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#cc0000;color:white;padding:12px;font-family:monospace;font-size:14px;z-index:9999;white-space:pre-wrap';
-  div.textContent = 'JS ERROR: ' + msg + '\nLine: ' + line + ' Col: ' + col + '\nFile: ' + src2;
-  document.body.appendChild(div);
-  return false;
-};
 'use strict';
 // ============================================================
 // UTILITIES
@@ -640,9 +632,8 @@ function filterMetarsByFlight(metarText, chocksOff, chocksOn){
   return filtered.length > 0 ? filtered.join('\n') : lines[0] || metarText;
 }
 
-// Fetch METAR and TAF - tries multiple sources
+// Fetch METAR and TAF - tries multiple sources with nearest-station fallback
 function fetchWx(icao, cb){
-  var tried = 0;
 
   function parseRaw(txt){
     if(!txt || typeof txt !== 'string') return '';
@@ -652,54 +643,78 @@ function fetchWx(icao, cb){
       .join('\n');
   }
 
-  // Source 1: aviationweather.gov direct
-  function tryNoaa(){
-    var base = 'https://aviationweather.gov/api/data/';
+  var noaaBase = 'https://aviationweather.gov/api/data/';
+
+  // Fetch METAR+TAF directly from NOAA for a given station ID
+  function noaaFetch(id, done){
     var m='', t='', n=0;
-    function done(){ if(++n===2){ if(m||t){ cb(m,t); } else { tryCheckwx(); } } }
-    fetch(base+'metar?ids='+icao+'&format=raw&hours=6')
+    function check(){ if(++n===2) done(m, t); }
+    fetch(noaaBase+'metar?ids='+id+'&format=raw&hours=6')
       .then(function(r){ return r.text(); })
-      .then(function(txt){ m = parseRaw(txt); done(); })
-      .catch(function(){ done(); });
-    fetch(base+'taf?ids='+icao+'&format=raw')
+      .then(function(txt){ m=parseRaw(txt); check(); })
+      .catch(function(){ check(); });
+    fetch(noaaBase+'taf?ids='+id+'&format=raw')
       .then(function(r){ return r.text(); })
-      .then(function(txt){ t = parseRaw(txt); done(); })
-      .catch(function(){ done(); });
+      .then(function(txt){ t=parseRaw(txt); check(); })
+      .catch(function(){ check(); });
   }
 
-  // Source 2: aviationweather.gov via allorigins CORS proxy
-  function tryCheckwx(){
-    var mUrl = 'https://api.allorigins.win/raw?url=' +
-      encodeURIComponent('https://aviationweather.gov/api/data/metar?ids='+icao+'&format=raw&hours=6');
-    var tUrl = 'https://api.allorigins.win/raw?url=' +
-      encodeURIComponent('https://aviationweather.gov/api/data/taf?ids='+icao+'&format=raw');
-    var m='', t='', n=0;
-    function done(){ if(++n===2){ if(m||t){ cb(m,t); } else { tryVatsim(); } } }
-    fetch(mUrl)
-      .then(function(r){ return r.text(); })
-      .then(function(txt){ m = parseRaw(txt); done(); })
-      .catch(function(){ done(); });
-    fetch(tUrl)
-      .then(function(r){ return r.text(); })
-      .then(function(txt){ t = parseRaw(txt); done(); })
-      .catch(function(){ done(); });
-  }
-
-  // Source 3: VATSIM (METAR only, always works, no CORS issues)
-  function tryVatsim(){
-    fetch('https://metar.vatsim.net/metar.php?id='+icao)
-      .then(function(r){ return r.text(); })
-      .then(function(txt){
-        var m = parseRaw(txt);
-        if(m){ cb(m, '(TAF not available via this source)'); }
-        else { cb('No data found for '+icao+'. Check ICAO code.', ''); }
+  // Find nearest station via NOAA airport coords + bbox search
+  function findNearest(done){
+    fetch(noaaBase+'airport?ids='+icao)
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(!d||!d[0]||d[0].lat==null){ done(null); return; }
+        var lat=d[0].lat, lon=d[0].lon, margin=3;
+        var bbox=[lat-margin,lon-margin,lat+margin,lon+margin].join(',');
+        fetch(noaaBase+'metar?bbox='+bbox+'&format=raw&hours=6')
+          .then(function(r){ return r.text(); })
+          .then(function(txt){
+            var lines=parseRaw(txt).split('\n').filter(function(l){return l.length>8;});
+            if(!lines.length){ done(null); return; }
+            // Pick closest (first result), extract station ID
+            var nearestId = lines[0].split(' ')[0];
+            done(nearestId, lines[0]);
+          })
+          .catch(function(){ done(null); });
       })
-      .catch(function(){
-        cb('Fetch failed - check internet connection', '');
-      });
+      .catch(function(){ done(null); });
   }
 
-  tryNoaa();
+  // VATSIM fallback - METAR only
+  function tryVatsim(id, done){
+    fetch('https://metar.vatsim.net/metar.php?id='+id)
+      .then(function(r){ return r.text(); })
+      .then(function(txt){ done(parseRaw(txt)); })
+      .catch(function(){ done(''); });
+  }
+
+  // Step 1: try NOAA direct
+  noaaFetch(icao, function(m, t){
+    if(m || t){ cb(m, t); return; }
+
+    // Step 2: VATSIM direct
+    tryVatsim(icao, function(vm){
+      if(vm){ cb(vm, ''); return; }
+
+      // Step 3: Find nearest station via bbox
+      findNearest(function(nearId, nearMetar){
+        if(!nearId){ cb('No data found for '+icao, ''); return; }
+
+        // Step 4: fetch full data for nearest station
+        noaaFetch(nearId, function(nm, nt){
+          var prefix = '[Nearest station: '+nearId+'] ';
+          if(nm || nt){
+            cb(prefix+(nm||nearMetar), nt);
+          } else {
+            tryVatsim(nearId, function(nvm){
+              cb(prefix+(nvm||nearMetar), '');
+            });
+          }
+        });
+      });
+    });
+  });
 }
 
 function openFlModal(ex){
@@ -1238,44 +1253,12 @@ window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();dP=
 qs('#install-btn').addEventListener('click',function(){if(!dP)return;dP.prompt();dP.userChoice.then(function(r){if(r.outcome==='accepted')toast('App installed!');dP=null;qs('#install-btn').style.display='none';});});
 
 // ============================================================
-// INIT - with diagnostics
+// INIT
 // ============================================================
-var dbg = document.createElement('div');
-dbg.id = 'dbg-panel';
-dbg.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:11px;padding:6px;max-height:120px;overflow-y:auto;z-index:9999;display:none';
-document.body.appendChild(dbg);
-function dbgLog(msg){
-  dbg.style.display='block';
-  dbg.innerHTML += msg + '<br/>';
-  dbg.scrollTop = dbg.scrollHeight;
-  console.log('[INIT] ' + msg);
-}
-
-try {
-  dbgLog('1. renderFlFilters...');
-  renderFlFilters();
-  dbgLog('2. renderFlStats...');
-  renderFlStats();
-  dbgLog('3. renderFlList...');
-  renderFlList();
-  dbgLog('4. renderClFilter...');
-  renderClFilter();
-  dbgLog('5. renderClList...');
-  renderClList();
-  dbgLog('6. renderLsFilter...');
-  renderLsFilter();
-  dbgLog('7. renderLsList...');
-  renderLsList();
-  dbgLog('8. renderRfFilter...');
-  renderRfFilter();
-  dbgLog('9. renderRfList...');
-  renderRfList();
-  dbgLog('INIT COMPLETE - tap here to dismiss');
-  setTimeout(function(){ dbg.style.display='none'; }, 4000);
-} catch(e) {
-  dbgLog('ERROR: ' + e.toString());
-  dbgLog('Stack: ' + (e.stack||'').slice(0,200));
-}
+renderFlFilters(); renderFlStats(); renderFlList();
+renderClFilter(); renderClList();
+renderLsFilter(); renderLsList();
+renderRfFilter(); renderRfList();
 </script>
 </body>
 </html>
