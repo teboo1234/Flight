@@ -439,7 +439,7 @@ function flSave(){save(FL_KEY,flights);}
 
 function newFlight(){
   return {id:uid(),date:'',aircraft:'G-XXXX',departure:'',destination:'',pic:'',student:'',category:'Dual',
-    etot:'',rwy1:'',rwy2:'',wxSurfDir:'',wxSurfSpd:'',wxTAS:'',wxFreezFL:'',wxMetarDep:'',wxTafDep:'',wxMetarDest:'',wxTafDest:'',
+    etob:'',etot:'',rwy1:'',rwy2:'',wxSurfDir:'',wxSurfSpd:'',wxTAS:'',wxFreezFL:'',wxMetarDep:'',wxTafDep:'',wxMetarDest:'',wxTafDest:'',
     fob:'',burnRate:'',fuelTaxi:'',fuelTrip:'',fuelContPct:'5',fuelAlt:'',fuelFinal:'',fuelExtra:'',
     fuelUplifted:'',oil:'',
     chocksOff:'',takeoff:'',landing:'',chocksOn:'',
@@ -516,12 +516,12 @@ function renderFlDetail(){
     whtml+='</div>';
     if(f.wxMetarDep||f.wxTafDep){
       whtml+='<div style="font-family:B612 Mono,monospace;font-size:10px;color:#a5b4fc;text-transform:uppercase;margin:6px 0 3px">Departure: '+(f.departure||'')+'</div>';
-      if(f.wxMetarDep)whtml+='<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:4px">'+filterMetarsByFlight(f.wxMetarDep,f.chocksOff,f.chocksOn)+'</div>';
+      if(f.wxMetarDep)whtml+='<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:4px">'+filterMetarsByFlight(f.wxMetarDep,f.chocksOff,f.chocksOn,f.etob)+'</div>';
       if(f.wxTafDep)whtml+='<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px">'+f.wxTafDep+'</div>';
     }
     if(f.wxMetarDest||f.wxTafDest){
       whtml+='<div style="font-family:B612 Mono,monospace;font-size:10px;color:#a5b4fc;text-transform:uppercase;margin:6px 0 3px">Destination: '+(f.destination||'')+'</div>';
-      if(f.wxMetarDest)whtml+='<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:4px">'+filterMetarsByFlight(f.wxMetarDest,f.chocksOff,f.chocksOn)+'</div>';
+      if(f.wxMetarDest)whtml+='<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:4px">'+filterMetarsByFlight(f.wxMetarDest,f.chocksOff,f.chocksOn,f.etob)+'</div>';
       if(f.wxTafDest)whtml+='<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px">'+f.wxTafDest+'</div>';
     }
     if(f.wxFreezFL)whtml+='<div class="sec"><div class="sec-lbl">Freezing Level</div><div class="sec-box">'+f.wxFreezFL+' ft</div></div>';
@@ -592,39 +592,47 @@ function renderFlDetail(){
 // Filter a multi-line METAR string to only observations within
 // ±30 min of the flight window (chocksOff -> chocksOn, HH:MM UTC)
 // METAR timestamp format: ICAO DDHHMMz e.g. EGLL 071220Z
-function filterMetarsByFlight(metarText, chocksOff, chocksOn){
-  if(!metarText || !chocksOff) return metarText;
+function filterMetarsByFlight(metarText, chocksOff, chocksOn, etob){
+  if(!metarText) return metarText;
 
-  var offDec  = parseUTC(chocksOff);
-  var onDec   = parseUTC(chocksOn || chocksOff);
-  if(offDec === null) return metarText;
+  // Determine window: chocks off/on if set, otherwise etob ± 1 hr
+  var MARGIN = 1.0; // 1 hour each side
+  var winStart, winEnd;
 
-  // Window: 30 min before chocks off to 30 min after chocks on
-  var MARGIN = 0.5; // 0.5 hrs = 30 min
-  var winStart = offDec - MARGIN;
-  var winEnd   = onDec  + MARGIN;
-  // Handle midnight wrap
+  var offDec = parseUTC(chocksOff);
+  var onDec  = parseUTC(chocksOn);
+  var etobDec = parseUTC(etob);
+
+  if(offDec !== null){
+    winStart = offDec - MARGIN;
+    winEnd   = (onDec !== null ? onDec : offDec) + MARGIN;
+  } else if(etobDec !== null){
+    winStart = etobDec - MARGIN;
+    winEnd   = etobDec + MARGIN;
+  } else {
+    return metarText; // no times set - return all
+  }
+
+  // Normalise for midnight wrap
   if(winStart < 0)  winStart += 24;
-  if(winEnd   > 24) winEnd   -= 24;
+  if(winEnd >= 24)  winEnd   -= 24;
 
-  var lines = metarText.split('\n');
+  var lines = metarText.split('\n').filter(function(l){ return l.trim().length > 3; });
   var filtered = lines.filter(function(line){
-    // Extract time from METAR: second token is DDHHMMz or HHMMz
     var parts = line.trim().split(/\s+/);
     var tok = parts.length > 1 ? parts[1] : '';
-    // Match DDHHMMz (6 digits + Z) or HHMMz (4 digits + Z)
-    var m6 = tok.match(/^\d{2}(\d{2})(\d{2})[Zz]/);  // DDHHMMz
-    var m4 = tok.match(/^(\d{2})(\d{2})[Zz]/);        // HHMMz
+    // DDHHMMz (most common) or HHMMz
+    var m6 = tok.match(/^\d{2}(\d{2})(\d{2})[Zz]/);
+    var m4 = tok.match(/^(\d{2})(\d{2})[Zz]/);
     var metarH = null;
     if(m6) metarH = parseInt(m6[1]) + parseInt(m6[2])/60;
     else if(m4) metarH = parseInt(m4[1]) + parseInt(m4[2])/60;
-    if(metarH === null) return true; // can't parse time - keep it
+    if(metarH === null) return true; // unparseable - keep
 
-    // Check if within window (accounting for midnight wrap)
     if(winStart <= winEnd){
       return metarH >= winStart && metarH <= winEnd;
     } else {
-      // Wraps midnight
+      // Crosses midnight
       return metarH >= winStart || metarH <= winEnd;
     }
   });
@@ -632,85 +640,79 @@ function filterMetarsByFlight(metarText, chocksOff, chocksOn){
   return filtered.length > 0 ? filtered.join('\n') : lines[0] || metarText;
 }
 
-// Fetch METAR and TAF - tries multiple sources with nearest-station fallback
+// Fetch METAR and TAF - NOAA primary, VATSIM fallback, nearest-station search
 function fetchWx(icao, cb){
+  var noaaBase = 'https://aviationweather.gov/api/data/';
 
   function parseRaw(txt){
     if(!txt || typeof txt !== 'string') return '';
     return txt.split('\n')
       .map(function(l){ return l.trim(); })
-      .filter(function(l){ return l.length > 3 && l.charAt(0) !== '<'; })
+      .filter(function(l){ return l.length > 6 && l.charAt(0) !== '<' && l.indexOf('No data')<0; })
       .join('\n');
   }
 
-  var noaaBase = 'https://aviationweather.gov/api/data/';
-
-  // Fetch METAR+TAF directly from NOAA for a given station ID
+  // Fetch METAR + TAF from NOAA for a station id
   function noaaFetch(id, done){
     var m='', t='', n=0;
-    function check(){ if(++n===2) done(m, t); }
+    function check(){ if(++n===2) done(m,t); }
     fetch(noaaBase+'metar?ids='+id+'&format=raw&hours=6')
-      .then(function(r){ return r.text(); })
-      .then(function(txt){ m=parseRaw(txt); check(); })
-      .catch(function(){ check(); });
-    fetch(noaaBase+'taf?ids='+id+'&format=raw')
-      .then(function(r){ return r.text(); })
-      .then(function(txt){ t=parseRaw(txt); check(); })
-      .catch(function(){ check(); });
+      .then(function(r){return r.text();})
+      .then(function(txt){m=parseRaw(txt);check();})
+      .catch(function(){check();});
+    fetch(noaaBase+'taf?ids='+id+'&format=raw&time=valid')
+      .then(function(r){return r.text();})
+      .then(function(txt){t=parseRaw(txt);check();})
+      .catch(function(){check();});
   }
 
-  // Find nearest station via NOAA airport coords + bbox search
-  function findNearest(done){
-    fetch(noaaBase+'airport?ids='+icao)
-      .then(function(r){ return r.json(); })
-      .then(function(d){
-        if(!d||!d[0]||d[0].lat==null){ done(null); return; }
-        var lat=d[0].lat, lon=d[0].lon, margin=3;
-        var bbox=[lat-margin,lon-margin,lat+margin,lon+margin].join(',');
-        fetch(noaaBase+'metar?bbox='+bbox+'&format=raw&hours=6')
-          .then(function(r){ return r.text(); })
-          .then(function(txt){
-            var lines=parseRaw(txt).split('\n').filter(function(l){return l.length>8;});
-            if(!lines.length){ done(null); return; }
-            // Pick closest (first result), extract station ID
-            var nearestId = lines[0].split(' ')[0];
-            done(nearestId, lines[0]);
-          })
-          .catch(function(){ done(null); });
-      })
-      .catch(function(){ done(null); });
-  }
-
-  // VATSIM fallback - METAR only
-  function tryVatsim(id, done){
+  // VATSIM METAR only (reliable, open CORS)
+  function vatsimFetch(id, done){
     fetch('https://metar.vatsim.net/metar.php?id='+id)
-      .then(function(r){ return r.text(); })
-      .then(function(txt){ done(parseRaw(txt)); })
-      .catch(function(){ done(''); });
+      .then(function(r){return r.text();})
+      .then(function(txt){done(parseRaw(txt));})
+      .catch(function(){done('');});
   }
 
-  // Step 1: try NOAA direct
-  noaaFetch(icao, function(m, t){
-    if(m || t){ cb(m, t); return; }
+  // Get airport lat/lon then search bbox for nearest reporting station
+  function nearestStation(done){
+    fetch(noaaBase+'airport?ids='+icao)
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(!d||!d[0]||d[0].lat==null){done(null);return;}
+        var lat=d[0].lat, lon=d[0].lon, deg=4;
+        var bbox=[lat-deg,lon-deg,lat+deg,lon+deg].join(',');
+        fetch(noaaBase+'metar?bbox='+bbox+'&format=raw&hours=6')
+          .then(function(r){return r.text();})
+          .then(function(txt){
+            var lines=parseRaw(txt).split('\n')
+              .filter(function(l){return l.length>8;})
+              .filter(function(l){return l.split(' ')[0]!==icao;}); // exclude original
+            if(!lines.length){done(null);return;}
+            done(lines[0].split(' ')[0]); // return nearest station ICAO
+          })
+          .catch(function(){done(null);});
+      })
+      .catch(function(){done(null);});
+  }
 
+  // Main sequence
+  // Step 1: NOAA direct
+  noaaFetch(icao, function(m,t){
+    if(m||t){cb(m,t);return;}
     // Step 2: VATSIM direct
-    tryVatsim(icao, function(vm){
-      if(vm){ cb(vm, ''); return; }
-
-      // Step 3: Find nearest station via bbox
-      findNearest(function(nearId, nearMetar){
-        if(!nearId){ cb('No data found for '+icao, ''); return; }
-
-        // Step 4: fetch full data for nearest station
-        noaaFetch(nearId, function(nm, nt){
-          var prefix = '[Nearest station: '+nearId+'] ';
-          if(nm || nt){
-            cb(prefix+(nm||nearMetar), nt);
-          } else {
-            tryVatsim(nearId, function(nvm){
-              cb(prefix+(nvm||nearMetar), '');
-            });
-          }
+    vatsimFetch(icao, function(vm){
+      if(vm){cb(vm,'');return;}
+      // Step 3: find nearest station
+      nearestStation(function(nearId){
+        if(!nearId){cb('No weather data found for '+icao,'');return;}
+        // Step 4: fetch nearest via NOAA
+        noaaFetch(nearId, function(nm,nt){
+          if(nm||nt){cb('[Nearest: '+nearId+'] '+nm, nt);return;}
+          // Step 5: VATSIM for nearest
+          vatsimFetch(nearId, function(nvm){
+            cb('[Nearest: '+nearId+'] '+(nvm||'No data'),'');
+          });
         });
       });
     });
@@ -844,7 +846,10 @@ function openFlModal(ex){
       field('Destination',inp('m-dest','text','YMML',f.destination))+
       field('PIC',inp('m-pic','text','Your name',f.pic))+
     '</div>'+
-    field('Student / Co-pilot',inp('m-student','text','Student name',f.student))+
+    '<div class="g2">'+
+      field('Student / Co-pilot',inp('m-student','text','Student name',f.student))+
+      '<div class="field"><label>Est. Time Off Blocks (UTC)</label>'+timeSpinnerHtml('m-etob',f.etob)+'</div>'+
+    '</div>'+
     '<div class="sdiv">Post-Flight</div>'+
     '<div class="g2">'+
       field('Oil Check',inp('m-oil','text','OK / 1L added',f.oil))+
@@ -869,6 +874,7 @@ function openFlModal(ex){
       f.maneuvers=qs('#m-maneuvers',t4)?qs('#m-maneuvers',t4).value:'';
       f.notes=qs('#m-notes',t4)?qs('#m-notes',t4).value:'';
       // weather
+      f.etob=getTime('m-etob',t4);
       f.etot=getTime('m-etot',t1);
       f.rwy1=g('m-rwy1',t1); f.rwy2=g('m-rwy2',t1);
       f.wxSurfDir=g('m-wxSurfDir',t1); f.wxSurfSpd=g('m-wxSurfSpd',t1);
@@ -1043,9 +1049,9 @@ function emailFlight(f){
     'ETOT: '+(f.etot||'--')+' UTC  TAS: '+(f.wxTAS||'--')+' kt  Freezing: '+(f.wxFreezFL||'--')+' ft',
     'Surface Wind: '+(f.wxSurfDir&&f.wxSurfSpd?f.wxSurfDir+'deg / '+f.wxSurfSpd+' kt':'--'),
     'Runways: '+(f.rwy1?'RWY '+f.rwy1:'--')+(f.rwy2?' and RWY '+f.rwy2:''),
-    (f.wxMetarDep?'DEP METAR (flight window): '+filterMetarsByFlight(f.wxMetarDep,f.chocksOff,f.chocksOn):''),
+    (f.wxMetarDep?'DEP METAR (flight window): '+filterMetarsByFlight(f.wxMetarDep,f.chocksOff,f.chocksOn,f.etob):''),
     (f.wxTafDep  ?'DEP TAF: '+f.wxTafDep:''),
-    (f.wxMetarDest?'DEST METAR (flight window): '+filterMetarsByFlight(f.wxMetarDest,f.chocksOff,f.chocksOn):''),
+    (f.wxMetarDest?'DEST METAR (flight window): '+filterMetarsByFlight(f.wxMetarDest,f.chocksOff,f.chocksOn,f.etob):''),
     (f.wxTafDest  ?'DEST TAF: '+f.wxTafDest:''),
 
     '','TIMES (UTC)','Chocks Off: '+(f.chocksOff||'--'),'Takeoff:    '+(f.takeoff||'--'),'Landing:    '+(f.landing||'--'),'Chocks On:  '+(f.chocksOn||'--'),
@@ -1076,9 +1082,9 @@ function exportFlight(f){
     'ETOT: '+(f.etot||'--')+' UTC  TAS: '+(f.wxTAS||'--')+' kt  Freezing: '+(f.wxFreezFL||'--')+' ft',
     'Surface Wind: '+(f.wxSurfDir&&f.wxSurfSpd?f.wxSurfDir+'deg / '+f.wxSurfSpd+' kt':'--'),
     'Runways: '+(f.rwy1?'RWY '+f.rwy1:'--')+(f.rwy2?' and RWY '+f.rwy2:''),
-    (f.wxMetarDep?'DEP METAR (flight window): '+filterMetarsByFlight(f.wxMetarDep,f.chocksOff,f.chocksOn):''),
+    (f.wxMetarDep?'DEP METAR (flight window): '+filterMetarsByFlight(f.wxMetarDep,f.chocksOff,f.chocksOn,f.etob):''),
     (f.wxTafDep  ?'DEP TAF: '+f.wxTafDep:''),
-    (f.wxMetarDest?'DEST METAR (flight window): '+filterMetarsByFlight(f.wxMetarDest,f.chocksOff,f.chocksOn):''),
+    (f.wxMetarDest?'DEST METAR (flight window): '+filterMetarsByFlight(f.wxMetarDest,f.chocksOff,f.chocksOn,f.etob):''),
     (f.wxTafDest  ?'DEST TAF: '+f.wxTafDest:''),
 
     '','TIMES (UTC)','Chocks Off: '+(f.chocksOff||'--'),'Takeoff: '+(f.takeoff||'--'),'Landing: '+(f.landing||'--'),'Chocks On: '+(f.chocksOn||'--'),
