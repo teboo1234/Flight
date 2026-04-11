@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TAF Source Test</title>
+<style>
+body{font-family:monospace;padding:16px;background:#f5f5f5;font-size:14px}
+input{font-size:16px;padding:8px;width:100px;border:1px solid #ccc;border-radius:4px;text-transform:uppercase}
+button{font-size:14px;padding:8px 14px;background:#0077cc;color:white;border:none;border-radius:4px;cursor:pointer;margin:3px}
+.box{background:white;border:1px solid #ccc;border-radius:6px;padding:10px;margin:8px 0;white-space:pre-wrap;word-break:break-all;font-size:12px;min-height:30px}
+.ok{border-color:#00aa00;background:#f0fff0}
+.err{border-color:#cc0000;background:#fff0f0}
+.wait{border-color:#ff8800;background:#fffaf0}
+h3{margin:14px 0 4px;font-size:13px}
+</style>
+</head>
+<body>
+<h2>TAF Source Diagnostic</h2>
+<p>Protocol: <strong id="proto"></strong></p>
+<p>ICAO: <input id="icao" value="EGLL"/> <button onclick="runAll()">Test All</button></p>
+
+<h3>1. NOAA api/data/taf direct</h3>
+<div class="box wait" id="r1">waiting</div>
+<h3>2. NOAA via allorigins proxy</h3>
+<div class="box wait" id="r2">waiting</div>
+<h3>3. NOAA via corsproxy.io</h3>
+<div class="box wait" id="r3">waiting</div>
+<h3>4. NOAA ADDS legacy dataserver</h3>
+<div class="box wait" id="r4">waiting</div>
+<h3>5. ADDS via allorigins proxy</h3>
+<div class="box wait" id="r5">waiting</div>
+<h3>6. METAR check (confirms network ok)</h3>
+<div class="box wait" id="r6">waiting</div>
+
+<script>
+document.getElementById('proto').textContent = window.location.protocol+'//'+window.location.hostname;
+function show(id,text,ok){var el=document.getElementById(id);el.textContent=(ok?'OK: ':'FAIL: ')+(text||'').slice(0,500);el.className='box '+(ok?'ok':'err');}
+function get(url,cb){fetch(url).then(function(r){return r.text();}).then(function(t){cb(null,t);}).catch(function(e){cb(e.toString(),'');});}
+function runAll(){
+  var icao=document.getElementById('icao').value.trim().toUpperCase();
+  ['r1','r2','r3','r4','r5','r6'].forEach(function(id){document.getElementById(id).className='box wait';document.getElementById(id).textContent='fetching...';});
+  var base='https://aviationweather.gov/api/data/taf?ids='+icao+'&format=raw';
+  var adds='https://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=tafs&requestType=retrieve&format=csv&stationString='+icao+'&hoursBeforeNow=12&mostRecentForEachStation=true';
+  get(base,function(e,t){if(e)show('r1',e,false);else show('r1',t||'(empty)',t&&t.length>10&&t.indexOf('<')<0);});
+  get('https://api.allorigins.win/raw?url='+encodeURIComponent(base),function(e,t){if(e)show('r2',e,false);else show('r2',t||'(empty)',t&&t.length>10&&t.indexOf('<')<0);});
+  get('https://corsproxy.io/?'+encodeURIComponent(base),function(e,t){if(e)show('r3',e,false);else show('r3',t||'(empty)',t&&t.length>10&&t.indexOf('<')<0);});
+  get(adds,function(e,t){if(e)show('r4',e,false);else show('r4',t||'(empty)',t&&t.length>10);});
+  get('https://api.allorigins.win/raw?url='+encodeURIComponent(adds),function(e,t){if(e)show('r5',e,false);else show('r5',t||'(empty)',t&&t.length>10);});
+  get('https://metar.vatsim.net/metar.php?id='+icao,function(e,t){if(e)show('r6',e,false);else show('r6',t||'(empty)',t&&t.length>10);});
+}
+</script>
+</body>
+</html>
