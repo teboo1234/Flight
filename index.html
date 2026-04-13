@@ -652,18 +652,37 @@ function fetchWx(icao, cb){
       .join('\n');
   }
 
-  // Fetch METAR + TAF from NOAA for a station id
+  // Fetch one URL, return text or ''
+  function fetchText(url, done){
+    fetch(url)
+      .then(function(r){ return r.text(); })
+      .then(function(txt){ done(txt||''); })
+      .catch(function(){ done(''); });
+  }
+
+  // Fetch METAR + TAF for a station, trying direct then proxy for each
   function noaaFetch(id, done){
-    var m='', t='', n=0;
-    function check(){ if(++n===2) done(m,t); }
-    fetch(noaaBase+'metar?ids='+id+'&format=raw&hours=6')
-      .then(function(r){return r.text();})
-      .then(function(txt){m=parseRaw(txt);check();})
-      .catch(function(){check();});
-    fetch(noaaBase+'taf?ids='+id+'&format=raw&time=valid')
-      .then(function(r){return r.text();})
-      .then(function(txt){t=parseRaw(txt);check();})
-      .catch(function(){check();});
+    var m='', t='', got=0;
+    function finish(){ if(++got===2) done(m,t); }
+
+    // METAR - direct only (usually works)
+    fetchText(noaaBase+'metar?ids='+id+'&format=raw&hours=6', function(txt){
+      m = parseRaw(txt);
+      finish();
+    });
+
+    // TAF - allorigins first (confirmed working), corsproxy fallback
+    function tryTaf1(){ // allorigins proxy
+      fetchText('https://api.allorigins.win/raw?url='+encodeURIComponent(noaaBase+'taf?ids='+id+'&format=raw'), function(txt){
+        t=parseRaw(txt); if(t){finish();} else {tryTaf2();}
+      });
+    }
+    function tryTaf2(){ // corsproxy.io
+      fetchText('https://corsproxy.io/?'+encodeURIComponent(noaaBase+'taf?ids='+id+'&format=raw'), function(txt){
+        t=parseRaw(txt); finish();
+      });
+    }
+    tryTaf1();
   }
 
   // VATSIM METAR only (reliable, open CORS)
