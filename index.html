@@ -641,24 +641,20 @@ function filterMetarsByFlight(metarText, chocksOff, chocksOn, etob){
   return filtered.length > 0 ? filtered.join('\n') : lines[0] || metarText;
 }
 
-// Fetch METAR and TAF - v15
+// Fetch METAR and TAF - v16
+// Uses allorigins proxy (confirmed working). If no data for ICAO,
+// searches within 20nm (0.35 deg) for nearest station that has a METAR.
 function fetchWx(icao, cb){
-  var ao   = 'https://api.allorigins.win/raw?url=';
-  var cp   = 'https://corsproxy.io/?';
-  var base = 'https://aviationweather.gov/api/data/';
+  var AO   = 'https://api.allorigins.win/raw?url=';
+  var CP   = 'https://corsproxy.io/?';
+  var BASE = 'https://aviationweather.gov/api/data/';
 
-  function clean(txt){
-    if(!txt || typeof txt !== 'string') return '';
-    return txt.split('\n')
-      .map(function(l){ return l.trim(); })
-      .filter(function(l){ return l.length > 6 && l.charAt(0) !== '<' && l.indexOf('No data') < 0; })
-      .join('\n');
-  }
+  function proxy(url){ return AO + encodeURIComponent(url); }
 
-  function get(url, done){
+  function getText(url, done){
     fetch(url)
       .then(function(r){ return r.text(); })
-      .then(function(t){ done(clean(t)); })
+      .then(function(t){ done(t || ''); })
       .catch(function(){ done(''); });
   }
 
@@ -669,37 +665,58 @@ function fetchWx(icao, cb){
       .catch(function(){ done(null); });
   }
 
-  // Fetch TAF for a given station id (allorigins -> corsproxy)
-  function fetchTafFor(id, done){
-    var tUrl = base + 'taf?ids=' + id + '&format=raw';
-    get(ao + encodeURIComponent(tUrl), function(taf){
-      if(taf){ done(taf); return; }
-      get(cp + encodeURIComponent(tUrl), function(taf2){
-        done(taf2 || '');
+  function cleanMetar(txt){
+    if(!txt) return '';
+    return txt.split('\n')
+      .map(function(l){ return l.trim(); })
+      .filter(function(l){
+        return l.length > 6
+          && l.charAt(0) !== '<'
+          && l.indexOf('No data') < 0
+          && l.indexOf('<!') < 0;
+      })
+      .join('\n');
+  }
+
+  // Step 1: get METAR for icao via allorigins -> VATSIM
+  function getMetar(id, done){
+    getText(proxy(BASE+'metar?ids='+id+'&format=raw&hours=6'), function(t){
+      var m = cleanMetar(t);
+      if(m){ done(m); return; }
+      // VATSIM fallback (confirmed working)
+      getText('https://metar.vatsim.net/metar.php?id='+id, function(t2){
+        done(cleanMetar(t2));
       });
     });
   }
 
-  // Fetch METAR for a given station id (allorigins -> VATSIM)
-  function fetchMetarFor(id, done){
-    var mUrl = base + 'metar?ids=' + id + '&format=raw&hours=6';
-    get(ao + encodeURIComponent(mUrl), function(metar){
-      if(metar){ done(metar); return; }
-      get('https://metar.vatsim.net/metar.php?id=' + id, function(metar2){
-        done(metar2 || '');
+  // Step 2: get TAF for icao via allorigins -> corsproxy
+  function getTaf(id, done){
+    getText(proxy(BASE+'taf?ids='+id+'&format=raw'), function(t){
+      var tf = cleanMetar(t);
+      if(tf){ done(tf); return; }
+      getText(CP+encodeURIComponent(BASE+'taf?ids='+id+'&format=raw'), function(t2){
+        done(cleanMetar(t2));
       });
     });
   }
 
-  // Find nearest station via NOAA airport coords + bbox METAR search
+  // Step 3: find nearest station within 20nm (0.35 deg) if icao has no data
   function findNearest(done){
-    getJSON(base + 'airport?ids=' + icao, function(d){
-      if(!d || !d[0] || d[0].lat == null){ done(null); return; }
-      var lat = d[0].lat, lon = d[0].lon, deg = 4;
-      var bbox = [lat-deg, lon-deg, lat+deg, lon+deg].join(',');
-      var bboxUrl = base + 'metar?bbox=' + bbox + '&format=raw&hours=6';
-      get(ao + encodeURIComponent(bboxUrl), function(txt){
-        var lines = txt.split('\n').filter(function(l){
+    // Get airport coordinates from NOAA
+    getText(proxy(BASE+'airport?ids='+icao), function(txt){
+      var lat = null, lon = null;
+      try{
+        // Response is JSON array
+        var d = JSON.parse(txt);
+        if(d && d[0] && d[0].lat != null){ lat = d[0].lat; lon = d[0].lon; }
+      } catch(e){}
+      if(lat === null){ done(null); return; }
+      // Search 0.35 degree box (~20nm)
+      var D = 0.35;
+      var bbox = (lat-D)+','+(lon-D)+','+(lat+D)+','+(lon+D);
+      getText(proxy(BASE+'metar?bbox='+bbox+'&format=raw&hours=6'), function(bboxTxt){
+        var lines = cleanMetar(bboxTxt).split('\n').filter(function(l){
           return l.length > 8 && l.split(' ')[0] !== icao;
         });
         done(lines.length ? lines[0].split(' ')[0] : null);
@@ -707,25 +724,16 @@ function fetchWx(icao, cb){
     });
   }
 
-  // Main sequence: try direct, then nearest
-  fetchMetarFor(icao, function(metar){
+  // Main flow
+  getMetar(icao, function(metar){
     if(metar){
-      // Got METAR for requested station - now get TAF
-      fetchTafFor(icao, function(taf){
-        cb(metar, taf);
-      });
+      getTaf(icao, function(taf){ cb(metar, taf); });
     } else {
-      // No METAR - find nearest station
       findNearest(function(nearId){
-        if(!nearId){
-          cb('No weather data found for ' + icao, '');
-          return;
-        }
-        // Fetch METAR + TAF for nearest station
-        fetchMetarFor(nearId, function(nearMetar){
-          fetchTafFor(nearId, function(nearTaf){
-            var prefix = '[Nearest: ' + nearId + '] ';
-            cb(prefix + (nearMetar || 'No METAR'), nearTaf);
+        if(!nearId){ cb('No weather data found for '+icao, ''); return; }
+        getMetar(nearId, function(nm){
+          getTaf(nearId, function(nt){
+            cb('[Nearest: '+nearId+'] '+(nm||''), nt);
           });
         });
       });
@@ -865,7 +873,7 @@ function openFlModal(ex){
       field('Student / Co-pilot',inp('m-student','text','Student name',f.student))+
       '<div class="field"><label>Est. Time Off Blocks (UTC)</label>'+timeSpinnerHtml('m-etob',f.etob)+'</div>'+
     '</div>'+
-    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);padding:2px 0 6px">v15</div>'+
+    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);padding:2px 0 6px">v16</div>'+
     '<div class="sdiv">Post-Flight</div>'+
     '<div class="g2">'+
       field('Oil Check',inp('m-oil','text','OK / 1L added',f.oil))+
