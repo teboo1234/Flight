@@ -735,17 +735,34 @@ function fetchWx(icao, cb){
     });
   }
 
+  // Extract 4-letter ICAO from a raw METAR line
+  function extractIcao(line){
+    var parts = line.trim().split(/\s+/);
+    for(var i=0; i<Math.min(parts.length,3); i++){
+      var p = parts[i];
+      if(/^[A-Z]{4}$/.test(p) && p !== 'METAR' && p !== 'SPECI' && p !== icao) return p;
+    }
+    return null;
+  }
+
   function searchBbox(lat, lon, done){
     var D=0.35; // ~20nm
     var bbox=(lat-D)+','+(lon-D)+','+(lat+D)+','+(lon+D);
     status('Searching 20nm box around '+lat.toFixed(2)+','+lon.toFixed(2)+'...');
     get(AO+encodeURIComponent(BASE+'metar?bbox='+bbox+'&format=raw&hours=6'), function(t){
       var lines=clean(t).split('\n').filter(function(l){return l.length>8&&l.split(' ')[0]!==icao;});
-      if(lines.length){done(lines[0].split(' ')[0]);return;}
+      if(lines.length){
+            var id1=extractIcao(lines[0]);
+            if(id1){done(id1);return;}
+          }
       // Try direct bbox
       get(BASE+'metar?bbox='+bbox+'&format=raw&hours=6', function(t2){
         var lines2=clean(t2).split('\n').filter(function(l){return l.length>8&&l.split(' ')[0]!==icao;});
-        done(lines2.length?lines2[0].split(' ')[0]:null);
+        if(lines2.length){
+            var id2=extractIcao(lines2[0]);
+            if(id2){done(id2);return;}
+          }
+          done(null);
       });
     });
   }
@@ -904,7 +921,7 @@ function openFlModal(ex){
       field('Student / Co-pilot',inp('m-student','text','Student name',f.student))+
       '<div class="field"><label>Est. Time Off Blocks (UTC)</label>'+timeSpinnerHtml('m-etob',f.etob)+'</div>'+
     '</div>'+
-    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);padding:2px 0 6px">v21</div>'+
+    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);padding:2px 0 6px">v22</div>'+
     '<div class="sdiv">Post-Flight</div>'+
     '<div class="g2">'+
       field('Oil Check',inp('m-oil','text','OK / 1L added',f.oil))+
@@ -996,20 +1013,30 @@ function openFlModal(ex){
     if(depLbl) depLbl.textContent=dep||'--';
     if(destLbl) destLbl.textContent=dest||'--';
     var toFetch=[];
-    if(dep.length>=3) toFetch.push({icao:dep, sfx:'Dep'});
-    if(dest.length>=3 && dest!==dep) toFetch.push({icao:dest, sfx:'Dest'});
+    if(dep.length>=3) toFetch.push({icao:dep, sfxList:['Dep']});
+    if(dest.length>=3){
+      if(dest===dep){
+        // Same airport - add dest to existing entry rather than fetching twice
+        if(toFetch.length) toFetch[0].sfxList.push('Dest');
+        else toFetch.push({icao:dest, sfxList:['Dest']});
+      } else {
+        toFetch.push({icao:dest, sfxList:['Dest']});
+      }
+    }
     if(!toFetch.length){
       if(status) status.textContent='Enter departure/destination ICAO in Details tab';
       return;
     }
-    if(status) status.textContent='Fetching '+toFetch.map(function(x){return x.icao;}).join(' & ')+'... (requires internet)';
+    if(status) status.textContent='Fetching '+toFetch.map(function(x){return x.icao;}).join(' & ')+'...';
     var done=0;
     toFetch.forEach(function(item){
       fetchWx(item.icao, function(metar, taf){
-        var mEl=qs('#m-wxMetar'+item.sfx, t1);
-        var tEl=qs('#m-wxTaf'+item.sfx, t1);
-        if(mEl) mEl.value=metar||'No METAR found for '+item.icao;
-        if(tEl) tEl.value=taf||'No TAF found for '+item.icao;
+        item.sfxList.forEach(function(sfx){
+          var mEl=qs('#m-wxMetar'+sfx, t1);
+          var tEl=qs('#m-wxTaf'+sfx, t1);
+          if(mEl) mEl.value=metar||'No METAR found for '+item.icao;
+          if(tEl) tEl.value=taf||'No TAF found for '+item.icao;
+        });
         if(++done===toFetch.length && status) status.textContent='Done';
       });
     });
