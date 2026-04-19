@@ -641,10 +641,8 @@ function filterMetarsByFlight(metarText, chocksOff, chocksOn, etob){
   return filtered.length > 0 ? filtered.join('\n') : lines[0] || metarText;
 }
 
-// Fetch METAR and TAF - v20
-// METAR: allorigins -> VATSIM fallback
-// TAF:   allorigins -> corsproxy fallback
-// Nearest: uses aviationweather airport API (direct, has CORS headers) -> bbox search
+// Fetch METAR and TAF - v21
+// Coords from Nominatim (OSM) - covers all airports worldwide including small UK fields
 function fetchWx(icao, cb){
   var AO   = 'https://api.allorigins.win/raw?url=';
   var CP   = 'https://corsproxy.io/?';
@@ -656,25 +654,31 @@ function fetchWx(icao, cb){
   }
 
   function clean(txt){
-    if(!txt || typeof txt !== 'string') return '';
+    if(!txt) return '';
     return txt.split('\n').map(function(l){return l.trim();})
-      .filter(function(l){return l.length>6 && l.charAt(0)!=='<' && l.indexOf('No data')<0 && l.indexOf('<!')<0;})
+      .filter(function(l){return l.length>6&&l.charAt(0)!=='<'&&l.indexOf('No data')<0&&l.indexOf('<!')<0;})
       .join('\n');
   }
 
   function get(url, done){
-    var t = setTimeout(function(){ done(''); }, 8000);
+    var t=setTimeout(function(){done('');},8000);
     fetch(url).then(function(r){return r.text();})
-      .then(function(txt){ clearTimeout(t); done(txt||''); })
-      .catch(function(){ clearTimeout(t); done(''); });
+      .then(function(txt){clearTimeout(t);done(txt||'');})
+      .catch(function(){clearTimeout(t);done('');});
   }
 
-  // METAR via allorigins -> VATSIM
+  function getJSON(url, done){
+    var t=setTimeout(function(){done(null);},8000);
+    fetch(url).then(function(r){return r.json();})
+      .then(function(d){clearTimeout(t);done(d);})
+      .catch(function(){clearTimeout(t);done(null);});
+  }
+
   function getMetar(id, done){
     status('METAR '+id+' via proxy...');
     get(AO+encodeURIComponent(BASE+'metar?ids='+id+'&format=raw&hours=6'), function(t){
       var m=clean(t);
-      if(m){ status('METAR found for '+id); done(m); return; }
+      if(m){status('METAR found for '+id);done(m);return;}
       status('Trying VATSIM for '+id+'...');
       get('https://metar.vatsim.net/metar.php?id='+id, function(t2){
         var m2=clean(t2);
@@ -684,57 +688,64 @@ function fetchWx(icao, cb){
     });
   }
 
-  // TAF via allorigins -> corsproxy
   function getTaf(id, done){
     get(AO+encodeURIComponent(BASE+'taf?ids='+id+'&format=raw'), function(t){
-      var tf=clean(t);
-      if(tf){ done(tf); return; }
-      get(CP+encodeURIComponent(BASE+'taf?ids='+id+'&format=raw'), function(t2){
-        done(clean(t2));
-      });
+      var tf=clean(t); if(tf){done(tf);return;}
+      get(CP+encodeURIComponent(BASE+'taf?ids='+id+'&format=raw'), function(t2){done(clean(t2));});
     });
   }
 
-  // Find nearest station - use NOAA airport API DIRECT (it has CORS headers)
-  // then bbox search via allorigins
-  function findNearest(done){
+  // Get coords from multiple sources
+  function getCoords(done){
+    // Source 1: NOAA airport API direct
     status('Looking up coords for '+icao+'...');
-    // Try direct first (NOAA airport API supports CORS)
     get(BASE+'airport?ids='+icao, function(txt){
-      var lat=null, lon=null;
-      try{ var d=JSON.parse(txt); if(d&&d[0]&&d[0].lat!=null){lat=+d[0].lat;lon=+d[0].lon;} }catch(e){}
-      if(lat===null){
-        // Try via allorigins proxy
-        get(AO+encodeURIComponent(BASE+'airport?ids='+icao), function(txt2){
-          try{ var d2=JSON.parse(txt2); if(d2&&d2[0]&&d2[0].lat!=null){lat=+d2[0].lat;lon=+d2[0].lon;} }catch(e){}
-          if(lat===null){ status('No coords for '+icao); done(null); return; }
-          searchBbox(lat, lon, done);
+      try{var d=JSON.parse(txt);if(d&&d[0]&&d[0].lat!=null){done(+d[0].lat,+d[0].lon);return;}}catch(e){}
+
+      // Source 2: NOAA airport via proxy
+      get(AO+encodeURIComponent(BASE+'airport?ids='+icao), function(txt2){
+        try{var d2=JSON.parse(txt2);if(d2&&d2[0]&&d2[0].lat!=null){done(+d2[0].lat,+d2[0].lon);return;}}catch(e){}
+
+        // Source 3: OpenStreetMap Nominatim - searches by ICAO code
+        status('Trying OSM for '+icao+'...');
+        var nomUrl='https://nominatim.openstreetmap.org/search?q='+icao+'&format=json&limit=1&featuretype=aerodrome';
+        getJSON(nomUrl, function(nd){
+          if(nd&&nd[0]&&nd[0].lat){done(+nd[0].lat,+nd[0].lon);return;}
+
+          // Source 4: OSM search by aerodrome name pattern
+          var nomUrl2='https://nominatim.openstreetmap.org/search?q=aerodrome+'+icao+'&format=json&limit=1';
+          getJSON(nomUrl2, function(nd2){
+            if(nd2&&nd2[0]&&nd2[0].lat){done(+nd2[0].lat,+nd2[0].lon);return;}
+
+            // Source 5: OurAirports API (has ALL airports worldwide)
+            status('Trying OurAirports for '+icao+'...');
+            getJSON('https://ourairports.com/airports/'+icao+'/id.json', function(oad){
+              if(oad&&oad.latitude_deg){done(+oad.latitude_deg,+oad.longitude_deg);return;}
+
+              // Source 6: airport-data.com
+              getJSON('https://airport-data.com/api/ap_info.json?iata=&icao='+icao, function(apd){
+                if(apd&&apd.latitude){done(+apd.latitude,+apd.longitude);return;}
+                status('Could not find coords for '+icao);
+                done(null,null);
+              });
+            });
+          });
         });
-        return;
-      }
-      searchBbox(lat, lon, done);
+      });
     });
   }
 
   function searchBbox(lat, lon, done){
-    // 0.35 deg ~ 20nm
-    var D=0.35;
+    var D=0.35; // ~20nm
     var bbox=(lat-D)+','+(lon-D)+','+(lat+D)+','+(lon+D);
-    status('Searching 20nm around '+lat.toFixed(2)+','+lon.toFixed(2)+'...');
-    // Try bbox via allorigins
-    get(AO+encodeURIComponent(BASE+'metar?bbox='+bbox+'&format=raw&hours=6'), function(bboxTxt){
-      var lines=clean(bboxTxt).split('\n').filter(function(l){
-        return l.length>8 && l.split(' ')[0]!==icao;
-      });
-      if(lines.length){ status('Nearest: '+lines[0].split(' ')[0]); done(lines[0].split(' ')[0]); return; }
-      // Try bbox direct
-      get(BASE+'metar?bbox='+bbox+'&format=raw&hours=6', function(bboxTxt2){
-        var lines2=clean(bboxTxt2).split('\n').filter(function(l){
-          return l.length>8 && l.split(' ')[0]!==icao;
-        });
-        if(lines2.length){ status('Nearest: '+lines2[0].split(' ')[0]); done(lines2[0].split(' ')[0]); return; }
-        status('No stations within 20nm of '+icao);
-        done(null);
+    status('Searching 20nm box around '+lat.toFixed(2)+','+lon.toFixed(2)+'...');
+    get(AO+encodeURIComponent(BASE+'metar?bbox='+bbox+'&format=raw&hours=6'), function(t){
+      var lines=clean(t).split('\n').filter(function(l){return l.length>8&&l.split(' ')[0]!==icao;});
+      if(lines.length){done(lines[0].split(' ')[0]);return;}
+      // Try direct bbox
+      get(BASE+'metar?bbox='+bbox+'&format=raw&hours=6', function(t2){
+        var lines2=clean(t2).split('\n').filter(function(l){return l.length>8&&l.split(' ')[0]!==icao;});
+        done(lines2.length?lines2[0].split(' ')[0]:null);
       });
     });
   }
@@ -743,13 +754,17 @@ function fetchWx(icao, cb){
   status('Starting '+icao+'...');
   getMetar(icao, function(metar){
     if(metar){
-      getTaf(icao, function(taf){ cb(metar, taf); });
+      getTaf(icao, function(taf){cb(metar,taf);});
     } else {
-      findNearest(function(nearId){
-        if(!nearId){ cb('No weather data found for '+icao,''); return; }
-        getMetar(nearId, function(nm){
-          getTaf(nearId, function(nt){
-            cb('[Nearest: '+nearId+'] '+(nm||''), nt);
+      getCoords(function(lat,lon){
+        if(lat===null){cb('No weather data found for '+icao,'');return;}
+        searchBbox(lat,lon,function(nearId){
+          if(!nearId){cb('No stations within 20nm of '+icao,'');return;}
+          status('Using nearest: '+nearId);
+          getMetar(nearId,function(nm){
+            getTaf(nearId,function(nt){
+              cb('[Nearest: '+nearId+'] '+(nm||''),nt);
+            });
           });
         });
       });
@@ -889,7 +904,7 @@ function openFlModal(ex){
       field('Student / Co-pilot',inp('m-student','text','Student name',f.student))+
       '<div class="field"><label>Est. Time Off Blocks (UTC)</label>'+timeSpinnerHtml('m-etob',f.etob)+'</div>'+
     '</div>'+
-    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);padding:2px 0 6px">v20</div>'+
+    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);padding:2px 0 6px">v21</div>'+
     '<div class="sdiv">Post-Flight</div>'+
     '<div class="g2">'+
       field('Oil Check',inp('m-oil','text','OK / 1L added',f.oil))+
