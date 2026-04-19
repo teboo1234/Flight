@@ -641,30 +641,17 @@ function filterMetarsByFlight(metarText, chocksOff, chocksOn, etob){
   return filtered.length > 0 ? filtered.join('\n') : lines[0] || metarText;
 }
 
-// Fetch METAR and TAF - v17 (with step diagnostics)
+// Fetch METAR and TAF - v18
 function fetchWx(icao, cb){
   var AO   = 'https://api.allorigins.win/raw?url=';
   var CP   = 'https://corsproxy.io/?';
   var BASE = 'https://aviationweather.gov/api/data/';
 
-  // Write diagnostic steps to the status span if visible
-  function diag(msg){
-    var s = document.querySelector('#wx-fetch-status');
-    if(s) s.textContent = '['+icao+'] '+msg;
-    console.log('[fetchWx '+icao+'] '+msg);
-  }
-
-  function proxy(url){ return AO + encodeURIComponent(url); }
-
-  function getText(url, done){
-    diag('GET '+url.slice(0,60)+'...');
-    fetch(url)
-      .then(function(r){
-        diag('HTTP '+r.status+' from '+url.slice(0,40));
-        return r.text();
-      })
-      .then(function(t){ done(t || ''); })
-      .catch(function(e){ diag('ERROR: '+e); done(''); });
+  // Show status in the wx-fetch-status span
+  function status(msg){
+    var els = document.querySelectorAll('#wx-fetch-status');
+    els.forEach(function(el){ el.textContent = msg; });
+    console.log('[WX '+icao+'] '+msg);
   }
 
   function clean(txt){
@@ -672,69 +659,101 @@ function fetchWx(icao, cb){
     return txt.split('\n')
       .map(function(l){ return l.trim(); })
       .filter(function(l){
-        return l.length > 6 && l.charAt(0) !== '<'
-          && l.indexOf('No data') < 0 && l.indexOf('<!') < 0;
+        return l.length > 6
+          && l.charAt(0) !== '<'
+          && l.indexOf('No data') < 0
+          && l.indexOf('<!') < 0;
       })
       .join('\n');
   }
 
+  // Simple fetch with timeout
+  function get(url, done){
+    var timer = setTimeout(function(){ done('TIMEOUT'); }, 10000);
+    fetch(url)
+      .then(function(r){ return r.text(); })
+      .then(function(t){ clearTimeout(timer); done(t||''); })
+      .catch(function(e){ clearTimeout(timer); done('ERR:'+e); });
+  }
+
   function getMetar(id, done){
-    getText(proxy(BASE+'metar?ids='+id+'&format=raw&hours=6'), function(t){
+    status('Fetching METAR for '+id+' via proxy...');
+    get(AO+encodeURIComponent(BASE+'metar?ids='+id+'&format=raw&hours=6'), function(t){
       var m = clean(t);
-      if(m){ diag('METAR ok via allorigins: '+m.slice(0,30)); done(m); return; }
-      diag('allorigins empty for '+id+', trying VATSIM...');
-      getText('https://metar.vatsim.net/metar.php?id='+id, function(t2){
+      if(m){ status('METAR found for '+id); done(m); return; }
+      status('No METAR via proxy (got: '+t.slice(0,40)+'), trying VATSIM...');
+      get('https://metar.vatsim.net/metar.php?id='+id, function(t2){
         var m2 = clean(t2);
-        diag(m2 ? 'METAR ok via VATSIM' : 'VATSIM also empty for '+id);
+        status(m2 ? 'METAR found via VATSIM for '+id : 'No METAR anywhere for '+id);
         done(m2);
       });
     });
   }
 
   function getTaf(id, done){
-    getText(proxy(BASE+'taf?ids='+id+'&format=raw'), function(t){
+    status('Fetching TAF for '+id+'...');
+    get(AO+encodeURIComponent(BASE+'taf?ids='+id+'&format=raw'), function(t){
       var tf = clean(t);
-      if(tf){ diag('TAF ok via allorigins'); done(tf); return; }
-      diag('allorigins empty for TAF, trying corsproxy...');
-      getText(CP+encodeURIComponent(BASE+'taf?ids='+id+'&format=raw'), function(t2){
-        var tf2 = clean(t2);
-        diag(tf2 ? 'TAF ok via corsproxy' : 'No TAF found for '+id);
-        done(tf2);
+      if(tf){ status('TAF found for '+id); done(tf); return; }
+      get(CP+encodeURIComponent(BASE+'taf?ids='+id+'&format=raw'), function(t2){
+        done(clean(t2));
       });
     });
   }
 
   function findNearest(done){
-    diag('No METAR for '+icao+', looking up coordinates...');
-    getText(proxy(BASE+'airport?ids='+icao), function(txt){
+    status('No METAR for '+icao+' - finding nearest station...');
+    // Get airport coordinates
+    get(AO+encodeURIComponent(BASE+'airport?ids='+icao), function(txt){
+      status('Airport lookup raw: '+txt.slice(0,60));
       var lat=null, lon=null;
-      try{ var d=JSON.parse(txt); if(d&&d[0]&&d[0].lat!=null){lat=d[0].lat;lon=d[0].lon;} }catch(e){}
-      if(lat===null){ diag('No coords for '+icao+', raw: '+txt.slice(0,80)); done(null); return; }
-      diag('Coords: '+lat+','+lon+' - searching 20nm box...');
-      var D=0.35;
-      var bbox=(lat-D)+','+(lon-D)+','+(lat+D)+','+(lon+D);
-      getText(proxy(BASE+'metar?bbox='+bbox+'&format=raw&hours=6'), function(bboxTxt){
-        var lines=clean(bboxTxt).split('\n').filter(function(l){
-          return l.length>8 && l.split(' ')[0]!==icao;
+      try{
+        var d = JSON.parse(txt);
+        if(d && d[0] && d[0].lat != null){ lat=+d[0].lat; lon=+d[0].lon; }
+      }catch(e){ status('JSON parse error: '+e+' raw:'+txt.slice(0,40)); }
+
+      if(lat===null){
+        status('No coords for '+icao+' - cannot find nearest');
+        done(null);
+        return;
+      }
+
+      // 0.35 deg ~ 20nm
+      var D = 0.35;
+      var bbox = (lat-D)+','+(lon-D)+','+(lat+D)+','+(lon+D);
+      status('Searching bbox '+bbox+' for METARs...');
+      get(AO+encodeURIComponent(BASE+'metar?bbox='+bbox+'&format=raw&hours=6'), function(bboxTxt){
+        status('bbox raw response: '+bboxTxt.slice(0,80));
+        var lines = clean(bboxTxt).split('\n').filter(function(l){
+          return l.length > 8 && l.split(' ')[0] !== icao;
         });
-        if(!lines.length){ diag('No stations in bbox: '+bbox+' raw: '+bboxTxt.slice(0,80)); done(null); return; }
-        var nearId=lines[0].split(' ')[0];
-        diag('Nearest station found: '+nearId);
+        if(!lines.length){
+          status('No stations found in 20nm of '+icao);
+          done(null);
+          return;
+        }
+        var nearId = lines[0].split(' ')[0];
+        status('Nearest station: '+nearId);
         done(nearId);
       });
     });
   }
 
   // Main flow
-  diag('Starting...');
+  status('Starting fetch for '+icao+'...');
   getMetar(icao, function(metar){
     if(metar){
       getTaf(icao, function(taf){ cb(metar, taf); });
     } else {
       findNearest(function(nearId){
-        if(!nearId){ cb('No weather data found for '+icao, ''); return; }
+        if(!nearId){
+          status('No weather data found for '+icao);
+          cb('No weather data found for '+icao, '');
+          return;
+        }
         getMetar(nearId, function(nm){
           getTaf(nearId, function(nt){
+            status('Done - using '+nearId);
             cb('[Nearest: '+nearId+'] '+(nm||''), nt);
           });
         });
@@ -875,7 +894,7 @@ function openFlModal(ex){
       field('Student / Co-pilot',inp('m-student','text','Student name',f.student))+
       '<div class="field"><label>Est. Time Off Blocks (UTC)</label>'+timeSpinnerHtml('m-etob',f.etob)+'</div>'+
     '</div>'+
-    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);padding:2px 0 6px">v17</div>'+
+    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);padding:2px 0 6px">v19</div>'+
     '<div class="sdiv">Post-Flight</div>'+
     '<div class="g2">'+
       field('Oil Check',inp('m-oil','text','OK / 1L added',f.oil))+
@@ -977,11 +996,14 @@ function openFlModal(ex){
     var done=0;
     toFetch.forEach(function(item){
       fetchWx(item.icao, function(metar, taf){
+        console.log('[doWxFetch cb] icao='+item.icao+' sfx='+item.sfx+' metar='+metar.slice(0,40)+' taf='+taf.slice(0,40));
         var mEl=qs('#m-wxMetar'+item.sfx, t1);
         var tEl=qs('#m-wxTaf'+item.sfx, t1);
+        console.log('[doWxFetch cb] mEl='+mEl+' tEl='+tEl);
         if(mEl) mEl.value=metar||'No METAR found for '+item.icao;
         if(tEl) tEl.value=taf||'No TAF found for '+item.icao;
-        if(++done===toFetch.length && status) status.textContent='Done';
+        if(++done===toFetch.length && status) status.textContent='Done: dep='+
+          (qs('#m-wxMetarDep',t1)?qs('#m-wxMetarDep',t1).value.slice(0,20):'NO EL');
       });
     });
   }
