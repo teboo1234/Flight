@@ -445,7 +445,7 @@ function newFlight(){
     fuelUplifted:'',oil:'',
     chocksOff:'',takeoff:'',landing:'',chocksOn:'',
     tachoStart:'',tachoEnd:'',hobbsStart:'',hobbsEnd:'',
-    maneuvers:'',notes:''};
+    maneuvers:'',notes:'',defects:[],safetyReports:[]};
 }
 
 function renderFlStats(){
@@ -575,6 +575,18 @@ function renderFlDetail(){
   dhtml+='</div><div class="g4" style="margin-bottom:9px">';
   [['Tacho Start',f.tachoStart],['Tacho End',f.tachoEnd],['Hobbs Start',f.hobbsStart],['Hobbs End',f.hobbsEnd]].forEach(function(r){dhtml+='<div class="sec"><div class="sec-lbl">'+r[0]+'</div><div class="sec-box">'+(r[1]||'--')+'</div></div>';});
   dhtml+='</div>';
+  if(f.defects&&f.defects.length){
+    var dv=mkEl('div','sec');
+    var dh='<div class="sec-lbl" style="margin-bottom:5px">Defects ('+f.defects.length+')</div>';
+    f.defects.forEach(function(d){dh+='<div style="display:flex;align-items:center;gap:7px;padding:6px 8px;background:var(--card);border:1px solid '+(d.reportable?'rgba(204,34,68,.4)':'var(--bdr)')+';border-radius:6px;margin-bottom:4px"><span style="flex:1;font-size:13px">'+d.text+'</span>'+(d.reportable?'<span class="badge b-ro">REPORTABLE</span>':'')+'</div>';});
+    dv.innerHTML=dh; box.appendChild(dv);
+  }
+  if(f.safetyReports&&f.safetyReports.length){
+    var sv=mkEl('div','sec');
+    var sh='<div class="sec-lbl" style="margin-bottom:5px">Safety Reports ('+f.safetyReports.length+')</div>';
+    f.safetyReports.forEach(function(r){sh+='<div style="background:var(--card);border:1px solid '+(r.reportable?'rgba(204,34,68,.45)':'var(--bdr)')+';border-radius:8px;padding:10px;margin-bottom:5px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-weight:700;font-size:13px;flex:1">'+r.title+'</span><span class="badge '+(r.reportable?'b-ro':'b-sl')+'">'+(r.reportable?'REPORTABLE':'Internal')+'</span></div>'+(r.description?'<div style="font-size:12px;color:var(--mut);white-space:pre-wrap">'+r.description+'</div>':'')+'</div>';});
+    sv.innerHTML=sh; box.appendChild(sv);
+  }
   if(f.oil||f.fuelUplifted)dhtml+='<div class="g2" style="margin-bottom:9px"><div class="sec"><div class="sec-lbl">Oil Check</div><div class="sec-box">'+(f.oil||'--')+'</div></div><div class="sec"><div class="sec-lbl">Fuel Uplifted</div><div class="sec-box">'+(f.fuelUplifted?f.fuelUplifted+' USG / '+dec2(parseFloat(f.fuelUplifted)*USG_TO_L)+' L':'--')+'</div></div></div>';
   if(f.maneuvers)dhtml+='<div class="sec"><div class="sec-lbl">Maneuvers</div><div class="sec-box">'+f.maneuvers+'</div></div>';
   if(f.notes)dhtml+='<div class="sec"><div class="sec-lbl">Instructor Notes</div><div class="sec-box">'+f.notes+'</div></div>';
@@ -890,11 +902,20 @@ function openFlModal(ex){
       field('Tacho End',ninp('m-tachoEnd','1235.2',f.tachoEnd))+
       field('Hobbs End',ninp('m-hobbsEnd','2346.4',f.hobbsEnd))+
     '</div>'+
+    '<div class="sdiv">Block and Flight Times (UTC)</div>'+
     '<div class="g4">'+
-      field('Chocks Off (UTC)',timeSpinnerHtml('m-chocksOff',f.chocksOff))+
-      field('Takeoff (UTC)',timeSpinnerHtml('m-takeoff',f.takeoff))+
-      field('Landing (UTC)',timeSpinnerHtml('m-landing',f.landing))+
-      field('Chocks On (UTC)',timeSpinnerHtml('m-chocksOn',f.chocksOn))+
+      '<div class="field"><label>Chocks Off</label>'+timeSpinnerHtml('m-chocksOff',f.chocksOff)+
+        '<button type="button" class="btn btn-g" id="stamp-chocksOff" style="margin-top:5px;width:100%;font-size:11px;padding:5px">&#8987; Now</button>'+
+      '</div>'+
+      '<div class="field"><label>Takeoff</label>'+timeSpinnerHtml('m-takeoff',f.takeoff)+
+        '<button type="button" class="btn btn-g" id="stamp-takeoff" style="margin-top:5px;width:100%;font-size:11px;padding:5px">&#8987; Now</button>'+
+      '</div>'+
+      '<div class="field"><label>Landing</label>'+timeSpinnerHtml('m-landing',f.landing)+
+        '<button type="button" class="btn btn-g" id="stamp-landing" style="margin-top:5px;width:100%;font-size:11px;padding:5px">&#8987; Now</button>'+
+      '</div>'+
+      '<div class="field"><label>Chocks On</label>'+timeSpinnerHtml('m-chocksOn',f.chocksOn)+
+        '<button type="button" class="btn btn-g" id="stamp-chocksOn" style="margin-top:5px;width:100%;font-size:11px;padding:5px">&#8987; Now</button>'+
+      '</div>'+
     '</div>'+
     '<div class="calc-card cc-blue">'+
       '<div class="cc-title" style="color:#7dd3fc">Calculated Times (auto)</div>'+
@@ -930,9 +951,120 @@ function openFlModal(ex){
     field('Maneuvers / Exercises',ta('m-maneuvers',3,f.maneuvers,'Stalls, circuits...'))+
     field('Instructor Notes',ta('m-notes',3,f.notes,'Student progress...'));
 
+  // TAB 5: Route Wx
+  var t5=document.createElement('div');
+  t5.style.cssText='display:flex;flex-direction:column;height:100%';
+  t5.innerHTML=
+    '<div class="sdiv" style="margin-top:0">Route</div>'+
+    '<div style="display:flex;gap:8px;margin-bottom:8px">'+
+      '<div style="flex:1">'+
+        '<div style="display:flex;gap:6px;margin-bottom:6px">'+
+          '<div style="flex:1"><div class="sec-lbl">Departure</div><div class="sec-box" id="rtwx-dep" style="font-family:B612 Mono,monospace;font-size:15px;font-weight:700;min-height:32px">--</div></div>'+
+          '<div style="flex:1"><div class="sec-lbl">Destination</div><div class="sec-box" id="rtwx-dest" style="font-family:B612 Mono,monospace;font-size:15px;font-weight:700;min-height:32px">--</div></div>'+
+        '</div>'+
+        '<div class="field" style="margin-bottom:6px"><label>Route (airways and fixes will be skipped)</label>'+
+          '<textarea class="inp" id="rtwx-route" rows="2" placeholder="e.g. BCN L9 MAXIT UL612 DVR" style="font-family:B612 Mono,monospace;font-size:13px;text-transform:uppercase"></textarea>'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;gap:5px;padding-top:18px">'+
+        '<button type="button" class="btn btn-p" id="rtwx-fetch-btn">&#9928; Get Wx</button>'+
+        '<button type="button" class="btn btn-g" id="rtwx-clear-btn">Clear</button>'+
+      '</div>'+
+    '</div>'+
+    '<div id="rtwx-status" style="font-family:B612 Mono,monospace;font-size:11px;color:var(--sky);margin-bottom:6px"></div>'+
+    '<div id="rtwx-results" style="flex:1;overflow-y:auto">'+
+      '<div class="empty"><div class="empty-icon">&#127745;</div><span>Enter route and tap Get Wx</span></div>'+
+    '</div>';
+
+  // TAB 6: Defects
+  var t6=document.createElement('div');
+  t6.style.cssText='display:flex;flex-direction:column;gap:8px;height:100%;padding:2px';
+  var defListEl=mkEl('div','slist');
+  defListEl.style.cssText='flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px';
+  var defAddEl=mkEl('div','');
+  defAddEl.style.cssText='display:flex;gap:6px;flex-shrink:0';
+  defAddEl.innerHTML='<input class="inp" id="def-inp" placeholder="Describe defect..." style="flex:1"/>'+
+    '<button type="button" class="btn btn-p" id="def-add-btn">Add</button>';
+  t6.appendChild(defListEl);
+  t6.appendChild(defAddEl);
+  function renderDefects(){
+    defListEl.innerHTML='';
+    if(!f.defects||!f.defects.length){
+      defListEl.innerHTML='<div class="empty" style="min-height:60px"><div class="empty-icon">&#128295;</div><span>No defects logged</span></div>';
+      return;
+    }
+    f.defects.forEach(function(d,i){
+      var row=mkEl('div','');
+      row.style.cssText='background:var(--card);border:1px solid '+(d.reportable?'rgba(204,34,68,.45)':'var(--bdr)')+';border-radius:8px;padding:9px;display:flex;align-items:center;gap:8px';
+      var chk=mkEl('input',''); chk.type='checkbox'; chk.checked=!!d.reportable;
+      chk.title='Tick if reportable to authority';
+      chk.style.cssText='width:17px;height:17px;cursor:pointer;accent-color:var(--ros);flex-shrink:0';
+      var txt=mkEl('span',''); txt.style.cssText='flex:1;font-size:13px'; txt.textContent=d.text;
+      var badge=mkEl('span','badge '+(d.reportable?'b-ro':'b-sl'));
+      badge.style.cssText='flex-shrink:0'; badge.textContent=d.reportable?'REPORTABLE':'Optional';
+      var del=mkEl('button','btn btn-d'); del.textContent='×'; del.style.cssText='padding:2px 7px;flex-shrink:0';
+      chk.addEventListener('change',function(){ f.defects[i].reportable=chk.checked; renderDefects(); });
+      del.addEventListener('click',function(){ f.defects.splice(i,1); renderDefects(); });
+      row.appendChild(chk); row.appendChild(txt); row.appendChild(badge); row.appendChild(del);
+      defListEl.appendChild(row);
+    });
+  }
+  renderDefects();
+  qs('#def-add-btn',t6).addEventListener('click',function(){
+    var el=qs('#def-inp',t6); if(!el||!el.value.trim()) return;
+    f.defects.push({text:el.value.trim(),reportable:false}); el.value=''; renderDefects();
+  });
+  qs('#def-inp',t6).addEventListener('keydown',function(e){ if(e.key==='Enter'){e.preventDefault();qs('#def-add-btn',t6).click();}});
+
+  // TAB 7: Safety Reports
+  var t7=document.createElement('div');
+  t7.style.cssText='display:flex;flex-direction:column;gap:8px;height:100%;padding:2px';
+  var safListEl=mkEl('div','slist');
+  safListEl.style.cssText='flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px';
+  var safFormEl=mkEl('div','');
+  safFormEl.style.cssText='flex-shrink:0;display:flex;flex-direction:column;gap:6px';
+  safFormEl.innerHTML=
+    '<input class="inp" id="saf-title" placeholder="Safety event title..." style="font-weight:700"/>'+
+    '<textarea class="inp" id="saf-desc" rows="3" placeholder="Description, factors, actions taken..."></textarea>'+
+    '<div style="display:flex;align-items:center;gap:10px">'+
+      '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">'+
+        '<input type="checkbox" id="saf-rep" style="width:17px;height:17px;accent-color:var(--ros)"/>'+
+        'Reportable to authority'+
+      '</label>'+
+      '<button type="button" class="btn btn-p" id="saf-add-btn" style="margin-left:auto">Add Report</button>'+
+    '</div>';
+  t7.appendChild(safListEl);
+  t7.appendChild(safFormEl);
+  function renderSafety(){
+    safListEl.innerHTML='';
+    if(!f.safetyReports||!f.safetyReports.length){
+      safListEl.innerHTML='<div class="empty" style="min-height:60px"><div class="empty-icon">&#9888;</div><span>No safety reports</span></div>';
+      return;
+    }
+    f.safetyReports.forEach(function(r,i){
+      var card=mkEl('div','');
+      card.style.cssText='background:var(--card);border:1px solid '+(r.reportable?'rgba(204,34,68,.45)':'var(--bdr)')+';border-radius:9px;padding:11px';
+      var hdr=mkEl('div',''); hdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:5px';
+      var title=mkEl('span',''); title.style.cssText='font-weight:700;font-size:14px;flex:1'; title.textContent=r.title;
+      var badge=mkEl('span','badge '+(r.reportable?'b-ro':'b-sl')); badge.textContent=r.reportable?'REPORTABLE':'Internal';
+      var del=mkEl('button','btn btn-d'); del.textContent='×'; del.style.cssText='padding:2px 7px';
+      del.addEventListener('click',function(){ f.safetyReports.splice(i,1); renderSafety(); });
+      hdr.appendChild(title); hdr.appendChild(badge); hdr.appendChild(del); card.appendChild(hdr);
+      if(r.description){ var desc=mkEl('div',''); desc.style.cssText='font-size:12px;color:var(--mut);white-space:pre-wrap;line-height:1.5'; desc.textContent=r.description; card.appendChild(desc); }
+      safListEl.appendChild(card);
+    });
+  }
+  renderSafety();
+  qs('#saf-add-btn',t7).addEventListener('click',function(){
+    var ti=qs('#saf-title',t7),de=qs('#saf-desc',t7),re=qs('#saf-rep',t7);
+    if(!ti||!ti.value.trim()) return;
+    f.safetyReports.push({title:ti.value.trim(),description:de?de.value:'',reportable:re?re.checked:false});
+    ti.value=''; if(de)de.value=''; if(re)re.checked=false; renderSafety();
+  });
+
   var box2=openTabModal({
     title:ex?'Edit Flight Record':'Log New Flight', wide:true,
-    tabs:[{label:'Details',body:t4},{label:'Weather',body:t1},{label:'Fuel',body:t2},{label:'Times',body:t3}],
+    tabs:[{label:'Details',body:t4},{label:'Weather',body:t1},{label:'Fuel',body:t2},{label:'Times',body:t3},{label:'Route Wx',body:t5},{label:'Defects',body:t6},{label:'Safety',body:t7}],
     saveLabel:ex?'Save Changes':'Log Flight',
     onSave:function(){
       var g=function(id,ctx){var e=qs('#'+id,ctx||box2);return e?e.value.trim():'';};
@@ -1068,6 +1200,54 @@ function openFlModal(ex){
 
   // Weather wired
 
+  // Route Wx tab wiring
+  (function(){
+    var depEl   = qs('#m-dep', t4);
+    var destEl  = qs('#m-dest', t4);
+    var rtwxDep  = qs('#rtwx-dep', t5);
+    var rtwxDest = qs('#rtwx-dest', t5);
+    var rtwxRoute= qs('#rtwx-route', t5);
+    var rtwxRes  = qs('#rtwx-results', t5);
+    var rtwxStat = qs('#rtwx-status', t5);
+    var fetchBtn = qs('#rtwx-fetch-btn', t5);
+    var clearBtn = qs('#rtwx-clear-btn', t5);
+
+    // Sync dep/dest from Details tab into Route Wx display
+    function syncIcaos(){
+      var dep  = depEl  ? depEl.value.trim().toUpperCase()  : '';
+      var dest = destEl ? destEl.value.trim().toUpperCase() : '';
+      if(rtwxDep)  rtwxDep.textContent  = dep  || '--';
+      if(rtwxDest) rtwxDest.textContent = dest || '--';
+    }
+    if(depEl)  depEl.addEventListener('input',  syncIcaos);
+    if(destEl) destEl.addEventListener('input', syncIcaos);
+    syncIcaos();
+
+    // Fetch button - build full route from dep + route field + dest
+    if(fetchBtn) fetchBtn.addEventListener('click', function(){
+      var dep  = depEl  ? depEl.value.trim().toUpperCase()  : '';
+      var dest = destEl ? destEl.value.trim().toUpperCase() : '';
+      var mid  = rtwxRoute ? rtwxRoute.value.trim().toUpperCase() : '';
+      var full = [dep, mid, dest].filter(Boolean).join(' ');
+      if(!full){ if(rtwxStat) rtwxStat.textContent='Enter departure/destination in Details tab'; return; }
+      runRouteWxFetch(full, rtwxRes, rtwxStat);
+    });
+
+    // Clear button
+    if(clearBtn) clearBtn.addEventListener('click', function(){
+      if(rtwxRoute) rtwxRoute.value='';
+      if(rtwxRes)   rtwxRes.innerHTML='<div class="empty"><div class="empty-icon">&#127745;</div><span>Enter route and tap Get Wx</span></div>';
+      if(rtwxStat)  rtwxStat.textContent='';
+    });
+
+    // Uppercase the route input as user types
+    if(rtwxRoute) rtwxRoute.addEventListener('input', function(){
+      var pos=rtwxRoute.selectionStart;
+      rtwxRoute.value=rtwxRoute.value.toUpperCase();
+      rtwxRoute.selectionStart=rtwxRoute.selectionEnd=pos;
+    });
+  })();
+
   // Fuel calc live
   function fuelCalcLive(){
     var g2=function(id){var e=qs('#'+id,t2);return e?e.value:'';};
@@ -1117,6 +1297,29 @@ function openFlModal(ex){
   });
   ['m-tachoStart','m-tachoEnd','m-hobbsStart','m-hobbsEnd'].forEach(function(id){var e=qs('#'+id,t3);if(e)e.addEventListener('input',timesCalcLive);});
   if(ex)setTimeout(timesCalcLive,0);
+
+  // Stamp current UTC time (rounded to nearest 0.1hr = 6 min) into a time spinner
+  function stampNow(baseId){
+    var now = new Date();
+    var totalMins = now.getUTCHours()*60 + now.getUTCMinutes();
+    // Round to nearest 6 minutes
+    var rounded = Math.round(totalMins/6)*6;
+    if(rounded >= 1440) rounded = 0; // midnight wrap
+    var hh = Math.floor(rounded/60);
+    var mm = rounded % 60;
+    var hhStr = ('0'+hh).slice(-2);
+    var mmStr = ('0'+mm).slice(-2);
+    var hSel = qs('#'+baseId+'-h', t3);
+    var mSel = qs('#'+baseId+'-m', t3);
+    if(hSel) hSel.value = hhStr;
+    if(mSel) mSel.value = mmStr;
+    timesCalcLive();
+  }
+
+  ['chocksOff','takeoff','landing','chocksOn'].forEach(function(field){
+    var btn = qs('#stamp-'+field, t3);
+    if(btn) btn.addEventListener('click', function(){ stampNow('m-'+field); });
+  });
 }
 
 function emailFlight(f){
@@ -1148,7 +1351,11 @@ function emailFlight(f){
     'Final Reserve:  '+dec2(fr3.final_)+' USG','Extra:          '+dec2(fr3.extra)+' USG',
     'Total Required: '+dec2(fr3.total)+' USG','Surplus/Deficit:'+(surplus3!==null?dec2(surplus3)+' USG':'--'),
     'Oil: '+(f.oil||'--'),'Fuel Uplifted: '+(f.fuelUplifted?f.fuelUplifted+' USG':'--'),
-    '','MANEUVERS',f.maneuvers||'--','','NOTES',f.notes||'--','','-- Sent from FlightDeck'
+    '','MANEUVERS',f.maneuvers||'--','','NOTES',f.notes||'--',(f.defects&&f.defects.length?'DEFECTS: '+f.defects.map(function(d){return d.text+(d.reportable?' [REPORTABLE]':'');}).join(' | '):''),
+    (f.safetyReports&&f.safetyReports.length?'SAFETY: '+f.safetyReports.map(function(r){return r.title+(r.reportable?' [REPORTABLE]':'');}).join(' | '):''),
+    (f.defects&&f.defects.length?'DEFECTS: '+f.defects.map(function(d){return d.text+(d.reportable?' [REPORTABLE]':'');}).join(' | '):''),
+    (f.safetyReports&&f.safetyReports.length?'SAFETY: '+f.safetyReports.map(function(r){return r.title+(r.reportable?' [REPORTABLE]':'');}).join(' | '):''),
+    '','-- Sent from FlightDeck'
   ];
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
@@ -1339,6 +1546,56 @@ try{var mf={name:'FlightDeck Instructor Hub',short_name:'FlightDeck',start_url:'
 var dP=null;
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();dP=e;qs('#install-btn').style.display='block';});
 qs('#install-btn').addEventListener('click',function(){if(!dP)return;dP.prompt();dP.userChoice.then(function(r){if(r.outcome==='accepted')toast('App installed!');dP=null;qs('#install-btn').style.display='none';});});
+
+// ============================================================
+// ============================================================
+// ROUTE WX HELPERS (used by flight log modal tab)
+// ============================================================
+function extractIcaos(routeStr){
+  return routeStr.toUpperCase().split(/[\s\/,]+/).filter(function(tok){
+    return /^[A-Z]{4}$/.test(tok);
+  });
+}
+
+function renderRouteWxCard(icao, metar, taf, idx){
+  var div = document.createElement('div');
+  div.style.cssText = 'background:var(--card);border:1px solid '+(metar&&metar.indexOf('No ')<0?'rgba(0,119,204,.4)':'var(--bdr)')+';border-radius:10px;padding:12px;margin-bottom:8px';
+  var metarHtml = '<div style="margin-top:8px"><div class="sec-lbl">METAR</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-top:3px">'+(metar||'No data')+'</div></div>';
+  var tafHtml   = taf ? '<div style="margin-top:6px"><div class="sec-lbl">TAF</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-top:3px">'+taf+'</div></div>' : '';
+  div.innerHTML = '<div style="display:flex;align-items:center;gap:6px"><span style="font-family:B612 Mono,monospace;font-size:11px;color:var(--mut)">'+(idx+1)+'.</span><span style="font-family:B612 Mono,monospace;font-size:15px;font-weight:700;color:var(--sky)">'+icao+'</span></div>'+metarHtml+tafHtml;
+  return div;
+}
+
+function runRouteWxFetch(routeStr, resultsEl, statusEl){
+  var icaos = extractIcaos(routeStr);
+  if(!icaos.length){ if(statusEl) statusEl.textContent='No ICAO codes found'; return; }
+  var seen={}, unique=[];
+  icaos.forEach(function(ic){ if(!seen[ic]){ seen[ic]=true; unique.push(ic); } });
+  resultsEl.innerHTML='';
+  if(statusEl) statusEl.textContent='Fetching '+unique.length+' airports...';
+  var cards={};
+  unique.forEach(function(ic,i){
+    var ph=document.createElement('div');
+    ph.style.cssText='background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:12px;margin-bottom:8px;font-family:B612 Mono,monospace;font-size:12px;color:var(--mut)';
+    ph.innerHTML='<span style="font-size:11px;color:var(--mut)">'+(i+1)+'.</span> <span style="font-size:15px;font-weight:700;color:var(--sky)">'+ic+'</span><span style="margin-left:10px">Fetching...</span>';
+    resultsEl.appendChild(ph);
+    cards[ic]={el:ph,idx:i};
+  });
+  var done=0;
+  unique.forEach(function(ic){
+    fetchWx(ic,function(metar,taf){
+      var card=cards[ic];
+      if(card){
+        var newEl=renderRouteWxCard(ic,metar,taf,card.idx);
+        card.el.parentNode.replaceChild(newEl,card.el);
+      }
+      done++;
+      if(statusEl) statusEl.textContent=done<unique.length?'Fetching... '+done+'/'+unique.length+' done':'Done — '+unique.length+' airports';
+    });
+  });
+}
+
+)();
 
 // ============================================================
 // INIT
