@@ -344,25 +344,55 @@ function fetchWx(icao,cb){
     });
   }
   function findNearest(done){
-    get(BASE+'airport?ids='+icao,function(txt){
-      var lat=null,lon=null;
-      try{var d=JSON.parse(txt);if(d&&d[0]&&d[0].lat!=null){lat=+d[0].lat;lon=+d[0].lon;}}catch(e){}
-      if(lat===null){
-        get(AO+encodeURIComponent(BASE+'airport?ids='+icao),function(txt2){
-          try{var d2=JSON.parse(txt2);if(d2&&d2[0]&&d2[0].lat!=null){lat=+d2[0].lat;lon=+d2[0].lon;}}catch(e){}
-          if(lat===null){
-            getJSON('https://nominatim.openstreetmap.org/search?q='+icao+'&format=json&limit=1&featuretype=aerodrome',function(nd){
-              if(nd&&nd[0]){lat=+nd[0].lat;lon=+nd[0].lon;}
-              if(lat===null){done(null);return;}
-              searchBox(lat,lon,done);
-            });
-            return;
-          }
-          searchBox(lat,lon,done);
+    // Try to get airport coordinates from multiple sources in sequence
+    function tryNoaaDirect(cb){
+      get(BASE+'airport?ids='+icao,function(txt){
+        try{var d=JSON.parse(txt);if(d&&d[0]&&d[0].lat!=null){cb(+d[0].lat,+d[0].lon);return;}}catch(e){}
+        cb(null,null);
+      });
+    }
+    function tryNoaaProxy(cb){
+      get(AO+encodeURIComponent(BASE+'airport?ids='+icao),function(txt){
+        try{var d=JSON.parse(txt);if(d&&d[0]&&d[0].lat!=null){cb(+d[0].lat,+d[0].lon);return;}}catch(e){}
+        cb(null,null);
+      });
+    }
+    function tryNominatim(cb){
+      // Search OSM for the ICAO code as an aeroway
+      var url='https://nominatim.openstreetmap.org/search?q='+icao+'&format=json&limit=5';
+      getJSON(url,function(nd){
+        if(nd&&nd.length){
+          // Prefer aerodrome/aeroway results
+          var aero=nd.filter(function(r){return r.type==='aerodrome'||r.class==='aeroway'||r.type==='aeroway';});
+          var best=aero.length?aero[0]:nd[0];
+          if(best&&best.lat){cb(+best.lat,+best.lon);return;}
+        }
+        cb(null,null);
+      });
+    }
+    function tryOurAirports(cb){
+      // OurAirports CSV - use the API endpoint
+      var url='https://api.allorigins.win/raw?url='+encodeURIComponent('https://ourairports.com/airports/'+icao+'/id.json');
+      get(url,function(txt){
+        try{var d=JSON.parse(txt);if(d&&d.latitude_deg){cb(+d.latitude_deg,+d.longitude_deg);return;}}catch(e){}
+        cb(null,null);
+      });
+    }
+
+    setStatus('Finding coords for '+icao+'...');
+    tryNoaaDirect(function(lat,lon){
+      if(lat!==null){searchBox(lat,lon,done);return;}
+      tryNoaaProxy(function(lat2,lon2){
+        if(lat2!==null){searchBox(lat2,lon2,done);return;}
+        tryNominatim(function(lat3,lon3){
+          if(lat3!==null){searchBox(lat3,lon3,done);return;}
+          tryOurAirports(function(lat4,lon4){
+            if(lat4!==null){searchBox(lat4,lon4,done);return;}
+            setStatus('No coords found for '+icao);
+            done(null);
+          });
         });
-        return;
-      }
-      searchBox(lat,lon,done);
+      });
     });
   }
   function searchBox(lat,lon,done){
