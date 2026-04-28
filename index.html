@@ -2,144 +2,120 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#020617"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v28</title>
+<title>FlightDeck -- Instructor Hub</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=B612:wght@400;700&family=B612+Mono:wght@400;700&display=swap');
-*{box-sizing:border-box;margin:0;padding:0}
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
-  --bg:#f0f4f8;--sur:#fff;--card:#e8edf2;--bdr:#c8d4e0;
-  --txt:#1a2332;--mut:#5a6a7a;--sky:#0077cc;--em:#0a8a4a;
-  --amb:#cc7700;--ros:#cc2244;--vio:#6644aa;
+  --bg:#020617;--surface:#0f172a;--card:#1e293b;--border:#334155;
+  --text:#e2e8f0;--muted:#64748b;--sky:#0ea5e9;--em:#10b981;
+  --amber:#f59e0b;--rose:#f43f5e;--violet:#8b5cf6;
 }
-html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'B612',sans-serif;font-size:16px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 button{cursor:pointer;font-family:inherit}
-input,textarea,select{font-family:inherit;font-size:15px}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px}
-
-/* Layout */
+input,textarea,select{font-family:inherit}
 #app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
-header{flex-shrink:0;background:rgba(240,244,248,.97);border-bottom:1px solid var(--bdr);box-shadow:0 1px 3px rgba(0,0,0,.07)}
-.hdr{max-width:1200px;margin:0 auto;padding:0 14px;display:flex;align-items:center;gap:6px;height:50px}
-.logo{font-family:'B612',sans-serif;font-weight:700;font-size:16px;color:var(--sky);margin-right:auto}
-nav{display:flex;gap:2px;overflow-x:auto}
-.tb{padding:5px 10px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--mut);font-size:12px;white-space:nowrap;transition:all .15s}
-.tb.on{border-color:var(--sky);background:rgba(0,119,204,.1);color:var(--sky);font-weight:700}
-.tb:hover:not(.on){background:var(--card)}
-main{flex:1;overflow:hidden;max-width:1200px;width:100%;margin:0 auto;padding:12px 14px;display:flex;flex-direction:column}
+header{flex-shrink:0;background:rgba(2,6,23,.97);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);z-index:50}
+.hdr{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:8px;height:54px}
+.logo{display:flex;align-items:center;gap:9px;margin-right:auto}
+.logo-icon{width:28px;height:28px;background:linear-gradient(135deg,var(--sky),var(--violet));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.logo-name{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:#fff}
+.logo-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);border-left:1px solid var(--border);padding-left:10px}
+nav{display:flex;gap:3px}
+.tb{padding:5px 12px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:12px;font-weight:500;transition:all .15s;white-space:nowrap}
+.tb.on{border-color:var(--sky);background:rgba(14,165,233,.12);color:#38bdf8}
+.tb:hover:not(.on){background:var(--card);color:var(--text)}
+.pwa-btn{padding:4px 10px;border-radius:7px;border:1px solid var(--em);background:rgba(16,185,129,.12);color:#34d399;font-size:11px;display:none;cursor:pointer}
+main{flex:1;overflow:hidden;max-width:1280px;width:100%;margin:0 auto;padding:16px 20px;display:flex;flex-direction:column}
 .panel{display:none;flex:1;overflow:hidden;flex-direction:column}
 .panel.on{display:flex}
-.panes{display:flex;gap:10px;flex:1;overflow:hidden}
-.sidebar{width:210px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;overflow:hidden}
-.slist{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.panes{display:flex;gap:14px;flex:1;overflow:hidden}
+.sidebar{width:232px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.slist{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding-right:2px}
 .detail{flex:1;min-width:0;overflow:hidden}
-
-/* Cards */
-.card{background:var(--sur);border:1px solid var(--bdr);border-radius:9px;padding:10px;cursor:pointer;transition:border-color .15s}
-.card:hover{border-color:var(--sky)}
-.card.sel{border-color:var(--sky);background:rgba(0,119,204,.05)}
-.ctitle{font-weight:700;font-size:13px;color:var(--txt);margin-bottom:4px}
-.cmeta{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-
-/* Detail box */
-.dbox{background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:14px;height:100%;display:flex;flex-direction:column;overflow-y:auto;gap:10px}
-.empty{height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--mut);font-size:13px}
-.empty-icon{font-size:32px;opacity:.3}
-
-/* Badges */
-.badge{font-family:'B612 Mono',monospace;font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid}
-.b-sky{background:rgba(0,119,204,.1);color:var(--sky);border-color:rgba(0,119,204,.3)}
-.b-em{background:rgba(10,138,74,.1);color:var(--em);border-color:rgba(10,138,74,.3)}
-.b-am{background:rgba(204,119,0,.1);color:var(--amb);border-color:rgba(204,119,0,.3)}
-.b-vi{background:rgba(102,68,170,.1);color:var(--vio);border-color:rgba(102,68,170,.3)}
-.b-ro{background:rgba(204,34,68,.1);color:var(--ros);border-color:rgba(204,34,68,.3)}
-.b-sl{background:rgba(90,106,122,.1);color:var(--mut);border-color:rgba(90,106,122,.3)}
-
-/* Buttons */
-.btn{padding:6px 12px;border-radius:7px;border:none;font-size:13px;font-family:'B612',sans-serif;cursor:pointer;transition:all .15s}
-.btn-p{background:var(--sky);color:#fff}.btn-p:hover{opacity:.85}
-.btn-s{background:var(--em);color:#fff}.btn-s:hover{opacity:.85}
-.btn-g{background:transparent;border:1px solid var(--bdr);color:var(--mut)}.btn-g:hover{background:var(--card);color:var(--txt)}
-.btn-d{background:rgba(204,34,68,.1);border:1px solid rgba(204,34,68,.3);color:var(--ros)}.btn-d:hover{background:rgba(204,34,68,.2)}
+.dbox{background:rgba(15,23,42,.45);border:1px solid var(--border);border-radius:14px;padding:18px;height:100%;display:flex;flex-direction:column;overflow-y:auto}
+.empty{height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;flex-direction:column;gap:8px}
+.empty-icon{font-size:36px;opacity:.3}
+.card{background:rgba(30,41,59,.45);border:1px solid var(--border);border-radius:11px;padding:11px;cursor:pointer;transition:all .15s}
+.card:hover{border-color:#475569}
+.card.sel-sky{border-color:var(--sky)!important;background:rgba(14,165,233,.08)!important}
+.card.sel-em{border-color:var(--em)!important;background:rgba(16,185,129,.08)!important}
+.card.sel-am{border-color:var(--amber)!important;background:rgba(245,158,11,.08)!important}
+.ctitle{font-weight:600;font-size:13px;color:#fff;margin-bottom:5px;line-height:1.3}
+.cmeta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.dh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:10px}
+.dtitle{font-family:'Syne',sans-serif;font-weight:700;font-size:19px;color:#fff;line-height:1.2}
+.dactions{display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap}
+.badge{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid;white-space:nowrap}
+.b-sky{background:rgba(14,165,233,.12);color:#7dd3fc;border-color:rgba(14,165,233,.35)}
+.b-em{background:rgba(16,185,129,.12);color:#6ee7b7;border-color:rgba(16,185,129,.35)}
+.b-am{background:rgba(245,158,11,.12);color:#fcd34d;border-color:rgba(245,158,11,.35)}
+.b-vi{background:rgba(139,92,246,.12);color:#c4b5fd;border-color:rgba(139,92,246,.35)}
+.b-ro{background:rgba(244,63,94,.12);color:#fda4af;border-color:rgba(244,63,94,.35)}
+.b-sl{background:rgba(100,116,139,.12);color:#94a3b8;border-color:rgba(100,116,139,.35)}
+.btn{padding:6px 13px;border-radius:8px;border:none;font-size:12px;font-weight:500;transition:all .15s}
+.btn-p{background:var(--sky);color:#fff}.btn-p:hover{background:#38bdf8}
+.btn-g{background:transparent;border:1px solid var(--border);color:#94a3b8}.btn-g:hover{background:var(--card);color:var(--text)}
+.btn-d{background:rgba(244,63,94,.12);border:1px solid rgba(244,63,94,.35);color:#fda4af}.btn-d:hover{background:rgba(244,63,94,.22)}
+.btn-s{background:var(--em);color:#fff}.btn-s:hover{background:#34d399;color:#000}
 .btn-full{width:100%;text-align:center;padding:8px}
-
-/* Forms */
-.field{margin-bottom:10px}
-.field label{display:block;font-family:'B612 Mono',monospace;font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
-.inp{width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:7px;padding:7px 10px;color:var(--txt);outline:none;transition:border-color .15s}
+.field{margin-bottom:12px}
+.field label{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.inp{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;transition:border-color .15s;outline:none}
 .inp:focus{border-color:var(--sky)}
-textarea.inp{resize:vertical;line-height:1.5}
-.sdiv{font-family:'B612 Mono',monospace;font-size:10px;color:var(--sky);text-transform:uppercase;letter-spacing:.1em;padding:6px 0 4px;border-bottom:1px solid rgba(0,119,204,.2);margin-bottom:8px}
+textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
-
-/* Stats */
-.stat-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.stat{background:rgba(0,119,204,.07);border:1px solid rgba(0,119,204,.2);border-radius:8px;padding:7px 11px;text-align:center;min-width:75px}
-.stat-v{font-family:'B612 Mono',monospace;font-size:17px;font-weight:700;color:var(--sky)}
-.stat-l{font-size:10px;color:var(--mut);margin-top:1px}
-
-/* Section boxes */
-.sec-lbl{font-family:'B612 Mono',monospace;font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
-.sec-box{background:var(--card);border:1px solid var(--bdr);border-radius:7px;padding:8px 10px;font-size:13px;color:var(--txt);line-height:1.6;white-space:pre-wrap}
-
-/* Calc cards */
-.cc{border-radius:9px;padding:11px;margin-bottom:8px}
-.cc-blue{background:rgba(0,119,204,.05);border:1px solid rgba(0,119,204,.2)}
-.cc-amber{background:rgba(204,119,0,.05);border:1px solid rgba(204,119,0,.2)}
-.cc-purple{background:rgba(102,68,170,.06);border:1px solid rgba(102,68,170,.2)}
-.cc-title{font-family:'B612 Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;color:var(--mut)}
-.cv{font-family:'B612 Mono',monospace;font-size:16px;font-weight:700;color:var(--sky)}
-
-/* Checklist items */
-.cli{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:7px;border:1px solid var(--bdr);background:var(--sur);transition:all .15s}
-.cli.done{background:rgba(10,138,74,.05);border-color:rgba(10,138,74,.3)}
-.cli-chk{width:16px;height:16px;border-radius:4px;border:2px solid var(--bdr);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s}
+.stat-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.stat{background:rgba(14,165,233,.07);border:1px solid rgba(14,165,233,.2);border-radius:9px;padding:9px 14px;text-align:center;min-width:88px}
+.stat-v{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:#38bdf8}
+.stat-l{font-size:10px;color:var(--muted);margin-top:1px}
+.sec{margin-bottom:12px}
+.sec-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}
+.sec-box{background:rgba(2,6,23,.45);border:1px solid rgba(51,65,85,.5);border-radius:9px;padding:11px;font-size:13px;color:#cbd5e1;line-height:1.7;white-space:pre-wrap}
+.calc-card{background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.2);border-radius:11px;padding:14px;margin-bottom:14px}
+.fuel-card{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);border-radius:11px;padding:14px;margin-bottom:14px}
+.calc-title{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+.calc-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:#38bdf8}
+.calc-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.sdiv{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--sky);text-transform:uppercase;letter-spacing:.1em;padding:8px 0 4px;border-bottom:1px solid rgba(14,165,233,.2);margin-bottom:10px;margin-top:6px}
+.cli{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;border:1px solid;transition:all .15s}
+.cli.done{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.3)}
+.cli.undone{background:rgba(30,41,59,.45);border-color:var(--border)}
+.cli-chk{width:17px;height:17px;border-radius:4px;border:2px solid;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
 .cli-chk.on{background:var(--em);border-color:var(--em)}
-.cli-num{font-family:'B612 Mono',monospace;font-size:10px;color:var(--mut);min-width:18px}
-.cli-text{flex:1;font-size:13px}.cli-text.done{text-decoration:line-through;color:var(--mut)}
-.cli-del{opacity:0;background:none;border:none;color:var(--mut);cursor:pointer;padding:2px 5px;font-size:13px}
-.cli:hover .cli-del{opacity:1}
-.prog{height:3px;background:var(--bdr);border-radius:2px;margin-top:5px;overflow:hidden}
-.prog-fill{height:100%;background:var(--em);transition:width .3s}
-
-/* Filter chips */
-.fbar{display:flex;gap:3px;flex-wrap:wrap}
-.fchip{font-family:'B612 Mono',monospace;font-size:10px;padding:3px 7px;border-radius:4px;border:1px solid var(--bdr);background:var(--sur);color:var(--mut);cursor:pointer;transition:all .15s}
+.cli-chk.off{border-color:var(--muted)}.cli-chk.off:hover{border-color:var(--em)}
+.cli-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);min-width:17px}
+.cli-text{flex:1;font-size:13px}.cli-text.done{text-decoration:line-through;color:var(--muted)}
+.cli-del{opacity:0;font-size:11px;color:var(--muted);transition:opacity .15s;padding:2px 5px;border-radius:4px;border:none;background:none;cursor:pointer}
+.cli:hover .cli-del{opacity:1}.cli-del:hover{color:var(--rose)}
+.prog{height:3px;background:var(--border);border-radius:2px;margin-top:7px;overflow:hidden}
+.prog-fill{height:100%;background:var(--em);border-radius:2px;transition:width .3s}
+.fbar{display:flex;gap:4px;flex-wrap:wrap}
+.fchip{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 7px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;transition:all .15s}
 .fchip.on{background:var(--sky);border-color:var(--sky);color:#fff}
-
-/* Modal */
-.overlay{position:fixed;inset:0;background:rgba(26,35,50,.6);backdrop-filter:blur(6px);z-index:100;display:flex;align-items:center;justify-content:center;padding:10px}
-.mbox{background:var(--sur);border:1px solid var(--bdr);border-radius:14px;width:100%;max-width:820px;max-height:93vh;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.2)}
-.mhead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--bdr);flex-shrink:0}
-.mtitle{font-weight:700;font-size:15px;color:var(--txt)}
-.mclose{background:none;border:none;font-size:20px;color:var(--mut);cursor:pointer;line-height:1;padding:2px 6px}
-.mtabs{display:flex;border-bottom:1px solid var(--bdr);flex-shrink:0;padding:0 16px;overflow-x:auto;gap:0}
-.mtab{padding:9px 13px;font-size:12px;color:var(--mut);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap;transition:all .15s}
-.mtab.on{color:var(--sky);border-bottom-color:var(--sky);font-weight:700}
-.mpanel{display:none;padding:14px 16px;overflow-y:auto;flex:1}
-.mpanel.on{display:block}
-.mfoot{padding:10px 16px;border-top:1px solid var(--bdr);display:flex;gap:6px;flex-shrink:0}
-
-/* Fuel pair */
-.fpair{display:flex;gap:6px;align-items:center}
-.fpair-wrap{position:relative;flex:1}
-.fpair-wrap input{padding-right:34px}
-.fpair-unit{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--mut);pointer-events:none;font-family:'B612 Mono',monospace}
-
-/* Toast */
-.toast{position:fixed;bottom:16px;right:16px;background:var(--sur);border:1px solid var(--em);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--em);z-index:300;transform:translateY(60px);opacity:0;transition:all .25s;pointer-events:none}
+.fchip:hover:not(.on){color:var(--text)}
+.overlay{position:fixed;inset:0;background:rgba(2,6,23,.9);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:center;justify-content:center;padding:14px}
+.mbox{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:600px;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 30px 60px rgba(0,0,0,.7)}
+.mbox.wide{max-width:760px}
+.mhead{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+.mtitle{font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:15px}
+.mclose{background:none;border:none;color:var(--muted);font-size:20px;line-height:1;padding:2px 6px;cursor:pointer}.mclose:hover{color:#fff}
+.mbody{padding:18px;overflow-y:auto;flex:1}
+.mfoot{padding:10px 18px;border-top:1px solid var(--border);display:flex;gap:7px;flex-shrink:0}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--em);border-radius:9px;padding:9px 14px;font-size:12px;color:#6ee7b7;z-index:300;transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none}
 .toast.show{transform:translateY(0);opacity:1}
-
-/* Wind result cells */
-.wval{font-family:'B612 Mono',monospace;font-size:15px;font-weight:700}
-
-@media(max-width:600px){
-  .panes{flex-direction:column}.sidebar{width:100%;max-height:180px}
-  .g2,.g3,.g4{grid-template-columns:1fr 1fr}
+@media(max-width:640px){
+  .panes{flex-direction:column}.sidebar{width:100%;max-height:200px}
+  .logo-sub{display:none}.g2,.g3,.g4{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -147,36 +123,37 @@ textarea.inp{resize:vertical;line-height:1.5}
 <div id="app">
 <header>
   <div class="hdr">
-    <div class="logo">&#9992; FlightDeck</div>
+    <div class="logo">
+      <div class="logo-icon">&#9992;</div>
+      <span class="logo-name">FlightDeck</span>
+      <span class="logo-sub">Instructor Hub</span>
+    </div>
     <nav id="nav">
-      <button class="tb on" data-tab="flights">Flights</button>
-      <button class="tb" data-tab="checklists">Checklists</button>
-      <button class="tb" data-tab="lessons">Lessons</button>
-      <button class="tb" data-tab="references">References</button>
+      <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
+      <button class="tb" data-tab="checklists">&#10003; Checklists</button>
+      <button class="tb" data-tab="lessons">&#128218; Lessons</button>
+      <button class="tb" data-tab="references">&#128203; References</button>
     </nav>
-    <button class="btn btn-g" id="settings-btn" style="font-size:11px;padding:4px 9px">&#9881;</button>
+    <button class="btn btn-g" id="settings-btn" style="font-size:11px;padding:4px 10px;flex-shrink:0">&#9881; Settings</button>
+    <button class="pwa-btn" id="install-btn">&#8595; Install</button>
   </div>
 </header>
 <main>
-
-  <!-- FLIGHTS -->
   <div class="panel on" id="tab-flights">
     <div class="stat-row" id="fl-stats"></div>
     <div class="panes">
       <div class="sidebar">
-        <input class="inp" id="fl-search" placeholder="Search..." style="font-size:12px"/>
+        <input class="inp" id="fl-search" placeholder="Search flights..." style="font-size:12px"/>
         <div class="fbar" id="fl-filter"></div>
         <div class="slist" id="fl-list"></div>
-        <button class="btn btn-p btn-full" id="fl-new">+ New Flight</button>
-        <button class="btn btn-g btn-full" id="fl-csv">&#8595; Export CSV</button>
+        <button class="btn btn-p btn-full" id="fl-new">+ Log Flight</button>
+        <button class="btn btn-g btn-full" id="fl-export-all">&#8595; Export All (.csv)</button>
       </div>
       <div class="detail" id="fl-detail">
-        <div class="empty"><div class="empty-icon">&#9992;</div><span>Select or log a flight</span></div>
+        <div class="empty"><div class="empty-icon">&#9992;</div><span>Select a flight or log a new one</span></div>
       </div>
     </div>
   </div>
-
-  <!-- CHECKLISTS -->
   <div class="panel" id="tab-checklists">
     <div class="panes">
       <div class="sidebar">
@@ -189,22 +166,18 @@ textarea.inp{resize:vertical;line-height:1.5}
       </div>
     </div>
   </div>
-
-  <!-- LESSONS -->
   <div class="panel" id="tab-lessons">
     <div class="panes">
       <div class="sidebar">
         <div class="fbar" id="ls-filter"></div>
         <div class="slist" id="ls-list"></div>
-        <button class="btn btn-p btn-full" id="ls-new">+ New Lesson</button>
+        <button class="btn btn-p btn-full" id="ls-new">+ New Lesson Plan</button>
       </div>
       <div class="detail" id="ls-detail">
         <div class="empty"><div class="empty-icon">&#128218;</div><span>Select a lesson</span></div>
       </div>
     </div>
   </div>
-
-  <!-- REFERENCES -->
   <div class="panel" id="tab-references">
     <div class="panes">
       <div class="sidebar">
@@ -218,1258 +191,1098 @@ textarea.inp{resize:vertical;line-height:1.5}
       </div>
     </div>
   </div>
-
 </main>
 </div>
 <div id="modal-root"></div>
 <div class="toast" id="toast"></div>
+
 <script>
-'use strict'; // build 1777353440
-// ── ERROR DISPLAY ──────────────────────────────────────────────────────────
-window.onerror = function(msg,url,line,col,err){
-  var b=document.createElement('div');
-  b.style.cssText='position:fixed;top:0;left:0;right:0;background:#cc0000;color:#fff;padding:10px;font-family:monospace;font-size:13px;z-index:9999;white-space:pre-wrap';
-  b.textContent='ERROR L'+line+': '+msg+'\n'+(err&&err.stack?err.stack.slice(0,200):'');
-  document.body.appendChild(b);
-};
+// ============================================================
+// UTILITIES
+// ============================================================
+var uid = function(){ return Math.random().toString(36).slice(2,9); };
+var qs  = function(s,c){ return (c||document).querySelector(s); };
 
-// ── EMBEDDED AIRPORT COORDS (instant lookup, no API needed) ──────────────────
-var AIRPORT_COORDS={
-  'BGGH':[64.1908,-51.6781],
-  'BIRK':[64.1300,-21.9406],
-  'EBBR':[50.9014,4.4844],
-  'EDDB':[52.3667,13.5033],
-  'EDDF':[50.0333,8.5706],
-  'EDDL':[51.2895,6.7668],
-  'EDDM':[48.3538,11.7861],
-  'EFHK':[60.3172,24.9633],
-  'EGAA':[54.6575,-6.2158],
-  'EGAC':[54.6181,-5.8725],
-  'EGAE':[55.0428,-7.1619],
-  'EGBB':[52.4539,-1.7480],
-  'EGBJ':[51.8942,-2.1672],
-  'EGBO':[52.5175,-2.2597],
-  'EGBP':[51.6682,-2.0567],
-  'EGBW':[52.1922,-1.6144],
-  'EGCC':[53.3537,-2.2750],
-  'EGCN':[53.4806,-1.0106],
-  'EGFF':[51.3967,-3.3433],
-  'EGFH':[51.6053,-4.0683],
-  'EGGW':[51.8747,-0.3683],
-  'EGHH':[50.78,-1.8425],
-  'EGHI':[50.9503,-1.3568],
-  'EGKA':[50.8356,-0.2961],
-  'EGKB':[51.3308,0.0325],
-  'EGKK':[51.1481,-0.1903],
-  'EGLC':[51.5053,0.0553],
-  'EGLD':[51.5906,-0.5117],
-  'EGLF':[51.2775,-0.7764],
-  'EGLL':[51.4775,-0.4614],
-  'EGNJ':[54.5092,-1.4256],
-  'EGNM':[53.8659,-1.6606],
-  'EGNS':[54.0833,-4.6239],
-  'EGNT':[54.9375,-1.6917],
-  'EGNV':[54.5092,-1.4256],
-  'EGNX':[52.8311,-1.3281],
-  'EGOD':[52.6147,-4.1339],
-  'EGOE':[52.7981,-2.6517],
-  'EGPB':[60.3019,-1.2956],
-  'EGPD':[57.2019,-2.1978],
-  'EGPE':[57.5425,-4.0478],
-  'EGPF':[55.8719,-4.4331],
-  'EGPH':[55.9500,-3.3625],
-  'EGPK':[55.5094,-4.5867],
-  'EGPO':[58.2158,-6.3308],
-  'EGPU':[56.4994,-6.8697],
-  'EGQL':[56.3728,-2.8681],
-  'EGQS':[57.7033,-3.3394],
-  'EGSS':[51.885,0.235],
-  'EGTE':[50.7344,-3.4139],
-  'EGTK':[51.8369,-1.3200],
-  'EGTR':[51.6747,-0.4169],
-  'EGWU':[51.5531,-0.4183],
-  'EHAM':[52.3086,4.7639],
-  'EHRD':[51.9569,4.4372],
-  'EICK':[51.8411,-8.4911],
-  'EIDW':[53.4213,-6.2700],
-  'EINN':[52.7003,-8.9247],
-  'EISG':[54.2803,-8.5992],
-  'EKCH':[55.6179,12.6561],
-  'EKVG':[62.0636,-7.2772],
-  'ENBO':[67.2692,14.3653],
-  'ENGM':[60.1939,11.1004],
-  'ENVA':[63.4578,10.9239],
-  'EPWA':[52.1657,20.9671],
-  'ESGG':[57.6628,12.2798],
-  'ESSA':[59.6519,17.9186],
-  'EVRA':[56.9236,23.9711],
-  'EYVI':[54.6339,25.2858],
-  'LEBL':[41.2971,2.0785],
-  'LEMD':[40.4722,-3.5608],
-  'LEMG':[36.6749,-4.4991],
-  'LFMN':[43.6584,7.2159],
-  'LFPG':[49.0097,2.5479],
-  'LFPO':[48.7233,2.3794],
-  'LHBP':[47.4298,19.2611],
-  'LIME':[45.6736,9.7042],
-  'LIRA':[41.6539,12.4317],
-  'LIRF':[41.8003,12.2389],
-  'LKPR':[50.1008,14.2600],
-  'LOWW':[48.1103,16.5697],
-  'LPFR':[37.0144,-7.9659],
-  'LPPT':[38.7756,-9.1359],
-  'LSGG':[46.2381,6.1089],
-  'LSZH':[47.4647,8.5492],
-  'UMMS':[53.8825,28.0322],
-};
+function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function load(k,d){ try{ var r=localStorage.getItem(k); return r?JSON.parse(r):d; }catch(e){ return d; } }
 
-// ── UTILS ─────────────────────────────────────────────────────────────────
-var USG_L = 3.785;
-function uid(){ return Math.random().toString(36).slice(2,9); }
-function qs(s,c){ return (c||document).querySelector(s); }
-function save(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
-function load(k,d){ try{var r=localStorage.getItem(k);return r?JSON.parse(r):d;}catch(e){return d;} }
-function toast(m){ var t=qs('#toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500); }
-function mkEl(tag,cls,html){ var e=document.createElement(tag);if(cls)e.className=cls;if(html)e.innerHTML=html;return e; }
-function setText(id,v,ctx){ var e=qs('#'+id,ctx||document);if(e)e.textContent=v; }
-function dl(name,text,mime){ var a=document.createElement('a');a.href='data:'+(mime||'text/plain')+';charset=utf-8,'+encodeURIComponent(text);a.download=name;a.click(); }
-function todayUTC(){ var d=new Date();return d.getUTCFullYear()+'-'+('0'+(d.getUTCMonth()+1)).slice(-2)+'-'+('0'+d.getUTCDate()).slice(-2); }
-
-// ── TIME HELPERS ──────────────────────────────────────────────────────────
-function parseUTC(s){ if(!s)return null;var m=s.match(/^(\d{1,2}):(\d{2})$/);if(!m)return null;return parseInt(m[1])+parseInt(m[2])/60; }
-function timeDiff(a,b){ if(a===null||b===null)return null;var d=b-a;if(d<0)d+=24;return d; }
-function decToHM(d){ if(d===null||d===undefined||isNaN(d))return '--';var h=Math.floor(d),m=Math.round((d-h)*60);return h+':'+(m<10?'0':'')+m; }
-function dec2(v){ if(v===null||v===undefined||isNaN(parseFloat(v)))return '--';return parseFloat(v).toFixed(2); }
-function instrDiff(a,b){ var x=parseFloat(a),y=parseFloat(b);if(isNaN(x)||isNaN(y)||y<x)return null;return y-x; }
-function nowUTCRounded(){ var d=new Date();var tot=d.getUTCHours()*60+d.getUTCMinutes();var r=Math.round(tot/6)*6;if(r>=1440)r=0;return ('0'+Math.floor(r/60)).slice(-2)+':'+('0'+(r%60)).slice(-2); }
-
-// ── WIND ──────────────────────────────────────────────────────────────────
-function rwyWind(rwyNum,windDir,windSpd){
-  var r=parseFloat(rwyNum)*10,d=parseFloat(windDir),s=parseFloat(windSpd);
-  if(isNaN(r)||isNaN(d)||isNaN(s))return null;
-  var a=(d-r)*Math.PI/180;
-  var hw=s*Math.cos(a),xw=s*Math.sin(a);
-  return{hwAbs:Math.round(Math.abs(hw)),xwAbs:Math.round(Math.abs(xw)),hwLabel:hw>=0?'HW':'TW',xwLabel:xw>=0?'R':'L'};
+function toast(msg){
+  var t=qs('#toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); },2500);
 }
 
-// ── FUEL ──────────────────────────────────────────────────────────────────
-var SETTINGS = load('fd_settings',{burnRate:'8.0'});
-function saveSets(){ save('fd_settings',SETTINGS); }
-
-function fuelCalc(f){
-  var burn=parseFloat(f.burnRate||SETTINGS.burnRate)||8;
-  var taxi=parseFloat(f.fuelTaxi)||0, trip=parseFloat(f.fuelTrip)||0;
-  var cont=trip*(parseFloat(f.fuelContPct)||5)/100;
-  var alt=parseFloat(f.fuelAlt)||0, fin=parseFloat(f.fuelFinal)||0, extra=parseFloat(f.fuelExtra)||0;
-  var total=taxi+trip+cont+alt+fin+extra;
-  var fob=parseFloat(f.fob);
-  return{burn:burn,taxi:taxi,trip:trip,cont:cont,contPct:parseFloat(f.fuelContPct)||5,
-         alt:alt,final_:fin,extra:extra,total:total,
-         fob:isNaN(fob)?null:fob,
-         surplus:isNaN(fob)?null:fob-total,
-         endurance:isNaN(fob)||burn<=0?null:fob/burn};
-}
-function flTimes(f){
-  return{block:timeDiff(parseUTC(f.chocksOff),parseUTC(f.chocksOn)),
-         air:timeDiff(parseUTC(f.takeoff),parseUTC(f.landing)),
-         tacho:instrDiff(f.tachoStart,f.tachoEnd),
-         hobbs:instrDiff(f.hobbsStart,f.hobbsEnd)};
+function dlFile(name,text,mime){
+  var a=document.createElement('a');
+  a.href='data:'+(mime||'text/plain')+';charset=utf-8,'+encodeURIComponent(text);
+  a.download=name;
+  a.click();
 }
 
-// ── METAR FILTER ──────────────────────────────────────────────────────────
-function filterMetars(txt,chocksOff,chocksOn,etob){
-  if(!txt)return txt;
-  var MARGIN=1.0;
-  var ws,we,off=parseUTC(chocksOff),on=parseUTC(chocksOn),et=parseUTC(etob);
-  if(off!==null){ ws=off-MARGIN;we=(on!==null?on:off)+MARGIN; }
-  else if(et!==null){ ws=et-MARGIN;we=et+MARGIN; }
-  else return txt;
-  if(ws<0)ws+=24; if(we>=24)we-=24;
-  var lines=txt.split('\n').filter(function(l){return l.trim().length>6;});
-  var filtered=lines.filter(function(line){
-    var p=line.trim().split(/\s+/);
-    var tok=p.length>1?p[1]:'';
-    var m6=tok.match(/^\d{2}(\d{2})(\d{2})[Zz]/);
-    var m4=tok.match(/^(\d{2})(\d{2})[Zz]/);
-    var mh=null;
-    if(m6)mh=parseInt(m6[1])+parseInt(m6[2])/60;
-    else if(m4)mh=parseInt(m4[1])+parseInt(m4[2])/60;
-    if(mh===null)return true;
-    return ws<=we?(mh>=ws&&mh<=we):(mh>=ws||mh<=we);
-  });
-  return filtered.length?filtered.join('\n'):lines[0]||txt;
+function el(tag,cls,html){
+  var e=document.createElement(tag);
+  if(cls) e.className=cls;
+  if(html) e.innerHTML=html;
+  return e;
 }
 
-// ── WEATHER FETCH ─────────────────────────────────────────────────────────
-function fetchWx(icao,cb){
-  var key=localStorage.getItem('fd_avwx_key')||'';
-  var BASE='https://avwx.rest/api/';
-  var NOAA='https://aviationweather.gov/api/data/';
-  var AO='https://api.allorigins.win/raw?url=';
+// ============================================================
+// TIME HELPERS
+// ============================================================
+// "HH:MM" -> decimal hours, null if invalid
+function parseUTC(s){
+  if(!s) return null;
+  var m=s.match(/^(\d{1,2}):(\d{2})$/);
+  if(!m) return null;
+  var h=parseInt(m[1]), mn=parseInt(m[2]);
+  if(h>23||mn>59) return null;
+  return h + mn/60;
+}
 
-  function setStatus(msg){
-    document.querySelectorAll('#wx-fetch-status').forEach(function(el){el.textContent=msg;});
-  }
-  function cleanNoaa(txt){
-    if(!txt)return '';
-    return txt.split('\n').map(function(l){return l.trim();})
-      .filter(function(l){return l.length>6&&l.charAt(0)!=='<'&&l.indexOf('No data')<0;})
-      .join('\n');
+// decimal difference, wraps midnight
+function timeDiff(s,e){
+  if(s===null||e===null) return null;
+  var d=e-s;
+  if(d<0) d+=24;
+  return d;
+}
+
+// decimal -> "H:MM"
+function decToHM(d){
+  if(d===null||d===undefined||isNaN(d)) return '--';
+  var h=Math.floor(d), m=Math.round((d-h)*60);
+  return h+':'+(m<10?'0':'')+m;
+}
+
+// decimal -> 2dp string
+function dec2(v){
+  if(v===null||v===undefined||isNaN(v)) return '--';
+  return parseFloat(v).toFixed(2);
+}
+
+// tacho/hobbs end - start
+function instrDiff(s,e){
+  var sv=parseFloat(s), ev=parseFloat(e);
+  if(isNaN(sv)||isNaN(ev)) return null;
+  var d=ev-sv;
+  return d>=0 ? d : null;
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+var SETTINGS_KEY='fd_settings';
+var settings=load(SETTINGS_KEY,{defaultBurnRate:'8.0'});
+
+function saveSettings(){ save(SETTINGS_KEY,settings); }
+
+// ============================================================
+// FUEL CALCULATOR (all USG)
+// ============================================================
+function fuelCalc(fuelDep, fuelAdded, fuelShutdown, burnRateStr, airHrs){
+  var burn = parseFloat(burnRateStr||settings.defaultBurnRate);
+  var dep  = parseFloat(fuelDep);
+  var added= parseFloat(fuelAdded)||0;
+  var shut = parseFloat(fuelShutdown);
+
+  var totalAvail = !isNaN(dep) ? dep+added : null;
+
+  // fuel used: prefer actual readings, fall back to burn * airtime
+  var used = null;
+  if(totalAvail!==null && !isNaN(shut)){
+    used = totalAvail - shut;
+  } else if(airHrs!==null && !isNaN(burn)){
+    used = airHrs * burn;
   }
 
-  setStatus('Fetching '+icao+'...');
-
-  if(key){
-    var avwxQ='?token='+encodeURIComponent(key)+'&onfail=nearest';
-    var metar='',taf='',n=0;
-    function fin(){
-      if(++n===2){setStatus(metar?'Done':'No data for '+icao);cb(metar,taf);}
-    }
-
-    // METAR
-    fetch(BASE+'metar/'+icao+avwxQ)
-      .then(function(r){return r.json();})
-      .then(function(d){
-        if(d&&d.raw){
-          metar=d.raw;
-          // Note if nearest was used (station field will differ from requested icao)
-          if(d.station&&d.station!==icao){
-            metar='[Nearest: '+d.station+'] '+metar;
-          }
-        } else if(d&&d.error){
-          metar='';
-        }
-        fin();
-      })
-      .catch(function(){fin();});
-
-    // TAF with onfail=nearest
-    fetch(BASE+'taf/'+icao+avwxQ)
-      .then(function(r){return r.json();})
-      .then(function(d){
-        if(d&&d.raw)taf=d.raw;
-        else if(d&&d.sanitized)taf=d.sanitized;
-        fin();
-      })
-      .catch(function(){fin();});
-
-  } else {
-    // No key - NOAA via allorigins
-    var m2='',t2='',n2=0;
-    function fin2(){
-      if(++n2===2){
-        setStatus(m2?'Done':'No data (add AVWX key in Settings for better results)');
-        cb(m2,t2);
-      }
-    }
-    fetch(AO+encodeURIComponent(NOAA+'metar?ids='+icao+'&format=raw&hours=6'))
-      .then(function(r){return r.text();})
-      .then(function(t){m2=cleanNoaa(t);fin2();})
-      .catch(function(){fin2();});
-    fetch(AO+encodeURIComponent(NOAA+'taf?ids='+icao+'&format=raw'))
-      .then(function(r){return r.text();})
-      .then(function(t){t2=cleanNoaa(t);fin2();})
-      .catch(function(){fin2();});
+  // remaining: prefer actual shutdown reading
+  var remaining = null;
+  if(!isNaN(shut)){
+    remaining = shut;
+  } else if(totalAvail!==null && used!==null){
+    remaining = totalAvail - used;
   }
+
+  var endurance = (remaining!==null && !isNaN(burn) && burn>0) ? remaining/burn : null;
+
+  return {
+    burn:      isNaN(burn)?null:burn,
+    totalAvail: totalAvail,
+    used:       used,
+    remaining:  remaining,
+    endurance:  endurance
+  };
 }
 
-// ── MODAL ─────────────────────────────────────────────────────────────────
+// ============================================================
+// FLIGHT CALCULATIONS (times)
+// ============================================================
+function flCalc(f){
+  return {
+    block: timeDiff(parseUTC(f.chocksOff), parseUTC(f.chocksOn)),
+    air:   timeDiff(parseUTC(f.takeoff),   parseUTC(f.landing)),
+    tacho: instrDiff(f.tachoStart, f.tachoEnd),
+    hobbs: instrDiff(f.hobbsStart, f.hobbsEnd)
+  };
+}
+
+// ============================================================
+// MODAL ENGINE
+// ============================================================
+function openModal(cfg){
+  var root=qs('#modal-root');
+  root.innerHTML='';
+  var ov=el('div','overlay');
+  var box=el('div', cfg.wide ? 'mbox wide' : 'mbox');
+  var mh=el('div','mhead');
+  mh.innerHTML='<span class="mtitle">'+cfg.title+'</span><button class="mclose">&times;</button>';
+  var mb=el('div','mbody');
+  if(typeof cfg.body==='string') mb.innerHTML=cfg.body;
+  else mb.appendChild(cfg.body);
+  var mf=el('div','mfoot');
+  if(cfg.onSave){
+    var sb=el('button','btn btn-p', cfg.saveLabel||'Save');
+    sb.addEventListener('click',function(){ if(cfg.onSave()!==false) closeModal(); });
+    mf.appendChild(sb);
+  }
+  var cb=el('button','btn btn-g','Cancel');
+  cb.addEventListener('click', closeModal);
+  mf.appendChild(cb);
+  box.appendChild(mh);
+  box.appendChild(mb);
+  box.appendChild(mf);
+  ov.appendChild(box);
+  root.appendChild(ov);
+  ov.addEventListener('click',function(e){ if(e.target===ov) closeModal(); });
+  qs('.mclose',box).addEventListener('click', closeModal);
+  setTimeout(function(){ var f=qs('input,textarea',mb); if(f) f.focus(); },50);
+}
 function closeModal(){ qs('#modal-root').innerHTML=''; }
 
-function openModal(cfg){
-  var root=qs('#modal-root');root.innerHTML='';
-  var ov=mkEl('div','overlay');
-  var box=mkEl('div','mbox');
-  var mh=mkEl('div','mhead');
-  mh.innerHTML='<span class="mtitle">'+cfg.title+'</span><button class="mclose">&times;</button>';
-  var mb=mkEl('div','');mb.style.cssText='padding:14px 16px;overflow-y:auto;flex:1';
-  if(typeof cfg.body==='string')mb.innerHTML=cfg.body;else mb.appendChild(cfg.body);
-  var mf=mkEl('div','mfoot');
-  if(cfg.onSave){var sb=mkEl('button','btn btn-p',cfg.saveLabel||'Save');sb.onclick=function(){if(cfg.onSave()!==false)closeModal();};mf.appendChild(sb);}
-  var cb=mkEl('button','btn btn-g','Cancel');cb.onclick=closeModal;mf.appendChild(cb);
-  box.appendChild(mh);box.appendChild(mb);box.appendChild(mf);
-  ov.appendChild(box);root.appendChild(ov);
-  ov.onclick=function(e){if(e.target===ov)closeModal();};
-  qs('.mclose',box).onclick=closeModal;
-  setTimeout(function(){var f=qs('input,textarea',mb);if(f)f.focus();},50);
-}
-
-function openTabModal(cfg){
-  var root=qs('#modal-root');root.innerHTML='';
-  var ov=mkEl('div','overlay');
-  var box=mkEl('div','mbox');
-  box.style.cssText='display:flex;flex-direction:column';
-  var mh=mkEl('div','mhead');
-  mh.innerHTML='<span class="mtitle">'+cfg.title+'</span><button class="mclose">&times;</button>';
-  var tabBar=mkEl('div','mtabs');
-  cfg.tabs.forEach(function(t,i){
-    var btn=mkEl('button','mtab'+(i===0?' on':''),t.label);
-    btn.onclick=function(){
-      tabBar.querySelectorAll('.mtab').forEach(function(b){b.classList.remove('on');});
-      box.querySelectorAll('.mpanel').forEach(function(p){p.classList.remove('on');});
-      btn.classList.add('on');
-      qs('#mtp-'+i,box).classList.add('on');
-    };
-    tabBar.appendChild(btn);
-  });
-  box.appendChild(mh);box.appendChild(tabBar);
-  cfg.tabs.forEach(function(t,i){
-    var panel=mkEl('div','mpanel'+(i===0?' on':''));
-    panel.id='mtp-'+i;
-    if(typeof t.body==='string')panel.innerHTML=t.body;else panel.appendChild(t.body);
-    box.appendChild(panel);
-  });
-  var mf=mkEl('div','mfoot');
-  if(cfg.onSave){var sb=mkEl('button','btn btn-p',cfg.saveLabel||'Save');sb.onclick=function(){if(cfg.onSave()!==false)closeModal();};mf.appendChild(sb);}
-  var cb=mkEl('button','btn btn-g','Cancel');cb.onclick=closeModal;mf.appendChild(cb);
-  box.appendChild(mf);
-  ov.appendChild(box);root.appendChild(ov);
-  ov.onclick=function(e){if(e.target===ov)closeModal();};
-  qs('.mclose',box).onclick=closeModal;
-  return box;
-}
-
-// ── FORM HELPERS ──────────────────────────────────────────────────────────
-function field(lbl,inp){ return '<div class="field"><label>'+lbl+'</label>'+inp+'</div>'; }
-function inp(id,type,ph,val){ return '<input class="inp" id="'+id+'" type="'+(type||'text')+'" placeholder="'+(ph||'')+'" value="'+(val||'')+'"/>'; }
-function ninp(id,ph,val,step){ return '<input class="inp" id="'+id+'" type="number" step="'+(step||'0.1')+'" placeholder="'+(ph||'')+'" value="'+(val||'')+'"/>'; }
-function ta(id,rows,val,ph){ return '<textarea class="inp" id="'+id+'" rows="'+(rows||3)+'" placeholder="'+(ph||'')+'">'+((val||''))+'</textarea>'; }
-function sel(id,opts,selected){ return '<select class="inp" id="'+id+'">'+opts.map(function(o){return '<option'+(o===selected?' selected':'')+'>'+o+'</option>';}).join('')+'</select>'; }
-
-function fpair(lbl,baseId,usgVal){
-  var u=usgVal||'',l='';
-  if(u!==''){var n=parseFloat(u);if(!isNaN(n))l=(n*USG_L).toFixed(2);}
-  return '<div class="field"><label>'+lbl+'</label><div class="fpair">'+
-    '<div class="fpair-wrap"><input class="inp" id="'+baseId+'-u" type="number" step="0.01" placeholder="USG" value="'+u+'"/><span class="fpair-unit">USG</span></div>'+
-    '<span style="color:var(--mut);">=</span>'+
-    '<div class="fpair-wrap"><input class="inp" id="'+baseId+'-l" type="number" step="0.01" placeholder="L" value="'+l+'"/><span class="fpair-unit">L</span></div>'+
-    '</div></div>';
-}
-function wireFpair(baseId,container,onChange){
-  var u=qs('#'+baseId+'-u',container),l=qs('#'+baseId+'-l',container);
-  if(!u||!l)return;
-  u.oninput=function(){var v=parseFloat(u.value);l.value=isNaN(v)?'':(v*USG_L).toFixed(2);if(onChange)onChange();};
-  l.oninput=function(){var v=parseFloat(l.value);u.value=isNaN(v)?'':(v/USG_L).toFixed(2);if(onChange)onChange();};
-}
-
-function timeSpinner(baseId,stored){
-  var h='',m='';
-  if(stored&&/^\d{1,2}:\d{2}$/.test(stored)){var p=stored.split(':');h=('0'+parseInt(p[0])).slice(-2);m=p[1];}
-  var ho='<option value="">HH</option>';
-  for(var i=0;i<24;i++){var v=('0'+i).slice(-2);ho+='<option value="'+v+'"'+(h===v?' selected':'')+'>'+v+'</option>';}
-  var mo='<option value="">MM</option>';
-  ['00','06','12','18','24','30','36','42','48','54'].forEach(function(v){mo+='<option value="'+v+'"'+(m===v?' selected':'')+'>'+v+'</option>';});
-  return '<div style="display:flex;gap:4px;align-items:center">'+
-    '<select class="inp" id="'+baseId+'-h" style="flex:1">'+ho+'</select>'+
-    '<span style="color:var(--mut);font-weight:700">:</span>'+
-    '<select class="inp" id="'+baseId+'-m" style="flex:1">'+mo+'</select>'+
-    '</div>';
-}
-function getTime(baseId,ctx){
-  var h=qs('#'+baseId+'-h',ctx),m=qs('#'+baseId+'-m',ctx);
-  return (h&&m&&h.value&&m.value)?h.value+':'+m.value:'';
-}
-function wireTimeChange(baseId,ctx,fn){
-  var h=qs('#'+baseId+'-h',ctx),m=qs('#'+baseId+'-m',ctx);
-  if(h)h.onchange=fn;if(m)m.onchange=fn;
-}
-function stampTime(baseId,ctx){
-  var t=nowUTCRounded().split(':');
-  var h=qs('#'+baseId+'-h',ctx),m=qs('#'+baseId+'-m',ctx);
-  if(h)h.value=t[0];if(m)m.value=t[1];
-}
-
-function dateDDs(stored){
-  var yr='',mo='',dy='';
-  if(stored){var p=stored.split('-');if(p.length===3){yr=p[0];mo=p[1];dy=p[2];}}
-  var now=new Date().getUTCFullYear();
-  var ds='<select class="inp" id="m-day" style="flex:1"><option value="">DD</option>';
-  for(var d=1;d<=31;d++){var v=('0'+d).slice(-2);ds+='<option value="'+v+'"'+(dy===v?' selected':'')+'>'+v+'</option>';}
-  ds+='</select>';
-  var ms='<select class="inp" id="m-mon" style="flex:1.5"><option value="">MMM</option>';
-  ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].forEach(function(mn,i){
-    var v=('0'+(i+1)).slice(-2);ms+='<option value="'+v+'"'+(mo===v?' selected':'')+'>'+mn+'</option>';
-  });
-  ms+='</select>';
-  var ys='<select class="inp" id="m-yr" style="flex:1.2"><option value="">YYYY</option>';
-  for(var y=now;y>=now-5;y--){ys+='<option value="'+y+'"'+(yr===String(y)?' selected':'')+'>'+y+'</option>';}
-  ys+='</select>';
-  return '<div style="display:flex;gap:5px">'+ds+ms+ys+'</div>';
-}
-
-// ── SETTINGS ──────────────────────────────────────────────────────────────
-qs('#settings-btn').onclick=function(){
+// ============================================================
+// SETTINGS MODAL
+// ============================================================
+qs('#settings-btn').addEventListener('click', function(){
   var div=document.createElement('div');
-  var curKey=localStorage.getItem('fd_avwx_key')||'';
   div.innerHTML=
-    field('Default Burn Rate (USG/hr)','<input class="inp" id="s-burn" type="number" step="0.1" value="'+SETTINGS.burnRate+'"/>') +
-    '<div class="sdiv">Weather API</div>'+
-    '<div class="field"><label>AVWX API Key (free at avwx.rest)</label>'+
-      '<input class="inp" id="s-avwx" type="text" placeholder="Paste your AVWX token here" value="'+curKey+'"/>'+
-      '<div style="font-size:11px;color:var(--mut);margin-top:4px">With a key: reliable worldwide METAR/TAF including small UK airfields.<br>Without: NOAA only (may miss some airports).</div>'+
+    '<div class="field">'+
+      '<label>Default Fuel Burn Rate (USG/hr)</label>'+
+      '<input class="inp" id="s-burn" type="number" step="0.1" value="'+settings.defaultBurnRate+'" placeholder="8.0"/>'+
+      '<div style="font-size:11px;color:var(--muted);margin-top:4px">Applied to all flights unless overridden per flight</div>'+
+    '</div>'+
+    '<div style="background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.2);border-radius:9px;padding:12px;margin-top:4px">'+
+      '<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#7dd3fc;margin-bottom:6px">EXAMPLE</div>'+
+      '<div id="s-eg" style="font-size:12px;color:#cbd5e1;line-height:1.9"></div>'+
     '</div>';
+  function updateEg(){
+    var r=parseFloat(qs('#s-burn',div).value);
+    var eg=qs('#s-eg',div);
+    if(isNaN(r)||r<=0){ eg.textContent='Enter a valid burn rate'; return; }
+    eg.innerHTML=
+      'At '+r+' USG/hr:<br>'+
+      '1:00 hr flight uses '+dec2(r)+' USG<br>'+
+      '40 USG total = '+decToHM(40/r)+' endurance<br>'+
+      '10 USG remaining = '+decToHM(10/r)+' endurance';
+  }
+  qs('#s-burn',div).addEventListener('input', updateEg);
+  setTimeout(updateEg,0);
   openModal({title:'Settings',body:div,saveLabel:'Save',onSave:function(){
-    var v=parseFloat(qs('#s-burn',div).value);
-    if(isNaN(v)||v<=0){toast('Invalid rate');return false;}
-    SETTINGS.burnRate=String(v);saveSets();
-    var avwxKey=(qs('#s-avwx',div).value||'').trim();
-    if(avwxKey)localStorage.setItem('fd_avwx_key',avwxKey);
-    else localStorage.removeItem('fd_avwx_key');
-    toast('Saved');
+    var r=parseFloat(qs('#s-burn',div).value);
+    if(isNaN(r)||r<=0){ toast('Enter a valid burn rate'); return false; }
+    settings.defaultBurnRate=String(r);
+    saveSettings();
+    toast('Settings saved');
   }});
-};
-
-// ── TABS ──────────────────────────────────────────────────────────────────
-document.querySelectorAll('.tb').forEach(function(b){
-  b.onclick=function(){
-    document.querySelectorAll('.tb').forEach(function(x){x.classList.remove('on');});
-    document.querySelectorAll('.panel').forEach(function(x){x.classList.remove('on');});
-    b.classList.add('on');
-    qs('#tab-'+b.dataset.tab).classList.add('on');
-  };
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// FLIGHTS
-// ═══════════════════════════════════════════════════════════════════════════
-var FL_KEY='fd_flights_v4';
+// ============================================================
+// TABS
+// ============================================================
+document.querySelectorAll('.tb').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.tb').forEach(function(x){ x.classList.remove('on'); });
+    document.querySelectorAll('.panel').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    qs('#tab-'+b.dataset.tab).classList.add('on');
+  });
+});
+
+// ============================================================
+// FLIGHT LOG
+// ============================================================
+var FL_KEY='fd_flights_v3';
 var FL_CATS=['Solo','Dual','Check Ride','Navigation','Night','Instrument','Other'];
 var flights=load(FL_KEY,[]);
-var flSel=null;
+var flActive=null;
+
 function flSave(){ save(FL_KEY,flights); }
 
-function newFlight(){
-  return{id:uid(),date:todayUTC(),aircraft:'G-XXXX',departure:'',destination:'',
-    pic:'',student:'',category:'Dual',etob:'',etot:'',
-    rwy1:'',rwy2:'',wxSurfDir:'',wxSurfSpd:'',wxTAS:'',wxFreezFL:'',
-    wxMetarDep:'',wxTafDep:'',wxMetarDest:'',wxTafDest:'',
-    fob:'',burnRate:'',fuelTaxi:'',fuelTrip:'',fuelContPct:'5',
-    fuelAlt:'',fuelFinal:'',fuelExtra:'',fuelUplifted:'',oil:'',
-    chocksOff:'',takeoff:'',landing:'',chocksOn:'',
-    tachoStart:'',tachoEnd:'',hobbsStart:'',hobbsEnd:'',
-    maneuvers:'',notes:'',
-    defects:[],safetyReports:[]};
-}
-
 function renderFlStats(){
-  var tb=0,ta=0,tt=0,th=0;
+  var totTacho=0, totHobbs=0, totAir=0, totBlock=0;
   flights.forEach(function(f){
-    var c=flTimes(f);
-    tb+=c.block||0;ta+=c.air||0;
-    tt+=instrDiff(f.tachoStart,f.tachoEnd)||0;
-    th+=instrDiff(f.hobbsStart,f.hobbsEnd)||0;
+    var c=flCalc(f);
+    totTacho += instrDiff(f.tachoStart,f.tachoEnd)||0;
+    totHobbs += instrDiff(f.hobbsStart,f.hobbsEnd)||0;
+    totAir   += c.air||0;
+    totBlock += c.block||0;
   });
   qs('#fl-stats').innerHTML=
     '<div class="stat"><div class="stat-v">'+flights.length+'</div><div class="stat-l">Flights</div></div>'+
-    '<div class="stat"><div class="stat-v">'+dec2(tt)+'</div><div class="stat-l">Tacho hrs</div></div>'+
-    '<div class="stat"><div class="stat-v">'+dec2(th)+'</div><div class="stat-l">Hobbs hrs</div></div>'+
-    '<div class="stat"><div class="stat-v">'+decToHM(ta)+'</div><div class="stat-l">Air time</div></div>'+
-    '<div class="stat"><div class="stat-v">'+decToHM(tb)+'</div><div class="stat-l">Block time</div></div>';
+    '<div class="stat"><div class="stat-v">'+dec2(totTacho)+'</div><div class="stat-l">Tacho Hrs</div></div>'+
+    '<div class="stat"><div class="stat-v">'+dec2(totHobbs)+'</div><div class="stat-l">Hobbs Hrs</div></div>'+
+    '<div class="stat"><div class="stat-v">'+decToHM(totAir)+'</div><div class="stat-l">Air Time</div></div>'+
+    '<div class="stat"><div class="stat-v">'+decToHM(totBlock)+'</div><div class="stat-l">Block Time</div></div>';
 }
 
 function renderFlList(){
-  var srch=(qs('#fl-search').value||'').toLowerCase();
-  var fc=qs('#fl-filter .fchip.on');var fv=fc?fc.textContent:'All';
+  var search=(qs('#fl-search').value||'').toLowerCase();
+  var filt=qs('#fl-filter .fchip.on');
+  var filtVal=filt?filt.textContent:'All';
   var vis=flights.filter(function(f){
-    return(fv==='All'||f.category===fv)&&
-      (!srch||[f.date,f.aircraft,f.student,f.departure,f.destination].some(function(s){return(s||'').toLowerCase().includes(srch);}));
-  }).sort(function(a,b){return(b.date||'').localeCompare(a.date||'');});
-  var el=qs('#fl-list');el.innerHTML='';
-  if(!vis.length){el.innerHTML='<p style="color:var(--mut);font-size:12px;text-align:center;padding:10px">No flights</p>';return;}
+    var ok=(filtVal==='All'||f.category===filtVal);
+    if(search) ok=ok&&(
+      (f.date||'').includes(search)||
+      (f.aircraft||'').toLowerCase().includes(search)||
+      (f.student||'').toLowerCase().includes(search)||
+      (f.departure||'').toLowerCase().includes(search)||
+      (f.destination||'').toLowerCase().includes(search)
+    );
+    return ok;
+  }).sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+
+  var list=qs('#fl-list');
+  list.innerHTML='';
+  if(!vis.length){
+    list.innerHTML='<p style="color:var(--muted);font-size:12px;text-align:center;padding:12px">No flights found</p>';
+    return;
+  }
   vis.forEach(function(f){
-    var c=flTimes(f);
-    var card=mkEl('div','card'+(flSel===f.id?' sel':''));
-    card.innerHTML='<div class="ctitle">'+(f.date||'No date')+' &bull; '+(f.aircraft||'?')+'</div>'+
-      '<div class="cmeta"><span class="badge b-sky">'+(f.departure||'?')+' &rarr; '+(f.destination||'?')+'</span>'+
-      (f.student?'<span class="badge b-sl">'+f.student+'</span>':'')+
-      (c.tacho!==null?'<span class="badge b-am">T:'+dec2(c.tacho)+'</span>':'')+
-      '</div>';
-    card.onclick=function(){flSel=f.id;renderFlList();renderFlDetail();};
-    el.appendChild(card);
+    var c=flCalc(f);
+    var card=el('div','card'+(flActive===f.id?' sel-sky':''));
+    var badges='';
+    if(c.tacho!==null) badges+='<span class="badge b-am">T:'+dec2(c.tacho)+'</span>';
+    if(c.hobbs!==null) badges+='<span class="badge b-vi">H:'+dec2(c.hobbs)+'</span>';
+    if(c.air!==null)   badges+='<span class="badge b-em">Air:'+decToHM(c.air)+'</span>';
+    card.innerHTML=
+      '<div class="ctitle">'+(f.date||'No date')+' &middot; '+(f.aircraft||'?')+'</div>'+
+      '<div class="cmeta">'+
+        '<span class="badge b-sky">'+(f.departure||'?')+'&#8594;'+(f.destination||'?')+'</span>'+
+        (f.student?'<span class="badge b-sl">'+f.student+'</span>':'')+
+      '</div>'+
+      (badges?'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">'+badges+'</div>':'');
+    card.addEventListener('click',function(){ flActive=f.id; renderFlList(); renderFlDetail(); });
+    list.appendChild(card);
   });
 }
 
 function renderFlDetail(){
   var det=qs('#fl-detail');
-  if(!flSel){det.innerHTML='<div class="empty"><div class="empty-icon">&#9992;</div><span>Select or log a flight</span></div>';return;}
-  var f=flights.find(function(x){return x.id===flSel;});
-  if(!f){det.innerHTML='<div class="empty">Not found</div>';return;}
-  var c=flTimes(f),fc=fuelCalc(f);
-  var mDep=filterMetars(f.wxMetarDep,f.chocksOff,f.chocksOn,f.etob);
-  var mDest=filterMetars(f.wxMetarDest,f.chocksOff,f.chocksOn,f.etob);
-  det.innerHTML='';
-  var box=mkEl('div','dbox');
+  if(!flActive){
+    det.innerHTML='<div class="empty"><div class="empty-icon">&#9992;</div><span>Select a flight or log a new one</span></div>';
+    return;
+  }
+  var f=flights.filter(function(x){ return x.id===flActive; })[0];
+  if(!f){ det.innerHTML='<div class="empty">Not found</div>'; return; }
 
-  // Header
-  var dh=mkEl('div','');dh.style.cssText='display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:2px';
-  dh.innerHTML='<div><div style="font-weight:700;font-size:17px;color:var(--txt)">'+(f.date||'--')+' &bull; '+(f.aircraft||'?')+'</div>'+
-    '<div class="cmeta" style="margin-top:5px">'+
-    '<span class="badge b-sky">'+(f.departure||'?')+' &rarr; '+(f.destination||'?')+'</span>'+
-    (f.category?'<span class="badge b-vi">'+f.category+'</span>':'')+
-    (f.student?'<span class="badge b-sl">'+f.student+'</span>':'')+
-    (f.etob?'<span class="badge b-sl">ETOB '+f.etob+'Z</span>':'')+
-    '</div></div>'+
-    '<div style="display:flex;gap:5px;flex-shrink:0">'+
-    '<button class="btn btn-g" id="fle-btn">Edit</button>'+
-    '<button class="btn btn-g" id="flx-btn">&#8595;</button>'+
-    '<button class="btn btn-d" id="fld-btn">&#10005;</button>'+
+  var c=flCalc(f);
+  var fc=fuelCalc(f.fuelDep, f.fuelAdded, f.fuelShutdown, f.burnRate, c.air);
+
+  det.innerHTML='';
+  var box=el('div','dbox');
+
+  // -- Header --
+  var dh=el('div','dh');
+  dh.innerHTML=
+    '<div>'+
+      '<div class="dtitle">'+(f.date||'--')+' &middot; '+(f.aircraft||'Unknown')+'</div>'+
+      '<div class="cmeta" style="margin-top:6px">'+
+        '<span class="badge b-sky">'+(f.departure||'?')+' &#8594; '+(f.destination||'?')+'</span>'+
+        (f.category?'<span class="badge b-vi">'+f.category+'</span>':'')+
+        (f.student?'<span class="badge b-sl">'+f.student+'</span>':'')+
+      '</div>'+
+    '</div>'+
+    '<div class="dactions">'+
+      '<button class="btn btn-g" id="fl-edit-btn">Edit</button>'+
+      '<button class="btn btn-g" id="fl-exp-btn">&#8595; Export</button>'+
+      '<button class="btn btn-d" id="fl-del-btn">Delete</button>'+
     '</div>';
   box.appendChild(dh);
 
-  // Times
-  var tc=mkEl('div','cc cc-blue');
-  tc.innerHTML='<div class="cc-title">Times</div>'+
-    '<div class="g4" style="gap:8px">'+
-    ['Block|'+decToHM(c.block),'Air|'+decToHM(c.air),'Tacho|'+dec2(c.tacho),'Hobbs|'+dec2(c.hobbs)].map(function(r){
-      var p=r.split('|');return '<div><div class="sec-lbl">'+p[0]+'</div><div class="cv">'+p[1]+'</div></div>';
-    }).join('')+'</div>';
+  // -- Times card --
+  var tc=el('div','calc-card');
+  tc.innerHTML=
+    '<div class="calc-title" style="color:#7dd3fc">&#9201; Calculated Times</div>'+
+    '<div class="g4" style="gap:12px">'+
+      '<div><div class="sec-lbl">Block Time</div><div class="calc-val">'+decToHM(c.block)+'</div>'+
+        '<div class="calc-sub">'+(c.block!==null?dec2(c.block)+' hrs':'')+'</div>'+
+        '<div class="calc-sub">'+(f.chocksOff||'?')+' &#8594; '+(f.chocksOn||'?')+' UTC</div></div>'+
+      '<div><div class="sec-lbl">Air Time</div><div class="calc-val">'+decToHM(c.air)+'</div>'+
+        '<div class="calc-sub">'+(c.air!==null?dec2(c.air)+' hrs':'')+'</div>'+
+        '<div class="calc-sub">'+(f.takeoff||'?')+' &#8594; '+(f.landing||'?')+' UTC</div></div>'+
+      '<div><div class="sec-lbl">Tacho Time</div><div class="calc-val">'+dec2(c.tacho)+'</div>'+
+        '<div class="calc-sub">'+(c.tacho!==null?'hrs':'')+'</div>'+
+        '<div class="calc-sub">'+(f.tachoStart||'?')+' &#8594; '+(f.tachoEnd||'?')+'</div></div>'+
+      '<div><div class="sec-lbl">Hobbs Time</div><div class="calc-val">'+dec2(c.hobbs)+'</div>'+
+        '<div class="calc-sub">'+(c.hobbs!==null?'hrs':'')+'</div>'+
+        '<div class="calc-sub">'+(f.hobbsStart||'?')+' &#8594; '+(f.hobbsEnd||'?')+'</div></div>'+
+    '</div>';
   box.appendChild(tc);
 
-  // Weather
-  if(f.wxSurfDir||mDep||mDest||f.rwy1){
-    var wc=mkEl('div','cc cc-purple');
-    var wh='<div class="cc-title">Weather &mdash; TAS '+(f.wxTAS||'--')+' kt &bull; Freeze '+(f.wxFreezFL||'--')+' ft</div>';
-    if(f.wxSurfDir){
-      wh+='<div style="font-size:12px;color:var(--mut);margin-bottom:6px">Surface: '+f.wxSurfDir+'&deg; / '+f.wxSurfSpd+' kt</div>';
-      var r1=f.rwy1?rwyWind(f.rwy1,f.wxSurfDir,f.wxSurfSpd):null;
-      var r2=f.rwy2?rwyWind(f.rwy2,f.wxSurfDir,f.wxSurfSpd):null;
-      if(r1||r2){
-        wh+='<div class="g4" style="gap:8px;margin-bottom:8px">';
-        if(r1)wh+='<div><div class="sec-lbl">RWY '+f.rwy1+' HW/TW</div><div class="wval" style="color:'+(r1.hwLabel==='HW'?'var(--em)':'var(--ros)')+'">'+r1.hwAbs+' kt '+r1.hwLabel+'</div></div>'+
-          '<div><div class="sec-lbl">XW</div><div class="wval" style="color:var(--amb)">'+r1.xwAbs+' kt '+r1.xwLabel+'</div></div>';
-        if(r2)wh+='<div><div class="sec-lbl">RWY '+f.rwy2+' HW/TW</div><div class="wval" style="color:'+(r2.hwLabel==='HW'?'var(--em)':'var(--ros)')+'">'+r2.hwAbs+' kt '+r2.hwLabel+'</div></div>'+
-          '<div><div class="sec-lbl">XW</div><div class="wval" style="color:var(--amb)">'+r2.xwAbs+' kt '+r2.xwLabel+'</div></div>';
-        wh+='</div>';
-      }
-    }
-    if(mDep){wh+='<div class="sec-lbl">METAR Dep ('+(f.departure||'')+')</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:6px">'+mDep+'</div>';}
-    if(f.wxTafDep){wh+='<div class="sec-lbl">TAF Dep</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:6px">'+f.wxTafDep+'</div>';}
-    if(mDest){wh+='<div class="sec-lbl">METAR Dest ('+(f.destination||'')+')</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:6px">'+mDest+'</div>';}
-    if(f.wxTafDest){wh+='<div class="sec-lbl">TAF Dest</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px">'+f.wxTafDest+'</div>';}
-    wc.innerHTML=wh;box.appendChild(wc);
-  }
-
-  // Fuel
-  var fuCard=mkEl('div','cc cc-amber');
-  fuCard.innerHTML='<div class="cc-title">Fuel (Burn '+fc.burn+' USG/hr)</div>'+
-    '<div class="g3" style="gap:8px;margin-bottom:8px">'+
-    '<div><div class="sec-lbl">FOB</div><div class="cv">'+(fc.fob!==null?dec2(fc.fob)+' USG':'--')+'</div></div>'+
-    '<div><div class="sec-lbl">Endurance</div><div class="cv">'+(fc.endurance!==null?decToHM(fc.endurance):'--')+'</div></div>'+
-    '<div><div class="sec-lbl">Total Req</div><div class="cv">'+dec2(fc.total)+' USG</div></div>'+
+  // -- Fuel card --
+  var burnLabel=fc.burn!==null ? fc.burn+' USG/hr' : 'not set';
+  var fcard=el('div','fuel-card');
+  fcard.innerHTML=
+    '<div class="calc-title" style="color:#fcd34d">&#9981; Fuel (USG) &mdash; Burn rate: '+burnLabel+'</div>'+
+    '<div class="g4" style="gap:10px;margin-bottom:10px">'+
+      '<div><div class="sec-lbl">At Departure</div>'+
+        '<div class="sec-box">'+(f.fuelDep||'--')+' USG</div></div>'+
+      '<div><div class="sec-lbl">Added</div>'+
+        '<div class="sec-box">'+(f.fuelAdded||'0')+' USG</div></div>'+
+      '<div><div class="sec-lbl">Total Available</div>'+
+        '<div class="sec-box" style="color:#fcd34d;font-weight:600">'+
+          (fc.totalAvail!==null?dec2(fc.totalAvail)+' USG':'--')+'</div></div>'+
+      '<div><div class="sec-lbl">At Shutdown</div>'+
+        '<div class="sec-box">'+(f.fuelShutdown||'--')+' USG</div></div>'+
     '</div>'+
-    '<div class="g2" style="gap:8px">'+
-    '<div><div class="sec-lbl">Surplus/Deficit</div><div class="cv" style="color:'+(fc.surplus===null?'var(--mut)':fc.surplus>=0?'var(--em)':'var(--ros)'+'">'+(fc.surplus!==null?dec2(fc.surplus)+' USG':'--'))+'"></div></div>'+
+    '<div class="g3" style="gap:10px">'+
+      '<div><div class="sec-lbl">Fuel Used</div>'+
+        '<div class="sec-box" style="color:#fda4af">'+
+          (fc.used!==null?dec2(fc.used)+' USG':'--')+'</div></div>'+
+      '<div><div class="sec-lbl">Remaining</div>'+
+        '<div class="sec-box" style="color:#6ee7b7;font-weight:600">'+
+          (fc.remaining!==null?dec2(fc.remaining)+' USG':'--')+'</div></div>'+
+      '<div><div class="sec-lbl">Endurance Remaining</div>'+
+        '<div class="sec-box" style="color:#38bdf8;font-weight:600">'+
+          (fc.endurance!==null?decToHM(fc.endurance)+' ('+dec2(fc.endurance)+' hrs)':'--')+'</div></div>'+
     '</div>';
-  box.appendChild(fuCard);
+  box.appendChild(fcard);
 
-  // Details row
-  var dr=mkEl('div','');
-  var dhtml='<div class="g4" style="margin-bottom:8px">';
-  [['Chocks Off',f.chocksOff],['Takeoff',f.takeoff],['Landing',f.landing],['Chocks On',f.chocksOn]].forEach(function(r){
-    dhtml+='<div><div class="sec-lbl">'+r[0]+'</div><div class="sec-box">'+(r[1]||'--')+'</div></div>';
-  });
-  dhtml+='</div><div class="g4" style="margin-bottom:8px">';
-  [['Tacho Start',f.tachoStart],['Tacho End',f.tachoEnd],['Hobbs Start',f.hobbsStart],['Hobbs End',f.hobbsEnd]].forEach(function(r){
-    dhtml+='<div><div class="sec-lbl">'+r[0]+'</div><div class="sec-box">'+(r[1]||'--')+'</div></div>';
-  });
-  dhtml+='</div>';
-  if(f.maneuvers)dhtml+='<div class="sec-lbl">Maneuvers</div><div class="sec-box" style="margin-bottom:6px">'+f.maneuvers+'</div>';
-  if(f.notes)dhtml+='<div class="sec-lbl">Notes</div><div class="sec-box">'+f.notes+'</div>';
-
-  // Defects
-  if(f.defects&&f.defects.length){
-    dhtml+='<div class="sec-lbl" style="margin-top:8px">Defects</div>';
-    f.defects.forEach(function(d){
-      dhtml+='<div style="display:flex;align-items:center;gap:7px;padding:6px 9px;background:var(--card);border:1px solid '+(d.reportable?'rgba(204,34,68,.4)':'var(--bdr)')+';border-radius:6px;margin-bottom:4px">'+
-        '<span style="flex:1;font-size:13px">'+d.text+'</span>'+
-        (d.reportable?'<span class="badge b-ro">REPORTABLE</span>':'')+
-        '</div>';
-    });
-  }
-  // Safety
-  if(f.safetyReports&&f.safetyReports.length){
-    dhtml+='<div class="sec-lbl" style="margin-top:8px">Safety Reports</div>';
-    f.safetyReports.forEach(function(r){
-      dhtml+='<div style="background:var(--card);border:1px solid '+(r.reportable?'rgba(204,34,68,.4)':'var(--bdr)')+';border-radius:7px;padding:9px;margin-bottom:5px">'+
-        '<div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">'+
-        '<span style="font-weight:700;font-size:13px;flex:1">'+r.title+'</span>'+
-        '<span class="badge '+(r.reportable?'b-ro':'b-sl')+'">'+(r.reportable?'REPORTABLE':'Internal')+'</span></div>'+
-        (r.description?'<div style="font-size:12px;color:var(--mut);white-space:pre-wrap">'+r.description+'</div>':'')+
-        '</div>';
-    });
-  }
-
-  dr.innerHTML=dhtml;box.appendChild(dr);
-
-  // Version
-  var vdiv=mkEl('div','');
-  vdiv.style.cssText='text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);margin-top:4px';
-  vdiv.textContent='v24';
-  box.appendChild(vdiv);
-
+  // -- Detail rows --
+  var rows=el('div','');
+  rows.innerHTML=
+    '<div class="g2" style="margin-bottom:10px">'+
+      '<div class="sec"><div class="sec-lbl">PIC</div><div class="sec-box">'+(f.pic||'--')+'</div></div>'+
+      '<div class="sec"><div class="sec-lbl">Student / Co-pilot</div><div class="sec-box">'+(f.student||'--')+'</div></div>'+
+    '</div>'+
+    '<div class="g4" style="margin-bottom:10px">'+
+      '<div class="sec"><div class="sec-lbl">Chocks Off (UTC)</div><div class="sec-box">'+(f.chocksOff||'--')+'</div></div>'+
+      '<div class="sec"><div class="sec-lbl">Takeoff (UTC)</div><div class="sec-box">'+(f.takeoff||'--')+'</div></div>'+
+      '<div class="sec"><div class="sec-lbl">Landing (UTC)</div><div class="sec-box">'+(f.landing||'--')+'</div></div>'+
+      '<div class="sec"><div class="sec-lbl">Chocks On (UTC)</div><div class="sec-box">'+(f.chocksOn||'--')+'</div></div>'+
+    '</div>'+
+    '<div class="g4" style="margin-bottom:10px">'+
+      '<div class="sec"><div class="sec-lbl">Tacho Start</div><div class="sec-box">'+(f.tachoStart||'--')+'</div></div>'+
+      '<div class="sec"><div class="sec-lbl">Tacho End</div><div class="sec-box">'+(f.tachoEnd||'--')+'</div></div>'+
+      '<div class="sec"><div class="sec-lbl">Hobbs Start</div><div class="sec-box">'+(f.hobbsStart||'--')+'</div></div>'+
+      '<div class="sec"><div class="sec-lbl">Hobbs End</div><div class="sec-box">'+(f.hobbsEnd||'--')+'</div></div>'+
+    '</div>'+
+    (f.oil?'<div class="sec" style="margin-bottom:10px"><div class="sec-lbl">Oil Check</div><div class="sec-box">'+f.oil+'</div></div>':'')+
+    (f.maneuvers?'<div class="sec"><div class="sec-lbl">Maneuvers / Exercises</div><div class="sec-box">'+f.maneuvers+'</div></div>':'')+
+    (f.notes?'<div class="sec"><div class="sec-lbl">Instructor Notes</div><div class="sec-box">'+f.notes+'</div></div>':'');
+  box.appendChild(rows);
   det.appendChild(box);
 
-  qs('#fle-btn',box).onclick=function(){openFlModal(f);};
-  qs('#fld-btn',box).onclick=function(){
-    if(confirm('Delete?')){flights=flights.filter(function(x){return x.id!==f.id;});flSave();flSel=null;renderFlList();renderFlDetail();renderFlStats();toast('Deleted');}
-  };
-  qs('#flx-btn',box).onclick=function(){exportFlight(f);};
-}
-
-function renderFlFilters(){
-  var el=qs('#fl-filter');
-  ['All'].concat(FL_CATS).forEach(function(c){
-    var ch=mkEl('div','fchip'+(c==='All'?' on':''),c);
-    ch.onclick=function(){el.querySelectorAll('.fchip').forEach(function(x){x.classList.remove('on');});ch.classList.add('on');renderFlList();};
-    el.appendChild(ch);
+  qs('#fl-edit-btn',box).addEventListener('click',function(){ openFlModal(f); });
+  qs('#fl-del-btn',box).addEventListener('click',function(){
+    if(confirm('Delete this flight record?')){
+      flights=flights.filter(function(x){ return x.id!==f.id; });
+      flSave(); flActive=null;
+      renderFlList(); renderFlDetail(); renderFlStats();
+      toast('Flight deleted');
+    }
   });
-}
-qs('#fl-new').onclick=function(){openFlModal(null);};
-qs('#fl-search').oninput=renderFlList;
-qs('#fl-csv').onclick=function(){exportAllFlights();};
-
-function exportFlight(f){
-  var c=flTimes(f),fc=fuelCalc(f);
-  var mDep=filterMetars(f.wxMetarDep,f.chocksOff,f.chocksOn,f.etob);
-  var mDest=filterMetars(f.wxMetarDest,f.chocksOff,f.chocksOn,f.etob);
-  var lines=['FLIGHT RECORD','============',
-    'Date: '+(f.date||'--'),'Aircraft: '+(f.aircraft||'--'),'Category: '+(f.category||'--'),
-    'Route: '+(f.departure||'?')+' to '+(f.destination||'?'),'PIC: '+(f.pic||'--'),'Student: '+(f.student||'--'),
-    'ETOB: '+(f.etob||'--')+' UTC',
-    '','WEATHER',
-    'Surface Wind: '+(f.wxSurfDir?f.wxSurfDir+'deg/'+f.wxSurfSpd+'kt':'--'),
-    'RWY: '+(f.rwy1||'--')+(f.rwy2?' & '+f.rwy2:''),
-    'TAS: '+(f.wxTAS||'--')+' kt  Freeze: '+(f.wxFreezFL||'--')+' ft',
-    'DEP METAR: '+(mDep||'--'),'DEP TAF: '+(f.wxTafDep||'--'),
-    'DEST METAR: '+(mDest||'--'),'DEST TAF: '+(f.wxTafDest||'--'),
-    '','TIMES (UTC)',
-    'Chocks Off: '+(f.chocksOff||'--'),'Takeoff: '+(f.takeoff||'--'),
-    'Landing: '+(f.landing||'--'),'Chocks On: '+(f.chocksOn||'--'),
-    '','CALCULATED',
-    'Block: '+decToHM(c.block)+' ('+dec2(c.block)+' hrs)',
-    'Air:   '+decToHM(c.air)+' ('+dec2(c.air)+' hrs)',
-    'Tacho: '+dec2(c.tacho)+' ['+f.tachoStart+' to '+f.tachoEnd+']',
-    'Hobbs: '+dec2(c.hobbs)+' ['+f.hobbsStart+' to '+f.hobbsEnd+']',
-    '','FUEL  Burn: '+fc.burn+' USG/hr',
-    'FOB: '+dec2(fc.fob)+' USG  Endurance: '+decToHM(fc.endurance),
-    'Total Req: '+dec2(fc.total)+' USG  Surplus: '+dec2(fc.surplus)+' USG',
-    'Oil: '+(f.oil||'--')+'  Uplifted: '+(f.fuelUplifted||'--')+' USG',
-    '','MANEUVERS',f.maneuvers||'--','','NOTES',f.notes||'--'];
-  if(f.defects&&f.defects.length){lines.push('','DEFECTS');f.defects.forEach(function(d){lines.push('  - '+d.text+(d.reportable?' [REPORTABLE]':''));});}
-  if(f.safetyReports&&f.safetyReports.length){lines.push('','SAFETY');f.safetyReports.forEach(function(r){lines.push('  '+r.title+(r.reportable?' [REPORTABLE]':'')+'\n  '+r.description);});}
-  dl('flight_'+(f.date||'?')+'_'+(f.aircraft||'?')+'.txt',lines.join('\n'));
-  toast('Exported');
+  qs('#fl-exp-btn',box).addEventListener('click',function(){ exportFlight(f); });
 }
 
-function exportAllFlights(){
-  if(!flights.length){toast('No flights');return;}
-  var hdr='Date,Aircraft,Category,Dep,Dest,PIC,Student,ETOB,Block,Air,Tacho,Hobbs,FOB,BurnRate,TotalFuel,Surplus';
-  var rows=flights.map(function(f){
-    var c=flTimes(f),fc=fuelCalc(f);
-    return[f.date,f.aircraft,f.category,f.departure,f.destination,f.pic,f.student,f.etob,
-      decToHM(c.block),decToHM(c.air),dec2(c.tacho),dec2(c.hobbs),dec2(fc.fob),fc.burn,dec2(fc.total),dec2(fc.surplus)].join(',');
-  });
-  dl('FlightDeck_log.csv',[hdr].concat(rows).join('\n'),'text/csv');
-  toast('Exported CSV');
-}
-
-// ── FLIGHT MODAL ──────────────────────────────────────────────────────────
 function openFlModal(ex){
-  var f=ex?JSON.parse(JSON.stringify(ex)):newFlight();
+  var f=ex||{id:uid(),date:'',aircraft:'',departure:'',destination:'',pic:'',student:'',category:'Dual',
+    chocksOff:'',takeoff:'',landing:'',chocksOn:'',
+    tachoStart:'',tachoEnd:'',hobbsStart:'',hobbsEnd:'',
+    fuelDep:'',fuelAdded:'',fuelShutdown:'',burnRate:'',
+    oil:'',maneuvers:'',notes:''};
 
-  // ── Details tab ──
-  var tDet=document.createElement('div');
-  tDet.innerHTML=
+  var div=document.createElement('div');
+  div.innerHTML=
     '<div class="sdiv">Flight Details</div>'+
     '<div class="g3">'+
-      '<div class="field"><label>Date</label>'+dateDDs(f.date)+'</div>'+
-      field('Aircraft',inp('m-ac','text','G-XXXX',f.aircraft))+
-      field('Category',sel('m-cat',FL_CATS,f.category))+
+      '<div class="field"><label>Date</label><input class="inp" id="m-date" type="date" value="'+(f.date||'')+'"/></div>'+
+      '<div class="field"><label>Aircraft Reg</label><input class="inp" id="m-aircraft" placeholder="VH-XXX" value="'+(f.aircraft||'')+'"/></div>'+
+      '<div class="field"><label>Category</label><select class="inp" id="m-cat">'+
+        FL_CATS.map(function(c){ return '<option'+(c===f.category?' selected':'')+'>'+c+'</option>'; }).join('')+
+      '</select></div>'+
     '</div>'+
     '<div class="g3">'+
-      field('Departure',inp('m-dep','text','EGLL',f.departure))+
-      field('Destination',inp('m-dest','text','EGLL',f.destination))+
-      field('PIC',inp('m-pic','text','',f.pic))+
+      '<div class="field"><label>Departure</label><input class="inp" id="m-dep" placeholder="YSSY" value="'+(f.departure||'')+'"/></div>'+
+      '<div class="field"><label>Destination</label><input class="inp" id="m-dest" placeholder="YMML" value="'+(f.destination||'')+'"/></div>'+
+      '<div class="field"><label>PIC</label><input class="inp" id="m-pic" value="'+(f.pic||'')+'" placeholder="Your name"/></div>'+
     '</div>'+
-    '<div class="g2">'+
-      field('Student',inp('m-stu','text','',f.student))+
-      '<div class="field"><label>Est. Time Off Blocks (UTC)</label>'+timeSpinner('m-etob',f.etob)+'</div>'+
-    '</div>'+
-    '<div class="sdiv">Post-Flight</div>'+
-    '<div class="g2">'+
-      field('Oil Check',inp('m-oil','text','OK',f.oil))+
-      field('Fuel Uplifted (USG)',ninp('m-fuelup','0',f.fuelUplifted))+
-    '</div>'+
-    field('Maneuvers / Exercises',ta('m-man',2,f.maneuvers,'Circuits, stalls...'))+
-    field('Instructor Notes',ta('m-notes',2,f.notes,''))+
-    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);margin-top:4px">v28</div>';
+    '<div class="field"><label>Student / Co-pilot</label><input class="inp" id="m-student" value="'+(f.student||'')+'" placeholder="Student name"/></div>'+
 
-  // ── Weather tab ──
-  var tWx=document.createElement('div');
-  tWx.innerHTML=
-    '<div class="sdiv">Planning</div>'+
-    '<div class="g3">'+
-      '<div class="field"><label>ETOT (UTC)</label>'+timeSpinner('m-etot',f.etot)+'</div>'+
-      field('TAS (kt)',ninp('m-tas','90',f.wxTAS,'1'))+
-      field('Freezing Level (ft)',ninp('m-frz','8000',f.wxFreezFL,'100'))+
-    '</div>'+
-    '<div class="sdiv">Runways</div>'+
-    '<div class="g2">'+
-      field('Runway 1',inp('m-rwy1','number',f.rwy1||'09',f.rwy1))+
-      field('Runway 2',inp('m-rwy2','number',f.rwy2||'27',f.rwy2))+
-    '</div>'+
-    '<div class="sdiv">Surface Wind</div>'+
-    '<div class="g2">'+
-      field('Direction (&deg; mag)',ninp('m-wdir','180',f.wxSurfDir,'1'))+
-      field('Speed (kt)',ninp('m-wspd','15',f.wxSurfSpd,'1'))+
-    '</div>'+
-    '<div class="cc cc-purple" id="wx-comp-card">'+
-      '<div class="cc-title">Wind Components (auto)</div>'+
-      '<div class="g4" style="gap:8px">'+
-        '<div><div class="sec-lbl" id="rwy1-lbl">RWY 1</div><span class="wval" id="wx-r1-hw">--</span><span id="wx-r1-hwl" style="font-size:11px;color:var(--mut);margin-left:3px"></span></div>'+
-        '<div><div class="sec-lbl">XW</div><span class="wval" id="wx-r1-xw">--</span><span id="wx-r1-xwl" style="font-size:11px;color:var(--mut);margin-left:3px"></span></div>'+
-        '<div><div class="sec-lbl" id="rwy2-lbl">RWY 2</div><span class="wval" id="wx-r2-hw">--</span><span id="wx-r2-hwl" style="font-size:11px;color:var(--mut);margin-left:3px"></span></div>'+
-        '<div><div class="sec-lbl">XW</div><span class="wval" id="wx-r2-xw">--</span><span id="wx-r2-xwl" style="font-size:11px;color:var(--mut);margin-left:3px"></span></div>'+
-      '</div>'+
-    '</div>'+
-    '<div class="sdiv">METAR &amp; TAF</div>'+
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
-      '<span style="font-size:11px;color:var(--mut);font-family:B612 Mono,monospace">Auto-fetched from NOAA</span>'+
-      '<button type="button" class="btn btn-g" id="wx-fetch-btn" style="font-size:11px;padding:3px 10px">&#8635; Refresh</button>'+
-      '<span id="wx-fetch-status" style="font-size:11px;color:var(--sky);font-family:B612 Mono,monospace"></span>'+
-    '</div>'+
-    '<div class="g2">'+
-      '<div>'+
-        '<div class="sec-lbl">Departure: <span id="wx-dep-lbl">'+( f.departure||'--')+'</span></div>'+
-        '<textarea class="inp" id="m-mDep" rows="3" placeholder="METAR...">'+(f.wxMetarDep||'')+'</textarea>'+
-        '<textarea class="inp" id="m-tDep" rows="4" placeholder="TAF..." style="margin-top:5px">'+(f.wxTafDep||'')+'</textarea>'+
-      '</div>'+
-      '<div>'+
-        '<div class="sec-lbl">Destination: <span id="wx-dest-lbl">'+(f.destination||'--')+'</span></div>'+
-        '<textarea class="inp" id="m-mDest" rows="3" placeholder="METAR...">'+(f.wxMetarDest||'')+'</textarea>'+
-        '<textarea class="inp" id="m-tDest" rows="4" placeholder="TAF..." style="margin-top:5px">'+(f.wxTafDest||'')+'</textarea>'+
-      '</div>'+
-    '</div>';
-
-  // ── Fuel tab ──
-  var tFuel=document.createElement('div');
-  tFuel.innerHTML=
-    '<div class="sdiv">Fuel on Board</div>'+
-    fpair('Fuel on Board','m-fob',f.fob)+
-    '<div class="g2">'+
-      field('Burn Rate (USG/hr)',ninp('m-burn','Default: '+SETTINGS.burnRate,f.burnRate,'0.1'))+
-      '<div class="cc cc-blue" style="margin-top:20px;padding:9px"><div class="sec-lbl">Endurance</div><span class="cv" id="fob-end">--</span></div>'+
-    '</div>'+
-    '<div class="sdiv">Fuel Required</div>'+
-    fpair('Taxi','m-ftaxi',f.fuelTaxi)+
-    fpair('Trip','m-ftrip',f.fuelTrip)+
-    field('Contingency (%)',ninp('m-fcont','5',f.fuelContPct,'1'))+
-    fpair('Alternate','m-falt',f.fuelAlt)+
-    fpair('Final Reserve','m-ffin',f.fuelFinal)+
-    fpair('Extra','m-fext',f.fuelExtra)+
-    '<div class="cc cc-amber" id="fuel-result">'+
-      '<div class="cc-title">Fuel Required (auto)</div>'+
-      '<div class="g3" style="gap:8px;margin-bottom:8px">'+
-        ['Taxi|fr-taxi','Trip|fr-trip','Cont|fr-cont','Alt|fr-alt','Final|fr-fin','Extra|fr-ext'].map(function(r){var p=r.split('|');return '<div><div class="sec-lbl">'+p[0]+'</div><span class="cv" id="'+p[1]+'" style="font-size:13px">--</span></div>';}).join('')+
-      '</div>'+
-      '<div class="g2" style="gap:8px;border-top:1px solid rgba(204,119,0,.2);padding-top:8px">'+
-        '<div><div class="sec-lbl">Total Required</div><span class="cv" id="fr-total">--</span></div>'+
-        '<div><div class="sec-lbl">Surplus / Deficit</div><span class="cv" id="fr-surplus">--</span></div>'+
-      '</div>'+
-    '</div>';
-
-  // ── Times tab ──
-  var tTimes=document.createElement('div');
-  tTimes.innerHTML=
-    '<div class="sdiv">Instruments</div>'+
+    '<div class="sdiv">Block &amp; Air Times (HH:MM UTC)</div>'+
     '<div class="g4">'+
-      field('Tacho Start',ninp('m-ts','',f.tachoStart))+
-      field('Hobbs Start',ninp('m-hs','',f.hobbsStart))+
-      field('Tacho End',ninp('m-te','',f.tachoEnd))+
-      field('Hobbs End',ninp('m-he','',f.hobbsEnd))+
+      '<div class="field"><label>Chocks Off</label><input class="inp" id="m-chocksOff" placeholder="08:30" value="'+(f.chocksOff||'')+'" maxlength="5"/></div>'+
+      '<div class="field"><label>Takeoff</label><input class="inp" id="m-takeoff" placeholder="08:36" value="'+(f.takeoff||'')+'" maxlength="5"/></div>'+
+      '<div class="field"><label>Landing</label><input class="inp" id="m-landing" placeholder="09:48" value="'+(f.landing||'')+'" maxlength="5"/></div>'+
+      '<div class="field"><label>Chocks On</label><input class="inp" id="m-chocksOn" placeholder="09:54" value="'+(f.chocksOn||'')+'" maxlength="5"/></div>'+
     '</div>'+
-    '<div class="sdiv">Block &amp; Flight Times (UTC)</div>'+
+    '<div class="g2" style="background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.2);border-radius:9px;padding:12px;margin-bottom:10px">'+
+      '<div><div class="sec-lbl">Block Time (auto)</div>'+
+        '<span class="calc-val" id="m-block-v" style="font-size:16px">--</span> '+
+        '<span id="m-block-d" style="font-size:11px;color:var(--muted)"></span></div>'+
+      '<div><div class="sec-lbl">Air Time (auto)</div>'+
+        '<span class="calc-val" id="m-air-v" style="font-size:16px">--</span> '+
+        '<span id="m-air-d" style="font-size:11px;color:var(--muted)"></span></div>'+
+    '</div>'+
+
+    '<div class="sdiv">Tacho &amp; Hobbs (Decimal)</div>'+
     '<div class="g4">'+
-      '<div class="field"><label>Chocks Off</label>'+timeSpinner('m-off',f.chocksOff)+'<button type="button" class="btn btn-g" id="st-off" style="width:100%;margin-top:4px;font-size:11px;padding:4px">&#8987; Now</button></div>'+
-      '<div class="field"><label>Takeoff</label>'+timeSpinner('m-tkf',f.takeoff)+'<button type="button" class="btn btn-g" id="st-tkf" style="width:100%;margin-top:4px;font-size:11px;padding:4px">&#8987; Now</button></div>'+
-      '<div class="field"><label>Landing</label>'+timeSpinner('m-ldg',f.landing)+'<button type="button" class="btn btn-g" id="st-ldg" style="width:100%;margin-top:4px;font-size:11px;padding:4px">&#8987; Now</button></div>'+
-      '<div class="field"><label>Chocks On</label>'+timeSpinner('m-on',f.chocksOn)+'<button type="button" class="btn btn-g" id="st-on" style="width:100%;margin-top:4px;font-size:11px;padding:4px">&#8987; Now</button></div>'+
+      '<div class="field"><label>Tacho Start</label><input class="inp" id="m-tachoStart" type="number" step="0.1" placeholder="1234.5" value="'+(f.tachoStart||'')+'"/></div>'+
+      '<div class="field"><label>Tacho End</label><input class="inp" id="m-tachoEnd" type="number" step="0.1" placeholder="1235.2" value="'+(f.tachoEnd||'')+'"/></div>'+
+      '<div class="field"><label>Hobbs Start</label><input class="inp" id="m-hobbsStart" type="number" step="0.1" placeholder="2345.6" value="'+(f.hobbsStart||'')+'"/></div>'+
+      '<div class="field"><label>Hobbs End</label><input class="inp" id="m-hobbsEnd" type="number" step="0.1" placeholder="2346.4" value="'+(f.hobbsEnd||'')+'"/></div>'+
     '</div>'+
-    '<div class="cc cc-blue" id="times-result">'+
-      '<div class="cc-title">Calculated (auto)</div>'+
-      '<div class="g4" style="gap:8px">'+
-        '<div><div class="sec-lbl">Tacho</div><span class="cv" id="t-tacho">--</span></div>'+
-        '<div><div class="sec-lbl">Hobbs</div><span class="cv" id="t-hobbs">--</span></div>'+
-        '<div><div class="sec-lbl">Block Time</div><span class="cv" id="t-block">--</span></div>'+
-        '<div><div class="sec-lbl">Air Time</div><span class="cv" id="t-air">--</span></div>'+
+    '<div class="g2" style="background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.2);border-radius:9px;padding:12px;margin-bottom:10px">'+
+      '<div><div class="sec-lbl">Tacho Time (auto)</div>'+
+        '<span class="calc-val" id="m-tacho-v" style="font-size:16px">--</span>'+
+        '<span style="font-size:11px;color:var(--muted)"> hrs</span></div>'+
+      '<div><div class="sec-lbl">Hobbs Time (auto)</div>'+
+        '<span class="calc-val" id="m-hobbs-v" style="font-size:16px">--</span>'+
+        '<span style="font-size:11px;color:var(--muted)"> hrs</span></div>'+
+    '</div>'+
+
+    '<div class="sdiv">Fuel (USG)</div>'+
+    '<div class="g4">'+
+      '<div class="field"><label>At Departure</label><input class="inp" id="m-fuelDep" type="number" step="0.1" placeholder="40.0" value="'+(f.fuelDep||'')+'"/></div>'+
+      '<div class="field"><label>Added Before Flight</label><input class="inp" id="m-fuelAdded" type="number" step="0.1" placeholder="0" value="'+(f.fuelAdded||'')+'"/></div>'+
+      '<div class="field"><label>At Shutdown</label><input class="inp" id="m-fuelShutdown" type="number" step="0.1" placeholder="32.0" value="'+(f.fuelShutdown||'')+'"/></div>'+
+      '<div class="field"><label>Burn Rate (USG/hr)</label>'+
+        '<input class="inp" id="m-burnRate" type="number" step="0.1" placeholder="Default: '+settings.defaultBurnRate+'" value="'+(f.burnRate||'')+'"/>'+
       '</div>'+
-    '</div>';
+    '</div>'+
+    '<div style="background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);border-radius:9px;padding:12px;margin-bottom:10px">'+
+      '<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#fcd34d;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Fuel Calculations (auto)</div>'+
+      '<div class="g4" style="gap:10px">'+
+        '<div><div class="sec-lbl">Total Available</div>'+
+          '<span id="m-ftotal" style="font-family:JetBrains Mono,monospace;font-size:15px;font-weight:600;color:#fcd34d">--</span>'+
+          '<span style="font-size:10px;color:var(--muted)"> USG</span></div>'+
+        '<div><div class="sec-lbl">Fuel Used</div>'+
+          '<span id="m-fused" style="font-family:JetBrains Mono,monospace;font-size:15px;font-weight:600;color:#fda4af">--</span>'+
+          '<span style="font-size:10px;color:var(--muted)"> USG</span></div>'+
+        '<div><div class="sec-lbl">Remaining</div>'+
+          '<span id="m-frem" style="font-family:JetBrains Mono,monospace;font-size:15px;font-weight:600;color:#6ee7b7">--</span>'+
+          '<span style="font-size:10px;color:var(--muted)"> USG</span></div>'+
+        '<div><div class="sec-lbl">Endurance</div>'+
+          '<span id="m-fend" style="font-family:JetBrains Mono,monospace;font-size:15px;font-weight:600;color:#38bdf8">--</span></div>'+
+      '</div>'+
+    '</div>'+
 
-  // ── Defects tab ──
-  var tDef=document.createElement('div');
-  tDef.style.cssText='display:flex;flex-direction:column;gap:8px;height:100%';
-  var defListEl=mkEl('div','');defListEl.style.cssText='flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px';
-  var defAddRow=mkEl('div','');defAddRow.style.cssText='display:flex;gap:6px;flex-shrink:0';
-  defAddRow.innerHTML='<input class="inp" id="def-inp" placeholder="Describe defect..." style="flex:1"/>'+
-    '<button type="button" class="btn btn-p" id="def-add">Add</button>';
-  tDef.appendChild(defListEl);tDef.appendChild(defAddRow);
+    '<div class="sdiv">Other</div>'+
+    '<div class="field"><label>Oil Check</label><input class="inp" id="m-oil" value="'+(f.oil||'')+'" placeholder="OK / 1L added"/></div>'+
+    '<div class="field"><label>Maneuvers / Exercises</label><textarea class="inp" id="m-maneuvers" rows="3">'+(f.maneuvers||'')+'</textarea></div>'+
+    '<div class="field"><label>Instructor Notes</label><textarea class="inp" id="m-notes" rows="3">'+(f.notes||'')+'</textarea></div>';
 
-  function renderDefs(){
-    defListEl.innerHTML='';
-    if(!f.defects||!f.defects.length){
-      defListEl.innerHTML='<div class="empty" style="min-height:60px"><div class="empty-icon">&#128295;</div><span>No defects</span></div>';return;
-    }
-    f.defects.forEach(function(d,i){
-      var row=mkEl('div','');
-      row.style.cssText='background:var(--card);border:1px solid '+(d.reportable?'rgba(204,34,68,.4)':'var(--bdr)')+';border-radius:7px;padding:9px;display:flex;align-items:center;gap:8px';
-      var chk=mkEl('input','');chk.type='checkbox';chk.checked=!!d.reportable;chk.title='Mark as reportable';
-      chk.style.cssText='width:17px;height:17px;cursor:pointer;accent-color:var(--ros);flex-shrink:0';
-      var txt=mkEl('span','');txt.style.cssText='flex:1;font-size:13px';txt.textContent=d.text;
-      var lbl=mkEl('span','badge '+(d.reportable?'b-ro':'b-sl'));lbl.textContent=d.reportable?'REPORTABLE':'Optional';
-      var del=mkEl('button','btn btn-d');del.textContent='x';del.style.cssText='padding:2px 7px;flex-shrink:0';
-      chk.onchange=function(){f.defects[i].reportable=chk.checked;renderDefs();};
-      del.onclick=function(){f.defects.splice(i,1);renderDefs();};
-      row.appendChild(chk);row.appendChild(txt);row.appendChild(lbl);row.appendChild(del);
-      defListEl.appendChild(row);
+  // Auto-colon for UTC time fields
+  ['m-chocksOff','m-chocksOn','m-takeoff','m-landing'].forEach(function(id){
+    qs('#'+id,div).addEventListener('input',function(e){
+      var v=e.target.value.replace(/\D/g,'');
+      if(v.length>4) v=v.slice(0,4);
+      if(v.length>=3) v=v.slice(0,2)+':'+v.slice(2);
+      e.target.value=v;
+      liveCalc();
     });
-  }
-  renderDefs();
-
-  // ── Safety tab ──
-  var tSaf=document.createElement('div');
-  tSaf.style.cssText='display:flex;flex-direction:column;gap:8px;height:100%';
-  var safListEl=mkEl('div','');safListEl.style.cssText='flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px';
-  var safForm=mkEl('div','');safForm.style.cssText='flex-shrink:0;display:flex;flex-direction:column;gap:6px';
-  safForm.innerHTML=
-    '<input class="inp" id="saf-title" placeholder="Event title..." style="font-weight:700"/>'+
-    '<textarea class="inp" id="saf-desc" rows="3" placeholder="Description, factors, actions..."></textarea>'+
-    '<div style="display:flex;align-items:center;gap:10px">'+
-      '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">'+
-        '<input type="checkbox" id="saf-rep" style="width:17px;height:17px;accent-color:var(--ros)"/>'+
-        'Reportable to authority'+
-      '</label>'+
-      '<button type="button" class="btn btn-p" id="saf-add" style="margin-left:auto">Add Report</button>'+
-    '</div>';
-  tSaf.appendChild(safListEl);tSaf.appendChild(safForm);
-
-  function renderSafety(){
-    safListEl.innerHTML='';
-    if(!f.safetyReports||!f.safetyReports.length){
-      safListEl.innerHTML='<div class="empty" style="min-height:60px"><div class="empty-icon">&#9888;</div><span>No safety reports</span></div>';return;
-    }
-    f.safetyReports.forEach(function(r,i){
-      var card=mkEl('div','');
-      card.style.cssText='background:var(--card);border:1px solid '+(r.reportable?'rgba(204,34,68,.4)':'var(--bdr)')+';border-radius:8px;padding:10px';
-      var hdr=mkEl('div','');hdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px';
-      var tit=mkEl('span','');tit.style.cssText='font-weight:700;font-size:13px;flex:1';tit.textContent=r.title;
-      var bdg=mkEl('span','badge '+(r.reportable?'b-ro':'b-sl'));bdg.textContent=r.reportable?'REPORTABLE':'Internal';
-      var del=mkEl('button','btn btn-d');del.textContent='x';del.style.cssText='padding:2px 7px';
-      del.onclick=function(){f.safetyReports.splice(i,1);renderSafety();};
-      hdr.appendChild(tit);hdr.appendChild(bdg);hdr.appendChild(del);card.appendChild(hdr);
-      if(r.description){var desc=mkEl('div','');desc.style.cssText='font-size:12px;color:var(--mut);white-space:pre-wrap;line-height:1.5';desc.textContent=r.description;card.appendChild(desc);}
-      safListEl.appendChild(card);
-    });
-  }
-  renderSafety();
-
-  // ── Wire Defects ──
-  qs('#def-add',tDef).onclick=function(){
-    var el=qs('#def-inp',tDef);if(!el||!el.value.trim())return;
-    f.defects.push({text:el.value.trim(),reportable:false});el.value='';renderDefs();
-  };
-  qs('#def-inp',tDef).onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();qs('#def-add',tDef).click();}};
-
-  // ── Wire Safety ──
-  qs('#saf-add',tSaf).onclick=function(){
-    var ti=qs('#saf-title',tSaf),de=qs('#saf-desc',tSaf),re=qs('#saf-rep',tSaf);
-    if(!ti||!ti.value.trim())return;
-    f.safetyReports.push({title:ti.value.trim(),description:de?de.value:'',reportable:re?re.checked:false});
-    ti.value='';if(de)de.value='';if(re)re.checked=false;renderSafety();
-  };
-
-  // ── Open modal ──
-  var box2=openTabModal({
-    title:ex?'Edit Flight':'New Flight',
-    tabs:[
-      {label:'Details',body:tDet},
-      {label:'Weather',body:tWx},
-      {label:'Fuel',body:tFuel},
-      {label:'Times',body:tTimes},
-      {label:'Defects',body:tDef},
-      {label:'Safety',body:tSaf}
-    ],
-    saveLabel:ex?'Save':'Log Flight',
-    onSave:function(){
-      var g=function(id,ctx){var e=qs('#'+id,ctx||box2);return e?e.value.trim():'';};
-      var yr=g('m-yr',tDet),mo=g('m-mon',tDet),dy=g('m-day',tDet);
-      f.date=(yr&&mo&&dy)?yr+'-'+mo+'-'+dy:'';
-      f.aircraft=g('m-ac',tDet);f.category=g('m-cat',tDet);
-      f.departure=g('m-dep',tDet).toUpperCase();f.destination=g('m-dest',tDet).toUpperCase();
-      f.pic=g('m-pic',tDet);f.student=g('m-stu',tDet);
-      f.etob=getTime('m-etob',tDet);
-      f.oil=g('m-oil',tDet);f.fuelUplifted=g('m-fuelup',tDet);
-      f.maneuvers=g('m-man',tDet);f.notes=g('m-notes',tDet);
-      f.etot=getTime('m-etot',tWx);
-      f.wxTAS=g('m-tas',tWx);f.wxFreezFL=g('m-frz',tWx);
-      f.rwy1=g('m-rwy1',tWx);f.rwy2=g('m-rwy2',tWx);
-      f.wxSurfDir=g('m-wdir',tWx);f.wxSurfSpd=g('m-wspd',tWx);
-      f.wxMetarDep=qs('#m-mDep',tWx)?qs('#m-mDep',tWx).value:'';
-      f.wxTafDep=qs('#m-tDep',tWx)?qs('#m-tDep',tWx).value:'';
-      f.wxMetarDest=qs('#m-mDest',tWx)?qs('#m-mDest',tWx).value:'';
-      f.wxTafDest=qs('#m-tDest',tWx)?qs('#m-tDest',tWx).value:'';
-      f.fob=g('m-fob-u',tFuel);f.burnRate=g('m-burn',tFuel);
-      f.fuelTaxi=g('m-ftaxi-u',tFuel);f.fuelTrip=g('m-ftrip-u',tFuel);
-      f.fuelContPct=g('m-fcont',tFuel);f.fuelAlt=g('m-falt-u',tFuel);
-      f.fuelFinal=g('m-ffin-u',tFuel);f.fuelExtra=g('m-fext-u',tFuel);
-      f.tachoStart=g('m-ts',tTimes);f.tachoEnd=g('m-te',tTimes);
-      f.hobbsStart=g('m-hs',tTimes);f.hobbsEnd=g('m-he',tTimes);
-      f.chocksOff=getTime('m-off',tTimes);f.takeoff=getTime('m-tkf',tTimes);
-      f.landing=getTime('m-ldg',tTimes);f.chocksOn=getTime('m-on',tTimes);
-      if(!ex)flights.push(f);
-      else{var idx=flights.findIndex(function(x){return x.id===f.id;});if(idx>=0)flights[idx]=f;}
-      flSave();flSel=f.id;
-      renderFlList();renderFlDetail();renderFlStats();
-      toast(ex?'Updated':'Logged');
-      setTimeout(function(){emailFlight(f);},400);
-    }
   });
 
-  // ── Wire weather ──
-  function g2(id,ctx){var e=qs('#'+id,ctx);return e?e.value.trim():'';}
-  function wxCalc(){
-    var r1=g2('m-rwy1',tWx),r2=g2('m-rwy2',tWx),dir=g2('m-wdir',tWx),spd=g2('m-wspd',tWx);
-    var r1l=qs('#rwy1-lbl',tWx),r2l=qs('#rwy2-lbl',tWx);
-    if(r1l)r1l.textContent='RWY '+(r1||'1');if(r2l)r2l.textContent='RWY '+(r2||'2');
-    function setRwy(sfx,rwy){
-      var c=rwyWind(rwy,dir,spd);
-      if(c){
-        setText('wx-r'+sfx+'-hw',String(c.hwAbs),tWx);
-        var hwl=qs('#wx-r'+sfx+'-hwl',tWx);if(hwl){hwl.textContent=c.hwLabel+' kt';hwl.style.color=c.hwLabel==='HW'?'var(--em)':'var(--ros)';}
-        setText('wx-r'+sfx+'-xw',String(c.xwAbs),tWx);
-        var xwl=qs('#wx-r'+sfx+'-xwl',tWx);if(xwl)xwl.textContent=c.xwLabel+' kt';
-      } else {
-        setText('wx-r'+sfx+'-hw','--',tWx);setText('wx-r'+sfx+'-xw','--',tWx);
-        var hwl2=qs('#wx-r'+sfx+'-hwl',tWx);if(hwl2)hwl2.textContent='';
-        var xwl2=qs('#wx-r'+sfx+'-xwl',tWx);if(xwl2)xwl2.textContent='';
+  // All numeric fields trigger recalc
+  ['m-tachoStart','m-tachoEnd','m-hobbsStart','m-hobbsEnd',
+   'm-fuelDep','m-fuelAdded','m-fuelShutdown','m-burnRate'].forEach(function(id){
+    qs('#'+id,div).addEventListener('input', liveCalc);
+  });
+
+  function liveCalc(){
+    var g=function(id){ return qs('#'+id,div).value; };
+
+    // Times
+    var block=timeDiff(parseUTC(g('m-chocksOff')), parseUTC(g('m-chocksOn')));
+    var air  =timeDiff(parseUTC(g('m-takeoff')),   parseUTC(g('m-landing')));
+    var tacho=instrDiff(g('m-tachoStart'), g('m-tachoEnd'));
+    var hobbs=instrDiff(g('m-hobbsStart'), g('m-hobbsEnd'));
+
+    qs('#m-block-v',div).textContent=decToHM(block);
+    qs('#m-block-d',div).textContent=block!==null?'('+dec2(block)+' hrs)':'';
+    qs('#m-air-v',div).textContent=decToHM(air);
+    qs('#m-air-d',div).textContent=air!==null?'('+dec2(air)+' hrs)':'';
+    qs('#m-tacho-v',div).textContent=dec2(tacho);
+    qs('#m-hobbs-v',div).textContent=dec2(hobbs);
+
+    // Fuel
+    var br=g('m-burnRate')||settings.defaultBurnRate;
+    var fc=fuelCalc(g('m-fuelDep'), g('m-fuelAdded'), g('m-fuelShutdown'), br, air);
+    qs('#m-ftotal',div).textContent=fc.totalAvail!==null?dec2(fc.totalAvail):'--';
+    qs('#m-fused', div).textContent=fc.used!==null?dec2(fc.used):'--';
+    qs('#m-frem',  div).textContent=fc.remaining!==null?dec2(fc.remaining):'--';
+    qs('#m-fend',  div).textContent=fc.endurance!==null?decToHM(fc.endurance):'--';
+  }
+
+  if(ex) setTimeout(liveCalc,0);
+
+  openModal({title: ex?'Edit Flight Record':'Log New Flight', body:div, wide:true,
+    saveLabel: ex?'Save Changes':'Log Flight',
+    onSave: function(){
+      var g=function(id){ return qs('#'+id,div).value.trim(); };
+      f.date=g('m-date'); f.aircraft=g('m-aircraft'); f.category=g('m-cat');
+      f.departure=g('m-dep').toUpperCase(); f.destination=g('m-dest').toUpperCase();
+      f.pic=g('m-pic'); f.student=g('m-student');
+      f.chocksOff=g('m-chocksOff'); f.takeoff=g('m-takeoff');
+      f.landing=g('m-landing'); f.chocksOn=g('m-chocksOn');
+      f.tachoStart=g('m-tachoStart'); f.tachoEnd=g('m-tachoEnd');
+      f.hobbsStart=g('m-hobbsStart'); f.hobbsEnd=g('m-hobbsEnd');
+      f.fuelDep=g('m-fuelDep'); f.fuelAdded=g('m-fuelAdded');
+      f.fuelShutdown=g('m-fuelShutdown'); f.burnRate=g('m-burnRate');
+      f.oil=g('m-oil');
+      f.maneuvers=qs('#m-maneuvers',div).value;
+      f.notes=qs('#m-notes',div).value;
+      if(!ex) flights.push(f);
+      else{
+        var i=flights.findIndex(function(x){ return x.id===f.id; });
+        if(i>=0) flights[i]=f;
       }
+      flSave(); flActive=f.id;
+      renderFlList(); renderFlDetail(); renderFlStats();
+      toast((ex?'Flight updated':'Flight logged')+' -- opening Mail...');
+      setTimeout(function(){ emailFlight(f); },600);
     }
-    setRwy('1',r1);setRwy('2',r2);
-  }
-  ['m-rwy1','m-rwy2','m-wdir','m-wspd'].forEach(function(id){var e=qs('#'+id,tWx);if(e)e.oninput=wxCalc;});
-  if(ex)setTimeout(wxCalc,0);
-
-  function doFetch(){
-    var dep=g2('m-dep',tDet).toUpperCase(),dest=g2('m-dest',tDet).toUpperCase();
-    var depLbl=qs('#wx-dep-lbl',tWx),destLbl=qs('#wx-dest-lbl',tWx);
-    if(depLbl)depLbl.textContent=dep||'--';if(destLbl)destLbl.textContent=dest||'--';
-    var toFetch=[];
-    if(dep.length>=3){var s1={icao:dep,sfxList:['Dep']};if(dest.length>=3&&dest===dep)s1.sfxList.push('Dest');toFetch.push(s1);}
-    if(dest.length>=3&&dest!==dep)toFetch.push({icao:dest,sfxList:['Dest']});
-    if(!toFetch.length)return;
-    var done=0;
-    toFetch.forEach(function(item){
-      fetchWx(item.icao,function(metar,taf){
-        item.sfxList.forEach(function(sfx){
-          var mEl=qs('#m-m'+sfx,tWx),tEl=qs('#m-t'+sfx,tWx);
-          if(mEl)mEl.value=metar||('No METAR returned for '+item.icao);
-          if(tEl)tEl.value=taf||('No TAF returned for '+item.icao);
-        });
-        if(++done===toFetch.length){
-          var st=qs('#wx-fetch-status',tWx);
-          if(st)st.textContent='Done. METAR length: '+(metar?metar.length:0)+' TAF length: '+(taf?taf.length:0);
-        }
-      });
-    });
-  }
-  qs('#wx-fetch-btn',tWx).onclick=doFetch;
-  var depEl2=qs('#m-dep',tDet),destEl2=qs('#m-dest',tDet);
-  if(depEl2)depEl2.onchange=function(){setTimeout(doFetch,300);};
-  if(destEl2)destEl2.onchange=function(){setTimeout(doFetch,300);};
-  if(ex&&(f.departure||f.destination))setTimeout(function(){wxCalc();doFetch();},100);
-
-  // ── Wire fuel ──
-  function fuelLive(){
-    var burn2=parseFloat(g2('m-burn',tFuel))||parseFloat(SETTINGS.burnRate)||8;
-    var fob2=parseFloat(g2('m-fob-u',tFuel));
-    setText('fob-end',(!isNaN(fob2)&&burn2>0)?decToHM(fob2/burn2):'--',tFuel);
-    var tmpF={burnRate:g2('m-burn',tFuel)||SETTINGS.burnRate,
-      fuelTaxi:g2('m-ftaxi-u',tFuel),fuelTrip:g2('m-ftrip-u',tFuel),fuelContPct:g2('m-fcont',tFuel),
-      fuelAlt:g2('m-falt-u',tFuel),fuelFinal:g2('m-ffin-u',tFuel),fuelExtra:g2('m-fext-u',tFuel),fob:g2('m-fob-u',tFuel)};
-    var fc2=fuelCalc(tmpF);
-    setText('fr-taxi',dec2(fc2.taxi)+' USG',tFuel);setText('fr-trip',dec2(fc2.trip)+' USG',tFuel);
-    setText('fr-cont',dec2(fc2.cont)+' USG ('+dec2(fc2.contPct)+'%)',tFuel);
-    setText('fr-alt',dec2(fc2.alt)+' USG',tFuel);setText('fr-fin',dec2(fc2.final_)+' USG',tFuel);
-    setText('fr-ext',dec2(fc2.extra)+' USG',tFuel);setText('fr-total',dec2(fc2.total)+' USG',tFuel);
-    var surEl=qs('#fr-surplus',tFuel);
-    if(surEl){surEl.textContent=fc2.surplus!==null?dec2(fc2.surplus)+' USG':'--';surEl.style.color=fc2.surplus===null?'var(--mut)':fc2.surplus>=0?'var(--em)':'var(--ros)';}
-  }
-  ['m-fob','m-ftaxi','m-ftrip','m-falt','m-ffin','m-fext'].forEach(function(b){wireFpair(b,tFuel,fuelLive);});
-  ['m-burn','m-fcont'].forEach(function(id){var e=qs('#'+id,tFuel);if(e)e.oninput=fuelLive;});
-  if(ex)setTimeout(fuelLive,0);
-
-  // ── Wire times ──
-  function timesLive(){
-    setText('t-tacho',dec2(instrDiff(g2('m-ts',tTimes),g2('m-te',tTimes))),tTimes);
-    setText('t-hobbs',dec2(instrDiff(g2('m-hs',tTimes),g2('m-he',tTimes))),tTimes);
-    setText('t-block',decToHM(timeDiff(parseUTC(getTime('m-off',tTimes)),parseUTC(getTime('m-on',tTimes)))),tTimes);
-    setText('t-air',decToHM(timeDiff(parseUTC(getTime('m-tkf',tTimes)),parseUTC(getTime('m-ldg',tTimes)))),tTimes);
-  }
-  ['m-ts','m-te','m-hs','m-he'].forEach(function(id){var e=qs('#'+id,tTimes);if(e)e.oninput=timesLive;});
-  ['m-off','m-tkf','m-ldg','m-on'].forEach(function(id){wireTimeChange(id,tTimes,timesLive);});
-  [{id:'st-off',fld:'m-off'},{id:'st-tkf',fld:'m-tkf'},{id:'st-ldg',fld:'m-ldg'},{id:'st-on',fld:'m-on'}].forEach(function(item){
-    var btn=qs('#'+item.id,tTimes);if(btn)btn.onclick=function(){stampTime(item.fld,tTimes);timesLive();};
   });
-  if(ex)setTimeout(timesLive,0);
 }
 
 function emailFlight(f){
-  var c=flTimes(f),fc=fuelCalc(f);
-  var mDep=filterMetars(f.wxMetarDep,f.chocksOff,f.chocksOn,f.etob);
-  var mDest=filterMetars(f.wxMetarDest,f.chocksOff,f.chocksOn,f.etob);
-  var subj=encodeURIComponent('Flight: '+(f.date||'?')+' '+( f.aircraft||'?')+' '+(f.departure||'?')+'-'+(f.destination||'?'));
-  var lines=['FLIGHT RECORD','============',
-    'Date: '+(f.date||'--'),'Aircraft: '+(f.aircraft||'--'),'Category: '+(f.category||'--'),
-    'Route: '+(f.departure||'?')+' to '+(f.destination||'?'),
-    'PIC: '+(f.pic||'--'),'Student: '+(f.student||'--'),'ETOB: '+(f.etob||'--')+' UTC',
-    '','WEATHER',
-    'Surface: '+(f.wxSurfDir?f.wxSurfDir+'deg/'+f.wxSurfSpd+'kt':'--')+
-      '  TAS: '+(f.wxTAS||'--')+'kt  Freeze: '+(f.wxFreezFL||'--')+'ft',
-    'DEP METAR: '+(mDep||'--'),'DEP TAF: '+(f.wxTafDep||'--'),
-    'DEST METAR: '+(mDest||'--'),'DEST TAF: '+(f.wxTafDest||'--'),
-    '','TIMES','Chocks Off: '+(f.chocksOff||'--'),'Takeoff: '+(f.takeoff||'--'),
-    'Landing: '+(f.landing||'--'),'Chocks On: '+(f.chocksOn||'--'),
-    '','CALCULATED',
-    'Block: '+decToHM(c.block)+'  Air: '+decToHM(c.air),
-    'Tacho: '+dec2(c.tacho)+'  Hobbs: '+dec2(c.hobbs),
-    '','FUEL  Burn: '+fc.burn+' USG/hr',
-    'FOB: '+dec2(fc.fob)+' USG  End: '+decToHM(fc.endurance),
-    'Total Req: '+dec2(fc.total)+' USG  Surplus: '+dec2(fc.surplus)+' USG',
-    'Oil: '+(f.oil||'--')+'  Uplifted: '+(f.fuelUplifted||'--')+' USG',
-    '','MANEUVERS',f.maneuvers||'--','','NOTES',f.notes||'--'];
-  if(f.defects&&f.defects.length){lines.push('','DEFECTS');f.defects.forEach(function(d){lines.push('  - '+d.text+(d.reportable?' [REPORTABLE]':''));});}
-  if(f.safetyReports&&f.safetyReports.length){lines.push('','SAFETY');f.safetyReports.forEach(function(r){lines.push('  '+r.title+(r.reportable?' [REPORTABLE]':'')+'\n  '+r.description);});}
-  lines.push('','-- FlightDeck v24');
+  var c=flCalc(f);
+  var fc=fuelCalc(f.fuelDep, f.fuelAdded, f.fuelShutdown, f.burnRate||settings.defaultBurnRate, c.air);
+  var subj=encodeURIComponent('Flight Record -- '+( f.date||'?')+' - '+(f.aircraft||'?')+' - '+(f.departure||'?')+' to '+(f.destination||'?'));
+  var lines=[
+    'FLIGHT RECORD',
+    '=============',
+    'Date:        '+(f.date||'--'),
+    'Aircraft:    '+(f.aircraft||'--'),
+    'Category:    '+(f.category||'--'),
+    'Route:       '+(f.departure||'?')+' to '+(f.destination||'?'),
+    'PIC:         '+(f.pic||'--'),
+    'Student:     '+(f.student||'--'),
+    '',
+    'TIMES (UTC)',
+    'Chocks Off:  '+(f.chocksOff||'--'),
+    'Takeoff:     '+(f.takeoff||'--'),
+    'Landing:     '+(f.landing||'--'),
+    'Chocks On:   '+(f.chocksOn||'--'),
+    '',
+    'CALCULATED TIMES',
+    'Block Time:  '+decToHM(c.block)+' ('+dec2(c.block)+' hrs)',
+    'Air Time:    '+decToHM(c.air)+' ('+dec2(c.air)+' hrs)',
+    'Tacho Time:  '+dec2(c.tacho)+' hrs  ['+( f.tachoStart||'?')+' to '+(f.tachoEnd||'?')+']',
+    'Hobbs Time:  '+dec2(c.hobbs)+' hrs  ['+(f.hobbsStart||'?')+' to '+(f.hobbsEnd||'?')+']',
+    '',
+    'FUEL (USG)  -- Burn rate: '+(fc.burn!==null?fc.burn+' USG/hr':'default '+settings.defaultBurnRate+' USG/hr'),
+    'At Departure:        '+(f.fuelDep||'--')+' USG',
+    'Added Before Flight: '+(f.fuelAdded||'0')+' USG',
+    'Total Available:     '+(fc.totalAvail!==null?dec2(fc.totalAvail)+' USG':'--'),
+    'At Shutdown:         '+(f.fuelShutdown||'--')+' USG',
+    'Fuel Used:           '+(fc.used!==null?dec2(fc.used)+' USG':'--'),
+    'Remaining:           '+(fc.remaining!==null?dec2(fc.remaining)+' USG':'--'),
+    'Endurance Remaining: '+(fc.endurance!==null?decToHM(fc.endurance)+' ('+dec2(fc.endurance)+' hrs)':'--'),
+    '',
+    'Oil: '+(f.oil||'--'),
+    '',
+    'MANEUVERS / EXERCISES',
+    f.maneuvers||'--',
+    '',
+    'INSTRUCTOR NOTES',
+    f.notes||'--',
+    '',
+    '-- Sent from FlightDeck Instructor Hub',
+  ];
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
+function exportFlight(f){
+  var c=flCalc(f);
+  var fc=fuelCalc(f.fuelDep, f.fuelAdded, f.fuelShutdown, f.burnRate||settings.defaultBurnRate, c.air);
+  var lines=[
+    'FLIGHT RECORD','=============',
+    'Date:        '+(f.date||'--'),
+    'Aircraft:    '+(f.aircraft||'--'),
+    'Category:    '+(f.category||'--'),
+    'Route:       '+(f.departure||'?')+' to '+(f.destination||'?'),
+    'PIC:         '+(f.pic||'--'),
+    'Student:     '+(f.student||'--'),
+    '','TIMES (UTC)',
+    'Chocks Off:  '+(f.chocksOff||'--'),
+    'Takeoff:     '+(f.takeoff||'--'),
+    'Landing:     '+(f.landing||'--'),
+    'Chocks On:   '+(f.chocksOn||'--'),
+    '','CALCULATED TIMES',
+    'Block Time:  '+decToHM(c.block)+' ('+dec2(c.block)+' hrs)',
+    'Air Time:    '+decToHM(c.air)+' ('+dec2(c.air)+' hrs)',
+    'Tacho Time:  '+dec2(c.tacho)+' hrs  ['+(f.tachoStart||'?')+' to '+(f.tachoEnd||'?')+']',
+    'Hobbs Time:  '+dec2(c.hobbs)+' hrs  ['+(f.hobbsStart||'?')+' to '+(f.hobbsEnd||'?')+']',
+    '','FUEL (USG)  -- Burn rate: '+(fc.burn!==null?fc.burn:'default '+settings.defaultBurnRate)+' USG/hr',
+    'At Departure:        '+(f.fuelDep||'--')+' USG',
+    'Added Before Flight: '+(f.fuelAdded||'0')+' USG',
+    'Total Available:     '+(fc.totalAvail!==null?dec2(fc.totalAvail)+' USG':'--'),
+    'At Shutdown:         '+(f.fuelShutdown||'--')+' USG',
+    'Fuel Used:           '+(fc.used!==null?dec2(fc.used)+' USG':'--'),
+    'Remaining:           '+(fc.remaining!==null?dec2(fc.remaining)+' USG':'--'),
+    'Endurance Remaining: '+(fc.endurance!==null?decToHM(fc.endurance)+' ('+dec2(fc.endurance)+' hrs)':'--'),
+    'Oil: '+(f.oil||'--'),
+    '','MANEUVERS / EXERCISES', f.maneuvers||'--',
+    '','INSTRUCTOR NOTES', f.notes||'--',
+  ];
+  dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
+  toast('Flight exported');
+}
 
-// ═══════════════════════════════════════════════════════════════════════════
+function exportAllFlights(){
+  if(!flights.length){ toast('No flights to export'); return; }
+  var hdr='Date,Aircraft,Category,Departure,Destination,PIC,Student,ChocksOff,Takeoff,Landing,ChocksOn,BlockHM,BlockHrs,AirHM,AirHrs,TachoStart,TachoEnd,TachoHrs,HobbsStart,HobbsEnd,HobbsHrs,FuelDep,FuelAdded,FuelTotal,FuelShutdown,FuelUsed,FuelRemain,BurnRate,Endurance,Oil,Maneuvers,Notes';
+  var rows=flights.map(function(f){
+    var c=flCalc(f);
+    var fc=fuelCalc(f.fuelDep,f.fuelAdded,f.fuelShutdown,f.burnRate||settings.defaultBurnRate,c.air);
+    return [
+      f.date,f.aircraft,f.category,f.departure,f.destination,f.pic,f.student,
+      f.chocksOff,f.takeoff,f.landing,f.chocksOn,
+      decToHM(c.block),dec2(c.block),decToHM(c.air),dec2(c.air),
+      f.tachoStart,f.tachoEnd,dec2(c.tacho),
+      f.hobbsStart,f.hobbsEnd,dec2(c.hobbs),
+      f.fuelDep,f.fuelAdded,dec2(fc.totalAvail),f.fuelShutdown,dec2(fc.used),dec2(fc.remaining),
+      fc.burn,dec2(fc.endurance),
+      f.oil,
+      '"'+(f.maneuvers||'').replace(/"/g,'""')+'"',
+      '"'+(f.notes||'').replace(/"/g,'""')+'"'
+    ].join(',');
+  });
+  dlFile('FlightDeck_log.csv',[hdr].concat(rows).join('\n'),'text/csv');
+  toast('All flights exported as CSV');
+}
+
+function renderFlFilters(){
+  var el2=qs('#fl-filter');
+  ['All'].concat(FL_CATS).forEach(function(c){
+    var ch=el('div','fchip'+(c==='All'?' on':''),c);
+    ch.addEventListener('click',function(){
+      el2.querySelectorAll('.fchip').forEach(function(x){ x.classList.remove('on'); });
+      ch.classList.add('on'); renderFlList();
+    });
+    el2.appendChild(ch);
+  });
+}
+
+qs('#fl-new').addEventListener('click',function(){ openFlModal(null); });
+qs('#fl-export-all').addEventListener('click', exportAllFlights);
+qs('#fl-search').addEventListener('input', renderFlList);
+
+// ============================================================
 // CHECKLISTS
-// ═══════════════════════════════════════════════════════════════════════════
+// ============================================================
 var CL_KEY='fd_checklists';
 var CL_CATS=['Pre-Flight','Engine Start','Run-Up','After Take-Off','Cruise','Descent','Pre-Landing','After Landing','Shutdown','Emergency','Other'];
 var checklists=load(CL_KEY,[
   {id:'cl1',title:'Pre-Flight Inspection',category:'Pre-Flight',items:[
-    {id:'i1',text:'Fuel quantity and quality checked',done:false},
-    {id:'i2',text:'Oil level checked',done:false},
-    {id:'i3',text:'Control surfaces free and correct',done:false},
-    {id:'i4',text:'Pitot tube cover removed',done:false},
-    {id:'i5',text:'Documents (AROW) on board',done:false}
+    {id:'i1',text:'Check fuel quantity and quality (sample)',done:false},
+    {id:'i2',text:'Inspect oil level',done:false},
+    {id:'i3',text:'Control surfaces -- free and correct',done:false},
+    {id:'i4',text:'Tires -- condition and inflation',done:false},
+    {id:'i5',text:'Pitot tube cover -- REMOVED',done:false},
+    {id:'i6',text:'Aircraft documents (AROW) -- ON BOARD',done:false},
+    {id:'i7',text:'Weight and balance -- CALCULATED',done:false},
   ]},
   {id:'cl2',title:'Engine Start',category:'Engine Start',items:[
-    {id:'i6',text:'Brakes SET',done:false},
-    {id:'i7',text:'Master switch ON',done:false},
-    {id:'i8',text:'Fuel selector BOTH',done:false},
-    {id:'i9',text:'Mixture RICH',done:false},
-    {id:'i10',text:'Propeller area CLEAR',done:false}
-  ]}
+    {id:'i8',text:'Brakes -- SET',done:false},
+    {id:'i9',text:'Master switch -- ON',done:false},
+    {id:'i10',text:'Fuel selector -- BOTH',done:false},
+    {id:'i11',text:'Throttle -- 1/4 inch OPEN',done:false},
+    {id:'i12',text:'Mixture -- RICH',done:false},
+    {id:'i13',text:'Propeller area -- CLEAR',done:false},
+    {id:'i14',text:'Ignition -- START',done:false},
+  ]},
+  {id:'cl3',title:'After Landing',category:'After Landing',items:[
+    {id:'i15',text:'Transponder -- STBY',done:false},
+    {id:'i16',text:'Flaps -- UP',done:false},
+    {id:'i17',text:'Landing light -- OFF',done:false},
+    {id:'i18',text:'Carb heat -- OFF (if applicable)',done:false},
+  ]},
 ]);
-var clSel=null;
+var clActive=null;
 function clSave(){ save(CL_KEY,checklists); }
 
 function renderClFilter(){
-  var el=qs('#cl-filter');el.innerHTML='';
+  var el2=qs('#cl-filter'); el2.innerHTML='';
   ['All'].concat(CL_CATS).forEach(function(c){
-    var ch=mkEl('div','fchip'+(c==='All'?' on':''),c);
-    ch.onclick=function(){el.querySelectorAll('.fchip').forEach(function(x){x.classList.remove('on');});ch.classList.add('on');renderClList();};
-    el.appendChild(ch);
+    var ch=el('div','fchip'+(c==='All'?' on':''),c);
+    ch.addEventListener('click',function(){
+      el2.querySelectorAll('.fchip').forEach(function(x){ x.classList.remove('on'); });
+      ch.classList.add('on'); renderClList();
+    });
+    el2.appendChild(ch);
   });
 }
+
 function renderClList(){
-  var el=qs('#cl-list');el.innerHTML='';
-  var fc=qs('#cl-filter .fchip.on');var fv=fc?fc.textContent:'All';
-  checklists.filter(function(c){return fv==='All'||c.category===fv;}).forEach(function(cl){
-    var done=cl.items.filter(function(i){return i.done;}).length;
+  var el2=qs('#cl-list');
+  var filt=qs('#cl-filter .fchip.on');
+  var filtVal=filt?filt.textContent:'All';
+  el2.innerHTML='';
+  checklists.filter(function(c){ return filtVal==='All'||c.category===filtVal; }).forEach(function(cl){
+    var done=cl.items.filter(function(i){ return i.done; }).length;
     var pct=cl.items.length?Math.round(done/cl.items.length*100):0;
-    var card=mkEl('div','card'+(clSel===cl.id?' sel':''));
-    card.innerHTML='<div class="ctitle">'+cl.title+'</div>'+
-      '<div class="cmeta"><span class="badge b-sky">'+cl.category+'</span><span style="font-size:11px;color:var(--mut)">'+done+'/'+cl.items.length+'</span></div>'+
+    var card=el('div','card'+(clActive===cl.id?' sel-sky':''));
+    card.innerHTML=
+      '<div class="ctitle">'+cl.title+'</div>'+
+      '<div class="cmeta"><span class="badge b-sky">'+cl.category+'</span>'+
+        '<span style="font-size:11px;color:var(--muted)">'+done+'/'+cl.items.length+'</span></div>'+
       '<div class="prog"><div class="prog-fill" style="width:'+pct+'%"></div></div>';
-    card.onclick=function(){clSel=cl.id;renderClList();renderClDetail();};
-    el.appendChild(card);
+    card.addEventListener('click',function(){ clActive=cl.id; renderClList(); renderClDetail(); });
+    el2.appendChild(card);
   });
 }
+
 function renderClDetail(){
-  var det=qs('#cl-detail');
-  if(!clSel){det.innerHTML='<div class="empty"><div class="empty-icon">&#10003;</div><span>Select a checklist</span></div>';return;}
-  var cl=checklists.find(function(x){return x.id===clSel;});
-  if(!cl){det.innerHTML='<div class="empty">Not found</div>';return;}
-  det.innerHTML='';var box=mkEl('div','dbox');
-  var done=cl.items.filter(function(i){return i.done;}).length;
-  var dh=mkEl('div','');dh.style.cssText='display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px';
-  dh.innerHTML='<div><div style="font-weight:700;font-size:16px">'+cl.title+'</div>'+
-    '<div class="cmeta" style="margin-top:4px"><span class="badge b-sky">'+cl.category+'</span><span style="font-size:11px;color:var(--mut)">'+done+' of '+cl.items.length+'</span></div></div>'+
-    '<div style="display:flex;gap:5px">'+
-    '<button class="btn btn-g" id="cl-rst">Reset</button>'+
-    '<button class="btn btn-d" id="cl-del">&#10005;</button>'+
+  var el2=qs('#cl-detail');
+  if(!clActive){ el2.innerHTML='<div class="empty"><div class="empty-icon">&#10003;</div><span>Select a checklist</span></div>'; return; }
+  var cl=checklists.filter(function(x){ return x.id===clActive; })[0];
+  if(!cl){ el2.innerHTML='<div class="empty">Not found</div>'; return; }
+  var done=cl.items.filter(function(i){ return i.done; }).length;
+  el2.innerHTML=''; var box=el('div','dbox');
+  var dh=el('div','dh');
+  dh.innerHTML=
+    '<div><div class="dtitle">'+cl.title+'</div>'+
+    '<div class="cmeta" style="margin-top:5px"><span class="badge b-sky">'+cl.category+'</span>'+
+    '<span style="font-size:11px;color:var(--muted)">'+done+' of '+cl.items.length+' complete</span></div></div>'+
+    '<div class="dactions">'+
+      '<button class="btn btn-g" id="cl-reset">Reset</button>'+
+      '<button class="btn btn-g" id="cl-exp">&#8595; Export</button>'+
+      '<button class="btn btn-d" id="cl-del">Delete</button>'+
     '</div>';
   box.appendChild(dh);
-  var items=mkEl('div','');items.style.cssText='flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px';
+  var items=el('div','');
+  items.style.cssText='flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;margin-bottom:10px';
   cl.items.forEach(function(it,idx){
-    var row=mkEl('div','cli '+(it.done?'done':''));
-    row.innerHTML='<div class="cli-chk '+(it.done?'on':'')+'">'+(it.done?'<svg width="9" height="7" viewBox="0 0 9 7"><polyline points="1,3.5 3,5.5 8,1" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>':'')+'</div>'+
+    var row=el('div','cli '+(it.done?'done':'undone'));
+    row.innerHTML=
+      '<div class="cli-chk '+(it.done?'on':'off')+'">'+
+        (it.done?'<svg width="10" height="8" viewBox="0 0 10 8"><polyline points="1,4 3.5,6.5 9,1" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>':'')+
+      '</div>'+
       '<span class="cli-num">'+('0'+(idx+1)).slice(-2)+'</span>'+
       '<span class="cli-text '+(it.done?'done':'')+'">'+it.text+'</span>'+
       '<button class="cli-del">&#215;</button>';
-    row.querySelector('.cli-chk').onclick=function(){cl.items=cl.items.map(function(x){return x.id===it.id?Object.assign({},x,{done:!x.done}):x;});clSave();renderClList();renderClDetail();};
-    row.querySelector('.cli-del').onclick=function(e){e.stopPropagation();cl.items=cl.items.filter(function(x){return x.id!==it.id;});clSave();renderClList();renderClDetail();};
+    row.querySelector('.cli-chk').addEventListener('click',function(){
+      cl.items=cl.items.map(function(x){ return x.id===it.id?Object.assign({},x,{done:!x.done}):x; });
+      clSave(); renderClList(); renderClDetail();
+    });
+    row.querySelector('.cli-del').addEventListener('click',function(e){
+      e.stopPropagation();
+      cl.items=cl.items.filter(function(x){ return x.id!==it.id; });
+      clSave(); renderClList(); renderClDetail();
+    });
     items.appendChild(row);
   });
-  if(!cl.items.length)items.innerHTML='<p style="color:var(--mut);font-size:12px;text-align:center;padding:12px">No items</p>';
+  if(!cl.items.length) items.innerHTML='<p style="color:var(--muted);font-size:12px;text-align:center;padding:20px">No items yet</p>';
   box.appendChild(items);
-  var ar=mkEl('div','');ar.style.cssText='display:flex;gap:6px';
-  ar.innerHTML='<input class="inp" id="cl-add-inp" placeholder="Add item..." style="flex:1"/><button class="btn btn-s">Add</button>';
-  ar.querySelector('.btn').onclick=function(){var i2=qs('#cl-add-inp',ar);if(!i2.value.trim())return;cl.items.push({id:uid(),text:i2.value.trim(),done:false});i2.value='';clSave();renderClDetail();renderClList();};
-  qs('#cl-add-inp',ar).onkeydown=function(e){if(e.key==='Enter')ar.querySelector('.btn').click();};
-  box.appendChild(ar);det.appendChild(box);
-  qs('#cl-rst',box).onclick=function(){cl.items=cl.items.map(function(x){return Object.assign({},x,{done:false});});clSave();renderClList();renderClDetail();};
-  qs('#cl-del',box).onclick=function(){if(confirm('Delete?')){checklists=checklists.filter(function(x){return x.id!==cl.id;});clSave();clSel=null;renderClList();renderClDetail();toast('Deleted');}};
+  var ar=el('div',''); ar.style.cssText='display:flex;gap:7px';
+  ar.innerHTML='<input class="inp" id="cl-add-inp" placeholder="Add checklist item..." style="flex:1"/><button class="btn btn-s">Add</button>';
+  ar.querySelector('.btn').addEventListener('click',function(){
+    var inp=qs('#cl-add-inp',ar); if(!inp.value.trim()) return;
+    cl.items.push({id:uid(),text:inp.value.trim(),done:false});
+    inp.value=''; clSave(); renderClDetail(); renderClList();
+  });
+  qs('#cl-add-inp',ar).addEventListener('keydown',function(e){ if(e.key==='Enter') ar.querySelector('.btn').click(); });
+  box.appendChild(ar); el2.appendChild(box);
+  qs('#cl-reset',box).addEventListener('click',function(){
+    cl.items=cl.items.map(function(x){ return Object.assign({},x,{done:false}); });
+    clSave(); renderClList(); renderClDetail();
+  });
+  qs('#cl-exp',box).addEventListener('click',function(){
+    var lines=['CHECKLIST: '+cl.title,'Category: '+cl.category,''].concat(
+      cl.items.map(function(it,i){ return '  '+('0'+(i+1)).slice(-2)+'. [ ] '+it.text; }));
+    dlFile(cl.title.replace(/\s+/g,'_')+'.txt',lines.join('\n')); toast('Exported');
+  });
+  qs('#cl-del',box).addEventListener('click',function(){
+    if(confirm('Delete this checklist?')){
+      checklists=checklists.filter(function(x){ return x.id!==cl.id; });
+      clSave(); clActive=null; renderClList(); renderClDetail(); toast('Deleted');
+    }
+  });
 }
-qs('#cl-new').onclick=function(){
-  var div=document.createElement('div');
-  div.innerHTML=field('Title',inp('m-clt','text','Checklist name',''))+field('Category',sel('m-clc',CL_CATS,'Pre-Flight'));
-  openModal({title:'New Checklist',body:div,saveLabel:'Create',onSave:function(){
-    var t=qs('#m-clt',div).value.trim();if(!t)return false;
-    var nl={id:uid(),title:t,category:qs('#m-clc',div).value,items:[]};
-    checklists.push(nl);clSave();clSel=nl.id;renderClList();renderClDetail();toast('Created');
-  }});
-};
 
-// ═══════════════════════════════════════════════════════════════════════════
+qs('#cl-new').addEventListener('click',function(){
+  var div=document.createElement('div');
+  div.innerHTML=
+    '<div class="field"><label>Title</label><input class="inp" id="m-clt" placeholder="e.g. Before Takeoff"/></div>'+
+    '<div class="field"><label>Category</label><select class="inp" id="m-clc">'+
+      CL_CATS.map(function(c){ return '<option>'+c+'</option>'; }).join('')+'</select></div>';
+  openModal({title:'New Checklist',body:div,saveLabel:'Create',onSave:function(){
+    var t=qs('#m-clt',div).value.trim(); if(!t) return false;
+    var nl={id:uid(),title:t,category:qs('#m-clc',div).value,items:[]};
+    checklists.push(nl); clSave(); clActive=nl.id; renderClList(); renderClDetail(); toast('Created');
+  }});
+});
+
+// ============================================================
 // LESSONS
-// ═══════════════════════════════════════════════════════════════════════════
+// ============================================================
 var LS_KEY='fd_lessons';
-var LS_STAGES=['Private Pilot','Instrument Rating','Commercial','CFI','ATPL','Other'];
-var lessons=load(LS_KEY,[{id:'ls1',title:'Introduction to Flight Controls',stage:'Private Pilot',duration:'60',objective:'Demonstrate understanding of primary flight controls.',content:'Cover ailerons, elevator, rudder. Discuss adverse yaw.',notes:'Use visual aids.'}]);
-var lsSel=null;
+var LS_STAGES=['Private Pilot','Instrument Rating','Commercial Pilot','CFI','ATPL','Other'];
+var scol={'Private Pilot':'b-em','Instrument Rating':'b-sky','Commercial Pilot':'b-am','CFI':'b-vi','ATPL':'b-ro','Other':'b-sl'};
+var lessons=load(LS_KEY,[
+  {id:'ls1',title:'Introduction to Flight Controls',stage:'Private Pilot',duration:'60',
+   objective:'Student will demonstrate understanding of primary and secondary flight controls.',
+   content:'Cover ailerons, elevator, rudder. Discuss adverse yaw, coordinated flight. Demonstrate in aircraft.',
+   notes:'Use visual aids. Emphasise rudder usage in turns. Watch for over-controlling.'}
+]);
+var lsActive=null;
 function lsSave(){ save(LS_KEY,lessons); }
+
 function renderLsFilter(){
-  var el=qs('#ls-filter');el.innerHTML='';
+  var el2=qs('#ls-filter'); el2.innerHTML='';
   ['All'].concat(LS_STAGES).forEach(function(s){
-    var ch=mkEl('div','fchip'+(s==='All'?' on':''),s);
-    ch.onclick=function(){el.querySelectorAll('.fchip').forEach(function(x){x.classList.remove('on');});ch.classList.add('on');renderLsList();};
-    el.appendChild(ch);
+    var ch=el('div','fchip'+(s==='All'?' on':''),s);
+    ch.addEventListener('click',function(){
+      el2.querySelectorAll('.fchip').forEach(function(x){ x.classList.remove('on'); });
+      ch.classList.add('on'); renderLsList();
+    });
+    el2.appendChild(ch);
   });
 }
+
 function renderLsList(){
-  var el=qs('#ls-list');el.innerHTML='';
-  var fc=qs('#ls-filter .fchip.on');var fv=fc?fc.textContent:'All';
-  lessons.filter(function(l){return fv==='All'||l.stage===fv;}).forEach(function(ls){
-    var card=mkEl('div','card'+(lsSel===ls.id?' sel':''));
-    card.innerHTML='<div class="ctitle">'+ls.title+'</div><div class="cmeta"><span class="badge b-em">'+ls.stage+'</span>'+(ls.duration?'<span style="font-size:11px;color:var(--mut)">'+ls.duration+' min</span>':'')+'</div>';
-    card.onclick=function(){lsSel=ls.id;renderLsList();renderLsDetail();};
-    el.appendChild(card);
+  var el2=qs('#ls-list'); el2.innerHTML='';
+  var filt=qs('#ls-filter .fchip.on');
+  var filtVal=filt?filt.textContent:'All';
+  lessons.filter(function(l){ return filtVal==='All'||l.stage===filtVal; }).forEach(function(ls){
+    var card=el('div','card'+(lsActive===ls.id?' sel-em':''));
+    card.innerHTML=
+      '<div class="ctitle">'+ls.title+'</div>'+
+      '<div class="cmeta"><span class="badge '+(scol[ls.stage]||'b-sl')+'">'+ls.stage+'</span>'+
+        (ls.duration?'<span style="font-size:11px;color:var(--muted)">'+ls.duration+' min</span>':'')+
+      '</div>';
+    card.addEventListener('click',function(){ lsActive=ls.id; renderLsList(); renderLsDetail(); });
+    el2.appendChild(card);
   });
 }
+
 function renderLsDetail(){
-  var det=qs('#ls-detail');
-  if(!lsSel){det.innerHTML='<div class="empty"><div class="empty-icon">&#128218;</div><span>Select a lesson</span></div>';return;}
-  var ls=lessons.find(function(x){return x.id===lsSel;});
-  if(!ls){det.innerHTML='<div class="empty">Not found</div>';return;}
-  det.innerHTML='';var box=mkEl('div','dbox');
-  box.innerHTML='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'+
-    '<div><div style="font-weight:700;font-size:16px">'+ls.title+'</div>'+
-    '<div class="cmeta" style="margin-top:4px"><span class="badge b-em">'+ls.stage+'</span>'+(ls.duration?'<span class="badge b-sl">'+ls.duration+' min</span>':'')+'</div></div>'+
-    '<div style="display:flex;gap:5px"><button class="btn btn-g" id="ls-edit">Edit</button><button class="btn btn-d" id="ls-del">&#10005;</button></div>'+
+  var el2=qs('#ls-detail');
+  if(!lsActive){ el2.innerHTML='<div class="empty"><div class="empty-icon">&#128218;</div><span>Select a lesson plan</span></div>'; return; }
+  var ls=lessons.filter(function(x){ return x.id===lsActive; })[0];
+  if(!ls){ el2.innerHTML='<div class="empty">Not found</div>'; return; }
+  el2.innerHTML=''; var box=el('div','dbox');
+  box.innerHTML=
+    '<div class="dh">'+
+      '<div><div class="dtitle">'+ls.title+'</div>'+
+      '<div class="cmeta" style="margin-top:5px">'+
+        '<span class="badge '+(scol[ls.stage]||'b-sl')+'">'+ls.stage+'</span>'+
+        (ls.duration?'<span class="badge b-sl">'+ls.duration+' min</span>':'')+
+      '</div></div>'+
+      '<div class="dactions">'+
+        '<button class="btn btn-g" id="ls-edit">Edit</button>'+
+        '<button class="btn btn-g" id="ls-exp">&#8595; Export</button>'+
+        '<button class="btn btn-d" id="ls-del">Delete</button>'+
+      '</div>'+
     '</div>'+
-    '<div class="sec-lbl" style="margin-top:8px">Objective</div><div class="sec-box">'+(ls.objective||'--')+'</div>'+
-    '<div class="sec-lbl" style="margin-top:6px">Content</div><div class="sec-box">'+(ls.content||'--')+'</div>'+
-    '<div class="sec-lbl" style="margin-top:6px">Instructor Notes</div><div class="sec-box">'+(ls.notes||'--')+'</div>';
-  det.appendChild(box);
-  qs('#ls-edit',box).onclick=function(){openLsModal(ls);};
-  qs('#ls-del',box).onclick=function(){if(confirm('Delete?')){lessons=lessons.filter(function(x){return x.id!==ls.id;});lsSave();lsSel=null;renderLsList();renderLsDetail();toast('Deleted');}};
+    '<div class="sec"><div class="sec-lbl">Objective</div><div class="sec-box">'+(ls.objective||'--')+'</div></div>'+
+    '<div class="sec"><div class="sec-lbl">Content</div><div class="sec-box">'+(ls.content||'--')+'</div></div>'+
+    '<div class="sec"><div class="sec-lbl">Instructor Notes</div><div class="sec-box">'+(ls.notes||'--')+'</div></div>';
+  el2.appendChild(box);
+  qs('#ls-edit',box).addEventListener('click',function(){ openLsModal(ls); });
+  qs('#ls-del',box).addEventListener('click',function(){
+    if(confirm('Delete?')){
+      lessons=lessons.filter(function(x){ return x.id!==ls.id; });
+      lsSave(); lsActive=null; renderLsList(); renderLsDetail(); toast('Deleted');
+    }
+  });
+  qs('#ls-exp',box).addEventListener('click',function(){
+    dlFile(ls.title.replace(/\s+/g,'_')+'_lesson.txt',
+      ['LESSON PLAN: '+ls.title,'Stage: '+ls.stage,'Duration: '+ls.duration+' min',
+       '','OBJECTIVE:',ls.objective,'','CONTENT:',ls.content,'','INSTRUCTOR NOTES:',ls.notes].join('\n'));
+    toast('Exported');
+  });
 }
+
 function openLsModal(ex){
   var ls=ex||{id:uid(),title:'',stage:'Private Pilot',duration:'60',objective:'',content:'',notes:''};
   var div=document.createElement('div');
-  div.innerHTML='<div class="g2">'+field('Title',inp('m-lst','text','',ls.title))+field('Duration (min)',ninp('m-lsd','60',ls.duration,'1'))+'</div>'+
-    field('Stage',sel('m-lss',LS_STAGES,ls.stage))+
-    field('Objective',ta('m-lso',2,ls.objective,'What will student achieve?'))+
-    field('Content',ta('m-lsc',4,ls.content,''))+
-    field('Notes',ta('m-lsn',2,ls.notes,''));
-  openModal({title:ex?'Edit Lesson':'New Lesson',body:div,saveLabel:ex?'Save':'Create',onSave:function(){
-    ls.title=qs('#m-lst',div).value.trim();if(!ls.title)return false;
-    ls.stage=qs('#m-lss',div).value;ls.duration=qs('#m-lsd',div).value;
-    ls.objective=qs('#m-lso',div).value;ls.content=qs('#m-lsc',div).value;ls.notes=qs('#m-lsn',div).value;
-    if(!ex)lessons.push(ls);else{var i=lessons.findIndex(function(x){return x.id===ls.id;});if(i>=0)lessons[i]=ls;}
-    lsSave();lsSel=ls.id;renderLsList();renderLsDetail();toast(ex?'Updated':'Created');
+  div.innerHTML=
+    '<div class="g3">'+
+      '<div class="field" style="grid-column:span 2"><label>Title</label><input class="inp" id="m-lst" value="'+(ls.title||'')+'" placeholder="Lesson title"/></div>'+
+      '<div class="field"><label>Duration (min)</label><input class="inp" id="m-lsd" value="'+(ls.duration||'')+'" type="number" placeholder="60"/></div>'+
+    '</div>'+
+    '<div class="field"><label>Stage</label><select class="inp" id="m-lss">'+
+      LS_STAGES.map(function(s){ return '<option'+(s===ls.stage?' selected':'')+'>'+s+'</option>'; }).join('')+'</select></div>'+
+    '<div class="field"><label>Objective</label><textarea class="inp" id="m-lso" rows="2">'+(ls.objective||'')+'</textarea></div>'+
+    '<div class="field"><label>Content</label><textarea class="inp" id="m-lsc" rows="4">'+(ls.content||'')+'</textarea></div>'+
+    '<div class="field"><label>Instructor Notes</label><textarea class="inp" id="m-lsn" rows="3">'+(ls.notes||'')+'</textarea></div>';
+  openModal({title:ex?'Edit Lesson':'New Lesson Plan',body:div,wide:true,saveLabel:ex?'Save':'Create',onSave:function(){
+    ls.title=qs('#m-lst',div).value.trim(); if(!ls.title) return false;
+    ls.stage=qs('#m-lss',div).value; ls.duration=qs('#m-lsd',div).value;
+    ls.objective=qs('#m-lso',div).value; ls.content=qs('#m-lsc',div).value; ls.notes=qs('#m-lsn',div).value;
+    if(!ex) lessons.push(ls);
+    else{ var i=lessons.findIndex(function(x){ return x.id===ls.id; }); if(i>=0) lessons[i]=ls; }
+    lsSave(); lsActive=ls.id; renderLsList(); renderLsDetail(); toast(ex?'Updated':'Created');
   }});
 }
-qs('#ls-new').onclick=function(){openLsModal(null);};
+qs('#ls-new').addEventListener('click',function(){ openLsModal(null); });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ============================================================
 // REFERENCES
-// ═══════════════════════════════════════════════════════════════════════════
+// ============================================================
 var RF_KEY='fd_references';
-var RF_CATS=['Regulations','Weather','Navigation','Systems','Maneuvers','Emergency','Performance','Other'];
+var RF_CATS=['Regulations','Weather','Navigation','Systems','Maneuvers','Emergency','Airspace','Performance','Other'];
+var rcol={Regulations:'b-sky',Weather:'b-am',Navigation:'b-em',Systems:'b-vi',Maneuvers:'b-ro',Emergency:'b-ro',Airspace:'b-sky',Performance:'b-am',Other:'b-sl'};
 var refs=load(RF_KEY,[
-  {id:'rf1',title:'VFR Weather Minimums',category:'Weather',content:'Class G below 1200ft AGL: 1500m vis, clear of cloud\nClass G above 1200ft AGL: 5000m, 1500m horiz/300m vert\nClass E/D/C: 5000m, 1500m horiz/300m vert'},
-  {id:'rf2',title:'AROW Documents',category:'Regulations',content:'A - Airworthiness Certificate\nR - Registration\nO - Operating Handbook (AFM/POH)\nW - Weight and Balance'}
+  {id:'rf1',title:'VFR Weather Minimums',category:'Weather',
+   content:'Class G (1200 AGL or below): 1500m vis, clear of cloud\nClass G (above 1200 AGL, below 10,000): 5000m, 1500m horiz / 300m vert\nClass E/D/C: 5000m, 1500m horiz / 300m vert\nClass A: IFR only\n\n(Verify current CASR Part 91)'},
+  {id:'rf2',title:'AROW -- Required Documents',category:'Regulations',
+   content:'A -- Airworthiness Certificate\nR -- Registration Certificate\nO -- Operating Handbook (AFM/POH)\nW -- Weight and Balance documentation\n\nMust be on board for all flights.'}
 ]);
-var rfSel=null;
+var rfActive=null;
 function rfSave(){ save(RF_KEY,refs); }
+
 function renderRfFilter(){
-  var el=qs('#rf-filter');el.innerHTML='';
+  var el2=qs('#rf-filter'); el2.innerHTML='';
   ['All'].concat(RF_CATS).forEach(function(c){
-    var ch=mkEl('div','fchip'+(c==='All'?' on':''),c);
-    ch.onclick=function(){el.querySelectorAll('.fchip').forEach(function(x){x.classList.remove('on');});ch.classList.add('on');renderRfList();};
-    el.appendChild(ch);
+    var ch=el('div','fchip'+(c==='All'?' on':''),c);
+    ch.addEventListener('click',function(){
+      el2.querySelectorAll('.fchip').forEach(function(x){ x.classList.remove('on'); });
+      ch.classList.add('on'); renderRfList();
+    });
+    el2.appendChild(ch);
   });
 }
+
 function renderRfList(){
-  var el=qs('#rf-list');el.innerHTML='';
-  var fc=qs('#rf-filter .fchip.on');var fv=fc?fc.textContent:'All';
-  var srch=(qs('#rf-search').value||'').toLowerCase();
-  refs.filter(function(r){return(fv==='All'||r.category===fv)&&(!srch||r.title.toLowerCase().includes(srch)||r.content.toLowerCase().includes(srch));}).forEach(function(rf){
-    var card=mkEl('div','card'+(rfSel===rf.id?' sel':''));
-    card.innerHTML='<div class="ctitle">'+rf.title+'</div><div class="cmeta"><span class="badge b-am">'+rf.category+'</span></div>';
-    card.onclick=function(){rfSel=rf.id;renderRfList();renderRfDetail();};
-    el.appendChild(card);
+  var el2=qs('#rf-list');
+  var filt=qs('#rf-filter .fchip.on');
+  var filtVal=filt?filt.textContent:'All';
+  var search=(qs('#rf-search').value||'').toLowerCase();
+  var vis=refs.filter(function(r){
+    return (filtVal==='All'||r.category===filtVal)&&
+      (!search||r.title.toLowerCase().includes(search)||r.content.toLowerCase().includes(search));
+  });
+  el2.innerHTML='';
+  if(!vis.length){ el2.innerHTML='<p style="color:var(--muted);font-size:12px;text-align:center;padding:12px">No results</p>'; return; }
+  vis.forEach(function(rf){
+    var card=el('div','card'+(rfActive===rf.id?' sel-am':''));
+    card.innerHTML='<div class="ctitle">'+rf.title+'</div><div class="cmeta"><span class="badge '+(rcol[rf.category]||'b-sl')+'">'+rf.category+'</span></div>';
+    card.addEventListener('click',function(){ rfActive=rf.id; renderRfList(); renderRfDetail(); });
+    el2.appendChild(card);
   });
 }
+
 function renderRfDetail(){
-  var det=qs('#rf-detail');
-  if(!rfSel){det.innerHTML='<div class="empty"><div class="empty-icon">&#128203;</div><span>Select a reference</span></div>';return;}
-  var rf=refs.find(function(x){return x.id===rfSel;});
-  if(!rf){det.innerHTML='<div class="empty">Not found</div>';return;}
-  det.innerHTML='';var box=mkEl('div','dbox');
-  box.innerHTML='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'+
-    '<div><div style="font-weight:700;font-size:16px">'+rf.title+'</div>'+
-    '<div class="cmeta" style="margin-top:4px"><span class="badge b-am">'+rf.category+'</span></div></div>'+
-    '<div style="display:flex;gap:5px"><button class="btn btn-g" id="rf-edit">Edit</button><button class="btn btn-d" id="rf-del">&#10005;</button></div>'+
+  var el2=qs('#rf-detail');
+  if(!rfActive){ el2.innerHTML='<div class="empty"><div class="empty-icon">&#128203;</div><span>Select a reference</span></div>'; return; }
+  var rf=refs.filter(function(x){ return x.id===rfActive; })[0];
+  if(!rf){ el2.innerHTML='<div class="empty">Not found</div>'; return; }
+  el2.innerHTML=''; var box=el('div','dbox');
+  box.innerHTML=
+    '<div class="dh">'+
+      '<div><div class="dtitle">'+rf.title+'</div>'+
+      '<div class="cmeta" style="margin-top:5px"><span class="badge '+(rcol[rf.category]||'b-sl')+'">'+rf.category+'</span></div></div>'+
+      '<div class="dactions">'+
+        '<button class="btn btn-g" id="rf-edit">Edit</button>'+
+        '<button class="btn btn-g" id="rf-exp">&#8595; Export</button>'+
+        '<button class="btn btn-d" id="rf-del">Delete</button>'+
+      '</div>'+
     '</div>'+
-    '<div class="sec-box" style="flex:1;white-space:pre-wrap;margin-top:8px">'+rf.content+'</div>';
-  det.appendChild(box);
-  qs('#rf-edit',box).onclick=function(){openRfModal(rf);};
-  qs('#rf-del',box).onclick=function(){if(confirm('Delete?')){refs=refs.filter(function(x){return x.id!==rf.id;});rfSave();rfSel=null;renderRfList();renderRfDetail();toast('Deleted');}};
+    '<div class="sec-box" style="flex:1;min-height:80px">'+rf.content+'</div>';
+  el2.appendChild(box);
+  qs('#rf-edit',box).addEventListener('click',function(){ openRfModal(rf); });
+  qs('#rf-del',box).addEventListener('click',function(){
+    if(confirm('Delete?')){
+      refs=refs.filter(function(x){ return x.id!==rf.id; });
+      rfSave(); rfActive=null; renderRfList(); renderRfDetail(); toast('Deleted');
+    }
+  });
+  qs('#rf-exp',box).addEventListener('click',function(){
+    dlFile(rf.title.replace(/\s+/g,'_')+'_ref.txt',['REFERENCE: '+rf.title,'Category: '+rf.category,'',rf.content].join('\n'));
+    toast('Exported');
+  });
 }
+
 function openRfModal(ex){
   var rf=ex||{id:uid(),title:'',category:'Regulations',content:''};
   var div=document.createElement('div');
-  div.innerHTML=field('Title',inp('m-rft','text','',rf.title))+field('Category',sel('m-rfc',RF_CATS,rf.category))+field('Content',ta('m-rfc2',10,rf.content,''));
-  openModal({title:ex?'Edit Reference':'New Reference',body:div,saveLabel:ex?'Save':'Create',onSave:function(){
-    rf.title=qs('#m-rft',div).value.trim();if(!rf.title)return false;
-    rf.category=qs('#m-rfc',div).value;rf.content=qs('#m-rfc2',div).value;
-    if(!ex)refs.push(rf);else{var i=refs.findIndex(function(x){return x.id===rf.id;});if(i>=0)refs[i]=rf;}
-    rfSave();rfSel=rf.id;renderRfList();renderRfDetail();toast(ex?'Updated':'Created');
+  div.innerHTML=
+    '<div class="field"><label>Title</label><input class="inp" id="m-rft" value="'+(rf.title||'')+'" placeholder="Reference title"/></div>'+
+    '<div class="field"><label>Category</label><select class="inp" id="m-rfc">'+
+      RF_CATS.map(function(c){ return '<option'+(c===rf.category?' selected':'')+'>'+c+'</option>'; }).join('')+'</select></div>'+
+    '<div class="field"><label>Content</label><textarea class="inp" id="m-rfc2" rows="10">'+(rf.content||'')+'</textarea></div>';
+  openModal({title:ex?'Edit Reference':'New Reference',body:div,wide:true,saveLabel:ex?'Save':'Create',onSave:function(){
+    rf.title=qs('#m-rft',div).value.trim(); if(!rf.title) return false;
+    rf.category=qs('#m-rfc',div).value; rf.content=qs('#m-rfc2',div).value;
+    if(!ex) refs.push(rf);
+    else{ var i=refs.findIndex(function(x){ return x.id===rf.id; }); if(i>=0) refs[i]=rf; }
+    rfSave(); rfActive=rf.id; renderRfList(); renderRfDetail(); toast(ex?'Updated':'Created');
   }});
 }
-qs('#rf-new').onclick=function(){openRfModal(null);};
-qs('#rf-search').oninput=renderRfList;
+qs('#rf-new').addEventListener('click',function(){ openRfModal(null); });
+qs('#rf-search').addEventListener('input', renderRfList);
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ============================================================
+// PWA
+// ============================================================
+var SW_CODE=[
+  "var C='fd-sw-v2';",
+  "self.addEventListener('install',function(e){",
+  "  e.waitUntil(caches.open(C).then(function(c){ return c.addAll([self.location.pathname]); }).then(function(){ return self.skipWaiting(); }));",
+  "});",
+  "self.addEventListener('activate',function(e){",
+  "  e.waitUntil(caches.keys().then(function(ks){",
+  "    return Promise.all(ks.filter(function(k){ return k!==C; }).map(function(k){ return caches.delete(k); }));",
+  "  }).then(function(){ return self.clients.claim(); }));",
+  "});",
+  "self.addEventListener('fetch',function(e){",
+  "  if(e.request.method!=='GET') return;",
+  "  e.respondWith(caches.match(e.request).then(function(r){",
+  "    return r||fetch(e.request).then(function(res){",
+  "      if(res.ok){ var cl=res.clone(); caches.open(C).then(function(c){ c.put(e.request,cl); }); }",
+  "      return res;",
+  "    }).catch(function(){ return caches.match(self.location.pathname); });",
+  "  }));",
+  "});"
+].join('\n');
+
+if('serviceWorker' in navigator){
+  try{
+    var swBlob=new Blob([SW_CODE],{type:'application/javascript'});
+    var swURL=URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swURL);
+  }catch(e){}
+}
+
+var mf={name:'FlightDeck Instructor Hub',short_name:'FlightDeck',start_url:'.',display:'standalone',
+  background_color:'#020617',theme_color:'#020617',
+  icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230ea5e9'/%3E%3Ctext y='.9em' font-size='80'%3E%E2%9C%88%3C/text%3E%3C/svg%3E",sizes:'192x192',type:'image/svg+xml'}]};
+try{
+  var ml=qs('#pwa-manifest');
+  ml.href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/json'}));
+}catch(e){}
+
+var deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault(); deferredPrompt=e;
+  qs('#install-btn').style.display='block';
+});
+qs('#install-btn').addEventListener('click',function(){
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(function(r){
+    if(r.outcome==='accepted') toast('App installed!');
+    deferredPrompt=null; qs('#install-btn').style.display='none';
+  });
+});
+
+// ============================================================
 // INIT
-// ═══════════════════════════════════════════════════════════════════════════
+// ============================================================
 renderFlFilters(); renderFlStats(); renderFlList();
 renderClFilter(); renderClList();
 renderLsFilter(); renderLsList();
