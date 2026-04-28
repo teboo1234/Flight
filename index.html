@@ -226,6 +226,96 @@ textarea.inp{resize:vertical;line-height:1.5}
 <script>
 'use strict';
 
+// ── EMBEDDED AIRPORT COORDS (instant lookup, no API needed) ──────────────────
+var AIRPORT_COORDS={
+  'BGGH':[64.1908,-51.6781],
+  'BIRK':[64.1300,-21.9406],
+  'EBBR':[50.9014,4.4844],
+  'EDDB':[52.3667,13.5033],
+  'EDDF':[50.0333,8.5706],
+  'EDDL':[51.2895,6.7668],
+  'EDDM':[48.3538,11.7861],
+  'EFHK':[60.3172,24.9633],
+  'EGAA':[54.6575,-6.2158],
+  'EGAC':[54.6181,-5.8725],
+  'EGAE':[55.0428,-7.1619],
+  'EGBB':[52.4539,-1.7480],
+  'EGBJ':[51.8942,-2.1672],
+  'EGBO':[52.5175,-2.2597],
+  'EGBP':[51.6682,-2.0567],
+  'EGBW':[52.1922,-1.6144],
+  'EGCC':[53.3537,-2.2750],
+  'EGCN':[53.4806,-1.0106],
+  'EGFF':[51.3967,-3.3433],
+  'EGFH':[51.6053,-4.0683],
+  'EGGW':[51.8747,-0.3683],
+  'EGHH':[50.78,-1.8425],
+  'EGHI':[50.9503,-1.3568],
+  'EGKA':[50.8356,-0.2961],
+  'EGKB':[51.3308,0.0325],
+  'EGKK':[51.1481,-0.1903],
+  'EGLC':[51.5053,0.0553],
+  'EGLD':[51.5906,-0.5117],
+  'EGLF':[51.2775,-0.7764],
+  'EGLL':[51.4775,-0.4614],
+  'EGNJ':[54.5092,-1.4256],
+  'EGNM':[53.8659,-1.6606],
+  'EGNS':[54.0833,-4.6239],
+  'EGNT':[54.9375,-1.6917],
+  'EGNV':[54.5092,-1.4256],
+  'EGNX':[52.8311,-1.3281],
+  'EGOD':[52.6147,-4.1339],
+  'EGOE':[52.7981,-2.6517],
+  'EGPB':[60.3019,-1.2956],
+  'EGPD':[57.2019,-2.1978],
+  'EGPE':[57.5425,-4.0478],
+  'EGPF':[55.8719,-4.4331],
+  'EGPH':[55.9500,-3.3625],
+  'EGPK':[55.5094,-4.5867],
+  'EGPO':[58.2158,-6.3308],
+  'EGPU':[56.4994,-6.8697],
+  'EGQL':[56.3728,-2.8681],
+  'EGQS':[57.7033,-3.3394],
+  'EGSS':[51.885,0.235],
+  'EGTE':[50.7344,-3.4139],
+  'EGTK':[51.8369,-1.3200],
+  'EGTR':[51.6747,-0.4169],
+  'EGWU':[51.5531,-0.4183],
+  'EHAM':[52.3086,4.7639],
+  'EHRD':[51.9569,4.4372],
+  'EICK':[51.8411,-8.4911],
+  'EIDW':[53.4213,-6.2700],
+  'EINN':[52.7003,-8.9247],
+  'EISG':[54.2803,-8.5992],
+  'EKCH':[55.6179,12.6561],
+  'EKVG':[62.0636,-7.2772],
+  'ENBO':[67.2692,14.3653],
+  'ENGM':[60.1939,11.1004],
+  'ENVA':[63.4578,10.9239],
+  'EPWA':[52.1657,20.9671],
+  'ESGG':[57.6628,12.2798],
+  'ESSA':[59.6519,17.9186],
+  'EVRA':[56.9236,23.9711],
+  'EYVI':[54.6339,25.2858],
+  'LEBL':[41.2971,2.0785],
+  'LEMD':[40.4722,-3.5608],
+  'LEMG':[36.6749,-4.4991],
+  'LFMN':[43.6584,7.2159],
+  'LFPG':[49.0097,2.5479],
+  'LFPO':[48.7233,2.3794],
+  'LHBP':[47.4298,19.2611],
+  'LIME':[45.6736,9.7042],
+  'LIRA':[41.6539,12.4317],
+  'LIRF':[41.8003,12.2389],
+  'LKPR':[50.1008,14.2600],
+  'LOWW':[48.1103,16.5697],
+  'LPFR':[37.0144,-7.9659],
+  'LPPT':[38.7756,-9.1359],
+  'LSGG':[46.2381,6.1089],
+  'LSZH':[47.4647,8.5492],
+  'UMMS':[53.8825,28.0322],
+};
+
 // ── UTILS ─────────────────────────────────────────────────────────────────
 var USG_L = 3.785;
 function uid(){ return Math.random().toString(36).slice(2,9); }
@@ -344,28 +434,30 @@ function fetchWx(icao,cb){
     });
   }
   function findNearest(done, refLat, refLon){
-    // Nominatim confirmed working (sources 3&4 from iPad test)
-    function nominatim(query, cb){
+    // 1. Check embedded table first (instant, no network)
+    var coords=AIRPORT_COORDS[icao];
+    if(coords){
+      setStatus('Searching near '+icao+'...');
+      searchBox(coords[0],coords[1],done);
+      return;
+    }
+    // 2. Nominatim fallback for airports not in table
+    setStatus('Looking up '+icao+' via Nominatim...');
+    function nominatim(query,cb){
       getJSON('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(query)+'&format=json&limit=5',function(d){
         if(!d||!d.length){cb(null,null);return;}
         var best;
-        if(refLat!==undefined&&refLon!==undefined&&d.length>1){
-          // Pick result closest to reference point (dep airport)
-          var minDist=Infinity;
-          d.forEach(function(r){
-            var dlat=+r.lat-refLat, dlon=+r.lon-refLon;
-            var dist=dlat*dlat+dlon*dlon;
-            if(dist<minDist){minDist=dist;best=r;}
-          });
+        if(refLat!==undefined&&d.length>1){
+          // Pick result closest to reference lat/lon
+          var minD=Infinity;
+          d.forEach(function(r){var dx=+r.lat-refLat,dy=+r.lon-refLon,dist=dx*dx+dy*dy;if(dist<minD){minD=dist;best=r;}});
         } else {
-          // Prefer aerodrome type, else first result
           var aero=d.filter(function(r){return r.type==='aerodrome'||r.class==='aeroway';});
           best=aero.length?aero[0]:d[0];
         }
         cb(+best.lat,+best.lon);
       });
     }
-    setStatus('Finding coords for '+icao+'...');
     nominatim(icao,function(lat,lon){
       if(lat!==null){searchBox(lat,lon,done);return;}
       nominatim('aerodrome '+icao,function(lat2,lon2){
@@ -1182,6 +1274,9 @@ function openFlModal(ex){
     // Get dep coords for proximity disambiguation
     var depLat=null, depLon=null;
     function getDepCoords(cb){
+      // Check embedded table first
+      var ec=AIRPORT_COORDS[dep4];
+      if(ec){depLat=ec[0];depLon=ec[1];cb();return;}
       if(/^[A-Z]{4}$/.test(dep4)){
         getJSON('https://nominatim.openstreetmap.org/search?q='+dep4+'&format=json&limit=1',function(d){
           if(d&&d[0]){depLat=+d[0].lat;depLon=+d[0].lon;}cb();
@@ -1214,41 +1309,43 @@ function openFlModal(ex){
     }
 
     function processTask(task){
-      if(task.type==='icao'){
-        // Standard airport - use fetchWx directly
-        fetchWx(task.tok,function(metar,taf){finishCard(task.tok,metar,taf);});
-      } else {
-        // IFR fix - look up coords via Nominatim, find nearest METAR
-        var fixIcao=task.tok;
-        getJSON('https://nominatim.openstreetmap.org/search?q='+fixIcao+'&format=json&limit=5',function(nd){
-          if(!nd||!nd.length){finishCard(fixIcao,'No location found for fix '+fixIcao,'');return;}
-          // Pick closest to departure if we have dep coords
-          var best=nd[0];
-          if(depLat!==null&&nd.length>1){
-            var minD=Infinity;
-            nd.forEach(function(r){var dx=+r.lat-depLat,dy=+r.lon-depLon,d2=dx*dx+dy*dy;if(d2<minD){minD=d2;best=r;}});
-          }
-          var lat=+best.lat,lon=+best.lon;
-          // Search 20nm around fix for nearest METAR station
+        if(task.type==='icao'){
+          fetchWx(task.tok,function(metar,taf){finishCard(task.tok,metar,taf);});
+          return;
+        }
+        // IFR fix: look up coords, find nearest METAR station
+        // Use embedded table if it's actually an airport code
+        var embCoords=AIRPORT_COORDS[task.tok];
+        function searchNear(lat,lon){
           var AO2='https://api.allorigins.win/raw?url=';
           var BASE2='https://aviationweather.gov/api/data/';
           var D=0.35;
           var bbox=(lat-D)+','+(lon-D)+','+(lat+D)+','+(lon+D);
-          function clean2(t){return (t||'').split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>6&&l.charAt(0)!=='<';}).join('\n');}
-          function extractId(line){var p=line.trim().split(/\s+/);for(var i=0;i<Math.min(p.length,3);i++){if(/^[A-Z]{4}$/.test(p[i])&&p[i]!=='METAR'&&p[i]!=='SPECI')return p[i];}return null;}
+          function clean2(t){return(t||'').split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>6&&l.charAt(0)!=='<';}).join('\n');}
+          function extId(line){var p=line.trim().split(/\s+/);for(var i=0;i<Math.min(p.length,3);i++){if(/^[A-Z]{4}$/.test(p[i])&&p[i]!=='METAR'&&p[i]!=='SPECI')return p[i];}return null;}
           fetch(AO2+encodeURIComponent(BASE2+'metar?bbox='+bbox+'&format=raw&hours=6'))
             .then(function(r){return r.text();})
             .then(function(txt){
               var lines=clean2(txt).split('\n').filter(function(l){return l.length>8;});
               var nearId=null;
-              for(var i=0;i<lines.length;i++){var id2=extractId(lines[i]);if(id2){nearId=id2;break;}}
-              if(!nearId){finishCard(fixIcao,'No stations within 20nm of '+fixIcao,'');return;}
-              fetchWx(nearId,function(metar,taf){finishCard(fixIcao+'\n['+nearId+'] '+metar,taf);});
+              for(var i=0;i<lines.length;i++){var id2=extId(lines[i]);if(id2){nearId=id2;break;}}
+              if(!nearId){finishCard(task.tok,'No stations within 20nm','');return;}
+              fetchWx(nearId,function(metar,taf){finishCard(task.tok+'\n[Nearest: '+nearId+'] '+metar,taf);});
             })
-            .catch(function(){finishCard(fixIcao,'Fetch error','');});
+            .catch(function(){finishCard(task.tok,'Fetch error','');});
+        }
+        if(embCoords){searchNear(embCoords[0],embCoords[1]);return;}
+        // Nominatim for unknown fixes - pick closest to departure
+        getJSON('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(task.tok)+'&format=json&limit=5',function(nd){
+          if(!nd||!nd.length){finishCard(task.tok,'Fix not found','');return;}
+          var best=nd[0];
+          if(depLat!==null&&nd.length>1){
+            var minD=Infinity;
+            nd.forEach(function(r){var dx=+r.lat-depLat,dy=+r.lon-depLon,d2=dx*dx+dy*dy;if(d2<minD){minD=d2;best=r;}});
+          }
+          searchNear(+best.lat,+best.lon);
         });
       }
-    }
 
     getDepCoords(function(){
       tasks.forEach(function(task){processTask(task);});
