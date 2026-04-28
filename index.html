@@ -395,114 +395,71 @@ function filterMetars(txt,chocksOff,chocksOn,etob){
 
 // ── WEATHER FETCH ─────────────────────────────────────────────────────────
 function fetchWx(icao,cb){
+  var key=localStorage.getItem('fd_avwx_key')||'';
+  var BASE='https://avwx.rest/api/';
+  var NOAA='https://aviationweather.gov/api/data/';
   var AO='https://api.allorigins.win/raw?url=';
-  var CP='https://corsproxy.io/?';
-  var BASE='https://aviationweather.gov/api/data/';
 
-  function clean(txt){
-    if(!txt)return '';
-    return txt.split('\n').map(function(l){return l.trim();})
-      .filter(function(l){return l.length>6&&l.charAt(0)!=='<'&&l.indexOf('No data')<0&&l.indexOf('<!')<0;})
-      .join('\n');
-  }
-  function get(url,done){
-    var t=setTimeout(function(){done('');},9000);
-    fetch(url).then(function(r){return r.text();}).then(function(t2){clearTimeout(t);done(t2||'');}).catch(function(){clearTimeout(t);done('');});
-  }
-  function getJSON(url,done){
-    var t=setTimeout(function(){done(null);},9000);
-    fetch(url).then(function(r){return r.json();}).then(function(d){clearTimeout(t);done(d);}).catch(function(){clearTimeout(t);done(null);});
-  }
-  function extractIcao(line){
-    var parts=line.trim().split(/\s+/);
-    for(var i=0;i<Math.min(parts.length,3);i++){
-      var p=parts[i];
-      if(/^[A-Z]{4}$/.test(p)&&p!=='METAR'&&p!=='SPECI'&&p!==icao)return p;
-    }
-    return null;
-  }
-  function getMetar(id,done){
-    get(AO+encodeURIComponent(BASE+'metar?ids='+id+'&format=raw&hours=6'),function(t){
-      var m=clean(t);if(m){done(m);return;}
-      get('https://metar.vatsim.net/metar.php?id='+id,function(t2){done(clean(t2));});
-    });
-  }
-  function getTaf(id,done){
-    get(AO+encodeURIComponent(BASE+'taf?ids='+id+'&format=raw'),function(t){
-      var tf=clean(t);if(tf){done(tf);return;}
-      get(CP+encodeURIComponent(BASE+'taf?ids='+id+'&format=raw'),function(t2){done(clean(t2));});
-    });
-  }
-  function findNearest(done, refLat, refLon){
-    // 1. Check embedded table first (instant, no network)
-    var coords=AIRPORT_COORDS[icao];
-    if(coords){
-      setStatus('Searching near '+icao+'...');
-      searchBox(coords[0],coords[1],done);
-      return;
-    }
-    // 2. Nominatim fallback for airports not in table
-    setStatus('Looking up '+icao+' via Nominatim...');
-    function nominatim(query,cb){
-      getJSON('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(query)+'&format=json&limit=5',function(d){
-        if(!d||!d.length){cb(null,null);return;}
-        var best;
-        if(refLat!==undefined&&d.length>1){
-          // Pick result closest to reference lat/lon
-          var minD=Infinity;
-          d.forEach(function(r){var dx=+r.lat-refLat,dy=+r.lon-refLon,dist=dx*dx+dy*dy;if(dist<minD){minD=dist;best=r;}});
-        } else {
-          var aero=d.filter(function(r){return r.type==='aerodrome'||r.class==='aeroway';});
-          best=aero.length?aero[0]:d[0];
-        }
-        cb(+best.lat,+best.lon);
-      });
-    }
-    nominatim(icao,function(lat,lon){
-      if(lat!==null){searchBox(lat,lon,done);return;}
-      nominatim('aerodrome '+icao,function(lat2,lon2){
-        if(lat2!==null){searchBox(lat2,lon2,done);return;}
-        setStatus('No coords for '+icao);done(null);
-      });
-    });
-  }
-  function searchBox(lat,lon,done){
-    var D=0.35;
-    var bbox=(lat-D)+','+(lon-D)+','+(lat+D)+','+(lon+D);
-    setStatus('Searching 20nm near '+lat.toFixed(2)+','+lon.toFixed(2)+'...');
-    get(AO+encodeURIComponent(BASE+'metar?bbox='+bbox+'&format=raw&hours=6'),function(txt){
-      var lines=clean(txt).split('\n').filter(function(l){return l.length>8;});
-      var nearId=null;
-      for(var i=0;i<lines.length;i++){var id2=extractIcao(lines[i]);if(id2&&id2!==icao){nearId=id2;break;}}
-      if(nearId){done(nearId);return;}
-      // Try direct bbox as fallback
-      get(BASE+'metar?bbox='+bbox+'&format=raw&hours=6',function(txt2){
-        var lines2=clean(txt2).split('\n').filter(function(l){return l.length>8;});
-        var nearId2=null;
-        for(var j=0;j<lines2.length;j++){var id3=extractIcao(lines2[j]);if(id3&&id3!==icao){nearId2=id3;break;}}
-        done(nearId2);
-      });
-    });
-  }
-
-  // Status helper
   function setStatus(msg){
     document.querySelectorAll('#wx-fetch-status').forEach(function(el){el.textContent=msg;});
   }
+  function cleanNoaa(txt){
+    if(!txt)return '';
+    return txt.split('\n').map(function(l){return l.trim();})
+      .filter(function(l){return l.length>6&&l.charAt(0)!=='<'&&l.indexOf('No data')<0;})
+      .join('\n');
+  }
+  function get(url,headers,done){
+    var t=setTimeout(function(){done('');},10000);
+    fetch(url,headers?{headers:headers}:{})
+      .then(function(r){return r.text();})
+      .then(function(t2){clearTimeout(t);done(t2||'');})
+      .catch(function(){clearTimeout(t);done('');});
+  }
 
   setStatus('Fetching '+icao+'...');
-  getMetar(icao,function(metar){
-    if(metar){
-      getTaf(icao,function(taf){setStatus('Done');cb(metar,taf);});
-    } else {
-      setStatus('No data for '+icao+', finding nearest...');
-      findNearest(function(nearId){
-        if(!nearId){setStatus('No data found');cb('No weather data for '+icao,'');return;}
-        setStatus('Using nearest: '+nearId);
-        getMetar(nearId,function(nm){getTaf(nearId,function(nt){cb('[Nearest:'+nearId+'] '+(nm||''),nt);});});
-      });
+
+  if(key){
+    // AVWX with onfail=nearest - handles nearest station automatically
+    var hdrs={'Authorization':'BEARER '+key};
+    var metar='',taf='',n=0;
+    function done2(){
+      if(++n===2){setStatus(metar?'Done':'No data');cb(metar,taf);}
     }
-  });
+    get(BASE+'metar/'+icao+'?onfail=nearest&options=info&format=json',hdrs,function(txt){
+      try{
+        var d=JSON.parse(txt);
+        if(d&&d.raw){
+          metar=d.raw;
+          // Note nearest station if different
+          if(d.info&&d.info.icao&&d.info.icao!==icao){
+            metar='[Nearest: '+d.info.icao+'] '+metar;
+          }
+        }
+      }catch(e){}
+      done2();
+    });
+    get(BASE+'taf/'+icao+'?onfail=nearest&format=json',hdrs,function(txt){
+      try{
+        var d=JSON.parse(txt);
+        if(d&&d.raw)taf=d.raw;
+        else if(d&&d.sanitized)taf=d.sanitized;
+      }catch(e){}
+      done2();
+    });
+  } else {
+    // No key - NOAA via allorigins proxy
+    var m2='',t2='',n2=0;
+    function done3(){
+      if(++n2===2){setStatus(m2?'Done':'No data (add AVWX key in Settings for better results)');cb(m2,t2);}
+    }
+    get(AO+encodeURIComponent(NOAA+'metar?ids='+icao+'&format=raw&hours=6'),null,function(txt){
+      m2=cleanNoaa(txt);done3();
+    });
+    get(AO+encodeURIComponent(NOAA+'taf?ids='+icao+'&format=raw'),null,function(txt){
+      t2=cleanNoaa(txt);done3();
+    });
+  }
 }
 
 // ── MODAL ─────────────────────────────────────────────────────────────────
@@ -632,11 +589,22 @@ function dateDDs(stored){
 // ── SETTINGS ──────────────────────────────────────────────────────────────
 qs('#settings-btn').onclick=function(){
   var div=document.createElement('div');
-  div.innerHTML=field('Default Burn Rate (USG/hr)','<input class="inp" id="s-burn" type="number" step="0.1" value="'+SETTINGS.burnRate+'"/>');
+  var curKey=localStorage.getItem('fd_avwx_key')||'';
+  div.innerHTML=
+    field('Default Burn Rate (USG/hr)','<input class="inp" id="s-burn" type="number" step="0.1" value="'+SETTINGS.burnRate+'"/>') +
+    '<div class="sdiv">Weather API</div>'+
+    '<div class="field"><label>AVWX API Key (free at avwx.rest)</label>'+
+      '<input class="inp" id="s-avwx" type="text" placeholder="Paste your AVWX token here" value="'+curKey+'"/>'+
+      '<div style="font-size:11px;color:var(--mut);margin-top:4px">With a key: reliable worldwide METAR/TAF including small UK airfields.<br>Without: NOAA only (may miss some airports).</div>'+
+    '</div>';
   openModal({title:'Settings',body:div,saveLabel:'Save',onSave:function(){
     var v=parseFloat(qs('#s-burn',div).value);
     if(isNaN(v)||v<=0){toast('Invalid rate');return false;}
-    SETTINGS.burnRate=String(v);saveSets();toast('Saved');
+    SETTINGS.burnRate=String(v);saveSets();
+    var avwxKey=(qs('#s-avwx',div).value||'').trim();
+    if(avwxKey)localStorage.setItem('fd_avwx_key',avwxKey);
+    else localStorage.removeItem('fd_avwx_key');
+    toast('Saved');
   }});
 };
 
@@ -1251,105 +1219,125 @@ function openFlModal(ex){
   // ── Wire Route Wx ──
   rDep.textContent=(f.departure||'?')+' \u2192 '+(f.destination||'?');
   rBtn.onclick=function(){
+    var key=localStorage.getItem('fd_avwx_key')||'';
     var dep4=g2('m-dep',tDet).toUpperCase();
     var dest4=g2('m-dest',tDet).toUpperCase();
     var mid=rInp.value.trim().toUpperCase();
-    var full=[dep4,mid,dest4].filter(Boolean).join(' ');
-    if(!full.trim()){rStat.textContent='Enter a route';return;}
 
-    // Parse tokens: 4-letter = ICAO airport, 5-letter = IFR fix (lookup nearest wx)
-    // 1-3 letter or letter+digits = airway (skip)
-    var tokens=full.split(/[\s,]+/).filter(Boolean);
-    var tasks=[], seen={};
-    tokens.forEach(function(tok){
-      if(seen[tok])return;
-      if(/^[A-Z]{4}$/.test(tok)){seen[tok]=true;tasks.push({tok:tok,type:'icao'});}
-      else if(/^[A-Z]{2,5}$/.test(tok)&&tok.length>=3){seen[tok]=true;tasks.push({tok:tok,type:'fix'});}
-    });
-    if(!tasks.length){rStat.textContent='No waypoints found';return;}
+    // Build route string for AVWX: dep;waypoints;dest
+    // AVWX path/station handles ICAO, navaids, fixes automatically
+    var parts=[dep4,mid,dest4].filter(Boolean);
+    // Convert spaces to semicolons for AVWX route format
+    var avwxRoute=parts.join(' ').split(/[\s,]+/).filter(Boolean).join(';');
 
-    rRes.innerHTML='';
-    rStat.textContent='Processing '+tasks.length+' waypoints...';
+    if(!avwxRoute){rStat.textContent='Enter departure/destination in Details tab';return;}
 
-    // Get dep coords for proximity disambiguation
-    var depLat=null, depLon=null;
-    function getDepCoords(cb){
-      // Check embedded table first
-      var ec=AIRPORT_COORDS[dep4];
-      if(ec){depLat=ec[0];depLon=ec[1];cb();return;}
-      if(/^[A-Z]{4}$/.test(dep4)){
-        getJSON('https://nominatim.openstreetmap.org/search?q='+dep4+'&format=json&limit=1',function(d){
-          if(d&&d[0]){depLat=+d[0].lat;depLon=+d[0].lon;}cb();
-        });
-      } else cb();
-    }
+    rRes.innerHTML='<div style="color:var(--mut);font-size:12px;padding:10px">Fetching route weather...</div>';
+    rStat.textContent='';
 
-    var cards3={},done3=0;
-    tasks.forEach(function(task,i){
-      var ph=mkEl('div','');
-      ph.style.cssText='background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px;margin-bottom:7px;font-size:12px;color:var(--mut)';
-      ph.innerHTML='<span style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky)">'+task.tok+'</span>'+(task.type==='fix'?' <span class="badge b-vi">FIX</span>':'')+' <span style="color:var(--mut)">fetching...</span>';
-      rRes.appendChild(ph);
-      cards3[task.tok]={el:ph,idx:i};
-    });
+    if(key){
+      // AVWX path/station - finds all reporting stations within 20nm of route
+      var hdrs={'Authorization':'BEARER '+key};
+      var BASE='https://avwx.rest/api/';
 
-    function finishCard(tok,metar,taf){
-      var card3=cards3[tok];
-      if(card3){
-        var ok=metar&&metar.indexOf('No weather')<0&&metar.length>5;
-        var newEl=mkEl('div','');
-        newEl.style.cssText='background:var(--sur);border:1px solid '+(ok?'rgba(0,119,204,.3)':'var(--bdr)')+';border-radius:8px;padding:10px;margin-bottom:7px';
-        newEl.innerHTML='<div style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky);margin-bottom:6px">'+tok+'</div>'+
-          '<div class="sec-lbl">METAR</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:5px">'+(metar||'No data')+'</div>'+
-          (taf?'<div class="sec-lbl">TAF</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px">'+taf+'</div>':'');
-        card3.el.parentNode.replaceChild(newEl,card3.el);
-      }
-      done3++;
-      rStat.textContent=done3<tasks.length?'Fetching... '+done3+'/'+tasks.length+' done':'Done — '+tasks.length+' waypoints';
-    }
-
-    function processTask(task){
-        if(task.type==='icao'){
-          fetchWx(task.tok,function(metar,taf){finishCard(task.tok,metar,taf);});
-          return;
-        }
-        // IFR fix: look up coords, find nearest METAR station
-        // Use embedded table if it's actually an airport code
-        var embCoords=AIRPORT_COORDS[task.tok];
-        function searchNear(lat,lon){
-          var AO2='https://api.allorigins.win/raw?url=';
-          var BASE2='https://aviationweather.gov/api/data/';
-          var D=0.35;
-          var bbox=(lat-D)+','+(lon-D)+','+(lat+D)+','+(lon+D);
-          function clean2(t){return(t||'').split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>6&&l.charAt(0)!=='<';}).join('\n');}
-          function extId(line){var p=line.trim().split(/\s+/);for(var i=0;i<Math.min(p.length,3);i++){if(/^[A-Z]{4}$/.test(p[i])&&p[i]!=='METAR'&&p[i]!=='SPECI')return p[i];}return null;}
-          fetch(AO2+encodeURIComponent(BASE2+'metar?bbox='+bbox+'&format=raw&hours=6'))
-            .then(function(r){return r.text();})
-            .then(function(txt){
-              var lines=clean2(txt).split('\n').filter(function(l){return l.length>8;});
-              var nearId=null;
-              for(var i=0;i<lines.length;i++){var id2=extId(lines[i]);if(id2){nearId=id2;break;}}
-              if(!nearId){finishCard(task.tok,'No stations within 20nm','');return;}
-              fetchWx(nearId,function(metar,taf){finishCard(task.tok+'\n[Nearest: '+nearId+'] '+metar,taf);});
-            })
-            .catch(function(){finishCard(task.tok,'Fetch error','');});
-        }
-        if(embCoords){searchNear(embCoords[0],embCoords[1]);return;}
-        // Nominatim for unknown fixes - pick closest to departure
-        getJSON('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(task.tok)+'&format=json&limit=5',function(nd){
-          if(!nd||!nd.length){finishCard(task.tok,'Fix not found','');return;}
-          var best=nd[0];
-          if(depLat!==null&&nd.length>1){
-            var minD=Infinity;
-            nd.forEach(function(r){var dx=+r.lat-depLat,dy=+r.lon-depLon,d2=dx*dx+dy*dy;if(d2<minD){minD=d2;best=r;}});
+      fetch(BASE+'path/station?route='+encodeURIComponent(avwxRoute)+'&distance=20&filter=icao,name,latitude,longitude',{headers:hdrs})
+        .then(function(r){return r.json();})
+        .then(function(d){
+          if(!d||!d.results||!d.results.length){
+            rRes.innerHTML='<div class="empty"><span>No reporting stations found along route</span></div>';
+            rStat.textContent='No stations found';return;
           }
-          searchNear(+best.lat,+best.lon);
-        });
-      }
+          // Deduplicate stations
+          var seen={},stations=[];
+          d.results.forEach(function(s){
+            if(s.icao&&!seen[s.icao]){seen[s.icao]=true;stations.push(s);}
+          });
+          rStat.textContent='Found '+stations.length+' stations along route. Fetching weather...';
+          rRes.innerHTML='';
 
-    getDepCoords(function(){
-      tasks.forEach(function(task){processTask(task);});
-    });
+          // Create placeholder cards
+          var cards={};
+          stations.forEach(function(s,i){
+            var ph=mkEl('div','');
+            ph.style.cssText='background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px;margin-bottom:7px';
+            ph.innerHTML='<span style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky)">'+s.icao+'</span>'+
+              (s.name?' <span style="font-size:11px;color:var(--mut)">'+s.name+'</span>':'')+
+              ' <span style="color:var(--mut);font-size:12px">fetching...</span>';
+            rRes.appendChild(ph);
+            cards[s.icao]={el:ph};
+          });
+
+          var done=0;
+          stations.forEach(function(s){
+            // Fetch METAR and TAF for each station
+            var m='',t='',n=0;
+            function fin(){
+              if(++n!==2)return;
+              var card=cards[s.icao];
+              if(card){
+                var ok=m&&m.length>5;
+                var newEl=mkEl('div','');
+                newEl.style.cssText='background:var(--sur);border:1px solid '+(ok?'rgba(0,119,204,.3)':'var(--bdr)')+';border-radius:8px;padding:10px;margin-bottom:7px';
+                newEl.innerHTML='<div style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky);margin-bottom:5px">'+s.icao+
+                  (s.name?'<span style="font-weight:400;font-size:11px;color:var(--mut);margin-left:6px">'+s.name+'</span>':'')+
+                  '</div>'+
+                  '<div class="sec-lbl">METAR</div>'+
+                  '<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:5px">'+(m||'No METAR')+'</div>'+
+                  (t?'<div class="sec-lbl">TAF</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px">'+t+'</div>':'');
+                card.el.parentNode.replaceChild(newEl,card.el);
+              }
+              done++;
+              rStat.textContent=done<stations.length?done+'/'+stations.length+' done':'Done — '+stations.length+' stations';
+            }
+            fetch(BASE+'metar/'+s.icao+'?format=json',{headers:hdrs})
+              .then(function(r){return r.json();})
+              .then(function(d2){if(d2&&d2.raw)m=d2.raw;fin();})
+              .catch(function(){fin();});
+            fetch(BASE+'taf/'+s.icao+'?format=json',{headers:hdrs})
+              .then(function(r){return r.json();})
+              .then(function(d2){if(d2&&d2.raw)t=d2.raw;else if(d2&&d2.sanitized)t=d2.sanitized;fin();})
+              .catch(function(){fin();});
+          });
+        })
+        .catch(function(e){
+          rStat.textContent='Error: '+e;
+          rRes.innerHTML='<div class="empty"><span>Fetch failed. Check API key in Settings.</span></div>';
+        });
+    } else {
+      // No AVWX key - extract 4-letter ICAO codes only and use fetchWx
+      var icaos=[],seen2={};
+      avwxRoute.split(';').forEach(function(tok){
+        if(/^[A-Z]{4}$/.test(tok)&&!seen2[tok]){seen2[tok]=true;icaos.push(tok);}
+      });
+      if(!icaos.length){
+        rRes.innerHTML='<div class="empty"><span>Add AVWX API key in Settings for full route weather including navaids and fixes.</span></div>';
+        return;
+      }
+      rStat.textContent='No AVWX key — fetching '+icaos.length+' airports only';
+      rRes.innerHTML='';
+      var cards2={},done2=0;
+      icaos.forEach(function(ic,i){
+        var ph=mkEl('div','');
+        ph.style.cssText='background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px;margin-bottom:7px;color:var(--mut);font-size:12px';
+        ph.innerHTML='<span style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky)">'+ic+'</span> fetching...';
+        rRes.appendChild(ph);cards2[ic]={el:ph};
+      });
+      icaos.forEach(function(ic){
+        fetchWx(ic,function(metar,taf){
+          var card2=cards2[ic];
+          if(card2){
+            var newEl=mkEl('div','');
+            newEl.style.cssText='background:var(--sur);border:1px solid '+(metar&&metar.length>5?'rgba(0,119,204,.3)':'var(--bdr)')+';border-radius:8px;padding:10px;margin-bottom:7px';
+            newEl.innerHTML='<div style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky);margin-bottom:5px">'+ic+'</div>'+
+              '<div class="sec-lbl">METAR</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:5px">'+(metar||'No data')+'</div>'+
+              (taf?'<div class="sec-lbl">TAF</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px">'+taf+'</div>':'');
+            card2.el.parentNode.replaceChild(newEl,card2.el);
+          }
+          done2++;
+          rStat.textContent=done2<icaos.length?done2+'/'+icaos.length+' done':'Done';
+        });
+      });
+    }
   };
   rInp.oninput=function(){rInp.value=rInp.value.toUpperCase();};
 
