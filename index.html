@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v24</title>
+<title>FlightDeck v26</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=B612:wght@400;700&family=B612+Mono:wght@400;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -224,7 +224,14 @@ textarea.inp{resize:vertical;line-height:1.5}
 <div id="modal-root"></div>
 <div class="toast" id="toast"></div>
 <script>
-'use strict';
+'use strict'; // build 1777353440
+// ── ERROR DISPLAY ──────────────────────────────────────────────────────────
+window.onerror = function(msg,url,line,col,err){
+  var b=document.createElement('div');
+  b.style.cssText='position:fixed;top:0;left:0;right:0;background:#cc0000;color:#fff;padding:10px;font-family:monospace;font-size:13px;z-index:9999;white-space:pre-wrap';
+  b.textContent='ERROR L'+line+': '+msg+'\n'+(err&&err.stack?err.stack.slice(0,200):'');
+  document.body.appendChild(b);
+};
 
 // ── EMBEDDED AIRPORT COORDS (instant lookup, no API needed) ──────────────────
 var AIRPORT_COORDS={
@@ -895,7 +902,7 @@ function openFlModal(ex){
     '</div>'+
     field('Maneuvers / Exercises',ta('m-man',2,f.maneuvers,'Circuits, stalls...'))+
     field('Instructor Notes',ta('m-notes',2,f.notes,''))+
-    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);margin-top:4px">v25</div>';
+    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);margin-top:4px">v26</div>';
 
   // ── Weather tab ──
   var tWx=document.createElement('div');
@@ -998,87 +1005,20 @@ function openFlModal(ex){
       '</div>'+
     '</div>';
 
-  // ── Route Wx tab ──
-  var tRoute=document.createElement('div');
-  tRoute.style.cssText='display:flex;flex-direction:column;gap:8px;height:100%';
-  var rDep=mkEl('div',''); rDep.style.cssText='font-family:B612 Mono,monospace;font-size:13px;color:var(--sky);font-weight:700';
-  rDep.textContent=(f.departure||'?')+' \u2192 '+(f.destination||'?');
-  var rInpRow=mkEl('div',''); rInpRow.style.cssText='display:flex;gap:6px';
-  var rInp=mkEl('input','inp'); rInp.id='rtwx-inp'; rInp.placeholder='Route (e.g. BCN L9 DVR)'; rInp.style.flex='1';
-  rInp.style.textTransform='uppercase'; rInp.style.fontFamily='B612 Mono,monospace';
-  var rBtn=mkEl('button','btn btn-p','&#9928; Get Wx'); rBtn.id='rtwx-btn';
-  rInpRow.appendChild(rInp); rInpRow.appendChild(rBtn);
-  var rStat=mkEl('div',''); rStat.id='rtwx-stat'; rStat.style.cssText='font-size:11px;color:var(--sky);font-family:B612 Mono,monospace';
-  var rRes=mkEl('div',''); rRes.id='rtwx-res'; rRes.style.cssText='flex:1;overflow-y:auto';
-  rRes.innerHTML='<div class="empty" style="min-height:60px"><span>Enter route and tap Get Wx</span></div>';
-  tRoute.appendChild(rDep); tRoute.appendChild(rInpRow); tRoute.appendChild(rStat); tRoute.appendChild(rRes);
+  // ── Wire Defects ──
+  qs('#def-add',tDef).onclick=function(){
+    var el=qs('#def-inp',tDef);if(!el||!el.value.trim())return;
+    f.defects.push({text:el.value.trim(),reportable:false});el.value='';renderDefs();
+  };
+  qs('#def-inp',tDef).onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();qs('#def-add',tDef).click();}};
 
-  // ── Defects tab ──
-  var tDef=document.createElement('div');
-  tDef.style.cssText='display:flex;flex-direction:column;gap:8px;height:100%';
-  var defListEl=mkEl('div','');defListEl.style.cssText='flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px';
-  var defInpRow=mkEl('div','');defInpRow.style.cssText='display:flex;gap:6px;flex-shrink:0';
-  defInpRow.innerHTML='<input class="inp" id="def-inp" placeholder="Describe defect..." style="flex:1"/>'+
-    '<button type="button" class="btn btn-p" id="def-add">Add</button>';
-  tDef.appendChild(defListEl); tDef.appendChild(defInpRow);
-
-  function renderDefs(){
-    defListEl.innerHTML='';
-    if(!f.defects||!f.defects.length){
-      defListEl.innerHTML='<div class="empty" style="min-height:60px"><div class="empty-icon">&#128295;</div><span>No defects</span></div>';return;
-    }
-    f.defects.forEach(function(d,i){
-      var row=mkEl('div','');
-      row.style.cssText='background:var(--card);border:1px solid '+(d.reportable?'rgba(204,34,68,.4)':'var(--bdr)')+';border-radius:7px;padding:9px;display:flex;align-items:center;gap:8px';
-      var chk=mkEl('input','');chk.type='checkbox';chk.checked=!!d.reportable;chk.title='Mark as reportable';
-      chk.style.cssText='width:17px;height:17px;cursor:pointer;accent-color:var(--ros);flex-shrink:0';
-      var txt=mkEl('span','');txt.style.cssText='flex:1;font-size:13px';txt.textContent=d.text;
-      var lbl=mkEl('span','badge '+(d.reportable?'b-ro':'b-sl'));lbl.textContent=d.reportable?'REPORTABLE':'Optional';
-      var del=mkEl('button','btn btn-d');del.textContent='x';del.style.cssText='padding:2px 7px;flex-shrink:0';
-      chk.onchange=function(){f.defects[i].reportable=chk.checked;renderDefs();};
-      del.onclick=function(){f.defects.splice(i,1);renderDefs();};
-      row.appendChild(chk);row.appendChild(txt);row.appendChild(lbl);row.appendChild(del);
-      defListEl.appendChild(row);
-    });
-  }
-  renderDefs();
-
-  // ── Safety tab ──
-  var tSaf=document.createElement('div');
-  tSaf.style.cssText='display:flex;flex-direction:column;gap:8px;height:100%';
-  var safListEl=mkEl('div','');safListEl.style.cssText='flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px';
-  var safForm=mkEl('div','');safForm.style.cssText='flex-shrink:0;display:flex;flex-direction:column;gap:6px';
-  safForm.innerHTML=
-    '<input class="inp" id="saf-title" placeholder="Event title..." style="font-weight:700"/>'+
-    '<textarea class="inp" id="saf-desc" rows="3" placeholder="Description, factors, actions..."></textarea>'+
-    '<div style="display:flex;align-items:center;gap:10px">'+
-      '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">'+
-        '<input type="checkbox" id="saf-rep" style="width:17px;height:17px;accent-color:var(--ros)"/>'+
-        'Reportable to authority'+
-      '</label>'+
-      '<button type="button" class="btn btn-p" id="saf-add" style="margin-left:auto">Add Report</button>'+
-    '</div>';
-  tSaf.appendChild(safListEl);tSaf.appendChild(safForm);
-
-  function renderSafety(){
-    safListEl.innerHTML='';
-    if(!f.safetyReports||!f.safetyReports.length){
-      safListEl.innerHTML='<div class="empty" style="min-height:60px"><div class="empty-icon">&#9888;</div><span>No safety reports</span></div>';return;
-    }
-    f.safetyReports.forEach(function(r,i){
-      var card=mkEl('div','');
-      card.style.cssText='background:var(--card);border:1px solid '+(r.reportable?'rgba(204,34,68,.4)':'var(--bdr)')+';border-radius:8px;padding:10px';
-      var hdr=mkEl('div','');hdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px';
-      var tit=mkEl('span','');tit.style.cssText='font-weight:700;font-size:13px;flex:1';tit.textContent=r.title;
-      var bdg=mkEl('span','badge '+(r.reportable?'b-ro':'b-sl'));bdg.textContent=r.reportable?'REPORTABLE':'Internal';
-      var del=mkEl('button','btn btn-d');del.textContent='x';del.style.cssText='padding:2px 7px';
-      del.onclick=function(){f.safetyReports.splice(i,1);renderSafety();};
-      hdr.appendChild(tit);hdr.appendChild(bdg);hdr.appendChild(del);card.appendChild(hdr);
-      if(r.description){var desc=mkEl('div','');desc.style.cssText='font-size:12px;color:var(--mut);white-space:pre-wrap;line-height:1.5';desc.textContent=r.description;card.appendChild(desc);}
-      safListEl.appendChild(card);
-    });
-  }
-  renderSafety();
+  // ── Wire Safety ──
+  qs('#saf-add',tSaf).onclick=function(){
+    var ti=qs('#saf-title',tSaf),de=qs('#saf-desc',tSaf),re=qs('#saf-rep',tSaf);
+    if(!ti||!ti.value.trim())return;
+    f.safetyReports.push({title:ti.value.trim(),description:de?de.value:'',reportable:re?re.checked:false});
+    ti.value='';if(de)de.value='';if(re)re.checked=false;renderSafety();
+  };
 
   // ── Open modal ──
   var box2=openTabModal({
@@ -1088,7 +1028,6 @@ function openFlModal(ex){
       {label:'Weather',body:tWx},
       {label:'Fuel',body:tFuel},
       {label:'Times',body:tTimes},
-      {label:'Route Wx',body:tRoute},
       {label:'Defects',body:tDef},
       {label:'Safety',body:tSaf}
     ],
@@ -1103,7 +1042,6 @@ function openFlModal(ex){
       f.etob=getTime('m-etob',tDet);
       f.oil=g('m-oil',tDet);f.fuelUplifted=g('m-fuelup',tDet);
       f.maneuvers=g('m-man',tDet);f.notes=g('m-notes',tDet);
-      // Weather
       f.etot=getTime('m-etot',tWx);
       f.wxTAS=g('m-tas',tWx);f.wxFreezFL=g('m-frz',tWx);
       f.rwy1=g('m-rwy1',tWx);f.rwy2=g('m-rwy2',tWx);
@@ -1112,28 +1050,25 @@ function openFlModal(ex){
       f.wxTafDep=qs('#m-tDep',tWx)?qs('#m-tDep',tWx).value:'';
       f.wxMetarDest=qs('#m-mDest',tWx)?qs('#m-mDest',tWx).value:'';
       f.wxTafDest=qs('#m-tDest',tWx)?qs('#m-tDest',tWx).value:'';
-      // Fuel
       f.fob=g('m-fob-u',tFuel);f.burnRate=g('m-burn',tFuel);
       f.fuelTaxi=g('m-ftaxi-u',tFuel);f.fuelTrip=g('m-ftrip-u',tFuel);
       f.fuelContPct=g('m-fcont',tFuel);f.fuelAlt=g('m-falt-u',tFuel);
       f.fuelFinal=g('m-ffin-u',tFuel);f.fuelExtra=g('m-fext-u',tFuel);
-      // Times
       f.tachoStart=g('m-ts',tTimes);f.tachoEnd=g('m-te',tTimes);
       f.hobbsStart=g('m-hs',tTimes);f.hobbsEnd=g('m-he',tTimes);
       f.chocksOff=getTime('m-off',tTimes);f.takeoff=getTime('m-tkf',tTimes);
       f.landing=getTime('m-ldg',tTimes);f.chocksOn=getTime('m-on',tTimes);
-      // defects and safety already mutated on f directly
       if(!ex)flights.push(f);
-      else{var i=flights.findIndex(function(x){return x.id===f.id;});if(i>=0)flights[i]=f;}
+      else{var idx=flights.findIndex(function(x){return x.id===f.id;});if(idx>=0)flights[idx]=f;}
       flSave();flSel=f.id;
       renderFlList();renderFlDetail();renderFlStats();
       toast(ex?'Updated':'Logged');
-      // Email
       setTimeout(function(){emailFlight(f);},400);
     }
   });
 
   // ── Wire weather ──
+  function g2(id,ctx){var e=qs('#'+id,ctx);return e?e.value.trim():'';}
   function wxCalc(){
     var r1=g2('m-rwy1',tWx),r2=g2('m-rwy2',tWx),dir=g2('m-wdir',tWx),spd=g2('m-wspd',tWx);
     var r1l=qs('#rwy1-lbl',tWx),r2l=qs('#rwy2-lbl',tWx);
@@ -1153,7 +1088,6 @@ function openFlModal(ex){
     }
     setRwy('1',r1);setRwy('2',r2);
   }
-  function g2(id,ctx){var e=qs('#'+id,ctx);return e?e.value.trim():'';}
   ['m-rwy1','m-rwy2','m-wdir','m-wspd'].forEach(function(id){var e=qs('#'+id,tWx);if(e)e.oninput=wxCalc;});
   if(ex)setTimeout(wxCalc,0);
 
@@ -1187,8 +1121,7 @@ function openFlModal(ex){
   function fuelLive(){
     var burn2=parseFloat(g2('m-burn',tFuel))||parseFloat(SETTINGS.burnRate)||8;
     var fob2=parseFloat(g2('m-fob-u',tFuel));
-    var end2=(!isNaN(fob2)&&burn2>0)?decToHM(fob2/burn2):'--';
-    setText('fob-end',end2,tFuel);
+    setText('fob-end',(!isNaN(fob2)&&burn2>0)?decToHM(fob2/burn2):'--',tFuel);
     var tmpF={burnRate:g2('m-burn',tFuel)||SETTINGS.burnRate,
       fuelTaxi:g2('m-ftaxi-u',tFuel),fuelTrip:g2('m-ftrip-u',tFuel),fuelContPct:g2('m-fcont',tFuel),
       fuelAlt:g2('m-falt-u',tFuel),fuelFinal:g2('m-ffin-u',tFuel),fuelExtra:g2('m-fext-u',tFuel),fob:g2('m-fob-u',tFuel)};
@@ -1196,8 +1129,7 @@ function openFlModal(ex){
     setText('fr-taxi',dec2(fc2.taxi)+' USG',tFuel);setText('fr-trip',dec2(fc2.trip)+' USG',tFuel);
     setText('fr-cont',dec2(fc2.cont)+' USG ('+dec2(fc2.contPct)+'%)',tFuel);
     setText('fr-alt',dec2(fc2.alt)+' USG',tFuel);setText('fr-fin',dec2(fc2.final_)+' USG',tFuel);
-    setText('fr-ext',dec2(fc2.extra)+' USG',tFuel);
-    setText('fr-total',dec2(fc2.total)+' USG',tFuel);
+    setText('fr-ext',dec2(fc2.extra)+' USG',tFuel);setText('fr-total',dec2(fc2.total)+' USG',tFuel);
     var surEl=qs('#fr-surplus',tFuel);
     if(surEl){surEl.textContent=fc2.surplus!==null?dec2(fc2.surplus)+' USG':'--';surEl.style.color=fc2.surplus===null?'var(--mut)':fc2.surplus>=0?'var(--em)':'var(--ros)';}
   }
@@ -1214,166 +1146,10 @@ function openFlModal(ex){
   }
   ['m-ts','m-te','m-hs','m-he'].forEach(function(id){var e=qs('#'+id,tTimes);if(e)e.oninput=timesLive;});
   ['m-off','m-tkf','m-ldg','m-on'].forEach(function(id){wireTimeChange(id,tTimes,timesLive);});
-  // Stamp Now buttons
   [{id:'st-off',fld:'m-off'},{id:'st-tkf',fld:'m-tkf'},{id:'st-ldg',fld:'m-ldg'},{id:'st-on',fld:'m-on'}].forEach(function(item){
     var btn=qs('#'+item.id,tTimes);if(btn)btn.onclick=function(){stampTime(item.fld,tTimes);timesLive();};
   });
   if(ex)setTimeout(timesLive,0);
-
-  // ── Wire Route Wx ──
-  rDep.textContent=(f.departure||'?')+' \u2192 '+(f.destination||'?');
-  rBtn.onclick=function(){
-    var key=localStorage.getItem('fd_avwx_key')||'';
-    var dep4=g2('m-dep',tDet).toUpperCase();
-    var dest4=g2('m-dest',tDet).toUpperCase();
-    var mid=rInp.value.trim().toUpperCase();
-
-    if(!dep4&&!dest4){rStat.textContent='Enter departure/destination in Details tab';return;}
-
-    // Build semicolon-separated route for AVWX
-    // Format: EGLD;BCN;DVR;EGKK  (ICAO codes, navaids, fixes separated by ;)
-    var routeParts=[];
-    if(dep4)routeParts.push(dep4);
-    if(mid){
-      mid.split(/[\s,;]+/).filter(Boolean).forEach(function(t){routeParts.push(t);});
-    }
-    if(dest4&&dest4!==dep4)routeParts.push(dest4);
-
-    var avwxRoute=routeParts.join(';');
-    rRes.innerHTML='';
-    rStat.textContent='Searching route: '+avwxRoute;
-
-    if(key){
-      var hdrs={'Authorization':'BEARER '+key};
-      var BASE='https://avwx.rest/api/';
-
-      // Use path/station to find all reporting stations within 20nm of route
-      fetch(BASE+'path/station?route='+encodeURIComponent(avwxRoute)+'&distance=20',{headers:hdrs})
-        .then(function(r){return r.json();})
-        .then(function(d){
-          // Handle AVWX error response
-          if(!d){rStat.textContent='No response from AVWX';return;}
-          if(d.error){rStat.textContent='AVWX error: '+d.error;return;}
-
-          var results=d.results||d;
-          if(!Array.isArray(results)||!results.length){
-            // Fall back to just fetching dep/dest directly
-            rStat.textContent='No intermediate stations found, fetching dep/dest only';
-            var fallback=[dep4,dest4].filter(Boolean);
-            fetchDirectList(fallback,hdrs,BASE);
-            return;
-          }
-
-          // Deduplicate
-          var seen={},stations=[];
-          results.forEach(function(s){
-            var id=s.icao||s.gps;
-            if(id&&!seen[id]){seen[id]=true;stations.push({icao:id,name:s.name||''});}
-          });
-
-          // Always include dep/dest even if not in path results
-          [dep4,dest4].filter(Boolean).forEach(function(ic){
-            if(!seen[ic]){seen[ic]=true;stations.unshift({icao:ic,name:''});}
-          });
-
-          rStat.textContent='Fetching weather for '+stations.length+' stations...';
-          fetchDirectList(stations.map(function(s){return s.icao;}),hdrs,BASE,stations);
-        })
-        .catch(function(e){
-          rStat.textContent='Path lookup failed, fetching dep/dest only';
-          fetchDirectList([dep4,dest4].filter(Boolean),hdrs,BASE);
-        });
-
-      function fetchDirectList(icaoList,hdrs,BASE,stationMeta){
-        rRes.innerHTML='';
-        var cards={};
-        icaoList.forEach(function(ic){
-          var name='';
-          if(stationMeta){stationMeta.forEach(function(s){if(s.icao===ic)name=s.name;});}
-          var ph=mkEl('div','');
-          ph.style.cssText='background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px;margin-bottom:7px';
-          ph.innerHTML='<span style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky)">'+ic+'</span>'+
-            (name?' <span style="font-size:11px;color:var(--mut)">'+name+'</span>':'')+
-            ' <span style="color:var(--mut);font-size:12px">fetching...</span>';
-          rRes.appendChild(ph);
-          cards[ic]={el:ph};
-        });
-
-        var done=0;
-        icaoList.forEach(function(ic){
-          fetchWx(ic,function(metar,taf){
-            var card=cards[ic];
-            if(card){
-              var ok=metar&&metar.length>5&&metar.indexOf('No data')<0;
-              var meta=stationMeta?stationMeta.filter(function(s){return s.icao===ic;})[0]:null;
-              var newEl=mkEl('div','');
-              newEl.style.cssText='background:var(--sur);border:1px solid '+(ok?'rgba(0,119,204,.3)':'var(--bdr)')+';border-radius:8px;padding:10px;margin-bottom:7px';
-              newEl.innerHTML='<div style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky);margin-bottom:5px">'+ic+
-                (meta&&meta.name?'<span style="font-weight:400;font-size:11px;color:var(--mut);margin-left:6px">'+meta.name+'</span>':'')+
-                '</div>'+
-                '<div class="sec-lbl">METAR</div>'+
-                '<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:5px">'+(metar||'No data')+'</div>'+
-                (taf?'<div class="sec-lbl">TAF</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px">'+taf+'</div>':'');
-              card.el.parentNode.replaceChild(newEl,card.el);
-            }
-            done++;
-            rStat.textContent=done<icaoList.length?done+'/'+icaoList.length+' done':'Done — '+icaoList.length+' stations';
-          });
-        });
-      }
-
-    } else {
-      // No AVWX key - fetch dep/dest + any 4-letter codes in route
-      var icaos=[dep4,dest4].filter(Boolean);
-      var seen3={};
-      icaos.forEach(function(ic){seen3[ic]=true;});
-      if(mid){
-        mid.split(/[\s,;]+/).filter(Boolean).forEach(function(t){
-          if(/^[A-Z]{4}$/.test(t)&&!seen3[t]){seen3[t]=true;icaos.push(t);}
-        });
-      }
-      rStat.textContent='No AVWX key — fetching ICAO airports only ('+icaos.length+')';
-      rRes.innerHTML='';
-      var cards2={},done2=0;
-      icaos.forEach(function(ic){
-        var ph=mkEl('div','');
-        ph.style.cssText='background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px;margin-bottom:7px;color:var(--mut);font-size:12px';
-        ph.innerHTML='<span style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky)">'+ic+'</span> fetching...';
-        rRes.appendChild(ph);cards2[ic]={el:ph};
-      });
-      icaos.forEach(function(ic){
-        fetchWx(ic,function(metar,taf){
-          var c=cards2[ic];
-          if(c){
-            var newEl=mkEl('div','');
-            newEl.style.cssText='background:var(--sur);border:1px solid '+(metar&&metar.length>5?'rgba(0,119,204,.3)':'var(--bdr)')+';border-radius:8px;padding:10px;margin-bottom:7px';
-            newEl.innerHTML='<div style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky);margin-bottom:5px">'+ic+'</div>'+
-              '<div class="sec-lbl">METAR</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:5px">'+(metar||'No data')+'</div>'+
-              (taf?'<div class="sec-lbl">TAF</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px">'+taf+'</div>':'');
-            c.el.parentNode.replaceChild(newEl,c.el);
-          }
-          done2++;
-          rStat.textContent=done2<icaos.length?done2+'/'+icaos.length+' done':'Done';
-        });
-      });
-    }
-  };
-  rInp.oninput=function(){rInp.value=rInp.value.toUpperCase();};
-
-  // ── Wire Defects ──
-  qs('#def-add',tDef).onclick=function(){
-    var el=qs('#def-inp',tDef);if(!el||!el.value.trim())return;
-    f.defects.push({text:el.value.trim(),reportable:false});el.value='';renderDefs();
-  };
-  qs('#def-inp',tDef).onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();qs('#def-add',tDef).click();}};
-
-  // ── Wire Safety ──
-  qs('#saf-add',tSaf).onclick=function(){
-    var ti=qs('#saf-title',tSaf),de=qs('#saf-desc',tSaf),re=qs('#saf-rep',tSaf);
-    if(!ti||!ti.value.trim())return;
-    f.safetyReports.push({title:ti.value.trim(),description:de?de.value:'',reportable:re?re.checked:false});
-    ti.value='';if(de)de.value='';if(re)re.checked=false;renderSafety();
-  };
 }
 
 function emailFlight(f){
