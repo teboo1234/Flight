@@ -409,56 +409,60 @@ function fetchWx(icao,cb){
       .filter(function(l){return l.length>6&&l.charAt(0)!=='<'&&l.indexOf('No data')<0;})
       .join('\n');
   }
-  function get(url,headers,done){
-    var t=setTimeout(function(){done('');},10000);
-    fetch(url,headers?{headers:headers}:{})
-      .then(function(r){return r.text();})
-      .then(function(t2){clearTimeout(t);done(t2||'');})
-      .catch(function(){clearTimeout(t);done('');});
-  }
 
   setStatus('Fetching '+icao+'...');
 
   if(key){
-    // AVWX with onfail=nearest - handles nearest station automatically
     var hdrs={'Authorization':'BEARER '+key};
     var metar='',taf='',n=0;
-    function done2(){
-      if(++n===2){setStatus(metar?'Done':'No data');cb(metar,taf);}
+    function fin(){
+      if(++n===2){setStatus(metar?'Done':'No data for '+icao);cb(metar,taf);}
     }
-    get(BASE+'metar/'+icao+'?onfail=nearest&options=info&format=json',hdrs,function(txt){
-      try{
-        var d=JSON.parse(txt);
+
+    // METAR with onfail=nearest - use filter=raw,station to keep response small
+    fetch(BASE+'metar/'+icao+'?onfail=nearest&filter=raw,station&format=json',{headers:hdrs})
+      .then(function(r){return r.json();})
+      .then(function(d){
         if(d&&d.raw){
           metar=d.raw;
-          // Note nearest station if different
-          if(d.info&&d.info.icao&&d.info.icao!==icao){
-            metar='[Nearest: '+d.info.icao+'] '+metar;
+          // Note if nearest was used (station field will differ from requested icao)
+          if(d.station&&d.station!==icao){
+            metar='[Nearest: '+d.station+'] '+metar;
           }
+        } else if(d&&d.error){
+          metar='';
         }
-      }catch(e){}
-      done2();
-    });
-    get(BASE+'taf/'+icao+'?onfail=nearest&format=json',hdrs,function(txt){
-      try{
-        var d=JSON.parse(txt);
+        fin();
+      })
+      .catch(function(){fin();});
+
+    // TAF with onfail=nearest
+    fetch(BASE+'taf/'+icao+'?onfail=nearest&filter=raw,station&format=json',{headers:hdrs})
+      .then(function(r){return r.json();})
+      .then(function(d){
         if(d&&d.raw)taf=d.raw;
         else if(d&&d.sanitized)taf=d.sanitized;
-      }catch(e){}
-      done2();
-    });
+        fin();
+      })
+      .catch(function(){fin();});
+
   } else {
-    // No key - NOAA via allorigins proxy
+    // No key - NOAA via allorigins
     var m2='',t2='',n2=0;
-    function done3(){
-      if(++n2===2){setStatus(m2?'Done':'No data (add AVWX key in Settings for better results)');cb(m2,t2);}
+    function fin2(){
+      if(++n2===2){
+        setStatus(m2?'Done':'No data (add AVWX key in Settings for better results)');
+        cb(m2,t2);
+      }
     }
-    get(AO+encodeURIComponent(NOAA+'metar?ids='+icao+'&format=raw&hours=6'),null,function(txt){
-      m2=cleanNoaa(txt);done3();
-    });
-    get(AO+encodeURIComponent(NOAA+'taf?ids='+icao+'&format=raw'),null,function(txt){
-      t2=cleanNoaa(txt);done3();
-    });
+    fetch(AO+encodeURIComponent(NOAA+'metar?ids='+icao+'&format=raw&hours=6'))
+      .then(function(r){return r.text();})
+      .then(function(t){m2=cleanNoaa(t);fin2();})
+      .catch(function(){fin2();});
+    fetch(AO+encodeURIComponent(NOAA+'taf?ids='+icao+'&format=raw'))
+      .then(function(r){return r.text();})
+      .then(function(t){t2=cleanNoaa(t);fin2();})
+      .catch(function(){fin2();});
   }
 }
 
@@ -891,7 +895,7 @@ function openFlModal(ex){
     '</div>'+
     field('Maneuvers / Exercises',ta('m-man',2,f.maneuvers,'Circuits, stalls...'))+
     field('Instructor Notes',ta('m-notes',2,f.notes,''))+
-    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);margin-top:4px">v24</div>';
+    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);margin-top:4px">v25</div>';
 
   // ── Weather tab ──
   var tWx=document.createElement('div');
@@ -1224,99 +1228,114 @@ function openFlModal(ex){
     var dest4=g2('m-dest',tDet).toUpperCase();
     var mid=rInp.value.trim().toUpperCase();
 
-    // Build route string for AVWX: dep;waypoints;dest
-    // AVWX path/station handles ICAO, navaids, fixes automatically
-    var parts=[dep4,mid,dest4].filter(Boolean);
-    // Convert spaces to semicolons for AVWX route format
-    var avwxRoute=parts.join(' ').split(/[\s,]+/).filter(Boolean).join(';');
+    if(!dep4&&!dest4){rStat.textContent='Enter departure/destination in Details tab';return;}
 
-    if(!avwxRoute){rStat.textContent='Enter departure/destination in Details tab';return;}
+    // Build semicolon-separated route for AVWX
+    // Format: EGLD;BCN;DVR;EGKK  (ICAO codes, navaids, fixes separated by ;)
+    var routeParts=[];
+    if(dep4)routeParts.push(dep4);
+    if(mid){
+      mid.split(/[\s,;]+/).filter(Boolean).forEach(function(t){routeParts.push(t);});
+    }
+    if(dest4&&dest4!==dep4)routeParts.push(dest4);
 
-    rRes.innerHTML='<div style="color:var(--mut);font-size:12px;padding:10px">Fetching route weather...</div>';
-    rStat.textContent='';
+    var avwxRoute=routeParts.join(';');
+    rRes.innerHTML='';
+    rStat.textContent='Searching route: '+avwxRoute;
 
     if(key){
-      // AVWX path/station - finds all reporting stations within 20nm of route
       var hdrs={'Authorization':'BEARER '+key};
       var BASE='https://avwx.rest/api/';
 
-      fetch(BASE+'path/station?route='+encodeURIComponent(avwxRoute)+'&distance=20&filter=icao,name,latitude,longitude',{headers:hdrs})
+      // Use path/station to find all reporting stations within 20nm of route
+      fetch(BASE+'path/station?route='+encodeURIComponent(avwxRoute)+'&distance=20',{headers:hdrs})
         .then(function(r){return r.json();})
         .then(function(d){
-          if(!d||!d.results||!d.results.length){
-            rRes.innerHTML='<div class="empty"><span>No reporting stations found along route</span></div>';
-            rStat.textContent='No stations found';return;
+          // Handle AVWX error response
+          if(!d){rStat.textContent='No response from AVWX';return;}
+          if(d.error){rStat.textContent='AVWX error: '+d.error;return;}
+
+          var results=d.results||d;
+          if(!Array.isArray(results)||!results.length){
+            // Fall back to just fetching dep/dest directly
+            rStat.textContent='No intermediate stations found, fetching dep/dest only';
+            var fallback=[dep4,dest4].filter(Boolean);
+            fetchDirectList(fallback,hdrs,BASE);
+            return;
           }
-          // Deduplicate stations
+
+          // Deduplicate
           var seen={},stations=[];
-          d.results.forEach(function(s){
-            if(s.icao&&!seen[s.icao]){seen[s.icao]=true;stations.push(s);}
-          });
-          rStat.textContent='Found '+stations.length+' stations along route. Fetching weather...';
-          rRes.innerHTML='';
-
-          // Create placeholder cards
-          var cards={};
-          stations.forEach(function(s,i){
-            var ph=mkEl('div','');
-            ph.style.cssText='background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px;margin-bottom:7px';
-            ph.innerHTML='<span style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky)">'+s.icao+'</span>'+
-              (s.name?' <span style="font-size:11px;color:var(--mut)">'+s.name+'</span>':'')+
-              ' <span style="color:var(--mut);font-size:12px">fetching...</span>';
-            rRes.appendChild(ph);
-            cards[s.icao]={el:ph};
+          results.forEach(function(s){
+            var id=s.icao||s.gps;
+            if(id&&!seen[id]){seen[id]=true;stations.push({icao:id,name:s.name||''});}
           });
 
-          var done=0;
-          stations.forEach(function(s){
-            // Fetch METAR and TAF for each station
-            var m='',t='',n=0;
-            function fin(){
-              if(++n!==2)return;
-              var card=cards[s.icao];
-              if(card){
-                var ok=m&&m.length>5;
-                var newEl=mkEl('div','');
-                newEl.style.cssText='background:var(--sur);border:1px solid '+(ok?'rgba(0,119,204,.3)':'var(--bdr)')+';border-radius:8px;padding:10px;margin-bottom:7px';
-                newEl.innerHTML='<div style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky);margin-bottom:5px">'+s.icao+
-                  (s.name?'<span style="font-weight:400;font-size:11px;color:var(--mut);margin-left:6px">'+s.name+'</span>':'')+
-                  '</div>'+
-                  '<div class="sec-lbl">METAR</div>'+
-                  '<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:5px">'+(m||'No METAR')+'</div>'+
-                  (t?'<div class="sec-lbl">TAF</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px">'+t+'</div>':'');
-                card.el.parentNode.replaceChild(newEl,card.el);
-              }
-              done++;
-              rStat.textContent=done<stations.length?done+'/'+stations.length+' done':'Done — '+stations.length+' stations';
-            }
-            fetch(BASE+'metar/'+s.icao+'?format=json',{headers:hdrs})
-              .then(function(r){return r.json();})
-              .then(function(d2){if(d2&&d2.raw)m=d2.raw;fin();})
-              .catch(function(){fin();});
-            fetch(BASE+'taf/'+s.icao+'?format=json',{headers:hdrs})
-              .then(function(r){return r.json();})
-              .then(function(d2){if(d2&&d2.raw)t=d2.raw;else if(d2&&d2.sanitized)t=d2.sanitized;fin();})
-              .catch(function(){fin();});
+          // Always include dep/dest even if not in path results
+          [dep4,dest4].filter(Boolean).forEach(function(ic){
+            if(!seen[ic]){seen[ic]=true;stations.unshift({icao:ic,name:''});}
           });
+
+          rStat.textContent='Fetching weather for '+stations.length+' stations...';
+          fetchDirectList(stations.map(function(s){return s.icao;}),hdrs,BASE,stations);
         })
         .catch(function(e){
-          rStat.textContent='Error: '+e;
-          rRes.innerHTML='<div class="empty"><span>Fetch failed. Check API key in Settings.</span></div>';
+          rStat.textContent='Path lookup failed, fetching dep/dest only';
+          fetchDirectList([dep4,dest4].filter(Boolean),hdrs,BASE);
         });
-    } else {
-      // No AVWX key - extract 4-letter ICAO codes only and use fetchWx
-      var icaos=[],seen2={};
-      avwxRoute.split(';').forEach(function(tok){
-        if(/^[A-Z]{4}$/.test(tok)&&!seen2[tok]){seen2[tok]=true;icaos.push(tok);}
-      });
-      if(!icaos.length){
-        rRes.innerHTML='<div class="empty"><span>Add AVWX API key in Settings for full route weather including navaids and fixes.</span></div>';
-        return;
+
+      function fetchDirectList(icaoList,hdrs,BASE,stationMeta){
+        rRes.innerHTML='';
+        var cards={};
+        icaoList.forEach(function(ic){
+          var name='';
+          if(stationMeta){stationMeta.forEach(function(s){if(s.icao===ic)name=s.name;});}
+          var ph=mkEl('div','');
+          ph.style.cssText='background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px;margin-bottom:7px';
+          ph.innerHTML='<span style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky)">'+ic+'</span>'+
+            (name?' <span style="font-size:11px;color:var(--mut)">'+name+'</span>':'')+
+            ' <span style="color:var(--mut);font-size:12px">fetching...</span>';
+          rRes.appendChild(ph);
+          cards[ic]={el:ph};
+        });
+
+        var done=0;
+        icaoList.forEach(function(ic){
+          fetchWx(ic,function(metar,taf){
+            var card=cards[ic];
+            if(card){
+              var ok=metar&&metar.length>5&&metar.indexOf('No data')<0;
+              var meta=stationMeta?stationMeta.filter(function(s){return s.icao===ic;})[0]:null;
+              var newEl=mkEl('div','');
+              newEl.style.cssText='background:var(--sur);border:1px solid '+(ok?'rgba(0,119,204,.3)':'var(--bdr)')+';border-radius:8px;padding:10px;margin-bottom:7px';
+              newEl.innerHTML='<div style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky);margin-bottom:5px">'+ic+
+                (meta&&meta.name?'<span style="font-weight:400;font-size:11px;color:var(--mut);margin-left:6px">'+meta.name+'</span>':'')+
+                '</div>'+
+                '<div class="sec-lbl">METAR</div>'+
+                '<div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:5px">'+(metar||'No data')+'</div>'+
+                (taf?'<div class="sec-lbl">TAF</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px">'+taf+'</div>':'');
+              card.el.parentNode.replaceChild(newEl,card.el);
+            }
+            done++;
+            rStat.textContent=done<icaoList.length?done+'/'+icaoList.length+' done':'Done — '+icaoList.length+' stations';
+          });
+        });
       }
-      rStat.textContent='No AVWX key — fetching '+icaos.length+' airports only';
+
+    } else {
+      // No AVWX key - fetch dep/dest + any 4-letter codes in route
+      var icaos=[dep4,dest4].filter(Boolean);
+      var seen3={};
+      icaos.forEach(function(ic){seen3[ic]=true;});
+      if(mid){
+        mid.split(/[\s,;]+/).filter(Boolean).forEach(function(t){
+          if(/^[A-Z]{4}$/.test(t)&&!seen3[t]){seen3[t]=true;icaos.push(t);}
+        });
+      }
+      rStat.textContent='No AVWX key — fetching ICAO airports only ('+icaos.length+')';
       rRes.innerHTML='';
       var cards2={},done2=0;
-      icaos.forEach(function(ic,i){
+      icaos.forEach(function(ic){
         var ph=mkEl('div','');
         ph.style.cssText='background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px;margin-bottom:7px;color:var(--mut);font-size:12px';
         ph.innerHTML='<span style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky)">'+ic+'</span> fetching...';
@@ -1324,14 +1343,14 @@ function openFlModal(ex){
       });
       icaos.forEach(function(ic){
         fetchWx(ic,function(metar,taf){
-          var card2=cards2[ic];
-          if(card2){
+          var c=cards2[ic];
+          if(c){
             var newEl=mkEl('div','');
             newEl.style.cssText='background:var(--sur);border:1px solid '+(metar&&metar.length>5?'rgba(0,119,204,.3)':'var(--bdr)')+';border-radius:8px;padding:10px;margin-bottom:7px';
             newEl.innerHTML='<div style="font-family:B612 Mono,monospace;font-weight:700;font-size:14px;color:var(--sky);margin-bottom:5px">'+ic+'</div>'+
               '<div class="sec-lbl">METAR</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px;margin-bottom:5px">'+(metar||'No data')+'</div>'+
               (taf?'<div class="sec-lbl">TAF</div><div class="sec-box" style="font-family:B612 Mono,monospace;font-size:12px">'+taf+'</div>':'');
-            card2.el.parentNode.replaceChild(newEl,card2.el);
+            c.el.parentNode.replaceChild(newEl,c.el);
           }
           done2++;
           rStat.textContent=done2<icaos.length?done2+'/'+icaos.length+' done':'Done';
