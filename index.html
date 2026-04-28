@@ -1005,6 +1005,73 @@ function openFlModal(ex){
       '</div>'+
     '</div>';
 
+  // ── Defects tab ──
+  var tDef=document.createElement('div');
+  tDef.style.cssText='display:flex;flex-direction:column;gap:8px;height:100%';
+  var defListEl=mkEl('div','');defListEl.style.cssText='flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px';
+  var defAddRow=mkEl('div','');defAddRow.style.cssText='display:flex;gap:6px;flex-shrink:0';
+  defAddRow.innerHTML='<input class="inp" id="def-inp" placeholder="Describe defect..." style="flex:1"/>'+
+    '<button type="button" class="btn btn-p" id="def-add">Add</button>';
+  tDef.appendChild(defListEl);tDef.appendChild(defAddRow);
+
+  function renderDefs(){
+    defListEl.innerHTML='';
+    if(!f.defects||!f.defects.length){
+      defListEl.innerHTML='<div class="empty" style="min-height:60px"><div class="empty-icon">&#128295;</div><span>No defects</span></div>';return;
+    }
+    f.defects.forEach(function(d,i){
+      var row=mkEl('div','');
+      row.style.cssText='background:var(--card);border:1px solid '+(d.reportable?'rgba(204,34,68,.4)':'var(--bdr)')+';border-radius:7px;padding:9px;display:flex;align-items:center;gap:8px';
+      var chk=mkEl('input','');chk.type='checkbox';chk.checked=!!d.reportable;chk.title='Mark as reportable';
+      chk.style.cssText='width:17px;height:17px;cursor:pointer;accent-color:var(--ros);flex-shrink:0';
+      var txt=mkEl('span','');txt.style.cssText='flex:1;font-size:13px';txt.textContent=d.text;
+      var lbl=mkEl('span','badge '+(d.reportable?'b-ro':'b-sl'));lbl.textContent=d.reportable?'REPORTABLE':'Optional';
+      var del=mkEl('button','btn btn-d');del.textContent='x';del.style.cssText='padding:2px 7px;flex-shrink:0';
+      chk.onchange=function(){f.defects[i].reportable=chk.checked;renderDefs();};
+      del.onclick=function(){f.defects.splice(i,1);renderDefs();};
+      row.appendChild(chk);row.appendChild(txt);row.appendChild(lbl);row.appendChild(del);
+      defListEl.appendChild(row);
+    });
+  }
+  renderDefs();
+
+  // ── Safety tab ──
+  var tSaf=document.createElement('div');
+  tSaf.style.cssText='display:flex;flex-direction:column;gap:8px;height:100%';
+  var safListEl=mkEl('div','');safListEl.style.cssText='flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px';
+  var safForm=mkEl('div','');safForm.style.cssText='flex-shrink:0;display:flex;flex-direction:column;gap:6px';
+  safForm.innerHTML=
+    '<input class="inp" id="saf-title" placeholder="Event title..." style="font-weight:700"/>'+
+    '<textarea class="inp" id="saf-desc" rows="3" placeholder="Description, factors, actions..."></textarea>'+
+    '<div style="display:flex;align-items:center;gap:10px">'+
+      '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">'+
+        '<input type="checkbox" id="saf-rep" style="width:17px;height:17px;accent-color:var(--ros)"/>'+
+        'Reportable to authority'+
+      '</label>'+
+      '<button type="button" class="btn btn-p" id="saf-add" style="margin-left:auto">Add Report</button>'+
+    '</div>';
+  tSaf.appendChild(safListEl);tSaf.appendChild(safForm);
+
+  function renderSafety(){
+    safListEl.innerHTML='';
+    if(!f.safetyReports||!f.safetyReports.length){
+      safListEl.innerHTML='<div class="empty" style="min-height:60px"><div class="empty-icon">&#9888;</div><span>No safety reports</span></div>';return;
+    }
+    f.safetyReports.forEach(function(r,i){
+      var card=mkEl('div','');
+      card.style.cssText='background:var(--card);border:1px solid '+(r.reportable?'rgba(204,34,68,.4)':'var(--bdr)')+';border-radius:8px;padding:10px';
+      var hdr=mkEl('div','');hdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px';
+      var tit=mkEl('span','');tit.style.cssText='font-weight:700;font-size:13px;flex:1';tit.textContent=r.title;
+      var bdg=mkEl('span','badge '+(r.reportable?'b-ro':'b-sl'));bdg.textContent=r.reportable?'REPORTABLE':'Internal';
+      var del=mkEl('button','btn btn-d');del.textContent='x';del.style.cssText='padding:2px 7px';
+      del.onclick=function(){f.safetyReports.splice(i,1);renderSafety();};
+      hdr.appendChild(tit);hdr.appendChild(bdg);hdr.appendChild(del);card.appendChild(hdr);
+      if(r.description){var desc=mkEl('div','');desc.style.cssText='font-size:12px;color:var(--mut);white-space:pre-wrap;line-height:1.5';desc.textContent=r.description;card.appendChild(desc);}
+      safListEl.appendChild(card);
+    });
+  }
+  renderSafety();
+
   // ── Wire Defects ──
   qs('#def-add',tDef).onclick=function(){
     var el=qs('#def-inp',tDef);if(!el||!el.value.trim())return;
