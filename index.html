@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v27</title>
+<title>FlightDeck v28</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=B612:wght@400;700&family=B612+Mono:wght@400;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -420,14 +420,14 @@ function fetchWx(icao,cb){
   setStatus('Fetching '+icao+'...');
 
   if(key){
-    var hdrs={'Authorization':'BEARER '+key};
+    var avwxQ='?token='+encodeURIComponent(key)+'&onfail=nearest';
     var metar='',taf='',n=0;
     function fin(){
       if(++n===2){setStatus(metar?'Done':'No data for '+icao);cb(metar,taf);}
     }
 
-    // METAR with onfail=nearest - use filter=raw,station to keep response small
-    fetch(BASE+'metar/'+icao+'?onfail=nearest',{headers:hdrs})
+    // METAR
+    fetch(BASE+'metar/'+icao+avwxQ)
       .then(function(r){return r.json();})
       .then(function(d){
         if(d&&d.raw){
@@ -444,7 +444,7 @@ function fetchWx(icao,cb){
       .catch(function(){fin();});
 
     // TAF with onfail=nearest
-    fetch(BASE+'taf/'+icao+'?onfail=nearest',{headers:hdrs})
+    fetch(BASE+'taf/'+icao+avwxQ)
       .then(function(r){return r.json();})
       .then(function(d){
         if(d&&d.raw)taf=d.raw;
@@ -902,7 +902,7 @@ function openFlModal(ex){
     '</div>'+
     field('Maneuvers / Exercises',ta('m-man',2,f.maneuvers,'Circuits, stalls...'))+
     field('Instructor Notes',ta('m-notes',2,f.notes,''))+
-    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);margin-top:4px">v27</div>';
+    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);margin-top:4px">v28</div>';
 
   // ── Weather tab ──
   var tWx=document.createElement('div');
