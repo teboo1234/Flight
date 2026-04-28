@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v26</title>
+<title>FlightDeck v27</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=B612:wght@400;700&family=B612+Mono:wght@400;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -427,7 +427,7 @@ function fetchWx(icao,cb){
     }
 
     // METAR with onfail=nearest - use filter=raw,station to keep response small
-    fetch(BASE+'metar/'+icao+'?onfail=nearest&filter=raw,station&format=json',{headers:hdrs})
+    fetch(BASE+'metar/'+icao+'?onfail=nearest',{headers:hdrs})
       .then(function(r){return r.json();})
       .then(function(d){
         if(d&&d.raw){
@@ -444,7 +444,7 @@ function fetchWx(icao,cb){
       .catch(function(){fin();});
 
     // TAF with onfail=nearest
-    fetch(BASE+'taf/'+icao+'?onfail=nearest&filter=raw,station&format=json',{headers:hdrs})
+    fetch(BASE+'taf/'+icao+'?onfail=nearest',{headers:hdrs})
       .then(function(r){return r.json();})
       .then(function(d){
         if(d&&d.raw)taf=d.raw;
@@ -902,7 +902,7 @@ function openFlModal(ex){
     '</div>'+
     field('Maneuvers / Exercises',ta('m-man',2,f.maneuvers,'Circuits, stalls...'))+
     field('Instructor Notes',ta('m-notes',2,f.notes,''))+
-    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);margin-top:4px">v26</div>';
+    '<div style="text-align:right;font-family:B612 Mono,monospace;font-size:10px;color:var(--mut);margin-top:4px">v27</div>';
 
   // ── Weather tab ──
   var tWx=document.createElement('div');
@@ -1171,10 +1171,13 @@ function openFlModal(ex){
       fetchWx(item.icao,function(metar,taf){
         item.sfxList.forEach(function(sfx){
           var mEl=qs('#m-m'+sfx,tWx),tEl=qs('#m-t'+sfx,tWx);
-          if(mEl)mEl.value=metar||'';
-          if(tEl)tEl.value=taf||'';
+          if(mEl)mEl.value=metar||('No METAR returned for '+item.icao);
+          if(tEl)tEl.value=taf||('No TAF returned for '+item.icao);
         });
-        if(++done===toFetch.length){var st=qs('#wx-fetch-status',tWx);if(st)st.textContent='Done';}
+        if(++done===toFetch.length){
+          var st=qs('#wx-fetch-status',tWx);
+          if(st)st.textContent='Done. METAR length: '+(metar?metar.length:0)+' TAF length: '+(taf?taf.length:0);
+        }
       });
     });
   }
