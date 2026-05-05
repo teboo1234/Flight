@@ -1,0 +1,2405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#020617"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="FlightDeck"/>
+<title>FlightDeck v61</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
+:root{
+  --bg:#f5f7fa;--surface:#ffffff;--card:#eef2f6;--border:#cbd5e1;
+  --text:#0f172a;--muted:#475569;--sky:#0369a1;--em:#047857;
+  --amber:#b45309;--rose:#be123c;--violet:#6d28d9;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+button{cursor:pointer;font-family:inherit}
+input,textarea,select{font-family:inherit}
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+header{flex-shrink:0;background:rgba(245,247,250,.97);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);z-index:50}
+.hdr{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:8px;height:54px}
+.logo{display:flex;align-items:center;gap:9px;margin-right:auto}
+.logo-icon{width:28px;height:28px;background:linear-gradient(135deg,var(--sky),var(--violet));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.logo-name{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--text)}
+.logo-sub{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);border-left:1px solid var(--border);padding-left:10px}
+nav{display:flex;gap:3px}
+.tb{padding:5px 12px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:12px;font-weight:500;transition:all .15s;white-space:nowrap}
+.tb.on{border-color:var(--sky);background:rgba(14,165,233,.12);color:#0284c7}
+.tb:hover:not(.on){background:var(--card);color:var(--text)}
+.pwa-btn{padding:4px 10px;border-radius:7px;border:1px solid var(--em);background:rgba(16,185,129,.12);color:#059669;font-size:13px;display:none;cursor:pointer}
+main{flex:1;overflow:hidden;max-width:1280px;width:100%;margin:0 auto;padding:16px 20px;display:flex;flex-direction:column}
+.panel{display:none;flex:1;overflow:hidden;flex-direction:column}
+.panel.on{display:flex}
+.panes{display:flex;gap:14px;flex:1;overflow:hidden}
+.sidebar{width:232px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.slist{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding-right:2px}
+.detail{flex:1;min-width:0;overflow:hidden}
+.dbox{background:rgba(255,255,255,.6);border:1px solid var(--border);border-radius:14px;padding:18px;height:100%;display:flex;flex-direction:column;overflow-y:auto}
+.empty{height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;flex-direction:column;gap:8px}
+.empty-icon{font-size:36px;opacity:.3}
+.card{background:rgba(255,255,255,.6);border:1px solid var(--border);border-radius:11px;padding:11px;cursor:pointer;transition:all .15s}
+.card:hover{border-color:#475569}
+.card.sel-sky{border-color:var(--sky)!important;background:rgba(14,165,233,.08)!important}
+.card.sel-em{border-color:var(--em)!important;background:rgba(16,185,129,.08)!important}
+.card.sel-am{border-color:var(--amber)!important;background:rgba(245,158,11,.08)!important}
+.ctitle{font-weight:600;font-size:13px;color:var(--text);margin-bottom:5px;line-height:1.3}
+.cmeta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.dh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:10px}
+.dtitle{font-family:'Syne',sans-serif;font-weight:700;font-size:19px;color:var(--text);line-height:1.2}
+.dactions{display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap}
+.badge{font-family:'JetBrains Mono',monospace;font-size:12px;padding:2px 6px;border-radius:4px;border:1px solid;white-space:nowrap}
+.b-sky{background:rgba(14,165,233,.12);color:#0369a1;border-color:rgba(14,165,233,.35)}
+.b-em{background:rgba(16,185,129,.12);color:#047857;border-color:rgba(16,185,129,.35)}
+.b-am{background:rgba(245,158,11,.12);color:#b45309;border-color:rgba(245,158,11,.35)}
+.b-vi{background:rgba(139,92,246,.12);color:#6d28d9;border-color:rgba(139,92,246,.35)}
+.b-ro{background:rgba(244,63,94,.12);color:#be123c;border-color:rgba(244,63,94,.35)}
+.b-sl{background:rgba(100,116,139,.12);color:#475569;border-color:rgba(100,116,139,.35)}
+.btn{padding:6px 13px;border-radius:8px;border:none;font-size:12px;font-weight:500;transition:all .15s}
+.btn-p{background:var(--sky);color:#fff}.btn-p:hover{background:#0284c7}
+.btn-g{background:transparent;border:1px solid var(--border);color:#475569}.btn-g:hover{background:var(--card);color:var(--text)}
+.btn-d{background:rgba(244,63,94,.12);border:1px solid rgba(244,63,94,.35);color:#be123c}.btn-d:hover{background:rgba(244,63,94,.22)}
+.btn-s{background:var(--em);color:#fff}.btn-s:hover{background:#059669;color:#000}
+.btn-full{width:100%;text-align:center;padding:8px}
+.field{margin-bottom:12px}
+.field label{display:block;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.inp{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-size:15px;transition:border-color .15s;outline:none}
+.inp:focus{border-color:var(--sky)}
+textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
+.stat-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.stat{background:rgba(14,165,233,.07);border:1px solid rgba(14,165,233,.2);border-radius:9px;padding:9px 14px;text-align:center;min-width:88px}
+.stat-v{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:#0284c7}
+.stat-l{font-size:12px;color:var(--muted);margin-top:1px}
+.sec{margin-bottom:12px}
+.sec-lbl{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}
+.sec-box{background:rgba(255,255,255,.7);border:1px solid rgba(203,213,225,.7);border-radius:9px;padding:11px;font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap}
+.calc-card{background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.2);border-radius:11px;padding:14px;margin-bottom:14px}
+.fuel-card{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);border-radius:11px;padding:14px;margin-bottom:14px}
+.calc-title{font-family:'JetBrains Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+.calc-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:#0284c7}
+.calc-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.sdiv{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--sky);text-transform:uppercase;letter-spacing:.1em;padding:8px 0 4px;border-bottom:1px solid rgba(14,165,233,.2);margin-bottom:10px;margin-top:6px}
+.cli{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;border:1px solid;transition:all .15s}
+.cli.done{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.3)}
+.cli.undone{background:rgba(255,255,255,.6);border-color:var(--border)}
+.cli-chk{width:17px;height:17px;border-radius:4px;border:2px solid;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.cli-chk.on{background:var(--em);border-color:var(--em)}
+.cli-chk.off{border-color:var(--muted)}.cli-chk.off:hover{border-color:var(--em)}
+.cli-num{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);min-width:17px}
+.cli-text{flex:1;font-size:13px}.cli-text.done{text-decoration:line-through;color:var(--muted)}
+.cli-del{opacity:0;font-size:13px;color:var(--muted);transition:opacity .15s;padding:2px 5px;border-radius:4px;border:none;background:none;cursor:pointer}
+.cli:hover .cli-del{opacity:1}.cli-del:hover{color:var(--rose)}
+.prog{height:3px;background:var(--border);border-radius:2px;margin-top:7px;overflow:hidden}
+.prog-fill{height:100%;background:var(--em);border-radius:2px;transition:width .3s}
+.fbar{display:flex;gap:4px;flex-wrap:wrap}
+.fchip{font-family:'JetBrains Mono',monospace;font-size:12px;padding:3px 7px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;transition:all .15s}
+.fchip.on{background:var(--sky);border-color:var(--sky);color:#fff}
+.fchip:hover:not(.on){color:var(--text)}
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:center;justify-content:center;padding:14px}
+.mbox{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:600px;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 30px 60px rgba(0,0,0,.7)}
+.mbox.wide{max-width:760px}
+.mhead{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+.mtitle{font-family:'Syne',sans-serif;font-weight:700;color:var(--text);font-size:15px}
+.mclose{background:none;border:none;color:var(--muted);font-size:20px;line-height:1;padding:2px 6px;cursor:pointer}.mclose:hover{color:var(--text)}
+.mbody{padding:18px;overflow-y:auto;flex:1}
+.mfoot{padding:10px 18px;border-top:1px solid var(--border);display:flex;gap:7px;flex-shrink:0}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--em);border-radius:9px;padding:9px 14px;font-size:12px;color:#047857;z-index:300;transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+@media(max-width:640px){
+  .panes{flex-direction:column}.sidebar{width:100%;max-height:200px}
+  .logo-sub{display:none}.g2,.g3,.g4{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div class="hdr">
+    <div class="logo">
+      <div class="logo-icon">&#9992;</div>
+      <span class="logo-name">FlightDeck</span>
+      <span class="logo-sub">Instructor Hub</span>
+    </div>
+    <nav id="nav">
+      <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
+    </nav>
+    <button class="btn btn-g" id="settings-btn" style="font-size:13px;padding:4px 10px;flex-shrink:0">&#9881; Settings</button>
+    <button class="pwa-btn" id="install-btn">&#8595; Install</button>
+  </div>
+</header>
+<main>
+  <div class="panel on" id="tab-flights">
+    <div class="stat-row" id="fl-stats"></div>
+    <div class="panes">
+      <div class="sidebar">
+        <input class="inp" id="fl-search" placeholder="Search flights..." style="font-size:12px"/>
+        <div class="fbar" id="fl-filter"></div>
+        <div class="slist" id="fl-list"></div>
+        <button class="btn btn-p btn-full" id="fl-new">+ Log Flight</button>
+        <button class="btn btn-g btn-full" id="fl-export-all">&#8595; Export All (.csv)</button>
+      </div>
+      <div class="detail" id="fl-detail">
+        <div class="empty"><div class="empty-icon">&#9992;</div><span>Select a flight or log a new one</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="panel" id="tab-checklists" style="display:none">
+    <div id="cl-filter"></div><div id="cl-list"></div><button id="cl-new"></button><div id="cl-detail"></div>
+  </div>
+  <div class="panel" id="tab-lessons" style="display:none">
+    <div id="ls-filter"></div><div id="ls-list"></div><button id="ls-new"></button><div id="ls-detail"></div>
+  </div>
+  <div class="panel" id="tab-references" style="display:none">
+    <input id="rf-search"/><div id="rf-filter"></div><div id="rf-list"></div><button id="rf-new"></button><div id="rf-detail"></div>
+  </div>
+</main>
+</div>
+<div id="modal-root"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// UTILITIES
+// ============================================================
+var uid = function(){ return Math.random().toString(36).slice(2,9); };
+var qs  = function(s,c){ return (c||document).querySelector(s); };
+
+function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function load(k,d){ try{ var r=localStorage.getItem(k); return r?JSON.parse(r):d; }catch(e){ return d; } }
+
+function toast(msg){
+  var t=qs('#toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); },2500);
+}
+
+function dlFile(name,text,mime){
+  var a=document.createElement('a');
+  a.href='data:'+(mime||'text/plain')+';charset=utf-8,'+encodeURIComponent(text);
+  a.download=name;
+  a.click();
+}
+
+function el(tag,cls,html){
+  var e=document.createElement(tag);
+  if(cls) e.className=cls;
+  if(html) e.innerHTML=html;
+  return e;
+}
+
+// ============================================================
+// TIME HELPERS
+// ============================================================
+// "HH:MM" -> decimal hours, null if invalid
+function parseUTC(s){
+  if(!s) return null;
+  var m=s.match(/^(\d{1,2}):(\d{2})$/);
+  if(!m) return null;
+  var h=parseInt(m[1]), mn=parseInt(m[2]);
+  if(h>23||mn>59) return null;
+  return h + mn/60;
+}
+
+// Build paired hour + minute dropdowns (minutes in 0.1 hr / 6 min steps)
+// Stored value reads as "HH:MM" via getTimeSpinner
+function timeSpinnerHtml(baseId, stored){
+  var h='', m='';
+  if(stored && /^\d{1,2}:\d{2}$/.test(stored)){
+    var p=stored.split(':');
+    h=('0'+parseInt(p[0])).slice(-2);
+    m=p[1];
+  }
+  var hOpts='<option value="">HH</option>';
+  for(var i=0;i<24;i++){
+    var v=('0'+i).slice(-2);
+    hOpts+='<option value="'+v+'"'+(h===v?' selected':'')+'>'+v+'</option>';
+  }
+  var mOpts='<option value="">MM</option>';
+  ['00','06','12','18','24','30','36','42','48','54'].forEach(function(v){
+    mOpts+='<option value="'+v+'"'+(m===v?' selected':'')+'>'+v+'</option>';
+  });
+  return '<div style="display:flex;gap:4px;align-items:center">'+
+    '<select class="inp" id="'+baseId+'-h" style="flex:1;padding:7px 4px">'+hOpts+'</select>'+
+    '<span style="color:var(--muted);font-weight:700">:</span>'+
+    '<select class="inp" id="'+baseId+'-m" style="flex:1;padding:7px 4px">'+mOpts+'</select>'+
+  '</div>';
+}
+function getTimeSpinner(baseId, ctx){
+  var h=qs('#'+baseId+'-h', ctx);
+  var m=qs('#'+baseId+'-m', ctx);
+  if(!h||!m||!h.value||!m.value) return '';
+  return h.value+':'+m.value;
+}
+function setTimeSpinnerNow(baseId, ctx){
+  var d=new Date();
+  var totalMin = d.getUTCHours()*60 + d.getUTCMinutes();
+  var roundedMin = Math.round(totalMin/6)*6;
+  if(roundedMin>=1440) roundedMin=0;
+  var hh=('0'+Math.floor(roundedMin/60)).slice(-2);
+  var mm=('0'+(roundedMin%60)).slice(-2);
+  var h=qs('#'+baseId+'-h',ctx), m=qs('#'+baseId+'-m',ctx);
+  if(h) h.value=hh;
+  if(m) m.value=mm;
+}
+
+// decimal difference, wraps midnight
+function timeDiff(s,e){
+  if(s===null||e===null) return null;
+  var d=e-s;
+  if(d<0) d+=24;
+  // Round to nearest 0.1 hr (6 min)
+  return Math.round(d*10)/10;
+}
+
+// decimal -> "H:MM"
+function decToHM(d){
+  if(d===null||d===undefined||isNaN(d)) return '--';
+  var h=Math.floor(d), m=Math.round((d-h)*60);
+  return h+':'+(m<10?'0':'')+m;
+}
+
+// decimal -> 2dp string
+function escapeHtml(s){
+  if(s===null||s===undefined) return '';
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+function dec2(v){
+  if(v===null||v===undefined||isNaN(v)) return '--';
+  return parseFloat(v).toFixed(2);
+}
+
+// tacho/hobbs end - start
+function instrDiff(s,e){
+  var sv=parseFloat(s), ev=parseFloat(e);
+  if(isNaN(sv)||isNaN(ev)) return null;
+  var d=ev-sv;
+  if(d<0) return null;
+  // Round to nearest 0.1 hr
+  return Math.round(d*10)/10;
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+var SETTINGS_KEY='fd_settings';
+var settings=load(SETTINGS_KEY,{defaultBurnRate:'8.0'});
+
+function saveSettings(){ save(SETTINGS_KEY,settings); }
+
+// ============================================================
+// WEATHER FETCH
+// ============================================================
+// Fetch raw text from a NOAA URL by trying a sequence of public CORS
+// proxies. Returns the first successful non-empty response, or '' with
+// the last error message. Free proxies come and go; this gives us
+// resilience without requiring the user to register anywhere.
+function fetchViaProxy(targetUrl, cb){
+  var proxies = [
+    function(u){ return 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u); },
+    function(u){ return 'https://corsproxy.io/?url=' + encodeURIComponent(u); },
+    function(u){ return 'https://proxy.corsfix.com/?' + encodeURIComponent(u); },
+    function(u){ return 'https://cors.x2u.in/' + encodeURIComponent(u); },
+    function(u){ return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u); }
+  ];
+  var attempts = [];
+  function tryNext(i){
+    if(i >= proxies.length){
+      cb('', 'all proxies failed: ' + attempts.join(' | '));
+      return;
+    }
+    var url = proxies[i](targetUrl);
+    var name = url.replace(/^https?:\/\//,'').split('/')[0];
+    fetch(url)
+      .then(function(r){
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.text();
+      })
+      .then(function(t){
+        // Reject obvious error responses
+        if(!t || t.length < 6 ||
+           /^Host not in allowlist/i.test(t) ||
+           /^error/i.test(t.trim()) ||
+           /^<!DOCTYPE|^<html/i.test(t.trim())){
+          attempts.push(name+': empty/blocked');
+          tryNext(i+1);
+          return;
+        }
+        cb(t, '');
+      })
+      .catch(function(e){
+        attempts.push(name+': '+(e.message||e));
+        tryNext(i+1);
+      });
+  }
+  tryNext(0);
+}
+
+// Fetch METAR (last 6 hr) + TAF for an ICAO airport.
+// If user has set an AVWX token, try that first (most reliable).
+// Otherwise (or on failure) fall back through several public CORS proxies
+// of NOAA aviationweather.gov.
+// Calls cb(metar, taf, errMsg) - errMsg empty on success.
+function fetchWx(icao, cb){
+  if(!icao) { cb('','','no ICAO'); return; }
+  icao = icao.toUpperCase();
+  var key = localStorage.getItem('fd_avwx_key') || '';
+
+  function clean(t){
+    if(!t) return '';
+    return t.split('\n').map(function(l){return l.trim();})
+      .filter(function(l){
+        if(l.length<6) return false;
+        if(l.charAt(0)==='<') return false;
+        if(/^Host not/i.test(l)) return false;
+        if(/^error/i.test(l)) return false;
+        if(l.indexOf('No data')>=0) return false;
+        return true;
+      }).join('\n');
+  }
+
+  // ---- AVWX path (if user has a token) ----
+  if(key){
+    var avwxQ = '?token='+encodeURIComponent(key)+'&onfail=nearest';
+    var metar='', taf='', done=0, errs=[];
+    function fin(){
+      if(++done===2){
+        var msg = (metar||taf) ? '' : ('AVWX returned no data: '+errs.join('; '));
+        cb(metar, taf, msg);
+      }
+    }
+    fetch('https://avwx.rest/api/metar/'+icao+avwxQ)
+      .then(function(r){ return r.ok ? r.json() : Promise.reject('HTTP '+r.status); })
+      .then(function(d){
+        if(d && d.raw){
+          metar = d.raw;
+          if(d.station && d.station !== icao) metar = '[Nearest: '+d.station+'] ' + metar;
+        } else if(d && d.error){ errs.push('METAR: '+d.error); }
+        fin();
+      }).catch(function(e){ errs.push('METAR: '+e); fin(); });
+    fetch('https://avwx.rest/api/taf/'+icao+avwxQ)
+      .then(function(r){ return r.ok ? r.json() : Promise.reject('HTTP '+r.status); })
+      .then(function(d){
+        if(d && d.raw) taf = d.raw;
+        else if(d && d.error) errs.push('TAF: '+d.error);
+        fin();
+      }).catch(function(e){ errs.push('TAF: '+e); fin(); });
+    return;
+  }
+
+  // ---- NOAA via fallback proxy chain ----
+  var noaaMetar = 'https://aviationweather.gov/api/data/metar?ids='+icao+'&format=raw&hours=6';
+  var noaaTaf   = 'https://aviationweather.gov/api/data/taf?ids='+icao+'&format=raw';
+  var metar='', taf='', done=0, errs=[];
+  function fin(){
+    if(++done===2){
+      // If we got nothing, try nearest-station fallback
+      if(!metar && !taf){
+        findNearestStation(icao, function(near, nearErr, distNm){
+          if(!near){
+            cb('','','no data for '+icao+' and no nearest station: '+(nearErr||'unknown')+' -- add AVWX token for better results');
+            return;
+          }
+          // Re-fetch with the nearest station
+          var m2='', t2='', d2=0;
+          function fin2(){
+            if(++d2===2){
+              var prefix = '[Nearest: '+near+(distNm?' ('+distNm+' nm)':'')+'] ';
+              cb(m2 ? prefix+m2 : '', t2 ? prefix+t2 : '',
+                 (m2||t2) ? '' : 'no data for '+icao+' or nearest '+near);
+            }
+          }
+          fetchViaProxy('https://aviationweather.gov/api/data/metar?ids='+near+'&format=raw&hours=6',
+            function(t){ m2 = clean(t); fin2(); });
+          fetchViaProxy('https://aviationweather.gov/api/data/taf?ids='+near+'&format=raw',
+            function(t){ t2 = clean(t); fin2(); });
+        });
+        return;
+      }
+      var msg = (metar||taf) ? '' : ('proxies failed -- '+errs.join(' | ')+' -- consider adding an AVWX token in Settings');
+      cb(metar, taf, msg);
+    }
+  }
+  fetchViaProxy(noaaMetar, function(t, err){
+    metar = clean(t);
+    if(!metar) errs.push('METAR via proxy: '+err);
+    fin();
+  });
+  fetchViaProxy(noaaTaf, function(t, err){
+    taf = clean(t);
+    if(!taf) errs.push('TAF via proxy: '+err);
+    fin();
+  });
+}
+
+// Find the closest reporting station to a given ICAO airport.
+// Uses NOAA's stationinfo for a wide regional list of stations,
+// then computes distances client-side. This avoids the bbox endpoint
+// which seems to be rejected by some proxies.
+function findNearestStation(icao, cb){
+  geocodeIcao(icao, function(lat, lon, src){
+    if(lat===null || lon===null){
+      cb(null, 'could not locate '+icao+' (tried: '+src+')');
+      return;
+    }
+    findNearestFromCoords(lat, lon, icao, cb);
+  });
+}
+
+// Hand-curated list of major reporting stations by region. When NOAA's
+// dynamic bbox query is unavailable through proxies, we test these known
+// reporters against the failed ICAO's location and pick the closest one
+// that has live METAR data.
+var KNOWN_REPORTERS = [
+  // UK & Ireland
+  'EGLL','EGKK','EGSS','EGGW','EGLC','EGGD','EGTE','EGFF','EGNX','EGCC',
+  'EGNT','EGNM','EGPH','EGPD','EGPF','EGPK','EGAA','EINN','EIDW','EICK',
+  'EGLF','EGUL','EGUN','EGVN','EGYP','EGWU','EGVA','EGUW','EGOS','EGOV',
+  'EGXC','EGXT','EGSC','EGTK','EGHI','EGJB','EGJJ','EGKB','EGMD','EGMC',
+  // Continental Europe (commonly used alternates)
+  'LFPG','LFPB','LFPO','EBBR','EHAM','EDDF','EDDM','EDDH','EKCH','ESSA',
+  // US (in case someone enters US codes)
+  'KJFK','KLAX','KORD','KATL','KDFW','KSEA','KBOS','KIAD','KIAH','KMIA'
+];
+
+function findNearestFromCoords(lat, lon, originalIcao, cb){
+  if(isNaN(lat)||isNaN(lon)){ cb(null, 'bad coords'); return; }
+  function gcNm(la1, lo1, la2, lo2){
+    var R = 3440.065;
+    var p1 = la1*Math.PI/180, p2 = la2*Math.PI/180;
+    var dp = (la2-la1)*Math.PI/180;
+    var dl = (lo2-lo1)*Math.PI/180;
+    var a = Math.sin(dp/2)*Math.sin(dp/2) +
+            Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)*Math.sin(dl/2);
+    return 2*R*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+  var MAX_DIST_NM = 60;
+
+  // Try the bbox endpoint first - works when proxies cooperate
+  var deg = 0.75;
+  var bbox = (lon-deg)+','+(lat-deg)+','+(lon+deg)+','+(lat+deg);
+  fetchViaProxy('https://aviationweather.gov/api/data/metar?bbox='+encodeURIComponent(bbox)+'&format=json&hours=2',
+    function(text){
+      if(text){
+        try {
+          var arr = JSON.parse(text);
+          if(Array.isArray(arr) && arr.length){
+            var best=null, bestD=Infinity;
+            arr.forEach(function(s){
+              if(!s.icaoId || s.icaoId === originalIcao) return;
+              var sLat = parseFloat(s.lat), sLon = parseFloat(s.lon);
+              if(isNaN(sLat)||isNaN(sLon)) return;
+              var d = gcNm(lat, lon, sLat, sLon);
+              if(d > MAX_DIST_NM) return;
+              if(d<bestD){ bestD=d; best=s.icaoId; }
+            });
+            if(best){ cb(best, '', Math.round(bestD)); return; }
+          }
+        } catch(e){}
+      }
+      // Fallback: try a known-list approach. Fetch METAR for all reporters
+      // in one batch, get the lat/lon of each from the response, pick closest.
+      var ids = KNOWN_REPORTERS.filter(function(s){return s !== originalIcao;}).join(',');
+      fetchViaProxy('https://aviationweather.gov/api/data/metar?ids='+ids+'&format=json&hours=2',
+        function(text2){
+          if(!text2){ cb(null, 'no list data'); return; }
+          try {
+            var arr2 = JSON.parse(text2);
+            if(!Array.isArray(arr2) || !arr2.length){ cb(null, 'empty list'); return; }
+            var best2=null, bestD2=Infinity;
+            arr2.forEach(function(s){
+              if(!s.icaoId || s.icaoId === originalIcao) return;
+              var sLat = parseFloat(s.lat), sLon = parseFloat(s.lon);
+              if(isNaN(sLat)||isNaN(sLon)) return;
+              var d = gcNm(lat, lon, sLat, sLon);
+              if(d > MAX_DIST_NM) return;
+              if(d<bestD2){ bestD2=d; best2=s.icaoId; }
+            });
+            if(best2) cb(best2, '', Math.round(bestD2));
+            else cb(null, 'no station within '+MAX_DIST_NM+' nm of '+originalIcao);
+          } catch(e){ cb(null, 'list parse error'); }
+        });
+    });
+}
+
+// Try several geocoding sources, calling cb(lat, lon, attemptedSources)
+function geocodeIcao(icao, cb){
+  var attempts = [];
+  // 1. NOAA's stationinfo (only works for stations they track - airliner-grade)
+  fetchViaProxy('https://aviationweather.gov/api/data/stationinfo?ids='+icao+'&format=json',
+    function(text){
+      if(text){
+        try {
+          var data = JSON.parse(text);
+          if(Array.isArray(data) && data.length && data[0].lat && data[0].lon){
+            cb(parseFloat(data[0].lat), parseFloat(data[0].lon), 'noaa');
+            return;
+          }
+        } catch(e){}
+      }
+      attempts.push('noaa');
+      // 2. OurAirports - public CSV listing every airport. We use a JSON wrapper.
+      // airportdb.io doesn't need an API key for unauthenticated lookups
+      fetchViaProxy('https://api.airportdb.io/api/v1/airport/'+icao+'?apiToken=public',
+        function(text2){
+          if(text2){
+            try {
+              var d2 = JSON.parse(text2);
+              if(d2 && d2.latitude_deg && d2.longitude_deg){
+                cb(parseFloat(d2.latitude_deg), parseFloat(d2.longitude_deg), 'airportdb');
+                return;
+              }
+            } catch(e){}
+          }
+          attempts.push('airportdb');
+          // 3. Nominatim - URL-encoded query (use %20 not +), via proxy
+          var q = encodeURIComponent(icao + ' airport');
+          fetchViaProxy('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+q,
+            function(text3){
+              if(text3){
+                try {
+                  var arr = JSON.parse(text3);
+                  if(Array.isArray(arr) && arr.length && arr[0].lat && arr[0].lon){
+                    cb(parseFloat(arr[0].lat), parseFloat(arr[0].lon), 'nominatim');
+                    return;
+                  }
+                } catch(e){}
+              }
+              attempts.push('nominatim');
+              // 4. Final attempt - Nominatim direct (Safari includes UA)
+              fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+q)
+                .then(function(r){ return r.json(); })
+                .then(function(arr){
+                  if(arr && arr.length && arr[0].lat && arr[0].lon){
+                    cb(parseFloat(arr[0].lat), parseFloat(arr[0].lon), 'nominatim-direct');
+                    return;
+                  }
+                  attempts.push('nominatim-direct');
+                  cb(null, null, attempts.join(','));
+                })
+                .catch(function(){
+                  attempts.push('nominatim-direct-fail');
+                  cb(null, null, attempts.join(','));
+                });
+            });
+        });
+    });
+}
+
+
+// Parse a "DDHHMMZ" or "HHMMZ" timestamp from a METAR line and return
+// the time-of-day in decimal hours, or null. Used to filter METARs to
+// those issued within the flight window.
+function metarHour(line){
+  var parts = line.trim().split(/\s+/);
+  for(var i=0;i<parts.length;i++){
+    var tok = parts[i];
+    var m6 = tok.match(/^\d{2}(\d{2})(\d{2})Z$/);
+    if(m6) return parseInt(m6[1])+parseInt(m6[2])/60;
+    var m4 = tok.match(/^(\d{2})(\d{2})Z$/);
+    if(m4) return parseInt(m4[1])+parseInt(m4[2])/60;
+  }
+  return null;
+}
+
+// Filter METAR text to only lines within ±MARGIN hr of the flight window.
+// If no chocks times are set, falls back to current UTC ± MARGIN.
+function filterMetars(txt, chocksOff, chocksOn){
+  if(!txt) return txt;
+  var off = parseUTC(chocksOff);
+  var on = parseUTC(chocksOn);
+  var MARGIN = 1.0;
+  var ws, we;
+  if(off===null && on===null){
+    var d=new Date();
+    var nowH = d.getUTCHours() + d.getUTCMinutes()/60;
+    ws = nowH - MARGIN;
+    we = nowH + MARGIN;
+  } else {
+    ws = (off!==null ? off : on) - MARGIN;
+    we = (on!==null ? on : off) + MARGIN;
+  }
+  if(ws<0) ws+=24;
+  if(we>=24) we-=24;
+  var lines = txt.split('\n').filter(function(l){return l.trim().length>6;});
+  var inWindow = function(h){
+    if(h===null) return true; // keep lines without a parseable timestamp
+    return ws<=we ? (h>=ws && h<=we) : (h>=ws || h<=we);
+  };
+  var keep = lines.filter(function(l){ return inWindow(metarHour(l)); });
+  return keep.length ? keep.join('\n') : (lines[0]||txt);
+}
+
+
+// Returns {hwAbs, hwLabel:'HW'|'TW', xwAbs, xwLabel:'L'|'R'}
+function rwyWind(rwyNum, windDir, windSpd){
+  var r = parseFloat(rwyNum)*10;
+  var d = parseFloat(windDir);
+  var s = parseFloat(windSpd);
+  if(isNaN(r)||isNaN(d)||isNaN(s)) return null;
+  var angle = (d - r) * Math.PI / 180;
+  var hw = s * Math.cos(angle);
+  var xw = s * Math.sin(angle);
+  return {
+    hwAbs: Math.round(Math.abs(hw)),
+    hwLabel: hw >= 0 ? 'HW' : 'TW',
+    xwAbs: Math.round(Math.abs(xw)),
+    xwLabel: xw >= 0 ? 'R' : 'L'
+  };
+}
+// ============================================================
+var USG_TO_L = 3.785;
+
+// Build a paired USG/Litres input - stored value is USG (canonical)
+function fuelPairHtml(baseId, usgVal, ph){
+  var u = usgVal||'';
+  var l = '';
+  if(u !== ''){
+    var n = parseFloat(u);
+    if(!isNaN(n)) l = (n * USG_TO_L).toFixed(2);
+  }
+  return '<div style="display:flex;gap:4px;align-items:center">'+
+    '<div style="position:relative;flex:1">'+
+      '<input class="inp" id="'+baseId+'" type="number" step="0.1" placeholder="'+(ph||'')+'" value="'+u+'" style="padding-right:32px"/>'+
+      '<span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);font-family:JetBrains Mono,monospace;pointer-events:none">USG</span>'+
+    '</div>'+
+    '<span style="color:var(--muted);font-size:13px">=</span>'+
+    '<div style="position:relative;flex:1">'+
+      '<input class="inp" id="'+baseId+'-l" type="number" step="0.01" placeholder="L" value="'+l+'" style="padding-right:24px"/>'+
+      '<span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);font-family:JetBrains Mono,monospace;pointer-events:none">L</span>'+
+    '</div>'+
+  '</div>';
+}
+
+// Wire up bidirectional USG <-> L conversion for a paired input
+// onChange callback fires after either value updates
+function wireFuelPair(baseId, ctx, onChange){
+  var u = qs('#'+baseId, ctx);
+  var l = qs('#'+baseId+'-l', ctx);
+  if(!u || !l) return;
+  u.addEventListener('input', function(){
+    var v = parseFloat(u.value);
+    l.value = isNaN(v) ? '' : (v * USG_TO_L).toFixed(2);
+    if(onChange) onChange();
+  });
+  l.addEventListener('input', function(){
+    var v = parseFloat(l.value);
+    u.value = isNaN(v) ? '' : (v / USG_TO_L).toFixed(2);
+    if(onChange) onChange();
+  });
+}
+
+function fuelCalc(f){
+  var burn=parseFloat(f.burnRate||settings.defaultBurnRate)||8;
+  var initial=parseFloat(f.fob);
+  var uplifted=parseFloat(f.fuelUplifted)||0;
+  // Total FOB = initial + uplifted (canonical fuel available)
+  var fob = isNaN(initial) ? null : initial + uplifted;
+  var taxi=parseFloat(f.fuelTaxi)||0;
+  var trip=parseFloat(f.fuelTrip)||0;
+  var contPct=parseFloat(f.fuelContPct);
+  if(isNaN(contPct)) contPct=5;
+  var cont=trip*contPct/100;
+  var alt=parseFloat(f.fuelAlt)||0;
+  var fin=parseFloat(f.fuelFinal)||0;
+  var extra=parseFloat(f.fuelExtra)||0;
+  var total=taxi+trip+cont+alt+fin+extra;
+  return{
+    burn:burn,
+    initial:isNaN(initial)?null:initial,
+    uplifted:uplifted,
+    fob:fob,
+    taxi:taxi, trip:trip, cont:cont, contPct:contPct,
+    alt:alt, final_:fin, extra:extra,
+    total:total,
+    surplus:fob===null?null:fob-total,
+    endurance:(fob===null||burn<=0)?null:fob/burn
+  };
+}
+
+// Fuel/time countdown table - shows fuel and endurance remaining at 30 min intervals
+function fuelTable(fob, burn){
+  if(isNaN(fob)||isNaN(burn)||burn<=0) return [];
+  var rows=[];
+  var hr=0;
+  while(true){
+    var fuelRem=fob - burn*hr;
+    if(fuelRem<=0){
+      rows.push({hr:hr, fuel:0, endurance:0, exhausted:true});
+      break;
+    }
+    rows.push({hr:hr, fuel:fuelRem, endurance:fuelRem/burn, exhausted:false});
+    hr+=0.5;
+    if(hr>20) break; // safety cap
+  }
+  return rows;
+}
+
+// ============================================================
+// FLIGHT CALCULATIONS (times)
+// ============================================================
+function flCalc(f){
+  return {
+    block: timeDiff(parseUTC(f.chocksOff), parseUTC(f.chocksOn)),
+    air:   timeDiff(parseUTC(f.takeoff),   parseUTC(f.landing)),
+    tacho: instrDiff(f.tachoStart, f.tachoEnd),
+    hobbs: instrDiff(f.hobbsStart, f.hobbsEnd)
+  };
+}
+
+// ============================================================
+// MODAL ENGINE
+// ============================================================
+function openModal(cfg){
+  var root=qs('#modal-root');
+  root.innerHTML='';
+  var ov=el('div','overlay');
+  var box=el('div', cfg.wide ? 'mbox wide' : 'mbox');
+  var mh=el('div','mhead modal-header');
+  mh.innerHTML='<span class="mtitle">'+cfg.title+'</span><button class="mclose">&times;</button>';
+  var mb=el('div','mbody');
+  if(typeof cfg.body==='string') mb.innerHTML=cfg.body;
+  else mb.appendChild(cfg.body);
+  var mf=el('div','mfoot');
+  if(cfg.onSave){
+    var sb=el('button','btn btn-p', cfg.saveLabel||'Save');
+    sb.addEventListener('click',function(){ if(cfg.onSave()!==false) doClose(); });
+    mf.appendChild(sb);
+  }
+  if(cfg.extraButtons && cfg.extraButtons.length){
+    cfg.extraButtons.forEach(function(b){
+      var btn=el('button', b.cls||'btn btn-g', b.label);
+      btn.addEventListener('click', function(){
+        if(typeof b.onClick === 'function') b.onClick();
+      });
+      mf.appendChild(btn);
+    });
+  }
+  var cb=el('button','btn btn-g','Cancel');
+  cb.addEventListener('click', doClose);
+  mf.appendChild(cb);
+  box.appendChild(mh);
+  box.appendChild(mb);
+  box.appendChild(mf);
+  ov.appendChild(box);
+  root.appendChild(ov);
+  function doClose(){
+    if(typeof cfg.onClose==='function') cfg.onClose();
+    closeModal();
+  }
+  ov.addEventListener('click',function(e){ if(e.target===ov) doClose(); });
+  qs('.mclose',box).addEventListener('click', doClose);
+  setTimeout(function(){ var f=qs('input,textarea',mb); if(f) f.focus(); },50);
+}
+function closeModal(){ qs('#modal-root').innerHTML=''; }
+
+// ============================================================
+// SETTINGS MODAL
+// ============================================================
+qs('#settings-btn').addEventListener('click', function(){
+  var div=document.createElement('div');
+  var curKey = localStorage.getItem('fd_avwx_key') || '';
+  div.innerHTML=
+    '<div class="field">'+
+      '<label>Default Fuel Burn Rate (USG/hr)</label>'+
+      '<input class="inp" id="s-burn" type="number" step="0.1" value="'+settings.defaultBurnRate+'" placeholder="8.0"/>'+
+      '<div style="font-size:13px;color:var(--muted);margin-top:4px">Applied to all flights unless overridden per flight</div>'+
+    '</div>'+
+    '<div style="background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.2);border-radius:9px;padding:12px;margin-top:4px">'+
+      '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:#0369a1;margin-bottom:6px">EXAMPLE</div>'+
+      '<div id="s-eg" style="font-size:12px;color:#cbd5e1;line-height:1.9"></div>'+
+    '</div>'+
+    '<div class="field" style="margin-top:14px">'+
+      '<label>AVWX API Key (optional)</label>'+
+      '<input class="inp" id="s-avwx" placeholder="Paste token to use AVWX worldwide" value="'+curKey+'"/>'+
+      '<div style="font-size:13px;color:var(--muted);margin-top:4px">Free key from <a href="https://account.avwx.rest/" target="_blank" style="color:#0369a1">avwx.rest</a> &mdash; gives worldwide METAR/TAF + nearest-station fallback. Leave blank to use NOAA via proxy.</div>'+
+    '</div>';
+  function updateEg(){
+    var r=parseFloat(qs('#s-burn',div).value);
+    var eg=qs('#s-eg',div);
+    if(isNaN(r)||r<=0){ eg.textContent='Enter a valid burn rate'; return; }
+    eg.innerHTML=
+      'At '+r+' USG/hr:<br>'+
+      '1:00 hr flight uses '+dec2(r)+' USG<br>'+
+      '40 USG total = '+decToHM(40/r)+' endurance<br>'+
+      '10 USG remaining = '+decToHM(10/r)+' endurance';
+  }
+  qs('#s-burn',div).addEventListener('input', updateEg);
+  setTimeout(updateEg,0);
+  openModal({title:'Settings',body:div,saveLabel:'Save',onSave:function(){
+    var r=parseFloat(qs('#s-burn',div).value);
+    if(isNaN(r)||r<=0){ toast('Enter a valid burn rate'); return false; }
+    settings.defaultBurnRate=String(r);
+    saveSettings();
+    var k=(qs('#s-avwx',div).value||'').trim();
+    if(k) localStorage.setItem('fd_avwx_key',k);
+    else localStorage.removeItem('fd_avwx_key');
+    toast('Settings saved');
+  }});
+});
+
+// ============================================================
+// TABS
+// ============================================================
+document.querySelectorAll('.tb').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.tb').forEach(function(x){ x.classList.remove('on'); });
+    document.querySelectorAll('.panel').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    qs('#tab-'+b.dataset.tab).classList.add('on');
+  });
+});
+
+// ============================================================
+// FLIGHT LOG
+// ============================================================
+var FL_KEY='fd_flights_v3';
+var FL_CATS=['Solo','Dual','Check Ride','Navigation','Night','Instrument','Other'];
+var flights=load(FL_KEY,[]);
+var flActive=null;
+
+function flSave(){ save(FL_KEY,flights); }
+
+function renderFlStats(){
+  var totTacho=0, totHobbs=0, totAir=0, totBlock=0;
+  flights.forEach(function(f){
+    var c=flCalc(f);
+    totTacho += instrDiff(f.tachoStart,f.tachoEnd)||0;
+    totHobbs += instrDiff(f.hobbsStart,f.hobbsEnd)||0;
+    totAir   += c.air||0;
+    totBlock += c.block||0;
+  });
+  qs('#fl-stats').innerHTML=
+    '<div class="stat"><div class="stat-v">'+flights.length+'</div><div class="stat-l">Flights</div></div>'+
+    '<div class="stat"><div class="stat-v">'+dec2(totTacho)+'</div><div class="stat-l">Tacho Hrs</div></div>'+
+    '<div class="stat"><div class="stat-v">'+dec2(totHobbs)+'</div><div class="stat-l">Hobbs Hrs</div></div>'+
+    '<div class="stat"><div class="stat-v">'+decToHM(totAir)+'</div><div class="stat-l">Air Time</div></div>'+
+    '<div class="stat"><div class="stat-v">'+decToHM(totBlock)+'</div><div class="stat-l">Block Time</div></div>';
+}
+
+function renderFlList(){
+  var search=(qs('#fl-search').value||'').toLowerCase();
+  var filt=qs('#fl-filter .fchip.on');
+  var filtVal=filt?filt.textContent:'All';
+  var vis=flights.filter(function(f){
+    var ok=(filtVal==='All'||f.category===filtVal);
+    if(search) ok=ok&&(
+      (f.date||'').includes(search)||
+      (f.aircraft||'').toLowerCase().includes(search)||
+      (f.student||'').toLowerCase().includes(search)||
+      (f.departure||'').toLowerCase().includes(search)||
+      (f.destination||'').toLowerCase().includes(search)
+    );
+    return ok;
+  }).sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+
+  var list=qs('#fl-list');
+  list.innerHTML='';
+  if(!vis.length){
+    list.innerHTML='<p style="color:var(--muted);font-size:12px;text-align:center;padding:12px">No flights found</p>';
+    return;
+  }
+  vis.forEach(function(f){
+    var c=flCalc(f);
+    var card=el('div','card'+(flActive===f.id?' sel-sky':''));
+    var badges='';
+    if(c.tacho!==null) badges+='<span class="badge b-am">T:'+dec2(c.tacho)+'</span>';
+    if(c.hobbs!==null) badges+='<span class="badge b-vi">H:'+dec2(c.hobbs)+'</span>';
+    if(c.air!==null)   badges+='<span class="badge b-em">Air:'+decToHM(c.air)+'</span>';
+    card.innerHTML=
+      '<div class="ctitle">'+(f.date||'No date')+' &middot; '+(f.aircraft||'?')+'</div>'+
+      '<div class="cmeta">'+
+        '<span class="badge b-sky">'+(f.departure||'?')+'&#8594;'+(f.destination||'?')+'</span>'+
+        (f.student?'<span class="badge b-sl">'+f.student+'</span>':'')+
+      '</div>'+
+      (badges?'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">'+badges+'</div>':'');
+    card.addEventListener('click',function(){ flActive=f.id; renderFlList(); renderFlDetail(); });
+    list.appendChild(card);
+  });
+}
+
+function renderFlDetail(){
+  var det=qs('#fl-detail');
+  if(!flActive){
+    det.innerHTML='<div class="empty"><div class="empty-icon">&#9992;</div><span>Select a flight or log a new one</span></div>';
+    return;
+  }
+  var f=flights.filter(function(x){ return x.id===flActive; })[0];
+  if(!f){ det.innerHTML='<div class="empty">Not found</div>'; return; }
+
+  var c=flCalc(f);
+
+  det.innerHTML='';
+  var box=el('div','dbox');
+
+  // -- Header --
+  var dh=el('div','dh');
+  dh.innerHTML=
+    '<div>'+
+      '<div class="dtitle">'+(f.date||'--')+' &middot; '+(f.aircraft||'Unknown')+'</div>'+
+      '<div class="cmeta" style="margin-top:6px">'+
+        '<span class="badge b-sky">'+(f.departure||'?')+' &#8594; '+(f.destination||'?')+'</span>'+
+        (f.category?'<span class="badge b-vi">'+f.category+'</span>':'')+
+        (f.student?'<span class="badge b-sl">'+f.student+'</span>':'')+
+      '</div>'+
+    '</div>'+
+    '<div class="dactions">'+
+      '<button class="btn btn-g" id="fl-edit-btn">Edit</button>'+
+      '<button class="btn btn-g" id="fl-exp-btn">&#8595; Export</button>'+
+      '<button class="btn btn-d" id="fl-del-btn">Delete</button>'+
+    '</div>';
+  box.appendChild(dh);
+
+  // -- Times card --
+  var tc=el('div','calc-card');
+  tc.innerHTML=
+    '<div class="calc-title" style="color:#0369a1">&#9201; Calculated Times</div>'+
+    '<div class="g4" style="gap:12px">'+
+      '<div><div class="sec-lbl">Block Time</div><div class="calc-val">'+decToHM(c.block)+'</div>'+
+        '<div class="calc-sub">'+(c.block!==null?dec2(c.block)+' hrs':'')+'</div>'+
+        '<div class="calc-sub">'+(f.chocksOff||'?')+' &#8594; '+(f.chocksOn||'?')+' UTC</div></div>'+
+      '<div><div class="sec-lbl">Air Time</div><div class="calc-val">'+decToHM(c.air)+'</div>'+
+        '<div class="calc-sub">'+(c.air!==null?dec2(c.air)+' hrs':'')+'</div>'+
+        '<div class="calc-sub">'+(f.takeoff||'?')+' &#8594; '+(f.landing||'?')+' UTC</div></div>'+
+      '<div><div class="sec-lbl">Tacho Time</div><div class="calc-val">'+dec2(c.tacho)+'</div>'+
+        '<div class="calc-sub">'+(c.tacho!==null?'hrs':'')+'</div>'+
+        '<div class="calc-sub">'+(f.tachoStart||'?')+' &#8594; '+(f.tachoEnd||'?')+'</div></div>'+
+      '<div><div class="sec-lbl">Hobbs Time</div><div class="calc-val">'+dec2(c.hobbs)+'</div>'+
+        '<div class="calc-sub">'+(c.hobbs!==null?'hrs':'')+'</div>'+
+        '<div class="calc-sub">'+(f.hobbsStart||'?')+' &#8594; '+(f.hobbsEnd||'?')+'</div></div>'+
+    '</div>';
+  box.appendChild(tc);
+
+  // -- Fuel card --
+  var fc=fuelCalc(f);
+  var burnLabel=fc.burn!==null ? fc.burn+' USG/hr' : 'not set';
+  var fcard=el('div','fuel-card');
+  fcard.innerHTML=
+    '<div class="calc-title" style="color:#b45309">&#9981; Fuel (USG) &mdash; Burn rate: '+burnLabel+'</div>'+
+    '<div class="g3" style="gap:10px;margin-bottom:10px">'+
+      '<div><div class="sec-lbl">Initial Fuel</div>'+
+        '<div class="sec-box">'+(fc.initial!==null?dec2(fc.initial)+' USG':'--')+'</div></div>'+
+      '<div><div class="sec-lbl">Fuel Uplifted</div>'+
+        '<div class="sec-box">'+(fc.uplifted?dec2(fc.uplifted)+' USG':'--')+'</div></div>'+
+      '<div><div class="sec-lbl">Total Fuel on Board</div>'+
+        '<div class="sec-box" style="color:#0369a1;font-weight:600">'+(fc.fob!==null?dec2(fc.fob)+' USG':'--')+'</div></div>'+
+    '</div>'+
+    '<div class="g3" style="gap:10px;margin-bottom:10px">'+
+      '<div><div class="sec-lbl">Total Required</div>'+
+        '<div class="sec-box" style="color:#b45309;font-weight:600">'+dec2(fc.total)+' USG</div></div>'+
+      '<div><div class="sec-lbl">Surplus / Deficit</div>'+
+        '<div class="sec-box" style="color:'+(fc.surplus===null?'var(--muted)':fc.surplus>=0?'#047857':'#be123c')+';font-weight:600">'+
+          (fc.surplus!==null?(fc.surplus>=0?'+':'')+dec2(fc.surplus)+' USG':'--')+'</div></div>'+
+      '<div><div class="sec-lbl">Endurance</div>'+
+        '<div class="sec-box" style="color:#0284c7;font-weight:600">'+
+          (fc.endurance!==null?decToHM(fc.endurance)+' ('+dec2(fc.endurance)+' hrs)':'--')+'</div></div>'+
+    '</div>'+
+    (f.fuelLanding ? '<div class="g3" style="gap:10px"><div><div class="sec-lbl">Actual Fuel on Landing</div><div class="sec-box" style="color:#6d28d9;font-weight:600">'+dec2(parseFloat(f.fuelLanding))+' USG / '+dec2(parseFloat(f.fuelLanding)*USG_TO_L)+' L</div></div></div>' : '');
+  box.appendChild(fcard);
+
+  // -- Weather card --
+  var hasWxData = f.wxTAS || f.wxFreezFL || f.wxCloudBase || f.wxSurfDir ||
+                  f.rwy1 || f.rwy2 || f.rwy3 || f.rwy4 ||
+                  f.wxMetar1 || f.wxMetar2 || f.wxMetar3 || f.wxMetar4 ||
+                  f.wxTaf1 || f.wxTaf2 || f.wxTaf3 || f.wxTaf4;
+  if(hasWxData){
+    var wcard=el('div','fuel-card');
+    wcard.style.background='rgba(139,92,246,.05)';
+    wcard.style.border='1px solid rgba(139,92,246,.25)';
+    var html =
+      '<div class="calc-title" style="color:#6d28d9">&#9925; Weather</div>';
+
+    // Planning row
+    if(f.wxTAS||f.wxFreezFL||f.wxCloudBase){
+      html += '<div class="g3" style="gap:10px;margin-bottom:10px">'+
+        '<div><div class="sec-lbl">TAS</div><div class="sec-box">'+(f.wxTAS?f.wxTAS+' kt':'--')+'</div></div>'+
+        '<div><div class="sec-lbl">Freezing Level</div><div class="sec-box">'+(f.wxFreezFL?f.wxFreezFL+' ft':'--')+'</div></div>'+
+        '<div><div class="sec-lbl">Cloud Base</div><div class="sec-box">'+(f.wxCloudBase?f.wxCloudBase+' ft':'--')+'</div></div>'+
+      '</div>';
+    }
+
+    // Surface wind + runway components
+    if(f.wxSurfDir||f.wxSurfSpd){
+      html += '<div class="sec" style="margin-bottom:10px">'+
+        '<div class="sec-lbl">Surface Wind</div>'+
+        '<div class="sec-box">'+(f.wxSurfDir||'--')+'&deg; / '+(f.wxSurfSpd||'--')+' kt</div>'+
+      '</div>';
+
+      var rows = [];
+      [f.rwy1,f.rwy2,f.rwy3,f.rwy4].forEach(function(rwy){
+        if(!rwy) return;
+        var c = rwyWind(rwy, f.wxSurfDir, f.wxSurfSpd);
+        if(!c) return;
+        var hwCol = c.hwLabel==='HW' ? '#047857' : '#be123c';
+        rows.push(
+          '<div style="display:flex;gap:14px;align-items:center;font-size:12px;font-family:JetBrains Mono,monospace;padding:5px 8px;background:rgba(255,255,255,.6);border-radius:6px">'+
+            '<span style="color:#6d28d9;min-width:75px;font-weight:600">RWY '+('0'+rwy).slice(-2)+'</span>'+
+            '<span><span style="color:var(--muted);font-size:12px">'+c.hwLabel+': </span><span style="color:'+hwCol+';font-weight:600">'+c.hwAbs+' kt</span></span>'+
+            '<span><span style="color:var(--muted);font-size:12px">XW: </span><span style="color:#b45309;font-weight:600">'+c.xwAbs+' kt '+c.xwLabel+'</span></span>'+
+          '</div>'
+        );
+      });
+      if(rows.length){
+        html += '<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">' + rows.join('') + '</div>';
+      }
+    }
+
+    // METAR / TAF blocks per ICAO (filtered for the saved flight window)
+    [1,2,3,4].forEach(function(n){
+      var icao = f['wxIcao'+n];
+      var metar = f['wxMetar'+n];
+      var taf = f['wxTaf'+n];
+      if(!icao && !metar && !taf) return;
+      var filtered = filterMetars(metar, f.chocksOff, f.chocksOn);
+      html += '<div style="background:rgba(255,255,255,.7);border:1px solid var(--border);border-radius:7px;padding:9px;margin-bottom:6px">'+
+        '<div style="font-family:JetBrains Mono,monospace;font-size:13px;color:#0369a1;font-weight:700;margin-bottom:5px">'+(icao||'Station '+n)+'</div>';
+      if(filtered){
+        html += '<div class="sec-lbl">METAR</div>'+
+          '<div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-family:JetBrains Mono,monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;margin-bottom:5px">'+escapeHtml(filtered)+'</div>';
+      }
+      if(taf){
+        html += '<div class="sec-lbl">TAF</div>'+
+          '<div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-family:JetBrains Mono,monospace;font-size:13px;white-space:pre-wrap;line-height:1.5">'+escapeHtml(taf)+'</div>';
+      }
+      html += '</div>';
+    });
+
+    wcard.innerHTML = html;
+    box.appendChild(wcard);
+  }
+
+  // -- Detail rows --
+  var rows=el('div','');
+  rows.innerHTML=
+    '<div class="g2" style="margin-bottom:10px">'+
+      '<div class="sec"><div class="sec-lbl">PIC</div><div class="sec-box">'+(f.pic||'--')+'</div></div>'+
+      '<div class="sec"><div class="sec-lbl">Student / Co-pilot</div><div class="sec-box">'+(f.student||'--')+'</div></div>'+
+    '</div>'+
+    '<div class="g2" style="margin-bottom:10px">'+
+      '<div class="sec"><div class="sec-lbl">Touch &amp; Goes</div><div class="sec-box">'+(f.touchGoes||'0')+'</div></div>'+
+      '<div class="sec"><div class="sec-lbl">&nbsp;</div><div class="sec-box" style="background:transparent;border:none">&nbsp;</div></div>'+
+    '</div>'+
+    '<div class="g4" style="margin-bottom:10px">'+
+      '<div class="sec"><div class="sec-lbl">Chocks Off (UTC)</div><div class="sec-box">'+(f.chocksOff||'--')+'</div></div>'+
+      '<div class="sec"><div class="sec-lbl">Takeoff (UTC)</div><div class="sec-box">'+(f.takeoff||'--')+'</div></div>'+
+      '<div class="sec"><div class="sec-lbl">Landing (UTC)</div><div class="sec-box">'+(f.landing||'--')+'</div></div>'+
+      '<div class="sec"><div class="sec-lbl">Chocks On (UTC)</div><div class="sec-box">'+(f.chocksOn||'--')+'</div></div>'+
+    '</div>'+
+    '<div class="g4" style="margin-bottom:10px">'+
+      '<div class="sec"><div class="sec-lbl">Tacho Start</div><div class="sec-box">'+(f.tachoStart||'--')+'</div></div>'+
+      '<div class="sec"><div class="sec-lbl">Tacho End</div><div class="sec-box">'+(f.tachoEnd||'--')+'</div></div>'+
+      '<div class="sec"><div class="sec-lbl">Hobbs Start</div><div class="sec-box">'+(f.hobbsStart||'--')+'</div></div>'+
+      '<div class="sec"><div class="sec-lbl">Hobbs End</div><div class="sec-box">'+(f.hobbsEnd||'--')+'</div></div>'+
+    '</div>'+
+    (f.oil?'<div class="sec" style="margin-bottom:10px"><div class="sec-lbl">Oil Check</div><div class="sec-box">'+f.oil+'</div></div>':'')+
+    (f.maneuvers?'<div class="sec"><div class="sec-lbl">Maneuvers / Exercises</div><div class="sec-box">'+f.maneuvers+'</div></div>':'')+
+    (f.notes?'<div class="sec"><div class="sec-lbl">Instructor Notes</div><div class="sec-box">'+f.notes+'</div></div>':'');
+  box.appendChild(rows);
+  det.appendChild(box);
+
+  qs('#fl-edit-btn',box).addEventListener('click',function(){ openFlModal(f); });
+  qs('#fl-del-btn',box).addEventListener('click',function(){
+    if(confirm('Delete this flight record?')){
+      flights=flights.filter(function(x){ return x.id!==f.id; });
+      flSave(); flActive=null;
+      renderFlList(); renderFlDetail(); renderFlStats();
+      toast('Flight deleted');
+    }
+  });
+  qs('#fl-exp-btn',box).addEventListener('click',function(){ exportFlight(f); });
+}
+
+function openFlModal(ex){
+  var f=ex||{id:uid(),date:'',aircraft:'',departure:'',destination:'',pic:'',student:'',category:'Dual',
+    touchGoes:'',
+    chocksOff:'',takeoff:'',landing:'',chocksOn:'',
+    tachoStart:'',tachoEnd:'',hobbsStart:'',hobbsEnd:'',
+    fob:'',burnRate:'',
+    fuelTaxi:'',fuelTrip:'',fuelContPct:'5',
+    fuelAlt:'',fuelFinal:'',fuelExtra:'',fuelUplifted:'',fuelLanding:'',
+    wxTAS:'',wxFreezFL:'',wxCloudBase:'',wxSurfDir:'',wxSurfSpd:'',
+    rwy1:'',rwy2:'',rwy3:'',rwy4:'',
+    wxIcao1:'',wxIcao2:'',wxIcao3:'',wxIcao4:'',
+    wxMetar1:'',wxMetar2:'',wxMetar3:'',wxMetar4:'',
+    wxTaf1:'',wxTaf2:'',wxTaf3:'',wxTaf4:'',
+    oil:'',maneuvers:'',notes:''};
+
+  var div=document.createElement('div');
+  div.innerHTML=
+    '<div style="display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--border)">'+
+      '<button type="button" id="m-tab-info" class="m-tab m-tab-on" style="padding:7px 14px;background:none;border:none;border-bottom:2px solid #0284c7;color:#0284c7;font-weight:600;font-size:12px;cursor:pointer;margin-bottom:-1px">Flight Info</button>'+
+      '<button type="button" id="m-tab-times" class="m-tab" style="padding:7px 14px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:12px;cursor:pointer;margin-bottom:-1px">Times</button>'+
+      '<button type="button" id="m-tab-wx" class="m-tab" style="padding:7px 14px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:12px;cursor:pointer;margin-bottom:-1px">Weather</button>'+
+      '<button type="button" id="m-tab-fuel" class="m-tab" style="padding:7px 14px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:12px;cursor:pointer;margin-bottom:-1px">Fuel</button>'+
+    '</div>'+
+    '<div id="m-section-info">'+
+    '<div class="sdiv">Flight Details</div>'+
+    '<div class="g3">'+
+      '<div class="field"><label>Date</label><input class="inp" id="m-date" type="date" value="'+(f.date||'')+'"/></div>'+
+      '<div class="field"><label>Aircraft Reg</label><input class="inp" id="m-aircraft" placeholder="VH-XXX" value="'+(f.aircraft||'')+'"/></div>'+
+      '<div class="field"><label>Category</label><select class="inp" id="m-cat">'+
+        FL_CATS.map(function(c){ return '<option'+(c===f.category?' selected':'')+'>'+c+'</option>'; }).join('')+
+      '</select></div>'+
+    '</div>'+
+    '<div class="g3">'+
+      '<div class="field"><label>Departure</label><input class="inp" id="m-dep" placeholder="YSSY" value="'+(f.departure||'')+'"/></div>'+
+      '<div class="field"><label>Destination</label><input class="inp" id="m-dest" placeholder="YMML" value="'+(f.destination||'')+'"/></div>'+
+      '<div class="field"><label>PIC</label><input class="inp" id="m-pic" value="'+(f.pic||'')+'" placeholder="Your name"/></div>'+
+    '</div>'+
+    '<div class="g2">'+
+      '<div class="field"><label>Student / Co-pilot</label><input class="inp" id="m-student" value="'+(f.student||'')+'" placeholder="Student name"/></div>'+
+      '<div class="field"><label>Touch &amp; Goes</label><input class="inp" id="m-touchGoes" type="number" min="0" step="1" placeholder="0" value="'+(f.touchGoes||'')+'"/></div>'+
+    '</div>'+
+
+    '</div>'+ // close #m-section-info (will reopen Other after fuel section)
+
+    '<div id="m-section-times" style="display:none">'+
+    '<div class="sdiv">Tacho &amp; Hobbs Start (Decimal)</div>'+
+    '<div class="g2">'+
+      '<div class="field"><label>Tacho Start</label><input class="inp" id="m-tachoStart" type="number" step="0.1" placeholder="1234.5" value="'+(f.tachoStart||'')+'"/></div>'+
+      '<div class="field"><label>Hobbs Start</label><input class="inp" id="m-hobbsStart" type="number" step="0.1" placeholder="2345.6" value="'+(f.hobbsStart||'')+'"/></div>'+
+    '</div>'+
+    '<div class="sdiv">Block &amp; Air Times (HH:MM UTC)</div>'+
+    '<div class="g4">'+
+      '<div class="field"><label>Chocks Off</label>'+
+        timeSpinnerHtml('m-chocksOff', f.chocksOff)+
+        '<button type="button" class="btn btn-g m-now-btn" data-target="m-chocksOff" style="width:100%;margin-top:4px;padding:4px;font-size:13px">Now</button>'+
+      '</div>'+
+      '<div class="field"><label>Takeoff</label>'+
+        timeSpinnerHtml('m-takeoff', f.takeoff)+
+        '<button type="button" class="btn btn-g m-now-btn" data-target="m-takeoff" style="width:100%;margin-top:4px;padding:4px;font-size:13px">Now</button>'+
+      '</div>'+
+      '<div class="field"><label>Landing</label>'+
+        timeSpinnerHtml('m-landing', f.landing)+
+        '<button type="button" class="btn btn-g m-now-btn" data-target="m-landing" style="width:100%;margin-top:4px;padding:4px;font-size:13px">Now</button>'+
+      '</div>'+
+      '<div class="field"><label>Chocks On</label>'+
+        timeSpinnerHtml('m-chocksOn', f.chocksOn)+
+        '<button type="button" class="btn btn-g m-now-btn" data-target="m-chocksOn" style="width:100%;margin-top:4px;padding:4px;font-size:13px">Now</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="g2" style="background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.2);border-radius:9px;padding:12px;margin-bottom:10px">'+
+      '<div><div class="sec-lbl">Block Time (auto)</div>'+
+        '<span class="calc-val" id="m-block-v" style="font-size:16px">--</span> '+
+        '<span id="m-block-d" style="font-size:13px;color:var(--muted)"></span></div>'+
+      '<div><div class="sec-lbl">Air Time (auto)</div>'+
+        '<span class="calc-val" id="m-air-v" style="font-size:16px">--</span> '+
+        '<span id="m-air-d" style="font-size:13px;color:var(--muted)"></span></div>'+
+    '</div>'+
+
+    '<div class="sdiv">Tacho &amp; Hobbs End (Decimal)</div>'+
+    '<div class="g2">'+
+      '<div class="field"><label>Tacho End</label><input class="inp" id="m-tachoEnd" type="number" step="0.1" placeholder="1235.2" value="'+(f.tachoEnd||'')+'"/></div>'+
+      '<div class="field"><label>Hobbs End</label><input class="inp" id="m-hobbsEnd" type="number" step="0.1" placeholder="2346.4" value="'+(f.hobbsEnd||'')+'"/></div>'+
+    '</div>'+
+    '<div class="g2" style="background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.2);border-radius:9px;padding:12px;margin-bottom:10px">'+
+      '<div><div class="sec-lbl">Tacho Time (auto)</div>'+
+        '<span class="calc-val" id="m-tacho-v" style="font-size:16px">--</span>'+
+        '<span style="font-size:13px;color:var(--muted)"> hrs</span></div>'+
+      '<div><div class="sec-lbl">Hobbs Time (auto)</div>'+
+        '<span class="calc-val" id="m-hobbs-v" style="font-size:16px">--</span>'+
+        '<span style="font-size:13px;color:var(--muted)"> hrs</span></div>'+
+    '</div>'+
+    '</div>'+ // close #m-section-times
+
+    '<div id="m-section-wx" style="display:none">'+
+    '<div class="sdiv">Planning</div>'+
+    '<div class="g3">'+
+      '<div class="field"><label>TAS (kt)</label><input class="inp" id="m-wxTAS" type="number" step="1" placeholder="90" value="'+(f.wxTAS||'')+'"/></div>'+
+      '<div class="field"><label>Freezing Level (ft)</label><input class="inp" id="m-wxFreezFL" type="number" step="100" placeholder="8000" value="'+(f.wxFreezFL||'')+'"/></div>'+
+      '<div class="field"><label>Cloud Base (ft)</label><input class="inp" id="m-wxCloudBase" type="number" step="100" placeholder="3000" value="'+(f.wxCloudBase||'')+'"/></div>'+
+    '</div>'+
+
+    '<div class="sdiv">Surface Wind</div>'+
+    '<div class="g2">'+
+      '<div class="field"><label>Direction (&deg; mag)</label><input class="inp" id="m-wxSurfDir" type="number" step="1" placeholder="180" value="'+(f.wxSurfDir||'')+'"/></div>'+
+      '<div class="field"><label>Speed (kt)</label><input class="inp" id="m-wxSurfSpd" type="number" step="1" placeholder="15" value="'+(f.wxSurfSpd||'')+'"/></div>'+
+    '</div>'+
+
+    '<div class="sdiv">Runways (enter two-digit number 01-36)</div>'+
+    '<div class="g4">'+
+      '<div class="field"><label>Runway 1</label><input class="inp" id="m-rwy1" type="number" min="1" max="36" placeholder="09" value="'+(f.rwy1||'')+'"/></div>'+
+      '<div class="field"><label>Runway 2</label><input class="inp" id="m-rwy2" type="number" min="1" max="36" placeholder="27" value="'+(f.rwy2||'')+'"/></div>'+
+      '<div class="field"><label>Runway 3</label><input class="inp" id="m-rwy3" type="number" min="1" max="36" placeholder="" value="'+(f.rwy3||'')+'"/></div>'+
+      '<div class="field"><label>Runway 4</label><input class="inp" id="m-rwy4" type="number" min="1" max="36" placeholder="" value="'+(f.rwy4||'')+'"/></div>'+
+    '</div>'+
+
+    '<div style="background:rgba(139,92,246,.05);border:1px solid rgba(139,92,246,.25);border-radius:9px;padding:12px;margin-bottom:10px">'+
+      '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:#6d28d9;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Wind Components (auto)</div>'+
+      '<div id="m-wxComponents" style="display:flex;flex-direction:column;gap:6px"></div>'+
+    '</div>'+
+
+    '<div class="sdiv">METAR &amp; TAF</div>'+
+    '<div style="font-size:13px;color:var(--muted);margin-bottom:6px">'+
+      'Enter up to 4 ICAO codes (e.g. EGLL, EGKK). METARs are filtered to within &plusmn;1 hr of your flight time. Set chocks-off and chocks-on times on the Times tab to enable filtering.'+
+    '</div>'+
+    '<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">'+
+      '<button type="button" class="btn btn-p" id="m-wxFetch" style="padding:6px 14px">&#8635; Fetch Weather</button>'+
+      '<span id="m-wxStatus" style="font-size:13px;color:var(--muted);font-family:JetBrains Mono,monospace"></span>'+
+    '</div>'+
+    '<div class="g4" style="margin-bottom:8px">'+
+      '<input class="inp" id="m-wxIcao1" placeholder="ICAO 1" maxlength="4" value="'+(f.wxIcao1||'')+'" style="text-transform:uppercase"/>'+
+      '<input class="inp" id="m-wxIcao2" placeholder="ICAO 2" maxlength="4" value="'+(f.wxIcao2||'')+'" style="text-transform:uppercase"/>'+
+      '<input class="inp" id="m-wxIcao3" placeholder="ICAO 3" maxlength="4" value="'+(f.wxIcao3||'')+'" style="text-transform:uppercase"/>'+
+      '<input class="inp" id="m-wxIcao4" placeholder="ICAO 4" maxlength="4" value="'+(f.wxIcao4||'')+'" style="text-transform:uppercase"/>'+
+    '</div>'+
+    [1,2,3,4].map(function(n){
+      return '<div id="m-wxBlock'+n+'" style="background:rgba(255,255,255,.7);border:1px solid var(--border);border-radius:9px;padding:10px;margin-bottom:8px;display:none">'+
+        '<div style="font-family:JetBrains Mono,monospace;font-size:13px;color:#0369a1;font-weight:700;margin-bottom:6px" id="m-wxBlockTitle'+n+'">--</div>'+
+        '<div style="font-size:12px;color:var(--muted);margin-bottom:3px;font-family:JetBrains Mono,monospace">METAR (filtered to flight window)</div>'+
+        '<textarea class="inp" id="m-wxMetar'+n+'" rows="3" placeholder="METAR..." style="font-family:JetBrains Mono,monospace;font-size:13px">'+(f['wxMetar'+n]||'')+'</textarea>'+
+        '<div style="font-size:12px;color:var(--muted);margin-top:6px;margin-bottom:3px;font-family:JetBrains Mono,monospace">TAF</div>'+
+        '<textarea class="inp" id="m-wxTaf'+n+'" rows="4" placeholder="TAF..." style="font-family:JetBrains Mono,monospace;font-size:13px">'+(f['wxTaf'+n]||'')+'</textarea>'+
+      '</div>';
+    }).join('')+
+
+    '</div>'+ // close #m-section-wx
+
+    '<div id="m-section-fuel" style="display:none">'+
+    '<div class="sdiv">Fuel Planning</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-family:JetBrains Mono,monospace">Enter USG or L &mdash; the other converts automatically (1 USG = 3.785 L)</div>'+
+    '<div class="g3">'+
+      '<div class="field"><label>Initial Fuel</label>'+fuelPairHtml('m-fob',f.fob,'40.0')+'</div>'+
+      '<div class="field"><label>Fuel Uplifted</label>'+fuelPairHtml('m-fuelUplifted',f.fuelUplifted,'0')+'</div>'+
+      '<div class="field"><label>Burn Rate (per hour)</label>'+
+        '<div style="display:flex;gap:4px;align-items:center">'+
+          '<div style="position:relative;flex:1">'+
+            '<input class="inp" id="m-burnRate" type="number" step="0.1" placeholder="'+settings.defaultBurnRate+'" value="'+(f.burnRate||'')+'" style="padding-right:42px"/>'+
+            '<span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);font-family:JetBrains Mono,monospace;pointer-events:none">USG/h</span>'+
+          '</div>'+
+          '<span style="color:var(--muted);font-size:13px">=</span>'+
+          '<div style="position:relative;flex:1">'+
+            '<input class="inp" id="m-burnRate-l" type="number" step="0.01" placeholder="L/h" value="'+(f.burnRate?(parseFloat(f.burnRate)*USG_TO_L).toFixed(2):'')+'" style="padding-right:32px"/>'+
+            '<span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);font-family:JetBrains Mono,monospace;pointer-events:none">L/h</span>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.25);border-radius:9px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'+
+      '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:#0369a1;text-transform:uppercase;letter-spacing:.08em">Total Fuel on Board</div>'+
+      '<span id="m-totalFob" style="font-family:JetBrains Mono,monospace;font-size:18px;font-weight:700;color:#0369a1">--</span>'+
+      '<span style="font-size:13px;color:var(--muted)">USG</span>'+
+      '<span style="color:var(--muted);font-size:13px">/</span>'+
+      '<span id="m-totalFobL" style="font-family:JetBrains Mono,monospace;font-size:14px;color:#0369a1">--</span>'+
+      '<span style="font-size:13px;color:var(--muted)">L</span>'+
+      '<span style="font-size:12px;color:var(--muted);font-style:italic;margin-left:auto">Initial Fuel + Fuel Uplifted</span>'+
+    '</div>'+
+    '<div class="g3">'+
+      '<div class="field"><label>Taxi</label>'+fuelPairHtml('m-fuelTaxi',f.fuelTaxi,'1.0')+'</div>'+
+      '<div class="field"><label>Trip</label>'+fuelPairHtml('m-fuelTrip',f.fuelTrip,'20.0')+'</div>'+
+      '<div class="field"><label>Contingency (%)</label>'+
+        '<div style="display:flex;gap:6px;align-items:center">'+
+          '<input class="inp" id="m-fuelContPct" type="number" step="1" placeholder="5" value="'+(f.fuelContPct||'5')+'" style="flex:0 0 70px"/>'+
+          '<div style="flex:1;background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);border-radius:7px;padding:6px 8px;font-family:JetBrains Mono,monospace;font-size:13px;color:#b45309;text-align:center">'+
+            '<span id="m-contUSG">--</span> USG / <span id="m-contL">--</span> L'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="g3">'+
+      '<div class="field"><label>Alternate</label>'+fuelPairHtml('m-fuelAlt',f.fuelAlt,'3.0')+'</div>'+
+      '<div class="field"><label>Final Reserve</label>'+fuelPairHtml('m-fuelFinal',f.fuelFinal,'6.0')+'</div>'+
+      '<div class="field"><label>Extra</label>'+fuelPairHtml('m-fuelExtra',f.fuelExtra,'0')+'</div>'+
+    '</div>'+
+    '<div style="background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);border-radius:9px;padding:12px;margin-bottom:10px">'+
+      '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:#b45309;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Fuel Required (auto)</div>'+
+      '<div class="g3" style="gap:10px">'+
+        '<div>'+
+          '<div class="sec-lbl">Total Required</div>'+
+          '<span id="m-frTotal" style="font-family:JetBrains Mono,monospace;font-size:15px;font-weight:600;color:#b45309">--</span>'+
+          '<div class="sec-lbl" style="margin-top:6px">Endurance Required</div>'+
+          '<span id="m-frTotalEnd" style="font-family:JetBrains Mono,monospace;font-size:13px;color:#b45309">--</span>'+
+        '</div>'+
+        '<div>'+
+          '<div class="sec-lbl">Surplus / Deficit</div>'+
+          '<span id="m-frSurplus" style="font-family:JetBrains Mono,monospace;font-size:15px;font-weight:600">--</span>'+
+          '<div class="sec-lbl" style="margin-top:6px">Surplus Endurance</div>'+
+          '<span id="m-frSurplusEnd" style="font-family:JetBrains Mono,monospace;font-size:13px">--</span>'+
+        '</div>'+
+        '<div>'+
+          '<div class="sec-lbl">Total FOB Endurance</div>'+
+          '<span id="m-frEnd" style="font-family:JetBrains Mono,monospace;font-size:15px;font-weight:600;color:#0284c7">--</span>'+
+          '<div class="sec-lbl" style="margin-top:6px">From Total Fuel on Board</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.25);border-radius:9px;padding:12px;margin-bottom:10px">'+
+      '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:#047857;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Expected Fuel on Landing</div>'+
+      '<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">'+
+        '<span id="m-frExpLand" style="font-family:JetBrains Mono,monospace;font-size:20px;font-weight:700;color:#047857">--</span>'+
+        '<span style="font-size:13px;color:var(--muted)">USG</span>'+
+        '<span style="color:var(--muted);font-size:13px">/</span>'+
+        '<span id="m-frExpLandL" style="font-family:JetBrains Mono,monospace;font-size:15px;color:#047857">--</span>'+
+        '<span style="font-size:13px;color:var(--muted)">L</span>'+
+      '</div>'+
+      '<div style="font-size:13px;color:var(--muted);font-style:italic">FOB &minus; Taxi &minus; Trip (planned consumption only). Excludes contingency, alternate, final reserve and extra.</div>'+
+    '</div>'+
+    '<div style="background:rgba(180,83,9,.05);border:1px solid rgba(180,83,9,.25);border-radius:9px;padding:12px;margin-bottom:10px">'+
+      '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:#b45309;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Expected Fuel from Flight Times</div>'+
+      '<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap">'+
+        '<span id="m-frTimeFuel" style="font-family:JetBrains Mono,monospace;font-size:20px;font-weight:700;color:#b45309">--</span>'+
+        '<span style="font-size:13px;color:var(--muted)">USG</span>'+
+        '<span style="color:var(--muted);font-size:13px">/</span>'+
+        '<span id="m-frTimeFuelL" style="font-family:JetBrains Mono,monospace;font-size:15px;color:#b45309">--</span>'+
+        '<span style="font-size:13px;color:var(--muted)">L</span>'+
+        '<span id="m-frTimeAir" style="font-family:JetBrains Mono,monospace;font-size:13px;color:var(--muted);margin-left:auto"></span>'+
+      '</div>'+
+      '<div style="font-size:13px;color:var(--muted);font-style:italic">FOB &minus; Taxi &minus; (Air Time &times; Burn Rate). Air Time = Landing &minus; Takeoff (set on Times tab).</div>'+
+    '</div>'+
+    '<div style="background:rgba(139,92,246,.05);border:1px solid rgba(139,92,246,.25);border-radius:9px;padding:12px;margin-bottom:10px">'+
+      '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:#6d28d9;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Actual Fuel on Landing</div>'+
+      '<div class="field" style="margin-bottom:8px">'+fuelPairHtml('m-fuelLanding',f.fuelLanding,'')+'</div>'+
+      '<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'+
+        '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Variance vs Expected:</div>'+
+        '<span id="m-frActVar" style="font-family:JetBrains Mono,monospace;font-size:14px;font-weight:700">--</span>'+
+        '<span id="m-frActVarPct" style="font-family:JetBrains Mono,monospace;font-size:13px;color:var(--muted)"></span>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.2);border-radius:9px;padding:12px;margin-bottom:10px">'+
+      '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:#0369a1;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Fuel &amp; Time Remaining (every 30 min)</div>'+
+      '<div id="m-fuelTable" style="font-family:JetBrains Mono,monospace;font-size:12px"></div>'+
+    '</div>'+
+    '</div>'+ // close #m-section-fuel
+
+    '<div id="m-section-info-extra">'+
+    '<div class="sdiv">Other</div>'+
+    '<div class="field"><label>Oil Check</label><input class="inp" id="m-oil" value="'+(f.oil||'')+'" placeholder="OK / 1L added"/></div>'+
+    '<div class="field"><label>Maneuvers / Exercises</label><textarea class="inp" id="m-maneuvers" rows="3">'+(f.maneuvers||'')+'</textarea></div>'+
+    '<div class="field"><label>Instructor Notes</label><textarea class="inp" id="m-notes" rows="3">'+(f.notes||'')+'</textarea></div>'+
+    '</div>';
+
+  // Tab switching
+  function switchTab(tab){
+    var sections={
+      info: [qs('#m-section-info',div), qs('#m-section-info-extra',div)],
+      times: [qs('#m-section-times',div)],
+      wx: [qs('#m-section-wx',div)],
+      fuel: [qs('#m-section-fuel',div)]
+    };
+    var btns={
+      info: qs('#m-tab-info',div),
+      times: qs('#m-tab-times',div),
+      wx: qs('#m-tab-wx',div),
+      fuel: qs('#m-tab-fuel',div)
+    };
+    Object.keys(sections).forEach(function(k){
+      sections[k].forEach(function(el){ if(el) el.style.display = (k===tab ? '' : 'none'); });
+      var b=btns[k];
+      if(b){
+        if(k===tab){
+          b.style.color='#0284c7';
+          b.style.borderBottomColor='#0284c7';
+          b.style.fontWeight='600';
+        } else {
+          b.style.color='var(--muted)';
+          b.style.borderBottomColor='transparent';
+          b.style.fontWeight='400';
+        }
+      }
+    });
+  }
+  // Wire tab buttons after DOM insert (defer so qs works)
+  setTimeout(function(){
+    var bi=qs('#m-tab-info',div), bt=qs('#m-tab-times',div), bw=qs('#m-tab-wx',div), bf=qs('#m-tab-fuel',div);
+    if(bi) bi.addEventListener('click', function(){ switchTab('info'); });
+    if(bt) bt.addEventListener('click', function(){ switchTab('times'); });
+    if(bw) bw.addEventListener('click', function(){ switchTab('wx'); });
+    if(bf) bf.addEventListener('click', function(){ switchTab('fuel'); });
+    // Wire all Now buttons inside the modal
+    div.querySelectorAll('.m-now-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var target=btn.getAttribute('data-target');
+        setTimeSpinnerNow(target, div);
+        liveCalc();
+      });
+    });
+  },0);
+
+  // Time spinner change listeners (each field has -h and -m sub-elements)
+  ['m-chocksOff','m-chocksOn','m-takeoff','m-landing'].forEach(function(id){
+    ['-h','-m'].forEach(function(sfx){
+      var el=qs('#'+id+sfx,div);
+      if(el) el.addEventListener('change', liveCalc);
+    });
+  });
+
+  // All numeric fields trigger recalc
+  ['m-tachoStart','m-tachoEnd','m-hobbsStart','m-hobbsEnd',
+   'm-fuelContPct',
+   'm-wxTAS','m-wxFreezFL','m-wxCloudBase','m-wxSurfDir','m-wxSurfSpd',
+   'm-rwy1','m-rwy2','m-rwy3','m-rwy4'].forEach(function(id){
+    var el=qs('#'+id,div); if(el) el.addEventListener('input', liveCalc);
+  });
+
+  // Wire bidirectional USG/L pairs - calc fires after either side updates
+  ['m-fob','m-fuelTaxi','m-fuelTrip','m-fuelAlt','m-fuelFinal','m-fuelExtra','m-fuelUplifted','m-burnRate','m-fuelLanding']
+    .forEach(function(baseId){ wireFuelPair(baseId, div, liveCalc); });
+
+  // ICAO inputs: uppercase + show/hide block based on whether code is entered
+  function syncWxBlocks(){
+    [1,2,3,4].forEach(function(n){
+      var icao=(qs('#m-wxIcao'+n,div).value||'').trim().toUpperCase();
+      var block=qs('#m-wxBlock'+n,div);
+      var hasContent = icao.length>=3 || (f['wxMetar'+n]||'') || (f['wxTaf'+n]||'');
+      if(block) block.style.display = hasContent ? '' : 'none';
+      if(hasContent){
+        var lbl=qs('#m-wxBlockTitle'+n,div);
+        if(lbl) lbl.textContent = icao || ('Station '+n);
+      }
+    });
+  }
+  [1,2,3,4].forEach(function(n){
+    var el=qs('#m-wxIcao'+n,div); if(!el) return;
+    el.addEventListener('input', function(){
+      el.value = el.value.toUpperCase();
+      syncWxBlocks();
+    });
+  });
+  syncWxBlocks();
+
+  // Fetch button - pulls METAR + TAF for each entered ICAO and filters METARs to flight window
+  var fetchBtn=qs('#m-wxFetch',div);
+  if(fetchBtn){
+    fetchBtn.addEventListener('click', function(){
+      var icaos = [1,2,3,4].map(function(n){
+        return (qs('#m-wxIcao'+n,div).value||'').trim().toUpperCase();
+      });
+      var validCount = icaos.filter(function(s){return s.length>=3;}).length;
+      if(!validCount){
+        toast('Enter at least one ICAO code');
+        return;
+      }
+      var status=qs('#m-wxStatus',div);
+      status.textContent='Fetching... (this may take a few seconds)';
+      status.style.color='#0369a1';
+
+      var off = getTimeSpinner('m-chocksOff',div);
+      var on  = getTimeSpinner('m-chocksOn',div);
+
+      var done=0, expected=validCount, errors=[];
+      icaos.forEach(function(icao,i){
+        if(icao.length<3) return;
+        var n = i+1;
+        // Show the block immediately
+        var block=qs('#m-wxBlock'+n,div);
+        if(block) block.style.display='';
+        var lbl=qs('#m-wxBlockTitle'+n,div);
+        if(lbl) lbl.textContent = icao + '  (fetching...)';
+
+        fetchWx(icao, function(metar, taf, errMsg){
+          var filtered = filterMetars(metar, off, on);
+          var mEl=qs('#m-wxMetar'+n,div);
+          var tEl=qs('#m-wxTaf'+n,div);
+          if(mEl) mEl.value = filtered || '';
+          if(tEl) tEl.value = taf || '';
+          if(lbl) lbl.textContent = icao + (errMsg?'  (FAILED)':'');
+          if(errMsg) errors.push(icao+': '+errMsg);
+          done++;
+          if(done >= expected){
+            if(errors.length){
+              status.textContent = 'Errors: '+errors.join(' | ');
+              status.style.color='#be123c';
+            } else {
+              var hasFlightTimes = (off||on) ? true : false;
+              status.textContent = hasFlightTimes
+                ? 'Done (METARs filtered to ±1 hr of flight window)'
+                : 'Done (METARs filtered to ±1 hr of current UTC time)';
+              status.style.color='#047857';
+            }
+          }
+        });
+      });
+    });
+  }
+
+  function liveCalc(){
+    var g=function(id){ return qs('#'+id,div).value; };
+
+    // Times
+    var block=timeDiff(parseUTC(getTimeSpinner('m-chocksOff',div)), parseUTC(getTimeSpinner('m-chocksOn',div)));
+    var air  =timeDiff(parseUTC(getTimeSpinner('m-takeoff',  div)), parseUTC(getTimeSpinner('m-landing',  div)));
+    var tacho=instrDiff(g('m-tachoStart'), g('m-tachoEnd'));
+    var hobbs=instrDiff(g('m-hobbsStart'), g('m-hobbsEnd'));
+
+    qs('#m-block-v',div).textContent=decToHM(block);
+    qs('#m-block-d',div).textContent=block!==null?'('+dec2(block)+' hrs)':'';
+    qs('#m-air-v',div).textContent=decToHM(air);
+    qs('#m-air-d',div).textContent=air!==null?'('+dec2(air)+' hrs)':'';
+    qs('#m-tacho-v',div).textContent=dec2(tacho);
+    qs('#m-hobbs-v',div).textContent=dec2(hobbs);
+
+    // Fuel
+    var fuelF={
+      burnRate:g('m-burnRate'),
+      fob:g('m-fob'),
+      fuelUplifted:g('m-fuelUplifted'),
+      fuelTaxi:g('m-fuelTaxi'),
+      fuelTrip:g('m-fuelTrip'),
+      fuelContPct:g('m-fuelContPct'),
+      fuelAlt:g('m-fuelAlt'),
+      fuelFinal:g('m-fuelFinal'),
+      fuelExtra:g('m-fuelExtra')
+    };
+    var fc=fuelCalc(fuelF);
+    // Total FOB display
+    var tfu=qs('#m-totalFob',div), tfl=qs('#m-totalFobL',div);
+    if(fc.fob!==null){
+      tfu.textContent=dec2(fc.fob);
+      tfl.textContent=dec2(fc.fob*USG_TO_L);
+    } else {
+      tfu.textContent='--';
+      tfl.textContent='--';
+    }
+    function fmtUSGL(v){ return dec2(v)+' USG / '+dec2(v*USG_TO_L)+' L'; }
+    // Live readout next to contingency % input
+    qs('#m-contUSG',div).textContent=dec2(fc.cont);
+    qs('#m-contL',div).textContent=dec2(fc.cont*USG_TO_L);
+    qs('#m-frTotal',div).textContent=fmtUSGL(fc.total);
+    // Endurance for total required = total / burn
+    var totEndEl=qs('#m-frTotalEnd',div);
+    totEndEl.textContent=(fc.burn>0)?decToHM(fc.total/fc.burn):'--';
+    var surEl=qs('#m-frSurplus',div);
+    var surEndEl=qs('#m-frSurplusEnd',div);
+    if(fc.surplus===null){
+      surEl.textContent='--';
+      surEl.style.color='var(--muted)';
+      surEndEl.textContent='--';
+      surEndEl.style.color='var(--muted)';
+    } else {
+      var sign=fc.surplus>=0?'+':'-';
+      var abs=Math.abs(fc.surplus);
+      surEl.textContent=sign+dec2(abs)+' USG / '+sign+dec2(abs*USG_TO_L)+' L';
+      surEl.style.color=fc.surplus>=0?'#047857':'#be123c';
+      // Surplus endurance = surplus / burn (signed)
+      if(fc.burn>0){
+        surEndEl.textContent=sign+decToHM(abs/fc.burn);
+        surEndEl.style.color=fc.surplus>=0?'#047857':'#be123c';
+      } else {
+        surEndEl.textContent='--';
+      }
+    }
+    qs('#m-frEnd',div).textContent=fc.endurance!==null?decToHM(fc.endurance):'--';
+
+    // Expected fuel on landing = FOB - Taxi - Trip
+    var expU = qs('#m-frExpLand',div);
+    var expL = qs('#m-frExpLandL',div);
+    var expVal = null;
+    if(fc.fob!==null){
+      expVal = fc.fob - fc.taxi - fc.trip;
+      expU.textContent = (expVal>=0?'':'-') + dec2(Math.abs(expVal));
+      expL.textContent = ((expVal>=0?'':'-') + dec2(Math.abs(expVal * USG_TO_L)));
+      expU.style.color = expVal >= fc.final_ ? '#047857' : (expVal >= 0 ? '#b45309' : '#be123c');
+    } else {
+      expU.textContent = '--';
+      expL.textContent = '--';
+      expU.style.color = 'var(--muted)';
+    }
+
+    // Expected fuel from flight times = FOB - Taxi - (Air Time × Burn Rate)
+    var tfuU = qs('#m-frTimeFuel',div);
+    var tfuL = qs('#m-frTimeFuelL',div);
+    var tfuAir = qs('#m-frTimeAir',div);
+    if(tfuU){
+      var to = parseUTC(getTimeSpinner('m-takeoff',div));
+      var ld = parseUTC(getTimeSpinner('m-landing',div));
+      var airHr = (to!==null && ld!==null) ? timeDiff(to, ld) : null;
+      if(fc.fob!==null && airHr!==null && fc.burn>0){
+        var tripActual = airHr * fc.burn;
+        var tfuVal = fc.fob - fc.taxi - tripActual;
+        tfuU.textContent = (tfuVal>=0?'':'-') + dec2(Math.abs(tfuVal));
+        tfuL.textContent = (tfuVal>=0?'':'-') + dec2(Math.abs(tfuVal * USG_TO_L));
+        tfuU.style.color = tfuVal >= fc.final_ ? '#047857' : (tfuVal >= 0 ? '#b45309' : '#be123c');
+        tfuAir.textContent = 'Air ' + decToHM(airHr) + ' (' + dec2(airHr) + ' hrs) × ' + fc.burn + ' = ' + dec2(tripActual) + ' USG';
+      } else {
+        tfuU.textContent = '--';
+        tfuL.textContent = '--';
+        tfuU.style.color = 'var(--muted)';
+        tfuAir.textContent = airHr===null ? 'Set takeoff & landing on Times tab' : '';
+      }
+    }
+
+    // Actual fuel on landing variance vs expected
+    var actEl = qs('#m-frActVar',div);
+    var actPctEl = qs('#m-frActVarPct',div);
+    var actVal = parseFloat(g('m-fuelLanding'));
+    if(!isNaN(actVal) && expVal!==null){
+      var diff = actVal - expVal;
+      var sign = diff>=0?'+':'-';
+      var absD = Math.abs(diff);
+      actEl.textContent = sign+dec2(absD)+' USG / '+sign+dec2(absD*USG_TO_L)+' L';
+      actEl.style.color = diff>=0 ? '#047857' : '#be123c';
+      if(expVal !== 0){
+        actPctEl.textContent = '('+sign+dec2(Math.abs(diff/expVal*100))+'%)';
+      } else {
+        actPctEl.textContent = '';
+      }
+    } else {
+      actEl.textContent = '--';
+      actEl.style.color = 'var(--muted)';
+      actPctEl.textContent = '';
+    }
+
+    // Fuel & time remaining countdown table
+    var rows=fuelTable(fc.fob, fc.burn);
+    var tEl=qs('#m-fuelTable',div);
+    if(!rows.length){
+      tEl.innerHTML='<span style="color:var(--muted)">Enter FOB and burn rate to see countdown</span>';
+    } else {
+      var html='<table style="width:100%;border-collapse:collapse">'+
+        '<thead><tr style="border-bottom:1px solid rgba(14,165,233,.3)">'+
+        '<th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500;font-size:12px;text-transform:uppercase">Time</th>'+
+        '<th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;font-size:12px;text-transform:uppercase">Fuel Rem (USG)</th>'+
+        '<th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;font-size:12px;text-transform:uppercase">Fuel Rem (L)</th>'+
+        '<th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;font-size:12px;text-transform:uppercase">Endurance</th>'+
+        '</tr></thead><tbody>';
+      rows.forEach(function(r){
+        var col=r.exhausted?'#be123c':(r.endurance<1?'#b45309':'#047857');
+        html+='<tr style="border-bottom:1px solid rgba(51,65,85,.3)">'+
+          '<td style="padding:4px 8px;color:#cbd5e1">'+decToHM(r.hr)+'</td>'+
+          '<td style="text-align:right;padding:4px 8px;color:'+col+'">'+(r.exhausted?'EMPTY':dec2(r.fuel))+'</td>'+
+          '<td style="text-align:right;padding:4px 8px;color:'+col+'">'+(r.exhausted?'EMPTY':dec2(r.fuel*USG_TO_L))+'</td>'+
+          '<td style="text-align:right;padding:4px 8px;color:'+col+'">'+(r.exhausted?'0:00':decToHM(r.endurance))+'</td>'+
+          '</tr>';
+      });
+      html+='</tbody></table>';
+      tEl.innerHTML=html;
+    }
+
+    // Weather wind components for up to 4 runways
+    var wxEl=qs('#m-wxComponents',div);
+    if(wxEl){
+      var dir=g('m-wxSurfDir'), spd=g('m-wxSurfSpd');
+      var rows=[];
+      ['m-rwy1','m-rwy2','m-rwy3','m-rwy4'].forEach(function(id,i){
+        var rwy=qs('#'+id,div).value.trim();
+        if(!rwy) return;
+        var c=rwyWind(rwy,dir,spd);
+        if(!c){
+          rows.push('<div style="display:flex;gap:10px;align-items:center;font-size:12px"><span style="font-family:JetBrains Mono,monospace;color:var(--muted);min-width:75px">RWY '+('0'+rwy).slice(-2)+'</span><span style="color:var(--muted)">Enter wind direction and speed</span></div>');
+          return;
+        }
+        var hwCol=c.hwLabel==='HW'?'#047857':'#be123c';
+        rows.push(
+          '<div style="display:flex;gap:14px;align-items:center;font-size:12px;font-family:JetBrains Mono,monospace">'+
+            '<span style="color:#6d28d9;min-width:75px;font-weight:600">RWY '+('0'+rwy).slice(-2)+'</span>'+
+            '<span><span style="color:var(--muted);font-size:12px">'+c.hwLabel+': </span><span style="color:'+hwCol+';font-weight:600">'+c.hwAbs+' kt</span></span>'+
+            '<span><span style="color:var(--muted);font-size:12px">XW: </span><span style="color:#b45309;font-weight:600">'+c.xwAbs+' kt '+c.xwLabel+'</span></span>'+
+          '</div>'
+        );
+      });
+      wxEl.innerHTML = rows.length ? rows.join('') : '<div style="color:var(--muted);font-size:12px">Enter at least one runway, plus wind direction and speed.</div>';
+    }
+  }
+
+  if(ex) setTimeout(liveCalc,0);
+
+  // Collect all form fields onto f - shared by autosave, email-now, and final save
+  function collectFields(){
+    var g=function(id){
+      var el=qs('#'+id,div);
+      return el ? (el.value||'').trim() : '';
+    };
+    f.date=g('m-date'); f.aircraft=g('m-aircraft'); f.category=g('m-cat');
+    f.departure=g('m-dep').toUpperCase(); f.destination=g('m-dest').toUpperCase();
+    f.pic=g('m-pic'); f.student=g('m-student');
+    f.touchGoes=g('m-touchGoes');
+    f.chocksOff=getTimeSpinner('m-chocksOff',div); f.takeoff=getTimeSpinner('m-takeoff',div);
+    f.landing=getTimeSpinner('m-landing',div); f.chocksOn=getTimeSpinner('m-chocksOn',div);
+    f.tachoStart=g('m-tachoStart'); f.tachoEnd=g('m-tachoEnd');
+    f.hobbsStart=g('m-hobbsStart'); f.hobbsEnd=g('m-hobbsEnd');
+    f.fob=g('m-fob'); f.burnRate=g('m-burnRate');
+    f.fuelTaxi=g('m-fuelTaxi'); f.fuelTrip=g('m-fuelTrip');
+    f.fuelContPct=g('m-fuelContPct'); f.fuelAlt=g('m-fuelAlt');
+    f.fuelFinal=g('m-fuelFinal'); f.fuelExtra=g('m-fuelExtra');
+    f.fuelUplifted=g('m-fuelUplifted');
+    f.fuelLanding=g('m-fuelLanding');
+    f.wxTAS=g('m-wxTAS'); f.wxFreezFL=g('m-wxFreezFL'); f.wxCloudBase=g('m-wxCloudBase');
+    f.wxSurfDir=g('m-wxSurfDir'); f.wxSurfSpd=g('m-wxSurfSpd');
+    f.rwy1=g('m-rwy1'); f.rwy2=g('m-rwy2'); f.rwy3=g('m-rwy3'); f.rwy4=g('m-rwy4');
+    [1,2,3,4].forEach(function(n){
+      f['wxIcao'+n]=g('m-wxIcao'+n);
+      var mEl=qs('#m-wxMetar'+n,div); if(mEl) f['wxMetar'+n]=mEl.value;
+      var tEl=qs('#m-wxTaf'+n,div); if(tEl) f['wxTaf'+n]=tEl.value;
+    });
+    f.oil=g('m-oil');
+    var manEl=qs('#m-maneuvers',div); if(manEl) f.maneuvers=manEl.value;
+    var notesEl=qs('#m-notes',div); if(notesEl) f.notes=notesEl.value;
+  }
+
+  // Persist current form state without closing the modal
+  function saveDraft(silent){
+    collectFields();
+    if(!ex){
+      // First-time draft: insert if not yet in flights[]
+      var existing = flights.findIndex(function(x){ return x.id===f.id; });
+      if(existing<0) flights.push(f);
+      else flights[existing]=f;
+    } else {
+      var i=flights.findIndex(function(x){ return x.id===f.id; });
+      if(i>=0) flights[i]=f;
+    }
+    flSave(); flActive=f.id;
+    if(!silent){ renderFlList(); renderFlDetail(); renderFlStats(); }
+  }
+
+  // Auto-save every 5 seconds while modal is open
+  var autoSaveTimer = setInterval(function(){
+    saveDraft(true);
+    var ind = qs('#m-autosave-ind',div);
+    if(ind){
+      var t = new Date();
+      ind.textContent = 'Saved ' + ('0'+t.getHours()).slice(-2) + ':' + ('0'+t.getMinutes()).slice(-2) + ':' + ('0'+t.getSeconds()).slice(-2);
+    }
+  }, 5000);
+
+  // Also save on every input/change so nothing is lost on a crash
+  div.addEventListener('input', function(){ saveDraft(true); });
+  div.addEventListener('change', function(){ saveDraft(true); });
+
+  openModal({title: ex?'Edit Flight Record':'Log New Flight', body:div, wide:true,
+    saveLabel: ex?'Save Changes':'Log Flight',
+    extraButtons: [{
+      label: '\u2709 Email Now',
+      cls: 'btn btn-g',
+      onClick: function(){
+        saveDraft(false);
+        toast('Saved -- opening Mail...');
+        setTimeout(function(){ emailFlight(f); }, 400);
+      }
+    }],
+    onClose: function(){ if(autoSaveTimer){ clearInterval(autoSaveTimer); autoSaveTimer=null; } },
+    onSave: function(){
+      if(autoSaveTimer){ clearInterval(autoSaveTimer); autoSaveTimer=null; }
+      collectFields();
+      if(!ex){
+        var existing = flights.findIndex(function(x){ return x.id===f.id; });
+        if(existing<0) flights.push(f);
+        else flights[existing]=f;
+      } else {
+        var i=flights.findIndex(function(x){ return x.id===f.id; });
+        if(i>=0) flights[i]=f;
+      }
+      flSave(); flActive=f.id;
+      renderFlList(); renderFlDetail(); renderFlStats();
+      toast((ex?'Flight updated':'Flight logged')+' -- opening Mail...');
+      setTimeout(function(){ emailFlight(f); },600);
+    }
+  });
+
+  // Insert auto-save indicator next to the header (after openModal renders)
+  setTimeout(function(){
+    var modal = document.querySelector('.modal-header');
+    if(modal && !qs('#m-autosave-ind',div)){
+      var ind = document.createElement('span');
+      ind.id = 'm-autosave-ind';
+      ind.style.cssText = 'font-size:11px;color:var(--em);font-family:JetBrains Mono,monospace;margin-left:12px';
+      ind.textContent = 'Auto-saving...';
+      modal.appendChild(ind);
+    }
+  }, 50);
+}
+
+// Build weather text block for emails/exports. Returns array of lines.
+function weatherTextLines(f){
+  var lines = [];
+  var hasAny = f.wxTAS||f.wxFreezFL||f.wxCloudBase||f.wxSurfDir||
+               f.rwy1||f.rwy2||f.rwy3||f.rwy4||
+               f.wxMetar1||f.wxMetar2||f.wxMetar3||f.wxMetar4||
+               f.wxTaf1||f.wxTaf2||f.wxTaf3||f.wxTaf4;
+  if(!hasAny) return lines;
+  lines.push('','WEATHER','=======');
+  if(f.wxTAS) lines.push('TAS:           '+f.wxTAS+' kt');
+  if(f.wxFreezFL) lines.push('Freezing Level: '+f.wxFreezFL+' ft');
+  if(f.wxCloudBase) lines.push('Cloud Base:    '+f.wxCloudBase+' ft');
+  if(f.wxSurfDir||f.wxSurfSpd){
+    lines.push('Surface Wind:  '+(f.wxSurfDir||'--')+' deg / '+(f.wxSurfSpd||'--')+' kt');
+    [f.rwy1,f.rwy2,f.rwy3,f.rwy4].forEach(function(rwy){
+      if(!rwy) return;
+      var c = rwyWind(rwy, f.wxSurfDir, f.wxSurfSpd);
+      if(!c) return;
+      lines.push('  RWY '+('0'+rwy).slice(-2)+': '+c.hwLabel+' '+c.hwAbs+' kt, XW '+c.xwAbs+' kt '+c.xwLabel);
+    });
+  }
+  [1,2,3,4].forEach(function(n){
+    var icao = f['wxIcao'+n];
+    var metar = f['wxMetar'+n];
+    var taf = f['wxTaf'+n];
+    if(!icao && !metar && !taf) return;
+    var filtered = filterMetars(metar, f.chocksOff, f.chocksOn);
+    lines.push('','-- '+(icao||'Station '+n)+' --');
+    if(filtered) lines.push('METAR:', filtered);
+    if(taf) lines.push('TAF:', taf);
+  });
+  return lines;
+}
+
+function emailFlight(f){
+  var c=flCalc(f);
+  var fc=fuelCalc(f);
+  var subj=encodeURIComponent('Flight Record -- '+( f.date||'?')+' - '+(f.aircraft||'?')+' - '+(f.departure||'?')+' to '+(f.destination||'?'));
+  var lines=[
+    'FLIGHT RECORD',
+    '=============',
+    'Date:        '+(f.date||'--'),
+    'Aircraft:    '+(f.aircraft||'--'),
+    'Category:    '+(f.category||'--'),
+    'Route:       '+(f.departure||'?')+' to '+(f.destination||'?'),
+    'PIC:         '+(f.pic||'--'),
+    'Student:     '+(f.student||'--'),
+    'Touch & Goes:'+' '+(f.touchGoes||'0'),
+    '',
+    'TIMES (UTC)',
+    'Chocks Off:  '+(f.chocksOff||'--'),
+    'Takeoff:     '+(f.takeoff||'--'),
+    'Landing:     '+(f.landing||'--'),
+    'Chocks On:   '+(f.chocksOn||'--'),
+    '',
+    'CALCULATED TIMES',
+    'Block Time:  '+decToHM(c.block)+' ('+dec2(c.block)+' hrs)',
+    'Air Time:    '+decToHM(c.air)+' ('+dec2(c.air)+' hrs)',
+    'Tacho Time:  '+dec2(c.tacho)+' hrs  ['+( f.tachoStart||'?')+' to '+(f.tachoEnd||'?')+']',
+    'Hobbs Time:  '+dec2(c.hobbs)+' hrs  ['+(f.hobbsStart||'?')+' to '+(f.hobbsEnd||'?')+']',
+    '',
+    'FUEL (USG)  -- Burn rate: '+fc.burn+' USG/hr',
+    'Initial Fuel:        '+(fc.initial!==null?dec2(fc.initial)+' USG':'--'),
+    'Fuel Uplifted:       '+(fc.uplifted?dec2(fc.uplifted)+' USG':'--'),
+    'Total Fuel on Board: '+(fc.fob!==null?dec2(fc.fob)+' USG':'--'),
+    'Taxi:                '+dec2(fc.taxi)+' USG',
+    'Trip:                '+dec2(fc.trip)+' USG',
+    'Contingency ('+dec2(fc.contPct)+'%): '+dec2(fc.cont)+' USG',
+    'Alternate:           '+dec2(fc.alt)+' USG',
+    'Final Reserve:       '+dec2(fc.final_)+' USG',
+    'Extra:               '+dec2(fc.extra)+' USG',
+    'Total Required:      '+dec2(fc.total)+' USG',
+    'Surplus / Deficit:   '+(fc.surplus!==null?(fc.surplus>=0?'+':'')+dec2(fc.surplus)+' USG':'--'),
+    'Endurance:           '+(fc.endurance!==null?decToHM(fc.endurance)+' ('+dec2(fc.endurance)+' hrs)':'--'),
+    'Fuel Uplifted:       '+(f.fuelUplifted||'--')+' USG',
+    'Actual on Landing:   '+(f.fuelLanding?dec2(parseFloat(f.fuelLanding))+' USG':'--'),
+    '',
+    'Oil: '+(f.oil||'--'),
+    '',
+    'MANEUVERS / EXERCISES',
+    f.maneuvers||'--',
+    '',
+    'INSTRUCTOR NOTES',
+    f.notes||'--',
+    '',
+    '-- Sent from FlightDeck Instructor Hub',
+  ].concat([]);
+  // Insert weather lines before the closing block
+  var wxLines = weatherTextLines(f);
+  if(wxLines.length){
+    // Find the position of the trailing blank+sign-off and splice in
+    var insertAt = lines.length - 2; // before final blank+signoff
+    lines.splice.apply(lines, [insertAt, 0].concat(wxLines));
+  }
+  window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
+}
+
+function exportFlight(f){
+  var c=flCalc(f);
+  var fc=fuelCalc(f);
+  var lines=[
+    'FLIGHT RECORD','=============',
+    'Date:        '+(f.date||'--'),
+    'Aircraft:    '+(f.aircraft||'--'),
+    'Category:    '+(f.category||'--'),
+    'Route:       '+(f.departure||'?')+' to '+(f.destination||'?'),
+    'PIC:         '+(f.pic||'--'),
+    'Student:     '+(f.student||'--'),
+    'Touch & Goes:'+' '+(f.touchGoes||'0'),
+    '','TIMES (UTC)',
+    'Chocks Off:  '+(f.chocksOff||'--'),
+    'Takeoff:     '+(f.takeoff||'--'),
+    'Landing:     '+(f.landing||'--'),
+    'Chocks On:   '+(f.chocksOn||'--'),
+    '','CALCULATED TIMES',
+    'Block Time:  '+decToHM(c.block)+' ('+dec2(c.block)+' hrs)',
+    'Air Time:    '+decToHM(c.air)+' ('+dec2(c.air)+' hrs)',
+    'Tacho Time:  '+dec2(c.tacho)+' hrs  ['+(f.tachoStart||'?')+' to '+(f.tachoEnd||'?')+']',
+    'Hobbs Time:  '+dec2(c.hobbs)+' hrs  ['+(f.hobbsStart||'?')+' to '+(f.hobbsEnd||'?')+']',
+    '','FUEL (USG)  -- Burn rate: '+fc.burn+' USG/hr',
+    'Initial Fuel:        '+(fc.initial!==null?dec2(fc.initial)+' USG':'--'),
+    'Fuel Uplifted:       '+(fc.uplifted?dec2(fc.uplifted)+' USG':'--'),
+    'Total Fuel on Board: '+(fc.fob!==null?dec2(fc.fob)+' USG':'--'),
+    'Taxi:                '+dec2(fc.taxi)+' USG',
+    'Trip:                '+dec2(fc.trip)+' USG',
+    'Contingency ('+dec2(fc.contPct)+'%): '+dec2(fc.cont)+' USG',
+    'Alternate:           '+dec2(fc.alt)+' USG',
+    'Final Reserve:       '+dec2(fc.final_)+' USG',
+    'Extra:               '+dec2(fc.extra)+' USG',
+    'Total Required:      '+dec2(fc.total)+' USG',
+    'Surplus / Deficit:   '+(fc.surplus!==null?(fc.surplus>=0?'+':'')+dec2(fc.surplus)+' USG':'--'),
+    'Endurance:           '+(fc.endurance!==null?decToHM(fc.endurance)+' ('+dec2(fc.endurance)+' hrs)':'--'),
+    'Actual on Landing:   '+(f.fuelLanding?dec2(parseFloat(f.fuelLanding))+' USG':'--'),
+    'Oil: '+(f.oil||'--'),
+    '','MANEUVERS / EXERCISES', f.maneuvers||'--',
+    '','INSTRUCTOR NOTES', f.notes||'--',
+  ].concat(weatherTextLines(f));
+  dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
+  toast('Flight exported');
+}
+
+function exportAllFlights(){
+  if(!flights.length){ toast('No flights to export'); return; }
+  var hdr='Date,Aircraft,Category,Departure,Destination,PIC,Student,TouchGoes,ChocksOff,Takeoff,Landing,ChocksOn,BlockHM,BlockHrs,AirHM,AirHrs,TachoStart,TachoEnd,TachoHrs,HobbsStart,HobbsEnd,HobbsHrs,InitialFuel,FuelUplifted,TotalFOB,Taxi,Trip,ContingencyPct,Cont,Alt,Final,Extra,TotalReq,Surplus,BurnRate,Endurance,Oil,Maneuvers,Notes';
+  var rows=flights.map(function(f){
+    var c=flCalc(f);
+    var fc=fuelCalc(f);
+    return [
+      f.date,f.aircraft,f.category,f.departure,f.destination,f.pic,f.student,f.touchGoes||'0',
+      f.chocksOff,f.takeoff,f.landing,f.chocksOn,
+      decToHM(c.block),dec2(c.block),decToHM(c.air),dec2(c.air),
+      f.tachoStart,f.tachoEnd,dec2(c.tacho),
+      f.hobbsStart,f.hobbsEnd,dec2(c.hobbs),
+      dec2(fc.initial),dec2(fc.uplifted),dec2(fc.fob),dec2(fc.taxi),dec2(fc.trip),dec2(fc.contPct),dec2(fc.cont),
+      dec2(fc.alt),dec2(fc.final_),dec2(fc.extra),
+      dec2(fc.total),dec2(fc.surplus),
+      fc.burn,dec2(fc.endurance),
+      f.oil,
+      '"'+(f.maneuvers||'').replace(/"/g,'""')+'"',
+      '"'+(f.notes||'').replace(/"/g,'""')+'"'
+    ].join(',');
+  });
+  dlFile('FlightDeck_log.csv',[hdr].concat(rows).join('\n'),'text/csv');
+  toast('All flights exported as CSV');
+}
+
+function renderFlFilters(){
+  var el2=qs('#fl-filter');
+  ['All'].concat(FL_CATS).forEach(function(c){
+    var ch=el('div','fchip'+(c==='All'?' on':''),c);
+    ch.addEventListener('click',function(){
+      el2.querySelectorAll('.fchip').forEach(function(x){ x.classList.remove('on'); });
+      ch.classList.add('on'); renderFlList();
+    });
+    el2.appendChild(ch);
+  });
+}
+
+qs('#fl-new').addEventListener('click',function(){ openFlModal(null); });
+qs('#fl-export-all').addEventListener('click', exportAllFlights);
+qs('#fl-search').addEventListener('input', renderFlList);
+
+// ============================================================
+// CHECKLISTS
+// ============================================================
+var CL_KEY='fd_checklists';
+var CL_CATS=['Pre-Flight','Engine Start','Run-Up','After Take-Off','Cruise','Descent','Pre-Landing','After Landing','Shutdown','Emergency','Other'];
+var checklists=load(CL_KEY,[
+  {id:'cl1',title:'Pre-Flight Inspection',category:'Pre-Flight',items:[
+    {id:'i1',text:'Check fuel quantity and quality (sample)',done:false},
+    {id:'i2',text:'Inspect oil level',done:false},
+    {id:'i3',text:'Control surfaces -- free and correct',done:false},
+    {id:'i4',text:'Tires -- condition and inflation',done:false},
+    {id:'i5',text:'Pitot tube cover -- REMOVED',done:false},
+    {id:'i6',text:'Aircraft documents (AROW) -- ON BOARD',done:false},
+    {id:'i7',text:'Weight and balance -- CALCULATED',done:false},
+  ]},
+  {id:'cl2',title:'Engine Start',category:'Engine Start',items:[
+    {id:'i8',text:'Brakes -- SET',done:false},
+    {id:'i9',text:'Master switch -- ON',done:false},
+    {id:'i10',text:'Fuel selector -- BOTH',done:false},
+    {id:'i11',text:'Throttle -- 1/4 inch OPEN',done:false},
+    {id:'i12',text:'Mixture -- RICH',done:false},
+    {id:'i13',text:'Propeller area -- CLEAR',done:false},
+    {id:'i14',text:'Ignition -- START',done:false},
+  ]},
+  {id:'cl3',title:'After Landing',category:'After Landing',items:[
+    {id:'i15',text:'Transponder -- STBY',done:false},
+    {id:'i16',text:'Flaps -- UP',done:false},
+    {id:'i17',text:'Landing light -- OFF',done:false},
+    {id:'i18',text:'Carb heat -- OFF (if applicable)',done:false},
+  ]},
+]);
+var clActive=null;
+function clSave(){ save(CL_KEY,checklists); }
+
+function renderClFilter(){
+  var el2=qs('#cl-filter'); el2.innerHTML='';
+  ['All'].concat(CL_CATS).forEach(function(c){
+    var ch=el('div','fchip'+(c==='All'?' on':''),c);
+    ch.addEventListener('click',function(){
+      el2.querySelectorAll('.fchip').forEach(function(x){ x.classList.remove('on'); });
+      ch.classList.add('on'); renderClList();
+    });
+    el2.appendChild(ch);
+  });
+}
+
+function renderClList(){
+  var el2=qs('#cl-list');
+  var filt=qs('#cl-filter .fchip.on');
+  var filtVal=filt?filt.textContent:'All';
+  el2.innerHTML='';
+  checklists.filter(function(c){ return filtVal==='All'||c.category===filtVal; }).forEach(function(cl){
+    var done=cl.items.filter(function(i){ return i.done; }).length;
+    var pct=cl.items.length?Math.round(done/cl.items.length*100):0;
+    var card=el('div','card'+(clActive===cl.id?' sel-sky':''));
+    card.innerHTML=
+      '<div class="ctitle">'+cl.title+'</div>'+
+      '<div class="cmeta"><span class="badge b-sky">'+cl.category+'</span>'+
+        '<span style="font-size:13px;color:var(--muted)">'+done+'/'+cl.items.length+'</span></div>'+
+      '<div class="prog"><div class="prog-fill" style="width:'+pct+'%"></div></div>';
+    card.addEventListener('click',function(){ clActive=cl.id; renderClList(); renderClDetail(); });
+    el2.appendChild(card);
+  });
+}
+
+function renderClDetail(){
+  var el2=qs('#cl-detail');
+  if(!clActive){ el2.innerHTML='<div class="empty"><div class="empty-icon">&#10003;</div><span>Select a checklist</span></div>'; return; }
+  var cl=checklists.filter(function(x){ return x.id===clActive; })[0];
+  if(!cl){ el2.innerHTML='<div class="empty">Not found</div>'; return; }
+  var done=cl.items.filter(function(i){ return i.done; }).length;
+  el2.innerHTML=''; var box=el('div','dbox');
+  var dh=el('div','dh');
+  dh.innerHTML=
+    '<div><div class="dtitle">'+cl.title+'</div>'+
+    '<div class="cmeta" style="margin-top:5px"><span class="badge b-sky">'+cl.category+'</span>'+
+    '<span style="font-size:13px;color:var(--muted)">'+done+' of '+cl.items.length+' complete</span></div></div>'+
+    '<div class="dactions">'+
+      '<button class="btn btn-g" id="cl-reset">Reset</button>'+
+      '<button class="btn btn-g" id="cl-exp">&#8595; Export</button>'+
+      '<button class="btn btn-d" id="cl-del">Delete</button>'+
+    '</div>';
+  box.appendChild(dh);
+  var items=el('div','');
+  items.style.cssText='flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;margin-bottom:10px';
+  cl.items.forEach(function(it,idx){
+    var row=el('div','cli '+(it.done?'done':'undone'));
+    row.innerHTML=
+      '<div class="cli-chk '+(it.done?'on':'off')+'">'+
+        (it.done?'<svg width="10" height="8" viewBox="0 0 10 8"><polyline points="1,4 3.5,6.5 9,1" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>':'')+
+      '</div>'+
+      '<span class="cli-num">'+('0'+(idx+1)).slice(-2)+'</span>'+
+      '<span class="cli-text '+(it.done?'done':'')+'">'+it.text+'</span>'+
+      '<button class="cli-del">&#215;</button>';
+    row.querySelector('.cli-chk').addEventListener('click',function(){
+      cl.items=cl.items.map(function(x){ return x.id===it.id?Object.assign({},x,{done:!x.done}):x; });
+      clSave(); renderClList(); renderClDetail();
+    });
+    row.querySelector('.cli-del').addEventListener('click',function(e){
+      e.stopPropagation();
+      cl.items=cl.items.filter(function(x){ return x.id!==it.id; });
+      clSave(); renderClList(); renderClDetail();
+    });
+    items.appendChild(row);
+  });
+  if(!cl.items.length) items.innerHTML='<p style="color:var(--muted);font-size:12px;text-align:center;padding:20px">No items yet</p>';
+  box.appendChild(items);
+  var ar=el('div',''); ar.style.cssText='display:flex;gap:7px';
+  ar.innerHTML='<input class="inp" id="cl-add-inp" placeholder="Add checklist item..." style="flex:1"/><button class="btn btn-s">Add</button>';
+  ar.querySelector('.btn').addEventListener('click',function(){
+    var inp=qs('#cl-add-inp',ar); if(!inp.value.trim()) return;
+    cl.items.push({id:uid(),text:inp.value.trim(),done:false});
+    inp.value=''; clSave(); renderClDetail(); renderClList();
+  });
+  qs('#cl-add-inp',ar).addEventListener('keydown',function(e){ if(e.key==='Enter') ar.querySelector('.btn').click(); });
+  box.appendChild(ar); el2.appendChild(box);
+  qs('#cl-reset',box).addEventListener('click',function(){
+    cl.items=cl.items.map(function(x){ return Object.assign({},x,{done:false}); });
+    clSave(); renderClList(); renderClDetail();
+  });
+  qs('#cl-exp',box).addEventListener('click',function(){
+    var lines=['CHECKLIST: '+cl.title,'Category: '+cl.category,''].concat(
+      cl.items.map(function(it,i){ return '  '+('0'+(i+1)).slice(-2)+'. [ ] '+it.text; }));
+    dlFile(cl.title.replace(/\s+/g,'_')+'.txt',lines.join('\n')); toast('Exported');
+  });
+  qs('#cl-del',box).addEventListener('click',function(){
+    if(confirm('Delete this checklist?')){
+      checklists=checklists.filter(function(x){ return x.id!==cl.id; });
+      clSave(); clActive=null; renderClList(); renderClDetail(); toast('Deleted');
+    }
+  });
+}
+
+qs('#cl-new').addEventListener('click',function(){
+  var div=document.createElement('div');
+  div.innerHTML=
+    '<div class="field"><label>Title</label><input class="inp" id="m-clt" placeholder="e.g. Before Takeoff"/></div>'+
+    '<div class="field"><label>Category</label><select class="inp" id="m-clc">'+
+      CL_CATS.map(function(c){ return '<option>'+c+'</option>'; }).join('')+'</select></div>';
+  openModal({title:'New Checklist',body:div,saveLabel:'Create',onSave:function(){
+    var t=qs('#m-clt',div).value.trim(); if(!t) return false;
+    var nl={id:uid(),title:t,category:qs('#m-clc',div).value,items:[]};
+    checklists.push(nl); clSave(); clActive=nl.id; renderClList(); renderClDetail(); toast('Created');
+  }});
+});
+
+// ============================================================
+// LESSONS
+// ============================================================
+var LS_KEY='fd_lessons';
+var LS_STAGES=['Private Pilot','Instrument Rating','Commercial Pilot','CFI','ATPL','Other'];
+var scol={'Private Pilot':'b-em','Instrument Rating':'b-sky','Commercial Pilot':'b-am','CFI':'b-vi','ATPL':'b-ro','Other':'b-sl'};
+var lessons=load(LS_KEY,[
+  {id:'ls1',title:'Introduction to Flight Controls',stage:'Private Pilot',duration:'60',
+   objective:'Student will demonstrate understanding of primary and secondary flight controls.',
+   content:'Cover ailerons, elevator, rudder. Discuss adverse yaw, coordinated flight. Demonstrate in aircraft.',
+   notes:'Use visual aids. Emphasise rudder usage in turns. Watch for over-controlling.'}
+]);
+var lsActive=null;
+function lsSave(){ save(LS_KEY,lessons); }
+
+function renderLsFilter(){
+  var el2=qs('#ls-filter'); el2.innerHTML='';
+  ['All'].concat(LS_STAGES).forEach(function(s){
+    var ch=el('div','fchip'+(s==='All'?' on':''),s);
+    ch.addEventListener('click',function(){
+      el2.querySelectorAll('.fchip').forEach(function(x){ x.classList.remove('on'); });
+      ch.classList.add('on'); renderLsList();
+    });
+    el2.appendChild(ch);
+  });
+}
+
+function renderLsList(){
+  var el2=qs('#ls-list'); el2.innerHTML='';
+  var filt=qs('#ls-filter .fchip.on');
+  var filtVal=filt?filt.textContent:'All';
+  lessons.filter(function(l){ return filtVal==='All'||l.stage===filtVal; }).forEach(function(ls){
+    var card=el('div','card'+(lsActive===ls.id?' sel-em':''));
+    card.innerHTML=
+      '<div class="ctitle">'+ls.title+'</div>'+
+      '<div class="cmeta"><span class="badge '+(scol[ls.stage]||'b-sl')+'">'+ls.stage+'</span>'+
+        (ls.duration?'<span style="font-size:13px;color:var(--muted)">'+ls.duration+' min</span>':'')+
+      '</div>';
+    card.addEventListener('click',function(){ lsActive=ls.id; renderLsList(); renderLsDetail(); });
+    el2.appendChild(card);
+  });
+}
+
+function renderLsDetail(){
+  var el2=qs('#ls-detail');
+  if(!lsActive){ el2.innerHTML='<div class="empty"><div class="empty-icon">&#128218;</div><span>Select a lesson plan</span></div>'; return; }
+  var ls=lessons.filter(function(x){ return x.id===lsActive; })[0];
+  if(!ls){ el2.innerHTML='<div class="empty">Not found</div>'; return; }
+  el2.innerHTML=''; var box=el('div','dbox');
+  box.innerHTML=
+    '<div class="dh">'+
+      '<div><div class="dtitle">'+ls.title+'</div>'+
+      '<div class="cmeta" style="margin-top:5px">'+
+        '<span class="badge '+(scol[ls.stage]||'b-sl')+'">'+ls.stage+'</span>'+
+        (ls.duration?'<span class="badge b-sl">'+ls.duration+' min</span>':'')+
+      '</div></div>'+
+      '<div class="dactions">'+
+        '<button class="btn btn-g" id="ls-edit">Edit</button>'+
+        '<button class="btn btn-g" id="ls-exp">&#8595; Export</button>'+
+        '<button class="btn btn-d" id="ls-del">Delete</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="sec"><div class="sec-lbl">Objective</div><div class="sec-box">'+(ls.objective||'--')+'</div></div>'+
+    '<div class="sec"><div class="sec-lbl">Content</div><div class="sec-box">'+(ls.content||'--')+'</div></div>'+
+    '<div class="sec"><div class="sec-lbl">Instructor Notes</div><div class="sec-box">'+(ls.notes||'--')+'</div></div>';
+  el2.appendChild(box);
+  qs('#ls-edit',box).addEventListener('click',function(){ openLsModal(ls); });
+  qs('#ls-del',box).addEventListener('click',function(){
+    if(confirm('Delete?')){
+      lessons=lessons.filter(function(x){ return x.id!==ls.id; });
+      lsSave(); lsActive=null; renderLsList(); renderLsDetail(); toast('Deleted');
+    }
+  });
+  qs('#ls-exp',box).addEventListener('click',function(){
+    dlFile(ls.title.replace(/\s+/g,'_')+'_lesson.txt',
+      ['LESSON PLAN: '+ls.title,'Stage: '+ls.stage,'Duration: '+ls.duration+' min',
+       '','OBJECTIVE:',ls.objective,'','CONTENT:',ls.content,'','INSTRUCTOR NOTES:',ls.notes].join('\n'));
+    toast('Exported');
+  });
+}
+
+function openLsModal(ex){
+  var ls=ex||{id:uid(),title:'',stage:'Private Pilot',duration:'60',objective:'',content:'',notes:''};
+  var div=document.createElement('div');
+  div.innerHTML=
+    '<div class="g3">'+
+      '<div class="field" style="grid-column:span 2"><label>Title</label><input class="inp" id="m-lst" value="'+(ls.title||'')+'" placeholder="Lesson title"/></div>'+
+      '<div class="field"><label>Duration (min)</label><input class="inp" id="m-lsd" value="'+(ls.duration||'')+'" type="number" placeholder="60"/></div>'+
+    '</div>'+
+    '<div class="field"><label>Stage</label><select class="inp" id="m-lss">'+
+      LS_STAGES.map(function(s){ return '<option'+(s===ls.stage?' selected':'')+'>'+s+'</option>'; }).join('')+'</select></div>'+
+    '<div class="field"><label>Objective</label><textarea class="inp" id="m-lso" rows="2">'+(ls.objective||'')+'</textarea></div>'+
+    '<div class="field"><label>Content</label><textarea class="inp" id="m-lsc" rows="4">'+(ls.content||'')+'</textarea></div>'+
+    '<div class="field"><label>Instructor Notes</label><textarea class="inp" id="m-lsn" rows="3">'+(ls.notes||'')+'</textarea></div>';
+  openModal({title:ex?'Edit Lesson':'New Lesson Plan',body:div,wide:true,saveLabel:ex?'Save':'Create',onSave:function(){
+    ls.title=qs('#m-lst',div).value.trim(); if(!ls.title) return false;
+    ls.stage=qs('#m-lss',div).value; ls.duration=qs('#m-lsd',div).value;
+    ls.objective=qs('#m-lso',div).value; ls.content=qs('#m-lsc',div).value; ls.notes=qs('#m-lsn',div).value;
+    if(!ex) lessons.push(ls);
+    else{ var i=lessons.findIndex(function(x){ return x.id===ls.id; }); if(i>=0) lessons[i]=ls; }
+    lsSave(); lsActive=ls.id; renderLsList(); renderLsDetail(); toast(ex?'Updated':'Created');
+  }});
+}
+qs('#ls-new').addEventListener('click',function(){ openLsModal(null); });
+
+// ============================================================
+// REFERENCES
+// ============================================================
+var RF_KEY='fd_references';
+var RF_CATS=['Regulations','Weather','Navigation','Systems','Maneuvers','Emergency','Airspace','Performance','Other'];
+var rcol={Regulations:'b-sky',Weather:'b-am',Navigation:'b-em',Systems:'b-vi',Maneuvers:'b-ro',Emergency:'b-ro',Airspace:'b-sky',Performance:'b-am',Other:'b-sl'};
+var refs=load(RF_KEY,[
+  {id:'rf1',title:'VFR Weather Minimums',category:'Weather',
+   content:'Class G (1200 AGL or below): 1500m vis, clear of cloud\nClass G (above 1200 AGL, below 10,000): 5000m, 1500m horiz / 300m vert\nClass E/D/C: 5000m, 1500m horiz / 300m vert\nClass A: IFR only\n\n(Verify current CASR Part 91)'},
+  {id:'rf2',title:'AROW -- Required Documents',category:'Regulations',
+   content:'A -- Airworthiness Certificate\nR -- Registration Certificate\nO -- Operating Handbook (AFM/POH)\nW -- Weight and Balance documentation\n\nMust be on board for all flights.'}
+]);
+var rfActive=null;
+function rfSave(){ save(RF_KEY,refs); }
+
+function renderRfFilter(){
+  var el2=qs('#rf-filter'); el2.innerHTML='';
+  ['All'].concat(RF_CATS).forEach(function(c){
+    var ch=el('div','fchip'+(c==='All'?' on':''),c);
+    ch.addEventListener('click',function(){
+      el2.querySelectorAll('.fchip').forEach(function(x){ x.classList.remove('on'); });
+      ch.classList.add('on'); renderRfList();
+    });
+    el2.appendChild(ch);
+  });
+}
+
+function renderRfList(){
+  var el2=qs('#rf-list');
+  var filt=qs('#rf-filter .fchip.on');
+  var filtVal=filt?filt.textContent:'All';
+  var search=(qs('#rf-search').value||'').toLowerCase();
+  var vis=refs.filter(function(r){
+    return (filtVal==='All'||r.category===filtVal)&&
+      (!search||r.title.toLowerCase().includes(search)||r.content.toLowerCase().includes(search));
+  });
+  el2.innerHTML='';
+  if(!vis.length){ el2.innerHTML='<p style="color:var(--muted);font-size:12px;text-align:center;padding:12px">No results</p>'; return; }
+  vis.forEach(function(rf){
+    var card=el('div','card'+(rfActive===rf.id?' sel-am':''));
+    card.innerHTML='<div class="ctitle">'+rf.title+'</div><div class="cmeta"><span class="badge '+(rcol[rf.category]||'b-sl')+'">'+rf.category+'</span></div>';
+    card.addEventListener('click',function(){ rfActive=rf.id; renderRfList(); renderRfDetail(); });
+    el2.appendChild(card);
+  });
+}
+
+function renderRfDetail(){
+  var el2=qs('#rf-detail');
+  if(!rfActive){ el2.innerHTML='<div class="empty"><div class="empty-icon">&#128203;</div><span>Select a reference</span></div>'; return; }
+  var rf=refs.filter(function(x){ return x.id===rfActive; })[0];
+  if(!rf){ el2.innerHTML='<div class="empty">Not found</div>'; return; }
+  el2.innerHTML=''; var box=el('div','dbox');
+  box.innerHTML=
+    '<div class="dh">'+
+      '<div><div class="dtitle">'+rf.title+'</div>'+
+      '<div class="cmeta" style="margin-top:5px"><span class="badge '+(rcol[rf.category]||'b-sl')+'">'+rf.category+'</span></div></div>'+
+      '<div class="dactions">'+
+        '<button class="btn btn-g" id="rf-edit">Edit</button>'+
+        '<button class="btn btn-g" id="rf-exp">&#8595; Export</button>'+
+        '<button class="btn btn-d" id="rf-del">Delete</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="sec-box" style="flex:1;min-height:80px">'+rf.content+'</div>';
+  el2.appendChild(box);
+  qs('#rf-edit',box).addEventListener('click',function(){ openRfModal(rf); });
+  qs('#rf-del',box).addEventListener('click',function(){
+    if(confirm('Delete?')){
+      refs=refs.filter(function(x){ return x.id!==rf.id; });
+      rfSave(); rfActive=null; renderRfList(); renderRfDetail(); toast('Deleted');
+    }
+  });
+  qs('#rf-exp',box).addEventListener('click',function(){
+    dlFile(rf.title.replace(/\s+/g,'_')+'_ref.txt',['REFERENCE: '+rf.title,'Category: '+rf.category,'',rf.content].join('\n'));
+    toast('Exported');
+  });
+}
+
+function openRfModal(ex){
+  var rf=ex||{id:uid(),title:'',category:'Regulations',content:''};
+  var div=document.createElement('div');
+  div.innerHTML=
+    '<div class="field"><label>Title</label><input class="inp" id="m-rft" value="'+(rf.title||'')+'" placeholder="Reference title"/></div>'+
+    '<div class="field"><label>Category</label><select class="inp" id="m-rfc">'+
+      RF_CATS.map(function(c){ return '<option'+(c===rf.category?' selected':'')+'>'+c+'</option>'; }).join('')+'</select></div>'+
+    '<div class="field"><label>Content</label><textarea class="inp" id="m-rfc2" rows="10">'+(rf.content||'')+'</textarea></div>';
+  openModal({title:ex?'Edit Reference':'New Reference',body:div,wide:true,saveLabel:ex?'Save':'Create',onSave:function(){
+    rf.title=qs('#m-rft',div).value.trim(); if(!rf.title) return false;
+    rf.category=qs('#m-rfc',div).value; rf.content=qs('#m-rfc2',div).value;
+    if(!ex) refs.push(rf);
+    else{ var i=refs.findIndex(function(x){ return x.id===rf.id; }); if(i>=0) refs[i]=rf; }
+    rfSave(); rfActive=rf.id; renderRfList(); renderRfDetail(); toast(ex?'Updated':'Created');
+  }});
+}
+qs('#rf-new').addEventListener('click',function(){ openRfModal(null); });
+qs('#rf-search').addEventListener('input', renderRfList);
+
+// ============================================================
+// PWA
+// ============================================================
+var SW_CODE=[
+  "var C='fd-sw-v2';",
+  "self.addEventListener('install',function(e){",
+  "  e.waitUntil(caches.open(C).then(function(c){ return c.addAll([self.location.pathname]); }).then(function(){ return self.skipWaiting(); }));",
+  "});",
+  "self.addEventListener('activate',function(e){",
+  "  e.waitUntil(caches.keys().then(function(ks){",
+  "    return Promise.all(ks.filter(function(k){ return k!==C; }).map(function(k){ return caches.delete(k); }));",
+  "  }).then(function(){ return self.clients.claim(); }));",
+  "});",
+  "self.addEventListener('fetch',function(e){",
+  "  if(e.request.method!=='GET') return;",
+  "  e.respondWith(caches.match(e.request).then(function(r){",
+  "    return r||fetch(e.request).then(function(res){",
+  "      if(res.ok){ var cl=res.clone(); caches.open(C).then(function(c){ c.put(e.request,cl); }); }",
+  "      return res;",
+  "    }).catch(function(){ return caches.match(self.location.pathname); });",
+  "  }));",
+  "});"
+].join('\n');
+
+if('serviceWorker' in navigator){
+  try{
+    var swBlob=new Blob([SW_CODE],{type:'application/javascript'});
+    var swURL=URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swURL);
+  }catch(e){}
+}
+
+var mf={name:'FlightDeck Instructor Hub',short_name:'FlightDeck',start_url:'.',display:'standalone',
+  background_color:'#020617',theme_color:'#020617',
+  icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230ea5e9'/%3E%3Ctext y='.9em' font-size='80'%3E%E2%9C%88%3C/text%3E%3C/svg%3E",sizes:'192x192',type:'image/svg+xml'}]};
+try{
+  var ml=qs('#pwa-manifest');
+  ml.href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/json'}));
+}catch(e){}
+
+var deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault(); deferredPrompt=e;
+  qs('#install-btn').style.display='block';
+});
+qs('#install-btn').addEventListener('click',function(){
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(function(r){
+    if(r.outcome==='accepted') toast('App installed!');
+    deferredPrompt=null; qs('#install-btn').style.display='none';
+  });
+});
+
+// ============================================================
+// INIT
+// ============================================================
+renderFlFilters(); renderFlStats(); renderFlList();
+renderClFilter(); renderClList();
+renderLsFilter(); renderLsList();
+renderRfFilter(); renderRfList();
+</script>
+</body>
+</html>
