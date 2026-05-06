@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v65</title>
+<title>FlightDeck v68</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -126,7 +126,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">Instructor Hub</span>
+      <span class="logo-sub">v68</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -280,14 +280,13 @@ function dec2(v){
   return parseFloat(v).toFixed(2);
 }
 
-// tacho/hobbs end - start
+// tacho/hobbs end - start (raw, not rounded - logbook records use exact reading)
 function instrDiff(s,e){
   var sv=parseFloat(s), ev=parseFloat(e);
   if(isNaN(sv)||isNaN(ev)) return null;
   var d=ev-sv;
   if(d<0) return null;
-  // Round to nearest 0.1 hr
-  return Math.round(d*10)/10;
+  return d;
 }
 
 // ============================================================
@@ -1489,6 +1488,27 @@ function openFlModal(ex){
   });
   syncWxBlocks();
 
+  // Auto-uppercase all text inputs and textareas in the modal.
+  // Skip number/date/time fields and the AVWX key (which is case-sensitive).
+  function makeUppercase(el){
+    if(!el || el.dataset.upper === 'on') return;
+    el.dataset.upper = 'on';
+    el.style.textTransform = 'uppercase';
+    el.addEventListener('input', function(){
+      var ss = el.selectionStart, se = el.selectionEnd;
+      var newVal = el.value.toUpperCase();
+      if(el.value !== newVal){
+        el.value = newVal;
+        try { el.setSelectionRange(ss, se); } catch(e){}
+      }
+    });
+  }
+  div.querySelectorAll('input.inp, textarea.inp').forEach(function(el){
+    var t = (el.type||'').toLowerCase();
+    if(t==='number' || t==='date' || t==='time' || t==='email' || t==='tel') return;
+    makeUppercase(el);
+  });
+
   // Fetch button - pulls METAR + TAF for each entered ICAO and filters METARs to flight window
   var fetchBtn=qs('#m-wxFetch',div);
   if(fetchBtn){
@@ -1839,17 +1859,18 @@ function weatherTextLines(f){
                f.wxMetar1||f.wxMetar2||f.wxMetar3||f.wxMetar4||
                f.wxTaf1||f.wxTaf2||f.wxTaf3||f.wxTaf4;
   if(!hasAny) return lines;
-  lines.push('','WEATHER','=======');
-  if(f.wxTAS) lines.push('TAS:           '+f.wxTAS+' kt');
-  if(f.wxFreezFL) lines.push('Freezing Level: '+f.wxFreezFL+' ft');
-  if(f.wxCloudBase) lines.push('Cloud Base:    '+f.wxCloudBase+' ft');
+  lines.push('', 'WEATHER', '=======');
+  if(f.wxTAS)       lines.push(logRow('TAS', f.wxTAS+' kt'));
+  if(f.wxFreezFL)   lines.push(logRow('Freezing Level', f.wxFreezFL+' ft'));
+  if(f.wxCloudBase) lines.push(logRow('Cloud Base', f.wxCloudBase+' ft'));
   if(f.wxSurfDir||f.wxSurfSpd){
-    lines.push('Surface Wind:  '+(f.wxSurfDir||'--')+' deg / '+(f.wxSurfSpd||'--')+' kt');
+    lines.push(logRow('Surface Wind', (f.wxSurfDir||'--')+'deg / '+(f.wxSurfSpd||'--')+' kt'));
     [f.rwy1,f.rwy2,f.rwy3,f.rwy4].forEach(function(rwy){
       if(!rwy) return;
       var c = rwyWind(rwy, f.wxSurfDir, f.wxSurfSpd);
       if(!c) return;
-      lines.push('  RWY '+('0'+rwy).slice(-2)+': '+c.hwLabel+' '+c.hwAbs+' kt, XW '+c.xwAbs+' kt '+c.xwLabel);
+      lines.push(logRow('  RWY '+('0'+rwy).slice(-2),
+        c.hwLabel+' '+c.hwAbs+' kt, XW '+c.xwAbs+' kt '+c.xwLabel, true));
     });
   }
   [1,2,3,4].forEach(function(n){
@@ -1858,11 +1879,34 @@ function weatherTextLines(f){
     var taf = f['wxTaf'+n];
     if(!icao && !metar && !taf) return;
     var filtered = filterMetars(metar, f.chocksOff, f.chocksOn);
-    lines.push('','-- '+(icao||'Station '+n)+' --');
-    if(filtered) lines.push('METAR:', filtered);
-    if(taf) lines.push('TAF:', taf);
+    lines.push('', '----- '+(icao||'Station '+n)+' -----');
+    if(filtered){
+      lines.push('METAR:');
+      filtered.split('\n').forEach(function(l){ lines.push('  '+l); });
+    }
+    if(taf){
+      lines.push('TAF:');
+      taf.split('\n').forEach(function(l){ lines.push('  '+l); });
+    }
   });
   return lines;
+}
+
+// Format a label/value row with consistent column width.
+// Label is left-padded to LABEL_W chars, value is the raw string.
+// If calc=true, wraps the value in **asterisks** as a "bold" marker that
+// renders as visually emphasized in plain-text email and is preserved in
+// downloaded text logs.
+function logRow(label, value, calc){
+  var LABEL_W = 22;
+  var lbl = (label + ':').padEnd ? (label+':').padEnd(LABEL_W) : (label+':' + ' '.repeat(Math.max(0, LABEL_W - (label.length+1))));
+  // Fallback for older engines without padEnd
+  if(!String.prototype.padEnd){
+    lbl = label+':'; while(lbl.length<LABEL_W) lbl+=' ';
+  }
+  var v = (value===null||value===undefined||value==='') ? '--' : String(value);
+  if(calc) v = '*'+v+'*';
+  return lbl + ' ' + v;
 }
 
 function emailFlight(f){
@@ -1872,59 +1916,58 @@ function emailFlight(f){
   var lines=[
     'FLIGHT RECORD',
     '=============',
-    'Date:        '+(f.date||'--'),
-    'Aircraft:    '+(f.aircraft||'--'),
-    'Category:    '+(f.category||'--'),
-    'Route:       '+(f.departure||'?')+' to '+(f.destination||'?'),
-    'PIC:         '+(f.pic||'--'),
-    'Student:     '+(f.student||'--'),
-    'Touch & Goes:'+' '+(f.touchGoes||'0'),
+    logRow('Date',         f.date),
+    logRow('Aircraft',     f.aircraft),
+    logRow('Category',     f.category),
+    logRow('Route',        (f.departure||'?')+' to '+(f.destination||'?')),
+    logRow('PIC',          f.pic),
+    logRow('Student',      f.student),
+    logRow('Touch & Goes', f.touchGoes||'0'),
     '',
     'TIMES (UTC)',
-    'Chocks Off:  '+(f.chocksOff||'--'),
-    'Takeoff:     '+(f.takeoff||'--'),
-    'Landing:     '+(f.landing||'--'),
-    'Chocks On:   '+(f.chocksOn||'--'),
+    '-----------',
+    logRow('Chocks Off', f.chocksOff),
+    logRow('Takeoff',    f.takeoff),
+    logRow('Landing',    f.landing),
+    logRow('Chocks On',  f.chocksOn),
     '',
-    'CALCULATED TIMES',
-    'Block Time:  '+decToHM(c.block)+' ('+dec2(c.block)+' hrs)',
-    'Air Time:    '+decToHM(c.air)+' ('+dec2(c.air)+' hrs)',
-    'Tacho Time:  '+dec2(c.tacho)+' hrs  ['+( f.tachoStart||'?')+' to '+(f.tachoEnd||'?')+']',
-    'Hobbs Time:  '+dec2(c.hobbs)+' hrs  ['+(f.hobbsStart||'?')+' to '+(f.hobbsEnd||'?')+']',
+    'CALCULATED TIMES (bold = derived)',
+    '---------------------------------',
+    logRow('Block Time', decToHM(c.block)+' ('+dec2(c.block)+' hrs)', true),
+    logRow('Air Time',   decToHM(c.air)+' ('+dec2(c.air)+' hrs)', true),
+    logRow('Tacho Time', dec2(c.tacho)+' hrs  ['+(f.tachoStart||'?')+' to '+(f.tachoEnd||'?')+']', true),
+    logRow('Hobbs Time', dec2(c.hobbs)+' hrs  ['+(f.hobbsStart||'?')+' to '+(f.hobbsEnd||'?')+']', true),
     '',
-    'FUEL (USG)  -- Burn rate: '+fc.burn+' USG/hr',
-    'Initial Fuel:        '+(fc.initial!==null?dec2(fc.initial)+' USG':'--'),
-    'Fuel Uplifted:       '+(fc.uplifted?dec2(fc.uplifted)+' USG':'--'),
-    'Total Fuel on Board: '+(fc.fob!==null?dec2(fc.fob)+' USG':'--'),
-    'Taxi:                '+dec2(fc.taxi)+' USG',
-    'Trip:                '+dec2(fc.trip)+' USG',
-    'Contingency ('+dec2(fc.contPct)+'%): '+dec2(fc.cont)+' USG',
-    'Alternate:           '+dec2(fc.alt)+' USG',
-    'Final Reserve:       '+dec2(fc.final_)+' USG',
-    'Extra:               '+dec2(fc.extra)+' USG',
-    'Total Required:      '+dec2(fc.total)+' USG',
-    'Surplus / Deficit:   '+(fc.surplus!==null?(fc.surplus>=0?'+':'')+dec2(fc.surplus)+' USG':'--'),
-    'Endurance:           '+(fc.endurance!==null?decToHM(fc.endurance)+' ('+dec2(fc.endurance)+' hrs)':'--'),
-    'Fuel Uplifted:       '+(f.fuelUplifted||'--')+' USG',
-    'Actual on Landing:   '+(f.fuelLanding?dec2(parseFloat(f.fuelLanding))+' USG':'--'),
+    'FUEL  (Burn rate '+fc.burn+' USG/hr)',
+    '------------------------------',
+    logRow('Initial Fuel',     fc.initial!==null?dec2(fc.initial)+' USG':'--'),
+    logRow('Fuel Uplifted',    fc.uplifted?dec2(fc.uplifted)+' USG':'--'),
+    logRow('Total Fuel on Board', fc.fob!==null?dec2(fc.fob)+' USG':'--', true),
+    logRow('Taxi',             dec2(fc.taxi)+' USG'),
+    logRow('Trip',             dec2(fc.trip)+' USG'),
+    logRow('Contingency '+dec2(fc.contPct)+'%', dec2(fc.cont)+' USG', true),
+    logRow('Alternate',        dec2(fc.alt)+' USG'),
+    logRow('Final Reserve',    dec2(fc.final_)+' USG'),
+    logRow('Extra',            dec2(fc.extra)+' USG'),
+    logRow('Total Required',   dec2(fc.total)+' USG', true),
+    logRow('Surplus/Deficit',  fc.surplus!==null?(fc.surplus>=0?'+':'')+dec2(fc.surplus)+' USG':'--', true),
+    logRow('Endurance',        fc.endurance!==null?decToHM(fc.endurance)+' ('+dec2(fc.endurance)+' hrs)':'--', true),
+    logRow('Actual on Landing', f.fuelLanding?dec2(parseFloat(f.fuelLanding))+' USG':'--'),
     '',
-    'Oil: '+(f.oil||'--'),
+    logRow('Oil', f.oil),
     '',
     'MANEUVERS / EXERCISES',
+    '---------------------',
     f.maneuvers||'--',
     '',
     'INSTRUCTOR NOTES',
+    '----------------',
     f.notes||'--',
-    '',
-    '-- Sent from FlightDeck Instructor Hub',
-  ].concat([]);
-  // Insert weather lines before the closing block
+  ];
+  // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
-  if(wxLines.length){
-    // Find the position of the trailing blank+sign-off and splice in
-    var insertAt = lines.length - 2; // before final blank+signoff
-    lines.splice.apply(lines, [insertAt, 0].concat(wxLines));
-  }
+  if(wxLines.length) lines = lines.concat(wxLines);
+  lines.push('','-- Sent from FlightDeck v68');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -1932,42 +1975,57 @@ function exportFlight(f){
   var c=flCalc(f);
   var fc=fuelCalc(f);
   var lines=[
-    'FLIGHT RECORD','=============',
-    'Date:        '+(f.date||'--'),
-    'Aircraft:    '+(f.aircraft||'--'),
-    'Category:    '+(f.category||'--'),
-    'Route:       '+(f.departure||'?')+' to '+(f.destination||'?'),
-    'PIC:         '+(f.pic||'--'),
-    'Student:     '+(f.student||'--'),
-    'Touch & Goes:'+' '+(f.touchGoes||'0'),
-    '','TIMES (UTC)',
-    'Chocks Off:  '+(f.chocksOff||'--'),
-    'Takeoff:     '+(f.takeoff||'--'),
-    'Landing:     '+(f.landing||'--'),
-    'Chocks On:   '+(f.chocksOn||'--'),
-    '','CALCULATED TIMES',
-    'Block Time:  '+decToHM(c.block)+' ('+dec2(c.block)+' hrs)',
-    'Air Time:    '+decToHM(c.air)+' ('+dec2(c.air)+' hrs)',
-    'Tacho Time:  '+dec2(c.tacho)+' hrs  ['+(f.tachoStart||'?')+' to '+(f.tachoEnd||'?')+']',
-    'Hobbs Time:  '+dec2(c.hobbs)+' hrs  ['+(f.hobbsStart||'?')+' to '+(f.hobbsEnd||'?')+']',
-    '','FUEL (USG)  -- Burn rate: '+fc.burn+' USG/hr',
-    'Initial Fuel:        '+(fc.initial!==null?dec2(fc.initial)+' USG':'--'),
-    'Fuel Uplifted:       '+(fc.uplifted?dec2(fc.uplifted)+' USG':'--'),
-    'Total Fuel on Board: '+(fc.fob!==null?dec2(fc.fob)+' USG':'--'),
-    'Taxi:                '+dec2(fc.taxi)+' USG',
-    'Trip:                '+dec2(fc.trip)+' USG',
-    'Contingency ('+dec2(fc.contPct)+'%): '+dec2(fc.cont)+' USG',
-    'Alternate:           '+dec2(fc.alt)+' USG',
-    'Final Reserve:       '+dec2(fc.final_)+' USG',
-    'Extra:               '+dec2(fc.extra)+' USG',
-    'Total Required:      '+dec2(fc.total)+' USG',
-    'Surplus / Deficit:   '+(fc.surplus!==null?(fc.surplus>=0?'+':'')+dec2(fc.surplus)+' USG':'--'),
-    'Endurance:           '+(fc.endurance!==null?decToHM(fc.endurance)+' ('+dec2(fc.endurance)+' hrs)':'--'),
-    'Actual on Landing:   '+(f.fuelLanding?dec2(parseFloat(f.fuelLanding))+' USG':'--'),
-    'Oil: '+(f.oil||'--'),
-    '','MANEUVERS / EXERCISES', f.maneuvers||'--',
-    '','INSTRUCTOR NOTES', f.notes||'--',
+    'FLIGHT RECORD',
+    '=============',
+    logRow('Date',         f.date),
+    logRow('Aircraft',     f.aircraft),
+    logRow('Category',     f.category),
+    logRow('Route',        (f.departure||'?')+' to '+(f.destination||'?')),
+    logRow('PIC',          f.pic),
+    logRow('Student',      f.student),
+    logRow('Touch & Goes', f.touchGoes||'0'),
+    '',
+    'TIMES (UTC)',
+    '-----------',
+    logRow('Chocks Off', f.chocksOff),
+    logRow('Takeoff',    f.takeoff),
+    logRow('Landing',    f.landing),
+    logRow('Chocks On',  f.chocksOn),
+    '',
+    'CALCULATED TIMES (bold = derived)',
+    '---------------------------------',
+    logRow('Block Time', decToHM(c.block)+' ('+dec2(c.block)+' hrs)', true),
+    logRow('Air Time',   decToHM(c.air)+' ('+dec2(c.air)+' hrs)', true),
+    logRow('Tacho Time', dec2(c.tacho)+' hrs  ['+(f.tachoStart||'?')+' to '+(f.tachoEnd||'?')+']', true),
+    logRow('Hobbs Time', dec2(c.hobbs)+' hrs  ['+(f.hobbsStart||'?')+' to '+(f.hobbsEnd||'?')+']', true),
+    '',
+    'FUEL  (Burn rate '+fc.burn+' USG/hr)',
+    '------------------------------',
+    logRow('Initial Fuel',     fc.initial!==null?dec2(fc.initial)+' USG':'--'),
+    logRow('Fuel Uplifted',    fc.uplifted?dec2(fc.uplifted)+' USG':'--'),
+    logRow('Total Fuel on Board', fc.fob!==null?dec2(fc.fob)+' USG':'--', true),
+    logRow('Taxi',             dec2(fc.taxi)+' USG'),
+    logRow('Trip',             dec2(fc.trip)+' USG'),
+    logRow('Contingency '+dec2(fc.contPct)+'%', dec2(fc.cont)+' USG', true),
+    logRow('Alternate',        dec2(fc.alt)+' USG'),
+    logRow('Final Reserve',    dec2(fc.final_)+' USG'),
+    logRow('Extra',            dec2(fc.extra)+' USG'),
+    logRow('Total Required',   dec2(fc.total)+' USG', true),
+    logRow('Surplus/Deficit',  fc.surplus!==null?(fc.surplus>=0?'+':'')+dec2(fc.surplus)+' USG':'--', true),
+    logRow('Endurance',        fc.endurance!==null?decToHM(fc.endurance)+' ('+dec2(fc.endurance)+' hrs)':'--', true),
+    logRow('Actual on Landing', f.fuelLanding?dec2(parseFloat(f.fuelLanding))+' USG':'--'),
+    '',
+    logRow('Oil', f.oil),
+    '',
+    'MANEUVERS / EXERCISES',
+    '---------------------',
+    f.maneuvers||'--',
+    '',
+    'INSTRUCTOR NOTES',
+    '----------------',
+    f.notes||'--',
   ].concat(weatherTextLines(f));
+  lines.push('','-- FlightDeck v68');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
