@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v63</title>
+<title>FlightDeck v65</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -369,78 +369,99 @@ function fetchWx(icao, cb){
       }).join('\n');
   }
 
-  // ---- AVWX path (if user has a token) ----
-  if(key){
-    var avwxQ = '?token='+encodeURIComponent(key)+'&onfail=nearest';
+  // Inner helper - the NOAA proxy chain (used as primary or as AVWX fallback)
+  function tryNoaa(){
+    var noaaMetar = 'https://aviationweather.gov/api/data/metar?ids='+icao+'&format=raw&hours=6';
+    var noaaTaf   = 'https://aviationweather.gov/api/data/taf?ids='+icao+'&format=raw';
     var metar='', taf='', done=0, errs=[];
     function fin(){
       if(++done===2){
-        var msg = (metar||taf) ? '' : ('AVWX returned no data: '+errs.join('; '));
-        cb(metar, taf, msg);
+        if(!metar && !taf){
+          // Try nearest-station fallback
+          findNearestStation(icao, function(near, nearErr, distNm){
+            if(!near){
+              cb('','','no data for '+icao+' and no nearest station: '+(nearErr||'unknown')+' -- check token / try later');
+              return;
+            }
+            var m2='', t2='', d2=0;
+            function fin2(){
+              if(++d2===2){
+                var prefix = '[Nearest: '+near+(distNm?' ('+distNm+' nm)':'')+'] ';
+                cb(m2 ? prefix+m2 : '', t2 ? prefix+t2 : '',
+                   (m2||t2) ? '' : 'no data for '+icao+' or nearest '+near);
+              }
+            }
+            fetchViaProxy('https://aviationweather.gov/api/data/metar?ids='+near+'&format=raw&hours=6',
+              function(t){ m2 = clean(t); fin2(); });
+            fetchViaProxy('https://aviationweather.gov/api/data/taf?ids='+near+'&format=raw',
+              function(t){ t2 = clean(t); fin2(); });
+          });
+          return;
+        }
+        cb(metar, taf, '');
+      }
+    }
+    fetchViaProxy(noaaMetar, function(t, err){
+      metar = clean(t); if(!metar) errs.push('METAR via proxy: '+err); fin();
+    });
+    fetchViaProxy(noaaTaf, function(t, err){
+      taf = clean(t); if(!taf) errs.push('TAF via proxy: '+err); fin();
+    });
+  }
+
+  // ---- AVWX path (if user has a token) ----
+  if(key){
+    var avwxQ = '?token='+encodeURIComponent(key.trim())+'&onfail=nearest';
+    var metar='', taf='', done=0, errs=[], gotAuthError=false;
+    function fin(){
+      if(++done===2){
+        // If AVWX gave us 401 (bad/expired token), fall through to NOAA proxy
+        if(gotAuthError && !metar && !taf){
+          console.log('AVWX auth failed - falling back to NOAA proxy');
+          tryNoaa();
+          return;
+        }
+        if(metar || taf){ cb(metar, taf, ''); return; }
+        // Other AVWX error - try NOAA as last resort
+        tryNoaa();
       }
     }
     fetch('https://avwx.rest/api/metar/'+icao+avwxQ)
-      .then(function(r){ return r.ok ? r.json() : Promise.reject('HTTP '+r.status); })
-      .then(function(d){
+      .then(function(r){
+        if(r.status===401||r.status===403) gotAuthError=true;
+        return r.text();
+      })
+      .then(function(txt){
+        var d=null;
+        try { d = JSON.parse(txt); } catch(e){ /* non-JSON */ }
         if(d && d.raw){
           metar = d.raw;
           if(d.station && d.station !== icao) metar = '[Nearest: '+d.station+'] ' + metar;
-        } else if(d && d.error){ errs.push('METAR: '+d.error); }
+        } else if(d && d.error){
+          errs.push('METAR: '+d.error);
+        } else if(!d) {
+          errs.push('METAR: non-JSON response');
+        }
         fin();
       }).catch(function(e){ errs.push('METAR: '+e); fin(); });
     fetch('https://avwx.rest/api/taf/'+icao+avwxQ)
-      .then(function(r){ return r.ok ? r.json() : Promise.reject('HTTP '+r.status); })
-      .then(function(d){
+      .then(function(r){
+        if(r.status===401||r.status===403) gotAuthError=true;
+        return r.text();
+      })
+      .then(function(txt){
+        var d=null;
+        try { d = JSON.parse(txt); } catch(e){}
         if(d && d.raw) taf = d.raw;
         else if(d && d.error) errs.push('TAF: '+d.error);
+        else if(!d) errs.push('TAF: non-JSON response');
         fin();
       }).catch(function(e){ errs.push('TAF: '+e); fin(); });
     return;
   }
 
-  // ---- NOAA via fallback proxy chain ----
-  var noaaMetar = 'https://aviationweather.gov/api/data/metar?ids='+icao+'&format=raw&hours=6';
-  var noaaTaf   = 'https://aviationweather.gov/api/data/taf?ids='+icao+'&format=raw';
-  var metar='', taf='', done=0, errs=[];
-  function fin(){
-    if(++done===2){
-      // If we got nothing, try nearest-station fallback
-      if(!metar && !taf){
-        findNearestStation(icao, function(near, nearErr, distNm){
-          if(!near){
-            cb('','','no data for '+icao+' and no nearest station: '+(nearErr||'unknown')+' -- add AVWX token for better results');
-            return;
-          }
-          // Re-fetch with the nearest station
-          var m2='', t2='', d2=0;
-          function fin2(){
-            if(++d2===2){
-              var prefix = '[Nearest: '+near+(distNm?' ('+distNm+' nm)':'')+'] ';
-              cb(m2 ? prefix+m2 : '', t2 ? prefix+t2 : '',
-                 (m2||t2) ? '' : 'no data for '+icao+' or nearest '+near);
-            }
-          }
-          fetchViaProxy('https://aviationweather.gov/api/data/metar?ids='+near+'&format=raw&hours=6',
-            function(t){ m2 = clean(t); fin2(); });
-          fetchViaProxy('https://aviationweather.gov/api/data/taf?ids='+near+'&format=raw',
-            function(t){ t2 = clean(t); fin2(); });
-        });
-        return;
-      }
-      var msg = (metar||taf) ? '' : ('proxies failed -- '+errs.join(' | ')+' -- consider adding an AVWX token in Settings');
-      cb(metar, taf, msg);
-    }
-  }
-  fetchViaProxy(noaaMetar, function(t, err){
-    metar = clean(t);
-    if(!metar) errs.push('METAR via proxy: '+err);
-    fin();
-  });
-  fetchViaProxy(noaaTaf, function(t, err){
-    taf = clean(t);
-    if(!taf) errs.push('TAF via proxy: '+err);
-    fin();
-  });
+  // No AVWX key - go directly to NOAA proxy path
+  tryNoaa();
 }
 
 // Find the closest reporting station to a given ICAO airport.
