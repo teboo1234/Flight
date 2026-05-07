@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v68</title>
+<title>FlightDeck v69</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -126,7 +126,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v68</span>
+      <span class="logo-sub">v69</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -774,7 +774,9 @@ function flCalc(f){
     block: timeDiff(parseUTC(f.chocksOff), parseUTC(f.chocksOn)),
     air:   timeDiff(parseUTC(f.takeoff),   parseUTC(f.landing)),
     tacho: instrDiff(f.tachoStart, f.tachoEnd),
-    hobbs: instrDiff(f.hobbsStart, f.hobbsEnd)
+    hobbs: instrDiff(f.hobbsStart, f.hobbsEnd),
+    lesson: timeDiff(parseUTC(f.lessonStart), parseUTC(f.lessonEnd)),
+    circuit: timeDiff(parseUTC(f.circuitStart), parseUTC(f.circuitEnd))
   };
 }
 
@@ -934,9 +936,8 @@ function renderFlList(){
     var c=flCalc(f);
     var card=el('div','card'+(flActive===f.id?' sel-sky':''));
     var badges='';
-    if(c.tacho!==null) badges+='<span class="badge b-am">T:'+dec2(c.tacho)+'</span>';
-    if(c.hobbs!==null) badges+='<span class="badge b-vi">H:'+dec2(c.hobbs)+'</span>';
-    if(c.air!==null)   badges+='<span class="badge b-em">Air:'+decToHM(c.air)+'</span>';
+    if(c.lesson!==null)  badges+='<span class="badge b-sky">Les:'+decToHM(c.lesson)+'</span>';
+    if(c.circuit!==null) badges+='<span class="badge b-am">Cct:'+decToHM(c.circuit)+'</span>';
     card.innerHTML=
       '<div class="ctitle">'+(f.date||'No date')+' &middot; '+(f.aircraft||'?')+'</div>'+
       '<div class="cmeta">'+
@@ -1144,6 +1145,7 @@ function openFlModal(ex){
   var f=ex||{id:uid(),date:'',aircraft:'',departure:'',destination:'',pic:'',student:'',category:'Dual',
     touchGoes:'',
     chocksOff:'',takeoff:'',landing:'',chocksOn:'',
+    lessonStart:'',lessonEnd:'',circuitStart:'',circuitEnd:'',
     tachoStart:'',tachoEnd:'',hobbsStart:'',hobbsEnd:'',
     fob:'',burnRate:'',
     fuelTaxi:'',fuelTrip:'',fuelContPct:'5',
@@ -1230,6 +1232,38 @@ function openFlModal(ex){
       '<div><div class="sec-lbl">Hobbs Time (auto)</div>'+
         '<span class="calc-val" id="m-hobbs-v" style="font-size:16px">--</span>'+
         '<span style="font-size:13px;color:var(--muted)"> hrs</span></div>'+
+    '</div>'+
+
+    '<div class="sdiv">Lesson Times (HH:MM UTC)</div>'+
+    '<div class="g2">'+
+      '<div class="field"><label>Lesson Start</label>'+
+        '<div style="display:flex;gap:4px">'+timeSpinnerHtml('m-lessonStart', f.lessonStart)+
+        '<button type="button" class="btn btn-g m-now-btn" data-target="m-lessonStart" style="padding:6px 8px;font-size:11px">Now</button></div>'+
+      '</div>'+
+      '<div class="field"><label>Lesson End</label>'+
+        '<div style="display:flex;gap:4px">'+timeSpinnerHtml('m-lessonEnd', f.lessonEnd)+
+        '<button type="button" class="btn btn-g m-now-btn" data-target="m-lessonEnd" style="padding:6px 8px;font-size:11px">Now</button></div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:rgba(3,105,161,.06);border:1px solid rgba(3,105,161,.2);border-radius:9px;padding:12px;margin-bottom:10px">'+
+      '<div class="sec-lbl">Lesson Duration (auto)</div>'+
+      '<span class="calc-val" id="m-lesson-v" style="font-size:16px">--</span>'+
+    '</div>'+
+
+    '<div class="sdiv">Circuit Times (HH:MM UTC)</div>'+
+    '<div class="g2">'+
+      '<div class="field"><label>Circuit Start</label>'+
+        '<div style="display:flex;gap:4px">'+timeSpinnerHtml('m-circuitStart', f.circuitStart)+
+        '<button type="button" class="btn btn-g m-now-btn" data-target="m-circuitStart" style="padding:6px 8px;font-size:11px">Now</button></div>'+
+      '</div>'+
+      '<div class="field"><label>Circuit End</label>'+
+        '<div style="display:flex;gap:4px">'+timeSpinnerHtml('m-circuitEnd', f.circuitEnd)+
+        '<button type="button" class="btn btn-g m-now-btn" data-target="m-circuitEnd" style="padding:6px 8px;font-size:11px">Now</button></div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:rgba(180,83,9,.06);border:1px solid rgba(180,83,9,.2);border-radius:9px;padding:12px;margin-bottom:10px">'+
+      '<div class="sec-lbl">Circuit Duration (auto)</div>'+
+      '<span class="calc-val" id="m-circuit-v" style="font-size:16px">--</span>'+
     '</div>'+
     '</div>'+ // close #m-section-times
 
@@ -1447,7 +1481,8 @@ function openFlModal(ex){
   },0);
 
   // Time spinner change listeners (each field has -h and -m sub-elements)
-  ['m-chocksOff','m-chocksOn','m-takeoff','m-landing'].forEach(function(id){
+  ['m-chocksOff','m-chocksOn','m-takeoff','m-landing',
+   'm-lessonStart','m-lessonEnd','m-circuitStart','m-circuitEnd'].forEach(function(id){
     ['-h','-m'].forEach(function(sfx){
       var el=qs('#'+id+sfx,div);
       if(el) el.addEventListener('change', liveCalc);
@@ -1579,6 +1614,11 @@ function openFlModal(ex){
     qs('#m-air-d',div).textContent=air!==null?'('+dec2(air)+' hrs)':'';
     qs('#m-tacho-v',div).textContent=dec2(tacho);
     qs('#m-hobbs-v',div).textContent=dec2(hobbs);
+
+    var lesson=timeDiff(parseUTC(getTimeSpinner('m-lessonStart',div)), parseUTC(getTimeSpinner('m-lessonEnd',div)));
+    var circuit=timeDiff(parseUTC(getTimeSpinner('m-circuitStart',div)), parseUTC(getTimeSpinner('m-circuitEnd',div)));
+    var lEl=qs('#m-lesson-v',div); if(lEl) lEl.textContent = lesson!==null ? decToHM(lesson)+' ('+dec2(lesson)+' hrs)' : '--';
+    var cEl=qs('#m-circuit-v',div); if(cEl) cEl.textContent = circuit!==null ? decToHM(circuit)+' ('+dec2(circuit)+' hrs)' : '--';
 
     // Fuel
     var fuelF={
@@ -1757,6 +1797,8 @@ function openFlModal(ex){
     f.touchGoes=g('m-touchGoes');
     f.chocksOff=getTimeSpinner('m-chocksOff',div); f.takeoff=getTimeSpinner('m-takeoff',div);
     f.landing=getTimeSpinner('m-landing',div); f.chocksOn=getTimeSpinner('m-chocksOn',div);
+    f.lessonStart=getTimeSpinner('m-lessonStart',div); f.lessonEnd=getTimeSpinner('m-lessonEnd',div);
+    f.circuitStart=getTimeSpinner('m-circuitStart',div); f.circuitEnd=getTimeSpinner('m-circuitEnd',div);
     f.tachoStart=g('m-tachoStart'); f.tachoEnd=g('m-tachoEnd');
     f.hobbsStart=g('m-hobbsStart'); f.hobbsEnd=g('m-hobbsEnd');
     f.fob=g('m-fob'); f.burnRate=g('m-burnRate');
@@ -1810,15 +1852,27 @@ function openFlModal(ex){
 
   openModal({title: ex?'Edit Flight Record':'Log New Flight', body:div, wide:true,
     saveLabel: ex?'Save Changes':'Log Flight',
-    extraButtons: [{
-      label: '\u2709 Email Now',
-      cls: 'btn btn-g',
-      onClick: function(){
-        saveDraft(false);
-        toast('Saved -- opening Mail...');
-        setTimeout(function(){ emailFlight(f); }, 400);
+    extraButtons: [
+      {
+        label: '\u2714 Save Draft',
+        cls: 'btn btn-g',
+        onClick: function(){
+          saveDraft(false);
+          toast('Saved as draft');
+          if(autoSaveTimer){ clearInterval(autoSaveTimer); autoSaveTimer=null; }
+          closeModal();
+        }
+      },
+      {
+        label: '\u2709 Email Now',
+        cls: 'btn btn-g',
+        onClick: function(){
+          saveDraft(false);
+          toast('Saved -- opening Mail...');
+          setTimeout(function(){ emailFlight(f); }, 400);
+        }
       }
-    }],
+    ],
     onClose: function(){ if(autoSaveTimer){ clearInterval(autoSaveTimer); autoSaveTimer=null; } },
     onSave: function(){
       if(autoSaveTimer){ clearInterval(autoSaveTimer); autoSaveTimer=null; }
@@ -1937,6 +1991,8 @@ function emailFlight(f){
     logRow('Air Time',   decToHM(c.air)+' ('+dec2(c.air)+' hrs)', true),
     logRow('Tacho Time', dec2(c.tacho)+' hrs  ['+(f.tachoStart||'?')+' to '+(f.tachoEnd||'?')+']', true),
     logRow('Hobbs Time', dec2(c.hobbs)+' hrs  ['+(f.hobbsStart||'?')+' to '+(f.hobbsEnd||'?')+']', true),
+    logRow('Lesson Time', c.lesson!==null ? decToHM(c.lesson)+' ('+dec2(c.lesson)+' hrs)' : '--', true),
+    logRow('Circuit Time', c.circuit!==null ? decToHM(c.circuit)+' ('+dec2(c.circuit)+' hrs)' : '--', true),
     '',
     'FUEL  (Burn rate '+fc.burn+' USG/hr)',
     '------------------------------',
@@ -1967,7 +2023,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v68');
+  lines.push('','-- Sent from FlightDeck v69');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -1998,6 +2054,8 @@ function exportFlight(f){
     logRow('Air Time',   decToHM(c.air)+' ('+dec2(c.air)+' hrs)', true),
     logRow('Tacho Time', dec2(c.tacho)+' hrs  ['+(f.tachoStart||'?')+' to '+(f.tachoEnd||'?')+']', true),
     logRow('Hobbs Time', dec2(c.hobbs)+' hrs  ['+(f.hobbsStart||'?')+' to '+(f.hobbsEnd||'?')+']', true),
+    logRow('Lesson Time', c.lesson!==null ? decToHM(c.lesson)+' ('+dec2(c.lesson)+' hrs)' : '--', true),
+    logRow('Circuit Time', c.circuit!==null ? decToHM(c.circuit)+' ('+dec2(c.circuit)+' hrs)' : '--', true),
     '',
     'FUEL  (Burn rate '+fc.burn+' USG/hr)',
     '------------------------------',
@@ -2025,7 +2083,7 @@ function exportFlight(f){
     '----------------',
     f.notes||'--',
   ].concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v68');
+  lines.push('','-- FlightDeck v69');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
