@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v69</title>
+<title>FlightDeck v70</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -126,7 +126,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v69</span>
+      <span class="logo-sub">v70</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -936,8 +936,16 @@ function renderFlList(){
     var c=flCalc(f);
     var card=el('div','card'+(flActive===f.id?' sel-sky':''));
     var badges='';
-    if(c.lesson!==null)  badges+='<span class="badge b-sky">Les:'+decToHM(c.lesson)+'</span>';
-    if(c.circuit!==null) badges+='<span class="badge b-am">Cct:'+decToHM(c.circuit)+'</span>';
+    if(f.lessonStart||f.lessonEnd||c.lesson!==null){
+      var lTimes = (f.lessonStart||'?')+'-'+(f.lessonEnd||'?');
+      var lDur = c.lesson!==null ? ' ('+decToHM(c.lesson)+')' : '';
+      badges+='<span class="badge b-sky">Les '+lTimes+lDur+'</span>';
+    }
+    if(f.circuitStart||f.circuitEnd||c.circuit!==null){
+      var cTimes = (f.circuitStart||'?')+'-'+(f.circuitEnd||'?');
+      var cDur = c.circuit!==null ? ' ('+decToHM(c.circuit)+')' : '';
+      badges+='<span class="badge b-am">Cct '+cTimes+cDur+'</span>';
+    }
     card.innerHTML=
       '<div class="ctitle">'+(f.date||'No date')+' &middot; '+(f.aircraft||'?')+'</div>'+
       '<div class="cmeta">'+
@@ -2023,7 +2031,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v69');
+  lines.push('','-- Sent from FlightDeck v70');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -2083,7 +2091,7 @@ function exportFlight(f){
     '----------------',
     f.notes||'--',
   ].concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v69');
+  lines.push('','-- FlightDeck v70');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
