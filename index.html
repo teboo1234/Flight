@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v70</title>
+<title>FlightDeck v73</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -87,6 +87,35 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 .calc-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:#0284c7}
 .calc-sub{font-size:12px;color:var(--muted);margin-top:2px}
 .sdiv{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--sky);text-transform:uppercase;letter-spacing:.1em;padding:8px 0 4px;border-bottom:1px solid rgba(14,165,233,.2);margin-bottom:10px;margin-top:6px}
+
+/* Colour-coded section cards used in the detail view and modal.
+   Each section gets one accent colour applied to its left border,
+   tinted background, and header label. */
+.scard{border-radius:11px;padding:14px;margin-bottom:18px;border-left-width:5px;border-left-style:solid;border-top:1px solid;border-right:1px solid;border-bottom:1px solid}
+.scard-head{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.scard-head .ico{font-size:18px}
+.s-info   {background:rgba(30,58,138,.06);border-color:rgba(30,58,138,.18);border-left-color:#1e3a8a}
+.s-info .scard-head{color:#1e3a8a}
+.s-times  {background:rgba(14,116,144,.06);border-color:rgba(14,116,144,.18);border-left-color:#0e7490}
+.s-times .scard-head{color:#0e7490}
+.s-wx     {background:rgba(109,40,217,.06);border-color:rgba(109,40,217,.18);border-left-color:#6d28d9}
+.s-wx .scard-head{color:#6d28d9}
+.s-fuel   {background:rgba(180,83,9,.06);border-color:rgba(180,83,9,.18);border-left-color:#b45309}
+.s-fuel .scard-head{color:#b45309}
+.s-defects{background:rgba(190,18,60,.07);border-color:rgba(190,18,60,.22);border-left-color:#be123c}
+.s-defects .scard-head{color:#be123c}
+.s-notes  {background:rgba(71,85,105,.06);border-color:rgba(71,85,105,.18);border-left-color:#475569}
+.s-notes .scard-head{color:#475569}
+/* Calculated/derived value styling - mono and slightly larger */
+.calc-num{font-family:'JetBrains Mono',monospace;font-weight:700}
+/* Spectrum strip on flight list cards: small coloured bars showing what's filled in */
+.spec{display:flex;height:4px;border-radius:2px;overflow:hidden;margin-bottom:8px;background:rgba(203,213,225,.4)}
+.spec span{flex:1}
+.spec .s1.on{background:#1e3a8a}
+.spec .s2.on{background:#0e7490}
+.spec .s3.on{background:#6d28d9}
+.spec .s4.on{background:#b45309}
+.spec .s5.on{background:#be123c}
 .cli{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;border:1px solid;transition:all .15s}
 .cli.done{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.3)}
 .cli.undone{background:rgba(255,255,255,.6);border-color:var(--border)}
@@ -126,7 +155,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v70</span>
+      <span class="logo-sub">v73</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -946,7 +975,21 @@ function renderFlList(){
       var cDur = c.circuit!==null ? ' ('+decToHM(c.circuit)+')' : '';
       badges+='<span class="badge b-am">Cct '+cTimes+cDur+'</span>';
     }
+    // Spectrum strip - which sections have data filled in?
+    var has1 = !!(f.pic||f.student||f.touchGoes||f.oil);                                          // Info
+    var has2 = !!(f.chocksOff||f.takeoff||f.landing||f.chocksOn||f.tachoStart||f.hobbsStart);     // Times
+    var has3 = !!(f.wxSurfDir||f.wxSurfSpd||f.wxTAS||f.wxMetar1||f.wxMetar2||f.wxMetar3||f.wxMetar4); // Weather
+    var has4 = !!(f.fob||f.fuelUplifted||f.burnRate||f.fuelTrip);                                 // Fuel
+    var has5 = !!(f.defects && f.defects.toUpperCase().replace(/\s/g,'') !== 'NONE');             // Defects (only if non-"None")
+    var spectrum = '<div class="spec">'+
+      '<span class="s1'+(has1?' on':'')+'" title="Flight Info"></span>'+
+      '<span class="s2'+(has2?' on':'')+'" title="Times"></span>'+
+      '<span class="s3'+(has3?' on':'')+'" title="Weather"></span>'+
+      '<span class="s4'+(has4?' on':'')+'" title="Fuel"></span>'+
+      '<span class="s5'+(has5?' on':'')+'" title="Defects"></span>'+
+    '</div>';
     card.innerHTML=
+      spectrum+
       '<div class="ctitle">'+(f.date||'No date')+' &middot; '+(f.aircraft||'?')+'</div>'+
       '<div class="cmeta">'+
         '<span class="badge b-sky">'+(f.departure||'?')+'&#8594;'+(f.destination||'?')+'</span>'+
@@ -968,6 +1011,7 @@ function renderFlDetail(){
   if(!f){ det.innerHTML='<div class="empty">Not found</div>'; return; }
 
   var c=flCalc(f);
+  var fc=fuelCalc(f);
 
   det.innerHTML='';
   var box=el('div','dbox');
@@ -990,66 +1034,80 @@ function renderFlDetail(){
     '</div>';
   box.appendChild(dh);
 
-  // -- Times card --
-  var tc=el('div','calc-card');
-  tc.innerHTML=
-    '<div class="calc-title" style="color:#0369a1">&#9201; Calculated Times</div>'+
-    '<div class="g4" style="gap:12px">'+
-      '<div><div class="sec-lbl">Block Time</div><div class="calc-val">'+decToHM(c.block)+'</div>'+
-        '<div class="calc-sub">'+(c.block!==null?dec2(c.block)+' hrs':'')+'</div>'+
-        '<div class="calc-sub">'+(f.chocksOff||'?')+' &#8594; '+(f.chocksOn||'?')+' UTC</div></div>'+
-      '<div><div class="sec-lbl">Air Time</div><div class="calc-val">'+decToHM(c.air)+'</div>'+
-        '<div class="calc-sub">'+(c.air!==null?dec2(c.air)+' hrs':'')+'</div>'+
-        '<div class="calc-sub">'+(f.takeoff||'?')+' &#8594; '+(f.landing||'?')+' UTC</div></div>'+
-      '<div><div class="sec-lbl">Tacho Time</div><div class="calc-val">'+dec2(c.tacho)+'</div>'+
-        '<div class="calc-sub">'+(c.tacho!==null?'hrs':'')+'</div>'+
-        '<div class="calc-sub">'+(f.tachoStart||'?')+' &#8594; '+(f.tachoEnd||'?')+'</div></div>'+
-      '<div><div class="sec-lbl">Hobbs Time</div><div class="calc-val">'+dec2(c.hobbs)+'</div>'+
-        '<div class="calc-sub">'+(c.hobbs!==null?'hrs':'')+'</div>'+
-        '<div class="calc-sub">'+(f.hobbsStart||'?')+' &#8594; '+(f.hobbsEnd||'?')+'</div></div>'+
+  // ============== FLIGHT INFO (slate-blue) ==============
+  var info=el('div','scard s-info');
+  info.innerHTML=
+    '<div class="scard-head"><span class="ico">&#9992;</span> Flight Info</div>'+
+    '<div class="g2" style="margin-bottom:10px">'+
+      '<div><div class="sec-lbl">PIC</div><div class="sec-box">'+(f.pic||'--')+'</div></div>'+
+      '<div><div class="sec-lbl">Student / Co-pilot</div><div class="sec-box">'+(f.student||'--')+'</div></div>'+
+    '</div>'+
+    '<div class="g2">'+
+      '<div><div class="sec-lbl">Touch &amp; Goes</div><div class="sec-box calc-num" style="color:#1e3a8a">'+(f.touchGoes||'0')+'</div></div>'+
+      '<div><div class="sec-lbl">Oil Check</div><div class="sec-box">'+(f.oil||'--')+'</div></div>'+
     '</div>';
+  box.appendChild(info);
+
+  // ============== TIMES (cyan) ==============
+  var tc=el('div','scard s-times');
+  tc.innerHTML=
+    '<div class="scard-head"><span class="ico">&#9201;</span> Times</div>'+
+    '<div class="g4" style="margin-bottom:14px">'+
+      '<div><div class="sec-lbl">Chocks Off</div><div class="sec-box">'+(f.chocksOff||'--')+'</div></div>'+
+      '<div><div class="sec-lbl">Takeoff</div><div class="sec-box">'+(f.takeoff||'--')+'</div></div>'+
+      '<div><div class="sec-lbl">Landing</div><div class="sec-box">'+(f.landing||'--')+'</div></div>'+
+      '<div><div class="sec-lbl">Chocks On</div><div class="sec-box">'+(f.chocksOn||'--')+'</div></div>'+
+    '</div>'+
+    '<div class="g4" style="gap:14px;background:rgba(255,255,255,.55);border:1px dashed rgba(14,116,144,.3);border-radius:9px;padding:12px;margin-bottom:14px">'+
+      '<div><div class="sec-lbl">Block Time</div><div class="calc-num" style="font-size:20px;color:#0e7490">'+decToHM(c.block)+'</div><div class="calc-sub">'+(c.block!==null?dec2(c.block)+' hrs':'')+'</div></div>'+
+      '<div><div class="sec-lbl">Air Time</div><div class="calc-num" style="font-size:20px;color:#0e7490">'+decToHM(c.air)+'</div><div class="calc-sub">'+(c.air!==null?dec2(c.air)+' hrs':'')+'</div></div>'+
+      '<div><div class="sec-lbl">Tacho</div><div class="calc-num" style="font-size:18px;color:#0e7490">'+dec2(c.tacho)+'</div><div class="calc-sub">'+(f.tachoStart||'?')+' &#8594; '+(f.tachoEnd||'?')+'</div></div>'+
+      '<div><div class="sec-lbl">Hobbs</div><div class="calc-num" style="font-size:18px;color:#0e7490">'+dec2(c.hobbs)+'</div><div class="calc-sub">'+(f.hobbsStart||'?')+' &#8594; '+(f.hobbsEnd||'?')+'</div></div>'+
+    '</div>'+
+    // Lesson + Circuit
+    ((c.lesson!==null||c.circuit!==null||f.lessonStart||f.circuitStart) ?
+      '<div class="g2" style="gap:14px">'+
+        '<div><div class="sec-lbl">Lesson Time</div><div class="sec-box"><span class="calc-num" style="color:#0e7490">'+(c.lesson!==null?decToHM(c.lesson):'--')+'</span>'+
+          (f.lessonStart||f.lessonEnd ? '<div class="calc-sub">'+(f.lessonStart||'?')+' &#8594; '+(f.lessonEnd||'?')+' UTC</div>' : '')+'</div></div>'+
+        '<div><div class="sec-lbl">Circuit Time</div><div class="sec-box"><span class="calc-num" style="color:#0e7490">'+(c.circuit!==null?decToHM(c.circuit):'--')+'</span>'+
+          (f.circuitStart||f.circuitEnd ? '<div class="calc-sub">'+(f.circuitStart||'?')+' &#8594; '+(f.circuitEnd||'?')+' UTC</div>' : '')+'</div></div>'+
+      '</div>' : '');
   box.appendChild(tc);
 
-  // -- Fuel card --
-  var fc=fuelCalc(f);
+  // ============== FUEL (amber) ==============
   var burnLabel=fc.burn!==null ? fc.burn+' USG/hr' : 'not set';
-  var fcard=el('div','fuel-card');
+  var fcard=el('div','scard s-fuel');
   fcard.innerHTML=
-    '<div class="calc-title" style="color:#b45309">&#9981; Fuel (USG) &mdash; Burn rate: '+burnLabel+'</div>'+
+    '<div class="scard-head"><span class="ico">&#9981;</span> Fuel <span style="font-weight:400;font-size:12px;color:var(--muted);margin-left:8px;letter-spacing:.05em">Burn '+burnLabel+'</span></div>'+
     '<div class="g3" style="gap:10px;margin-bottom:10px">'+
       '<div><div class="sec-lbl">Initial Fuel</div>'+
         '<div class="sec-box">'+(fc.initial!==null?dec2(fc.initial)+' USG':'--')+'</div></div>'+
       '<div><div class="sec-lbl">Fuel Uplifted</div>'+
         '<div class="sec-box">'+(fc.uplifted?dec2(fc.uplifted)+' USG':'--')+'</div></div>'+
       '<div><div class="sec-lbl">Total Fuel on Board</div>'+
-        '<div class="sec-box" style="color:#0369a1;font-weight:600">'+(fc.fob!==null?dec2(fc.fob)+' USG':'--')+'</div></div>'+
+        '<div class="sec-box calc-num" style="color:#b45309">'+(fc.fob!==null?dec2(fc.fob)+' USG':'--')+'</div></div>'+
     '</div>'+
     '<div class="g3" style="gap:10px;margin-bottom:10px">'+
       '<div><div class="sec-lbl">Total Required</div>'+
-        '<div class="sec-box" style="color:#b45309;font-weight:600">'+dec2(fc.total)+' USG</div></div>'+
+        '<div class="sec-box calc-num" style="color:#b45309">'+dec2(fc.total)+' USG</div></div>'+
       '<div><div class="sec-lbl">Surplus / Deficit</div>'+
-        '<div class="sec-box" style="color:'+(fc.surplus===null?'var(--muted)':fc.surplus>=0?'#047857':'#be123c')+';font-weight:600">'+
+        '<div class="sec-box calc-num" style="color:'+(fc.surplus===null?'var(--muted)':fc.surplus>=0?'#047857':'#be123c')+'">'+
           (fc.surplus!==null?(fc.surplus>=0?'+':'')+dec2(fc.surplus)+' USG':'--')+'</div></div>'+
       '<div><div class="sec-lbl">Endurance</div>'+
-        '<div class="sec-box" style="color:#0284c7;font-weight:600">'+
+        '<div class="sec-box calc-num" style="color:#0284c7">'+
           (fc.endurance!==null?decToHM(fc.endurance)+' ('+dec2(fc.endurance)+' hrs)':'--')+'</div></div>'+
     '</div>'+
-    (f.fuelLanding ? '<div class="g3" style="gap:10px"><div><div class="sec-lbl">Actual Fuel on Landing</div><div class="sec-box" style="color:#6d28d9;font-weight:600">'+dec2(parseFloat(f.fuelLanding))+' USG / '+dec2(parseFloat(f.fuelLanding)*USG_TO_L)+' L</div></div></div>' : '');
+    (f.fuelLanding ? '<div class="g3" style="gap:10px"><div><div class="sec-lbl">Actual Fuel on Landing</div><div class="sec-box calc-num" style="color:#6d28d9">'+dec2(parseFloat(f.fuelLanding))+' USG / '+dec2(parseFloat(f.fuelLanding)*USG_TO_L)+' L</div></div></div>' : '');
   box.appendChild(fcard);
 
-  // -- Weather card --
+  // ============== WEATHER (violet) ==============
   var hasWxData = f.wxTAS || f.wxFreezFL || f.wxCloudBase || f.wxSurfDir ||
                   f.rwy1 || f.rwy2 || f.rwy3 || f.rwy4 ||
                   f.wxMetar1 || f.wxMetar2 || f.wxMetar3 || f.wxMetar4 ||
                   f.wxTaf1 || f.wxTaf2 || f.wxTaf3 || f.wxTaf4;
   if(hasWxData){
-    var wcard=el('div','fuel-card');
-    wcard.style.background='rgba(139,92,246,.05)';
-    wcard.style.border='1px solid rgba(139,92,246,.25)';
-    var html =
-      '<div class="calc-title" style="color:#6d28d9">&#9925; Weather</div>';
-
-    // Planning row
+    var wcard=el('div','scard s-wx');
+    var html = '<div class="scard-head"><span class="ico">&#9925;</span> Weather</div>';
     if(f.wxTAS||f.wxFreezFL||f.wxCloudBase){
       html += '<div class="g3" style="gap:10px;margin-bottom:10px">'+
         '<div><div class="sec-lbl">TAS</div><div class="sec-box">'+(f.wxTAS?f.wxTAS+' kt':'--')+'</div></div>'+
@@ -1057,84 +1115,70 @@ function renderFlDetail(){
         '<div><div class="sec-lbl">Cloud Base</div><div class="sec-box">'+(f.wxCloudBase?f.wxCloudBase+' ft':'--')+'</div></div>'+
       '</div>';
     }
-
-    // Surface wind + runway components
     if(f.wxSurfDir||f.wxSurfSpd){
       html += '<div class="sec" style="margin-bottom:10px">'+
         '<div class="sec-lbl">Surface Wind</div>'+
         '<div class="sec-box">'+(f.wxSurfDir||'--')+'&deg; / '+(f.wxSurfSpd||'--')+' kt</div>'+
       '</div>';
-
-      var rows = [];
+      var rwRows = [];
       [f.rwy1,f.rwy2,f.rwy3,f.rwy4].forEach(function(rwy){
         if(!rwy) return;
-        var c = rwyWind(rwy, f.wxSurfDir, f.wxSurfSpd);
-        if(!c) return;
-        var hwCol = c.hwLabel==='HW' ? '#047857' : '#be123c';
-        rows.push(
-          '<div style="display:flex;gap:14px;align-items:center;font-size:12px;font-family:JetBrains Mono,monospace;padding:5px 8px;background:rgba(255,255,255,.6);border-radius:6px">'+
-            '<span style="color:#6d28d9;min-width:75px;font-weight:600">RWY '+('0'+rwy).slice(-2)+'</span>'+
-            '<span><span style="color:var(--muted);font-size:12px">'+c.hwLabel+': </span><span style="color:'+hwCol+';font-weight:600">'+c.hwAbs+' kt</span></span>'+
-            '<span><span style="color:var(--muted);font-size:12px">XW: </span><span style="color:#b45309;font-weight:600">'+c.xwAbs+' kt '+c.xwLabel+'</span></span>'+
+        var rw = rwyWind(rwy, f.wxSurfDir, f.wxSurfSpd);
+        if(!rw) return;
+        var hwCol = rw.hwLabel==='HW' ? '#047857' : '#be123c';
+        rwRows.push(
+          '<div style="display:flex;gap:14px;align-items:center;font-size:13px;font-family:JetBrains Mono,monospace;padding:7px 10px;background:rgba(255,255,255,.65);border-radius:7px">'+
+            '<span style="color:#6d28d9;min-width:75px;font-weight:700">RWY '+('0'+rwy).slice(-2)+'</span>'+
+            '<span><span style="color:var(--muted);font-size:12px">'+rw.hwLabel+': </span><span class="calc-num" style="color:'+hwCol+'">'+rw.hwAbs+' kt</span></span>'+
+            '<span><span style="color:var(--muted);font-size:12px">XW: </span><span class="calc-num" style="color:#b45309">'+rw.xwAbs+' kt '+rw.xwLabel+'</span></span>'+
           '</div>'
         );
       });
-      if(rows.length){
-        html += '<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">' + rows.join('') + '</div>';
+      if(rwRows.length){
+        html += '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">' + rwRows.join('') + '</div>';
       }
     }
-
-    // METAR / TAF blocks per ICAO (filtered for the saved flight window)
     [1,2,3,4].forEach(function(n){
       var icao = f['wxIcao'+n];
       var metar = f['wxMetar'+n];
       var taf = f['wxTaf'+n];
       if(!icao && !metar && !taf) return;
       var filtered = filterMetars(metar, f.chocksOff, f.chocksOn);
-      html += '<div style="background:rgba(255,255,255,.7);border:1px solid var(--border);border-radius:7px;padding:9px;margin-bottom:6px">'+
-        '<div style="font-family:JetBrains Mono,monospace;font-size:13px;color:#0369a1;font-weight:700;margin-bottom:5px">'+(icao||'Station '+n)+'</div>';
+      html += '<div style="background:rgba(255,255,255,.7);border:1px solid rgba(109,40,217,.2);border-radius:9px;padding:11px;margin-bottom:7px">'+
+        '<div style="font-family:JetBrains Mono,monospace;font-size:14px;color:#6d28d9;font-weight:700;margin-bottom:7px">'+(icao||'Station '+n)+'</div>';
       if(filtered){
         html += '<div class="sec-lbl">METAR</div>'+
-          '<div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-family:JetBrains Mono,monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;margin-bottom:5px">'+escapeHtml(filtered)+'</div>';
+          '<div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:JetBrains Mono,monospace;font-size:13px;white-space:pre-wrap;line-height:1.55;margin-bottom:7px">'+escapeHtml(filtered)+'</div>';
       }
       if(taf){
         html += '<div class="sec-lbl">TAF</div>'+
-          '<div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-family:JetBrains Mono,monospace;font-size:13px;white-space:pre-wrap;line-height:1.5">'+escapeHtml(taf)+'</div>';
+          '<div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:JetBrains Mono,monospace;font-size:13px;white-space:pre-wrap;line-height:1.55">'+escapeHtml(taf)+'</div>';
       }
       html += '</div>';
     });
-
     wcard.innerHTML = html;
     box.appendChild(wcard);
   }
 
-  // -- Detail rows --
-  var rows=el('div','');
-  rows.innerHTML=
-    '<div class="g2" style="margin-bottom:10px">'+
-      '<div class="sec"><div class="sec-lbl">PIC</div><div class="sec-box">'+(f.pic||'--')+'</div></div>'+
-      '<div class="sec"><div class="sec-lbl">Student / Co-pilot</div><div class="sec-box">'+(f.student||'--')+'</div></div>'+
-    '</div>'+
-    '<div class="g2" style="margin-bottom:10px">'+
-      '<div class="sec"><div class="sec-lbl">Touch &amp; Goes</div><div class="sec-box">'+(f.touchGoes||'0')+'</div></div>'+
-      '<div class="sec"><div class="sec-lbl">&nbsp;</div><div class="sec-box" style="background:transparent;border:none">&nbsp;</div></div>'+
-    '</div>'+
-    '<div class="g4" style="margin-bottom:10px">'+
-      '<div class="sec"><div class="sec-lbl">Chocks Off (UTC)</div><div class="sec-box">'+(f.chocksOff||'--')+'</div></div>'+
-      '<div class="sec"><div class="sec-lbl">Takeoff (UTC)</div><div class="sec-box">'+(f.takeoff||'--')+'</div></div>'+
-      '<div class="sec"><div class="sec-lbl">Landing (UTC)</div><div class="sec-box">'+(f.landing||'--')+'</div></div>'+
-      '<div class="sec"><div class="sec-lbl">Chocks On (UTC)</div><div class="sec-box">'+(f.chocksOn||'--')+'</div></div>'+
-    '</div>'+
-    '<div class="g4" style="margin-bottom:10px">'+
-      '<div class="sec"><div class="sec-lbl">Tacho Start</div><div class="sec-box">'+(f.tachoStart||'--')+'</div></div>'+
-      '<div class="sec"><div class="sec-lbl">Tacho End</div><div class="sec-box">'+(f.tachoEnd||'--')+'</div></div>'+
-      '<div class="sec"><div class="sec-lbl">Hobbs Start</div><div class="sec-box">'+(f.hobbsStart||'--')+'</div></div>'+
-      '<div class="sec"><div class="sec-lbl">Hobbs End</div><div class="sec-box">'+(f.hobbsEnd||'--')+'</div></div>'+
-    '</div>'+
-    (f.oil?'<div class="sec" style="margin-bottom:10px"><div class="sec-lbl">Oil Check</div><div class="sec-box">'+f.oil+'</div></div>':'')+
-    (f.maneuvers?'<div class="sec"><div class="sec-lbl">Maneuvers / Exercises</div><div class="sec-box">'+f.maneuvers+'</div></div>':'')+
-    (f.notes?'<div class="sec"><div class="sec-lbl">Instructor Notes</div><div class="sec-box">'+f.notes+'</div></div>':'');
-  box.appendChild(rows);
+  // ============== DEFECTS (rose) ==============
+  if(f.defects){
+    var dcard=el('div','scard s-defects');
+    dcard.innerHTML =
+      '<div class="scard-head"><span class="ico">&#9888;</span> Defects</div>'+
+      '<div class="sec-box" style="border-color:rgba(190,18,60,.3)">'+escapeHtml(f.defects)+'</div>';
+    box.appendChild(dcard);
+  }
+
+  // ============== MANEUVERS / NOTES (slate) ==============
+  if(f.maneuvers||f.notes){
+    var ncard=el('div','scard s-notes');
+    var nh = '<div class="scard-head"><span class="ico">&#9998;</span> Notes</div>';
+    if(f.maneuvers) nh += '<div class="sec" style="margin-bottom:10px"><div class="sec-lbl">Maneuvers / Exercises</div><div class="sec-box">'+escapeHtml(f.maneuvers)+'</div></div>';
+    if(f.notes)     nh += '<div class="sec"><div class="sec-lbl">Instructor Notes</div><div class="sec-box">'+escapeHtml(f.notes)+'</div></div>';
+    ncard.innerHTML = nh;
+    box.appendChild(ncard);
+  }
+
   det.appendChild(box);
 
   qs('#fl-edit-btn',box).addEventListener('click',function(){ openFlModal(f); });
@@ -1163,15 +1207,15 @@ function openFlModal(ex){
     wxIcao1:'',wxIcao2:'',wxIcao3:'',wxIcao4:'',
     wxMetar1:'',wxMetar2:'',wxMetar3:'',wxMetar4:'',
     wxTaf1:'',wxTaf2:'',wxTaf3:'',wxTaf4:'',
-    oil:'',maneuvers:'',notes:''};
+    oil:'',maneuvers:'',defects:'',notes:''};
 
   var div=document.createElement('div');
   div.innerHTML=
     '<div style="display:flex;gap:2px;margin-bottom:14px;border-bottom:2px solid var(--border)">'+
-      '<button type="button" id="m-tab-info" class="m-tab m-tab-on" style="padding:8px 8px;background:none;border:none;border-bottom:3px solid #0284c7;color:#0284c7;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1">Flight Info</button>'+
-      '<button type="button" id="m-tab-times" class="m-tab" style="padding:8px 8px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1">Times</button>'+
-      '<button type="button" id="m-tab-wx" class="m-tab" style="padding:8px 8px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1">Weather</button>'+
-      '<button type="button" id="m-tab-fuel" class="m-tab" style="padding:8px 8px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1">Fuel</button>'+
+      '<button type="button" id="m-tab-info" class="m-tab m-tab-on" style="padding:8px 8px;background:none;border:none;border-bottom:3px solid #1e3a8a;color:#1e3a8a;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#1e3a8a">Flight Info</button>'+
+      '<button type="button" id="m-tab-times" class="m-tab" style="padding:8px 8px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#0e7490">Times</button>'+
+      '<button type="button" id="m-tab-wx" class="m-tab" style="padding:8px 8px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#6d28d9">Weather</button>'+
+      '<button type="button" id="m-tab-fuel" class="m-tab" style="padding:8px 8px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#b45309">Fuel</button>'+
     '</div>'+
     '<div id="m-section-info">'+
     '<div class="sdiv">Flight Details</div>'+
@@ -1438,6 +1482,7 @@ function openFlModal(ex){
     '<div class="sdiv">Other</div>'+
     '<div class="field"><label>Oil Check</label><input class="inp" id="m-oil" value="'+(f.oil||'')+'" placeholder="OK / 1L added"/></div>'+
     '<div class="field"><label>Maneuvers / Exercises</label><textarea class="inp" id="m-maneuvers" rows="3">'+(f.maneuvers||'')+'</textarea></div>'+
+    '<div class="field"><label>Defects</label><textarea class="inp" id="m-defects" rows="3" placeholder="None / list any aircraft defects, snags or issues">'+(f.defects||'')+'</textarea></div>'+
     '<div class="field"><label>Instructor Notes</label><textarea class="inp" id="m-notes" rows="3">'+(f.notes||'')+'</textarea></div>'+
     '</div>';
 
@@ -1459,9 +1504,10 @@ function openFlModal(ex){
       sections[k].forEach(function(el){ if(el) el.style.display = (k===tab ? '' : 'none'); });
       var b=btns[k];
       if(b){
+        var col = b.getAttribute('data-color') || '#0284c7';
         if(k===tab){
-          b.style.color='#0284c7';
-          b.style.borderBottomColor='#0284c7';
+          b.style.color=col;
+          b.style.borderBottomColor=col;
           b.style.fontWeight='700';
         } else {
           b.style.color='var(--muted)';
@@ -1825,6 +1871,7 @@ function openFlModal(ex){
     });
     f.oil=g('m-oil');
     var manEl=qs('#m-maneuvers',div); if(manEl) f.maneuvers=manEl.value;
+    var defEl=qs('#m-defects',div); if(defEl) f.defects=defEl.value;
     var notesEl=qs('#m-notes',div); if(notesEl) f.notes=notesEl.value;
   }
 
@@ -1875,28 +1922,35 @@ function openFlModal(ex){
         label: '\u2709 Email Now',
         cls: 'btn btn-g',
         onClick: function(){
-          saveDraft(false);
-          toast('Saved -- opening Mail...');
-          setTimeout(function(){ emailFlight(f); }, 400);
+          collectFields();
+          runPreCommitChecks(f, function(){
+            saveDraft(false);
+            toast('Saved -- opening Mail...');
+            setTimeout(function(){ emailFlight(f); }, 400);
+          });
         }
       }
     ],
     onClose: function(){ if(autoSaveTimer){ clearInterval(autoSaveTimer); autoSaveTimer=null; } },
     onSave: function(){
-      if(autoSaveTimer){ clearInterval(autoSaveTimer); autoSaveTimer=null; }
       collectFields();
-      if(!ex){
-        var existing = flights.findIndex(function(x){ return x.id===f.id; });
-        if(existing<0) flights.push(f);
-        else flights[existing]=f;
-      } else {
-        var i=flights.findIndex(function(x){ return x.id===f.id; });
-        if(i>=0) flights[i]=f;
-      }
-      flSave(); flActive=f.id;
-      renderFlList(); renderFlDetail(); renderFlStats();
-      toast((ex?'Flight updated':'Flight logged')+' -- opening Mail...');
-      setTimeout(function(){ emailFlight(f); },600);
+      runPreCommitChecks(f, function(){
+        if(autoSaveTimer){ clearInterval(autoSaveTimer); autoSaveTimer=null; }
+        if(!ex){
+          var existing = flights.findIndex(function(x){ return x.id===f.id; });
+          if(existing<0) flights.push(f);
+          else flights[existing]=f;
+        } else {
+          var i=flights.findIndex(function(x){ return x.id===f.id; });
+          if(i>=0) flights[i]=f;
+        }
+        flSave(); flActive=f.id;
+        renderFlList(); renderFlDetail(); renderFlStats();
+        toast((ex?'Flight updated':'Flight logged')+' -- opening Mail...');
+        setTimeout(function(){ emailFlight(f); },600);
+        closeModal();
+      });
+      return false; // we close manually via the callback
     }
   });
 
@@ -1921,7 +1975,7 @@ function weatherTextLines(f){
                f.wxMetar1||f.wxMetar2||f.wxMetar3||f.wxMetar4||
                f.wxTaf1||f.wxTaf2||f.wxTaf3||f.wxTaf4;
   if(!hasAny) return lines;
-  lines.push('', 'WEATHER', '=======');
+  logBanner('WEATHER').forEach(function(l){ lines.push(l); });
   if(f.wxTAS)       lines.push(logRow('TAS', f.wxTAS+' kt'));
   if(f.wxFreezFL)   lines.push(logRow('Freezing Level', f.wxFreezFL+' ft'));
   if(f.wxCloudBase) lines.push(logRow('Cloud Base', f.wxCloudBase+' ft'));
@@ -1941,7 +1995,7 @@ function weatherTextLines(f){
     var taf = f['wxTaf'+n];
     if(!icao && !metar && !taf) return;
     var filtered = filterMetars(metar, f.chocksOff, f.chocksOn);
-    lines.push('', '----- '+(icao||'Station '+n)+' -----');
+    lines.push('', '── '+(icao||'Station '+n)+' ──');
     if(filtered){
       lines.push('METAR:');
       filtered.split('\n').forEach(function(l){ lines.push('  '+l); });
@@ -1962,7 +2016,6 @@ function weatherTextLines(f){
 function logRow(label, value, calc){
   var LABEL_W = 22;
   var lbl = (label + ':').padEnd ? (label+':').padEnd(LABEL_W) : (label+':' + ' '.repeat(Math.max(0, LABEL_W - (label.length+1))));
-  // Fallback for older engines without padEnd
   if(!String.prototype.padEnd){
     lbl = label+':'; while(lbl.length<LABEL_W) lbl+=' ';
   }
@@ -1971,13 +2024,103 @@ function logRow(label, value, calc){
   return lbl + ' ' + v;
 }
 
+// Build a framed section banner using box-drawing chars.
+// Returns an array of lines for a heading like:
+//   ╭───────────────╮
+//   │  FUEL         │
+//   ╰───────────────╯
+function logBanner(title){
+  var inner = ' '+title+' ';
+  while(inner.length < 38) inner += ' ';
+  var bar = '';
+  for(var i=0;i<inner.length;i++) bar += '─';
+  return ['', '╭'+bar+'╮', '│'+inner+'│', '╰'+bar+'╯'];
+}
+
+// Pre-commit checks - shows a modal listing missing fields and lets the user
+// fill them in or cancel. Calls done() when the user confirms.
+// Uses its own overlay layer so it doesn't destroy the underlying flight modal.
+function runPreCommitChecks(f, done){
+  var missing = [];
+  if(!f.touchGoes || f.touchGoes==='0' || f.touchGoes==='')
+    missing.push({key:'touchGoes', label:'Touch & Goes', placeholder:'0', type:'number'});
+  if(!f.fuelUplifted || f.fuelUplifted==='0' || f.fuelUplifted==='')
+    missing.push({key:'fuelUplifted', label:'Fuel Uplifted (USG)', placeholder:'0', type:'number'});
+  if(!f.oil)
+    missing.push({key:'oil', label:'Oil Check', placeholder:'OK / 1L added', type:'text'});
+  if(!f.defects)
+    missing.push({key:'defects', label:'Defects (enter "None" if no issues)', placeholder:'None', type:'text'});
+  var hasWx = f.wxSurfDir||f.wxSurfSpd||f.wxTAS||
+              f.wxMetar1||f.wxMetar2||f.wxMetar3||f.wxMetar4||
+              f.wxTaf1||f.wxTaf2||f.wxTaf3||f.wxTaf4;
+  var wxFlag = !hasWx;
+
+  if(missing.length===0 && !wxFlag){ done(); return; }
+
+  // Build layered overlay - appended to body, not modal-root
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:10px;max-width:480px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.25)';
+  var hdr = document.createElement('div');
+  hdr.style.cssText = 'padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px';
+  hdr.textContent = 'Review Flight';
+  var bodyEl = document.createElement('div');
+  bodyEl.style.cssText = 'padding:16px;overflow-y:auto;flex:1';
+
+  var inner = '<div style="font-size:14px;margin-bottom:12px;color:var(--text)">Quick check before logging. Fill in anything you want to add, or leave blank to skip.</div>';
+  missing.forEach(function(m){
+    inner += '<div class="field">'+
+      '<label>'+m.label+'</label>'+
+      '<input class="inp" id="pc-'+m.key+'" type="'+m.type+'" placeholder="'+m.placeholder+'"'+
+        (m.type==='number'?' step="0.1"':'')+
+      ' value=""/>'+
+    '</div>';
+  });
+  if(wxFlag){
+    inner += '<div style="background:rgba(180,83,9,.08);border:1px solid rgba(180,83,9,.3);border-radius:7px;padding:10px;margin-bottom:10px;font-size:13px;color:var(--text)">'+
+      '<strong>No weather captured.</strong> Cancel to add METAR/TAF on the Weather tab, or confirm to proceed anyway.'+
+    '</div>';
+  }
+  bodyEl.innerHTML = inner;
+
+  var foot = document.createElement('div');
+  foot.style.cssText = 'padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end';
+  var cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-g';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', function(){ document.body.removeChild(ov); });
+  var confirmBtn = document.createElement('button');
+  confirmBtn.className = 'btn btn-p';
+  confirmBtn.textContent = 'Confirm & Log';
+  confirmBtn.addEventListener('click', function(){
+    missing.forEach(function(m){
+      var el = bodyEl.querySelector('#pc-'+m.key);
+      if(el && el.value.trim()) f[m.key] = el.value.trim();
+    });
+    document.body.removeChild(ov);
+    done();
+  });
+  foot.appendChild(cancelBtn);
+  foot.appendChild(confirmBtn);
+
+  box.appendChild(hdr);
+  box.appendChild(bodyEl);
+  box.appendChild(foot);
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  setTimeout(function(){
+    var first = bodyEl.querySelector('input');
+    if(first) first.focus();
+  }, 50);
+}
+
 function emailFlight(f){
   var c=flCalc(f);
   var fc=fuelCalc(f);
   var subj=encodeURIComponent('Flight Record -- '+( f.date||'?')+' - '+(f.aircraft||'?')+' - '+(f.departure||'?')+' to '+(f.destination||'?'));
   var lines=[
-    'FLIGHT RECORD',
-    '=============',
+    ].concat(logBanner('FLIGHT RECORD'), [
     logRow('Date',         f.date),
     logRow('Aircraft',     f.aircraft),
     logRow('Category',     f.category),
@@ -1985,25 +2128,19 @@ function emailFlight(f){
     logRow('PIC',          f.pic),
     logRow('Student',      f.student),
     logRow('Touch & Goes', f.touchGoes||'0'),
-    '',
-    'TIMES (UTC)',
-    '-----------',
+  ], logBanner('TIMES (UTC)'), [
     logRow('Chocks Off', f.chocksOff),
     logRow('Takeoff',    f.takeoff),
     logRow('Landing',    f.landing),
     logRow('Chocks On',  f.chocksOn),
-    '',
-    'CALCULATED TIMES (bold = derived)',
-    '---------------------------------',
+  ], logBanner('CALCULATED TIMES (bold = derived)'), [
     logRow('Block Time', decToHM(c.block)+' ('+dec2(c.block)+' hrs)', true),
     logRow('Air Time',   decToHM(c.air)+' ('+dec2(c.air)+' hrs)', true),
     logRow('Tacho Time', dec2(c.tacho)+' hrs  ['+(f.tachoStart||'?')+' to '+(f.tachoEnd||'?')+']', true),
     logRow('Hobbs Time', dec2(c.hobbs)+' hrs  ['+(f.hobbsStart||'?')+' to '+(f.hobbsEnd||'?')+']', true),
     logRow('Lesson Time', c.lesson!==null ? decToHM(c.lesson)+' ('+dec2(c.lesson)+' hrs)' : '--', true),
     logRow('Circuit Time', c.circuit!==null ? decToHM(c.circuit)+' ('+dec2(c.circuit)+' hrs)' : '--', true),
-    '',
-    'FUEL  (Burn rate '+fc.burn+' USG/hr)',
-    '------------------------------',
+  ], logBanner('FUEL  (Burn rate '+fc.burn+' USG/hr)'), [
     logRow('Initial Fuel',     fc.initial!==null?dec2(fc.initial)+' USG':'--'),
     logRow('Fuel Uplifted',    fc.uplifted?dec2(fc.uplifted)+' USG':'--'),
     logRow('Total Fuel on Board', fc.fob!==null?dec2(fc.fob)+' USG':'--', true),
@@ -2019,19 +2156,17 @@ function emailFlight(f){
     logRow('Actual on Landing', f.fuelLanding?dec2(parseFloat(f.fuelLanding))+' USG':'--'),
     '',
     logRow('Oil', f.oil),
-    '',
-    'MANEUVERS / EXERCISES',
-    '---------------------',
+  ], logBanner('MANEUVERS / EXERCISES'), [
     f.maneuvers||'--',
-    '',
-    'INSTRUCTOR NOTES',
-    '----------------',
+  ], logBanner('DEFECTS'), [
+    f.defects||'None',
+  ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
-  ];
+  ]);
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v70');
+  lines.push('','-- Sent from FlightDeck v73');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -2039,8 +2174,7 @@ function exportFlight(f){
   var c=flCalc(f);
   var fc=fuelCalc(f);
   var lines=[
-    'FLIGHT RECORD',
-    '=============',
+    ].concat(logBanner('FLIGHT RECORD'), [
     logRow('Date',         f.date),
     logRow('Aircraft',     f.aircraft),
     logRow('Category',     f.category),
@@ -2048,25 +2182,19 @@ function exportFlight(f){
     logRow('PIC',          f.pic),
     logRow('Student',      f.student),
     logRow('Touch & Goes', f.touchGoes||'0'),
-    '',
-    'TIMES (UTC)',
-    '-----------',
+  ], logBanner('TIMES (UTC)'), [
     logRow('Chocks Off', f.chocksOff),
     logRow('Takeoff',    f.takeoff),
     logRow('Landing',    f.landing),
     logRow('Chocks On',  f.chocksOn),
-    '',
-    'CALCULATED TIMES (bold = derived)',
-    '---------------------------------',
+  ], logBanner('CALCULATED TIMES (bold = derived)'), [
     logRow('Block Time', decToHM(c.block)+' ('+dec2(c.block)+' hrs)', true),
     logRow('Air Time',   decToHM(c.air)+' ('+dec2(c.air)+' hrs)', true),
     logRow('Tacho Time', dec2(c.tacho)+' hrs  ['+(f.tachoStart||'?')+' to '+(f.tachoEnd||'?')+']', true),
     logRow('Hobbs Time', dec2(c.hobbs)+' hrs  ['+(f.hobbsStart||'?')+' to '+(f.hobbsEnd||'?')+']', true),
     logRow('Lesson Time', c.lesson!==null ? decToHM(c.lesson)+' ('+dec2(c.lesson)+' hrs)' : '--', true),
     logRow('Circuit Time', c.circuit!==null ? decToHM(c.circuit)+' ('+dec2(c.circuit)+' hrs)' : '--', true),
-    '',
-    'FUEL  (Burn rate '+fc.burn+' USG/hr)',
-    '------------------------------',
+  ], logBanner('FUEL  (Burn rate '+fc.burn+' USG/hr)'), [
     logRow('Initial Fuel',     fc.initial!==null?dec2(fc.initial)+' USG':'--'),
     logRow('Fuel Uplifted',    fc.uplifted?dec2(fc.uplifted)+' USG':'--'),
     logRow('Total Fuel on Board', fc.fob!==null?dec2(fc.fob)+' USG':'--', true),
@@ -2082,16 +2210,14 @@ function exportFlight(f){
     logRow('Actual on Landing', f.fuelLanding?dec2(parseFloat(f.fuelLanding))+' USG':'--'),
     '',
     logRow('Oil', f.oil),
-    '',
-    'MANEUVERS / EXERCISES',
-    '---------------------',
+  ], logBanner('MANEUVERS / EXERCISES'), [
     f.maneuvers||'--',
-    '',
-    'INSTRUCTOR NOTES',
-    '----------------',
+  ], logBanner('DEFECTS'), [
+    f.defects||'None',
+  ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
-  ].concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v70');
+  ]).concat(weatherTextLines(f));
+  lines.push('','-- FlightDeck v73');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
