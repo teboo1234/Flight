@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v74</title>
+<title>FlightDeck v75</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -66,14 +66,14 @@ main{flex:1;overflow:hidden;max-width:1280px;width:100%;margin:0 auto;padding:16
 .btn-d{background:rgba(244,63,94,.12);border:1px solid rgba(244,63,94,.35);color:#be123c}.btn-d:hover{background:rgba(244,63,94,.22)}
 .btn-s{background:var(--em);color:#fff}.btn-s:hover{background:#059669;color:#000}
 .btn-full{width:100%;text-align:center;padding:8px}
-.field{margin-bottom:12px}
-.field label{display:block;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.field{margin-bottom:14px}
+.field label{display:block;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
 .inp{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-size:15px;transition:border-color .15s;outline:none}
 .inp:focus{border-color:var(--sky)}
 textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px}
 .stat-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
 .stat{background:rgba(14,165,233,.07);border:1px solid rgba(14,165,233,.2);border-radius:9px;padding:9px 14px;text-align:center;min-width:88px}
 .stat-v{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:#0284c7}
@@ -91,9 +91,13 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 /* Colour-coded section cards used in the detail view and modal.
    Each section gets one accent colour applied to its left border,
    tinted background, and header label. */
-.scard{border-radius:11px;padding:14px;margin-bottom:18px;border-left-width:5px;border-left-style:solid;border-top:1px solid;border-right:1px solid;border-bottom:1px solid}
-.scard-head{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.scard{border-radius:11px;padding:18px;margin-bottom:24px;border-left-width:5px;border-left-style:solid;border-top:1px solid;border-right:1px solid;border-bottom:1px solid}
+.scard-head{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid currentColor;display:flex;align-items:center;gap:8px}
 .scard-head .ico{font-size:18px}
+.scard .field{margin-bottom:12px}
+.scard .sdiv{margin-top:18px;margin-bottom:12px}
+.scard > *:last-child{margin-bottom:0}
+.scard .g2,.scard .g3,.scard .g4{margin-bottom:14px}
 .s-info   {background:rgba(30,58,138,.06);border-color:rgba(30,58,138,.18);border-left-color:#1e3a8a}
 .s-info .scard-head{color:#1e3a8a}
 .s-times  {background:rgba(14,116,144,.06);border-color:rgba(14,116,144,.18);border-left-color:#0e7490}
@@ -155,7 +159,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v74</span>
+      <span class="logo-sub">v75</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -2178,7 +2182,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v74');
+  lines.push('','-- Sent from FlightDeck v75');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -2229,7 +2233,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v74');
+  lines.push('','-- FlightDeck v75');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
