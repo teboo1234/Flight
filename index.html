@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v73</title>
+<title>FlightDeck v74</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -155,7 +155,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v73</span>
+      <span class="logo-sub">v74</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -1217,7 +1217,8 @@ function openFlModal(ex){
       '<button type="button" id="m-tab-wx" class="m-tab" style="padding:8px 8px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#6d28d9">Weather</button>'+
       '<button type="button" id="m-tab-fuel" class="m-tab" style="padding:8px 8px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#b45309">Fuel</button>'+
     '</div>'+
-    '<div id="m-section-info">'+
+    '<div id="m-section-info" class="scard s-info">'+
+      '<div class="scard-head"><span class="ico">&#9992;</span> Flight Info</div>'+
     '<div class="sdiv">Flight Details</div>'+
     '<div class="g3">'+
       '<div class="field"><label>Date</label><input class="inp" id="m-date" type="date" value="'+(f.date||'')+'"/></div>'+
@@ -1238,7 +1239,8 @@ function openFlModal(ex){
 
     '</div>'+ // close #m-section-info (will reopen Other after fuel section)
 
-    '<div id="m-section-times" style="display:none">'+
+    '<div id="m-section-times" class="scard s-times" style="display:none">'+
+      '<div class="scard-head"><span class="ico">&#9201;</span> Times</div>'+
     '<div class="sdiv">Tacho &amp; Hobbs Start (Decimal)</div>'+
     '<div class="g2">'+
       '<div class="field"><label>Tacho Start</label><input class="inp" id="m-tachoStart" type="number" step="0.1" placeholder="1234.5" value="'+(f.tachoStart||'')+'"/></div>'+
@@ -1319,7 +1321,8 @@ function openFlModal(ex){
     '</div>'+
     '</div>'+ // close #m-section-times
 
-    '<div id="m-section-wx" style="display:none">'+
+    '<div id="m-section-wx" class="scard s-wx" style="display:none">'+
+      '<div class="scard-head"><span class="ico">&#9925;</span> Weather</div>'+
     '<div class="sdiv">Planning</div>'+
     '<div class="g3">'+
       '<div class="field"><label>TAS (kt)</label><input class="inp" id="m-wxTAS" type="number" step="1" placeholder="90" value="'+(f.wxTAS||'')+'"/></div>'+
@@ -1372,7 +1375,8 @@ function openFlModal(ex){
 
     '</div>'+ // close #m-section-wx
 
-    '<div id="m-section-fuel" style="display:none">'+
+    '<div id="m-section-fuel" class="scard s-fuel" style="display:none">'+
+      '<div class="scard-head"><span class="ico">&#9981;</span> Fuel</div>'+
     '<div class="sdiv">Fuel Planning</div>'+
     '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-family:JetBrains Mono,monospace">Enter USG or L &mdash; the other converts automatically (1 USG = 3.785 L)</div>'+
     '<div class="g3">'+
@@ -1479,11 +1483,19 @@ function openFlModal(ex){
     '</div>'+ // close #m-section-fuel
 
     '<div id="m-section-info-extra">'+
-    '<div class="sdiv">Other</div>'+
-    '<div class="field"><label>Oil Check</label><input class="inp" id="m-oil" value="'+(f.oil||'')+'" placeholder="OK / 1L added"/></div>'+
-    '<div class="field"><label>Maneuvers / Exercises</label><textarea class="inp" id="m-maneuvers" rows="3">'+(f.maneuvers||'')+'</textarea></div>'+
-    '<div class="field"><label>Defects</label><textarea class="inp" id="m-defects" rows="3" placeholder="None / list any aircraft defects, snags or issues">'+(f.defects||'')+'</textarea></div>'+
-    '<div class="field"><label>Instructor Notes</label><textarea class="inp" id="m-notes" rows="3">'+(f.notes||'')+'</textarea></div>'+
+
+    '<div class="scard s-defects">'+
+      '<div class="scard-head"><span class="ico">&#9888;</span> Defects</div>'+
+      '<textarea class="inp" id="m-defects" rows="3" placeholder="None / list any aircraft defects, snags or issues">'+(f.defects||'')+'</textarea>'+
+    '</div>'+
+
+    '<div class="scard s-notes">'+
+      '<div class="scard-head"><span class="ico">&#9998;</span> Notes &amp; Oil</div>'+
+      '<div class="field"><label>Oil Check</label><input class="inp" id="m-oil" value="'+(f.oil||'')+'" placeholder="OK / 1L added"/></div>'+
+      '<div class="field"><label>Maneuvers / Exercises</label><textarea class="inp" id="m-maneuvers" rows="3">'+(f.maneuvers||'')+'</textarea></div>'+
+      '<div class="field"><label>Instructor Notes</label><textarea class="inp" id="m-notes" rows="3">'+(f.notes||'')+'</textarea></div>'+
+    '</div>'+
+
     '</div>';
 
   // Tab switching
@@ -2166,7 +2178,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v73');
+  lines.push('','-- Sent from FlightDeck v74');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -2217,7 +2229,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v73');
+  lines.push('','-- FlightDeck v74');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
