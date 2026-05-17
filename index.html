@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v75</title>
+<title>FlightDeck v77</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -91,13 +91,21 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 /* Colour-coded section cards used in the detail view and modal.
    Each section gets one accent colour applied to its left border,
    tinted background, and header label. */
-.scard{border-radius:11px;padding:18px;margin-bottom:24px;border-left-width:5px;border-left-style:solid;border-top:1px solid;border-right:1px solid;border-bottom:1px solid}
+.scard{border-radius:11px;padding:18px;margin-bottom:36px;border-left-width:5px;border-left-style:solid;border-top:1px solid;border-right:1px solid;border-bottom:1px solid;box-shadow:0 2px 6px rgba(15,23,42,.06)}
+.scard:last-child{margin-bottom:0}
 .scard-head{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid currentColor;display:flex;align-items:center;gap:8px}
 .scard-head .ico{font-size:18px}
-.scard .field{margin-bottom:12px}
-.scard .sdiv{margin-top:18px;margin-bottom:12px}
+.scard .field{margin-bottom:14px}
+/* sdiv = subsection heading inside a section card (e.g. "Surface Wind",
+   "Runways", "Planning" within the Weather card). Give it real space
+   above so the subsections feel distinct from one another. */
+.scard .sdiv{margin-top:28px;margin-bottom:14px;padding-top:14px;border-top:1px dashed rgba(0,0,0,.1)}
+.scard .sdiv:first-of-type,
+.scard .scard-head + .sdiv,
+.scard > .sdiv:first-child{margin-top:0;padding-top:0;border-top:none}
 .scard > *:last-child{margin-bottom:0}
-.scard .g2,.scard .g3,.scard .g4{margin-bottom:14px}
+.scard .g2,.scard .g3,.scard .g4{margin-bottom:18px}
+.scard .g2:last-child,.scard .g3:last-child,.scard .g4:last-child{margin-bottom:0}
 .s-info   {background:rgba(30,58,138,.06);border-color:rgba(30,58,138,.18);border-left-color:#1e3a8a}
 .s-info .scard-head{color:#1e3a8a}
 .s-times  {background:rgba(14,116,144,.06);border-color:rgba(14,116,144,.18);border-left-color:#0e7490}
@@ -159,7 +167,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v75</span>
+      <span class="logo-sub">v77</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -2182,7 +2190,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v75');
+  lines.push('','-- Sent from FlightDeck v77');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -2233,7 +2241,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v75');
+  lines.push('','-- FlightDeck v77');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
