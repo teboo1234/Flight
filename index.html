@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v77</title>
+<title>FlightDeck v79</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -167,7 +167,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v77</span>
+      <span class="logo-sub">v79</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -660,8 +660,7 @@ function geocodeIcao(icao, cb){
 
 
 // Parse a "DDHHMMZ" or "HHMMZ" timestamp from a METAR line and return
-// the time-of-day in decimal hours, or null. Used to filter METARs to
-// those issued within the flight window.
+// the time-of-day in decimal hours, or null.
 function metarHour(line){
   var parts = line.trim().split(/\s+/);
   for(var i=0;i<parts.length;i++){
@@ -695,7 +694,7 @@ function filterMetars(txt, chocksOff, chocksOn){
   if(we>=24) we-=24;
   var lines = txt.split('\n').filter(function(l){return l.trim().length>6;});
   var inWindow = function(h){
-    if(h===null) return true; // keep lines without a parseable timestamp
+    if(h===null) return true;
     return ws<=we ? (h>=ws && h<=we) : (h>=ws || h<=we);
   };
   var keep = lines.filter(function(l){ return inWindow(metarHour(l)); });
@@ -1645,7 +1644,6 @@ function openFlModal(ex){
       icaos.forEach(function(icao,i){
         if(icao.length<3) return;
         var n = i+1;
-        // Show the block immediately
         var block=qs('#m-wxBlock'+n,div);
         if(block) block.style.display='';
         var lbl=qs('#m-wxBlockTitle'+n,div);
@@ -2190,7 +2188,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v77');
+  lines.push('','-- Sent from FlightDeck v79');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -2241,7 +2239,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v77');
+  lines.push('','-- FlightDeck v79');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
