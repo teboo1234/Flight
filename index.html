@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v79</title>
+<title>FlightDeck v82</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -167,7 +167,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v79</span>
+      <span class="logo-sub">v82</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -1206,6 +1206,7 @@ function renderFlDetail(){
 
 function openFlModal(ex){
   var f=ex||{id:uid(),date:'',aircraft:'',departure:'',destination:'',pic:'',student:'',category:'Dual',
+    tzOffset:'',
     touchGoes:'',
     chocksOff:'',takeoff:'',landing:'',chocksOn:'',
     lessonStart:'',lessonEnd:'',circuitStart:'',circuitEnd:'',
@@ -1257,23 +1258,38 @@ function openFlModal(ex){
       '<div class="field"><label>Tacho Start</label><input class="inp" id="m-tachoStart" type="number" step="0.1" placeholder="1234.5" value="'+(f.tachoStart||'')+'"/></div>'+
       '<div class="field"><label>Hobbs Start</label><input class="inp" id="m-hobbsStart" type="number" step="0.1" placeholder="2345.6" value="'+(f.hobbsStart||'')+'"/></div>'+
     '</div>'+
-    '<div class="sdiv">Block &amp; Air Times (HH:MM UTC)</div>'+
+    '<div class="sdiv">Block &amp; Air Times</div>'+
+    '<div class="field" style="margin-bottom:14px">'+
+      '<label>Local Time Offset (hours from UTC at Departure)</label>'+
+      '<div style="display:flex;gap:6px;align-items:center;max-width:240px">'+
+        '<input class="inp" id="m-tzOffset" type="number" step="0.5" placeholder="+1" value="'+(f.tzOffset||'')+'" style="flex:1"/>'+
+        '<span style="font-size:13px;color:var(--muted)">e.g. +1 for UK BST</span>'+
+      '</div>'+
+    '</div>'+
     '<div class="g4">'+
-      '<div class="field"><label>Chocks Off</label>'+
+      '<div class="field"><label>Chocks Off (UTC)</label>'+
         timeSpinnerHtml('m-chocksOff', f.chocksOff)+
-        '<button type="button" class="btn btn-g m-now-btn" data-target="m-chocksOff" style="width:100%;margin-top:4px;padding:4px;font-size:13px">Now</button>'+
+        '<div style="margin-top:6px"><label style="font-size:11px;color:var(--muted);margin-bottom:3px">Local</label>'+
+        timeSpinnerHtml('m-chocksOffLocal', '')+'</div>'+
+        '<button type="button" class="btn btn-g m-now-btn" data-target="m-chocksOff" style="width:100%;margin-top:6px;padding:4px;font-size:13px">Now</button>'+
       '</div>'+
-      '<div class="field"><label>Takeoff</label>'+
+      '<div class="field"><label>Takeoff (UTC)</label>'+
         timeSpinnerHtml('m-takeoff', f.takeoff)+
-        '<button type="button" class="btn btn-g m-now-btn" data-target="m-takeoff" style="width:100%;margin-top:4px;padding:4px;font-size:13px">Now</button>'+
+        '<div style="margin-top:6px"><label style="font-size:11px;color:var(--muted);margin-bottom:3px">Local</label>'+
+        timeSpinnerHtml('m-takeoffLocal', '')+'</div>'+
+        '<button type="button" class="btn btn-g m-now-btn" data-target="m-takeoff" style="width:100%;margin-top:6px;padding:4px;font-size:13px">Now</button>'+
       '</div>'+
-      '<div class="field"><label>Landing</label>'+
+      '<div class="field"><label>Landing (UTC)</label>'+
         timeSpinnerHtml('m-landing', f.landing)+
-        '<button type="button" class="btn btn-g m-now-btn" data-target="m-landing" style="width:100%;margin-top:4px;padding:4px;font-size:13px">Now</button>'+
+        '<div style="margin-top:6px"><label style="font-size:11px;color:var(--muted);margin-bottom:3px">Local</label>'+
+        timeSpinnerHtml('m-landingLocal', '')+'</div>'+
+        '<button type="button" class="btn btn-g m-now-btn" data-target="m-landing" style="width:100%;margin-top:6px;padding:4px;font-size:13px">Now</button>'+
       '</div>'+
-      '<div class="field"><label>Chocks On</label>'+
+      '<div class="field"><label>Chocks On (UTC)</label>'+
         timeSpinnerHtml('m-chocksOn', f.chocksOn)+
-        '<button type="button" class="btn btn-g m-now-btn" data-target="m-chocksOn" style="width:100%;margin-top:4px;padding:4px;font-size:13px">Now</button>'+
+        '<div style="margin-top:6px"><label style="font-size:11px;color:var(--muted);margin-bottom:3px">Local</label>'+
+        timeSpinnerHtml('m-chocksOnLocal', '')+'</div>'+
+        '<button type="button" class="btn btn-g m-now-btn" data-target="m-chocksOn" style="width:100%;margin-top:6px;padding:4px;font-size:13px">Now</button>'+
       '</div>'+
     '</div>'+
     '<div class="g2" style="background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.2);border-radius:9px;padding:12px;margin-bottom:10px">'+
@@ -1364,8 +1380,9 @@ function openFlModal(ex){
     '<div style="font-size:13px;color:var(--muted);margin-bottom:6px">'+
       'Enter up to 4 ICAO codes (e.g. EGLL, EGKK). METARs are filtered to within &plusmn;1 hr of your flight time. Set chocks-off and chocks-on times on the Times tab to enable filtering.'+
     '</div>'+
-    '<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">'+
+    '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">'+
       '<button type="button" class="btn btn-p" id="m-wxFetch" style="padding:6px 14px">&#8635; Fetch Weather</button>'+
+      '<span id="m-wxLed" title="Weather status" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#cbd5e1;border:1px solid #94a3b8;box-shadow:none;flex-shrink:0"></span>'+
       '<span id="m-wxStatus" style="font-size:13px;color:var(--muted);font-family:JetBrains Mono,monospace"></span>'+
     '</div>'+
     '<div class="g4" style="margin-bottom:8px">'+
@@ -1566,6 +1583,99 @@ function openFlModal(ex){
     });
   });
 
+  // ----- UTC <-> Local cross-conversion -----
+  // Pairs are: m-chocksOff <-> m-chocksOffLocal, etc. The user's tz offset
+  // (hours from UTC) is in m-tzOffset. When a UTC pair changes, the Local
+  // shows offset-added; when Local changes, UTC shows offset-subtracted.
+  // Guards prevent the change handlers from re-triggering each other.
+  var conversionInFlight = false;
+  function getTzOffset(){
+    var el = qs('#m-tzOffset', div);
+    if(!el) return 0;
+    var v = parseFloat(el.value);
+    return isNaN(v) ? 0 : v;
+  }
+  // Add hours to "HH:MM", returning "HH:MM" rounded to nearest 6 min (0.1 hr).
+  // Returns '' for invalid input.
+  function addHoursToHM(hm, hrs){
+    if(!hm || !/^\d{1,2}:\d{2}$/.test(hm)) return '';
+    var parts = hm.split(':');
+    var totalMin = parseInt(parts[0])*60 + parseInt(parts[1]) + Math.round(hrs*60);
+    // Wrap modulo 24*60
+    totalMin = ((totalMin % 1440) + 1440) % 1440;
+    // Round to nearest 6 minutes (so the value fits the dropdown options)
+    totalMin = Math.round(totalMin/6) * 6;
+    if(totalMin >= 1440) totalMin -= 1440;
+    var hh = Math.floor(totalMin/60);
+    var mm = totalMin % 60;
+    return ('0'+hh).slice(-2)+':'+('0'+mm).slice(-2);
+  }
+  // Write a "HH:MM" value into a spinner pair (h + m selects).
+  function setSpinnerValue(baseId, hm){
+    var h = qs('#'+baseId+'-h', div);
+    var m = qs('#'+baseId+'-m', div);
+    if(!h || !m) return;
+    if(!hm){ h.value=''; m.value=''; return; }
+    var p = hm.split(':');
+    h.value = p[0];
+    m.value = p[1];
+  }
+  // The four UTC/Local pairs
+  var TZ_PAIRS = [
+    {utc:'m-chocksOff',  local:'m-chocksOffLocal'},
+    {utc:'m-takeoff',    local:'m-takeoffLocal'},
+    {utc:'m-landing',    local:'m-landingLocal'},
+    {utc:'m-chocksOn',   local:'m-chocksOnLocal'}
+  ];
+  function utcToLocalAll(){
+    if(conversionInFlight) return;
+    conversionInFlight = true;
+    var off = getTzOffset();
+    TZ_PAIRS.forEach(function(p){
+      var utc = getTimeSpinner(p.utc, div);
+      if(!utc) return;
+      setSpinnerValue(p.local, addHoursToHM(utc, off));
+    });
+    conversionInFlight = false;
+  }
+  function onUtcChange(pair){
+    if(conversionInFlight) return;
+    conversionInFlight = true;
+    var off = getTzOffset();
+    var utc = getTimeSpinner(pair.utc, div);
+    setSpinnerValue(pair.local, addHoursToHM(utc, off));
+    conversionInFlight = false;
+  }
+  function onLocalChange(pair){
+    if(conversionInFlight) return;
+    conversionInFlight = true;
+    var off = getTzOffset();
+    var loc = getTimeSpinner(pair.local, div);
+    setSpinnerValue(pair.utc, addHoursToHM(loc, -off));
+    conversionInFlight = false;
+    liveCalc();
+  }
+  TZ_PAIRS.forEach(function(p){
+    ['-h','-m'].forEach(function(sfx){
+      var u = qs('#'+p.utc+sfx, div);
+      if(u) u.addEventListener('change', function(){ onUtcChange(p); });
+      var l = qs('#'+p.local+sfx, div);
+      if(l) l.addEventListener('change', function(){ onLocalChange(p); });
+    });
+  });
+  // Offset change re-derives all local times from existing UTC
+  var tzEl = qs('#m-tzOffset', div);
+  if(tzEl) tzEl.addEventListener('input', utcToLocalAll);
+  // Default tz offset for a new flight: estimate UK BST/GMT from today's date
+  if(!ex && !f.tzOffset && tzEl){
+    var now = new Date();
+    var month = now.getUTCMonth(); // 0=Jan
+    // BST roughly late March to late October
+    tzEl.value = (month>=2 && month<=9) ? '1' : '0';
+  }
+  // Initial sync: populate Local fields from existing UTC values
+  utcToLocalAll();
+
   // All numeric fields trigger recalc
   ['m-tachoStart','m-tachoEnd','m-hobbsStart','m-hobbsEnd',
    'm-fuelContPct',
@@ -1600,6 +1710,44 @@ function openFlModal(ex){
   });
   syncWxBlocks();
 
+  // Auto-populate ICAO slots from Departure and Destination.
+  // dep+dest take slots 1+2 (deduped); other manually-entered codes are kept
+  // in remaining slots unless they duplicate dep/dest.
+  function syncIcaosFromRoute(){
+    var dep  = (qs('#m-dep',  div).value || '').trim().toUpperCase();
+    var dest = (qs('#m-dest', div).value || '').trim().toUpperCase();
+    var current = [1,2,3,4].map(function(n){
+      return (qs('#m-wxIcao'+n,div).value || '').trim().toUpperCase();
+    });
+    var seen = {};
+    var result = [];
+    function add(code){
+      if(!code || code.length<3) return;
+      if(seen[code]) return;
+      if(result.length>=4) return;
+      seen[code] = true;
+      result.push(code);
+    }
+    add(dep);
+    add(dest);
+    current.forEach(add);
+    [1,2,3,4].forEach(function(n,i){
+      var el = qs('#m-wxIcao'+n,div);
+      if(!el) return;
+      var newVal = result[i] || '';
+      if(el.value !== newVal){
+        el.value = newVal;
+      }
+    });
+    syncWxBlocks();
+  }
+  ['m-dep','m-dest'].forEach(function(id){
+    var el = qs('#'+id, div);
+    if(!el) return;
+    el.addEventListener('input', syncIcaosFromRoute);
+  });
+  syncIcaosFromRoute();
+
   // Auto-uppercase all text inputs and textareas in the modal.
   // Skip number/date/time fields and the AVWX key (which is case-sensitive).
   function makeUppercase(el){
@@ -1621,59 +1769,122 @@ function openFlModal(ex){
     makeUppercase(el);
   });
 
-  // Fetch button - pulls METAR + TAF for each entered ICAO and filters METARs to flight window
-  var fetchBtn=qs('#m-wxFetch',div);
-  if(fetchBtn){
-    fetchBtn.addEventListener('click', function(){
-      var icaos = [1,2,3,4].map(function(n){
-        return (qs('#m-wxIcao'+n,div).value||'').trim().toUpperCase();
-      });
-      var validCount = icaos.filter(function(s){return s.length>=3;}).length;
-      if(!validCount){
-        toast('Enter at least one ICAO code');
-        return;
-      }
-      var status=qs('#m-wxStatus',div);
-      status.textContent='Fetching... (this may take a few seconds)';
-      status.style.color='#0369a1';
+  // Set the weather status LED.
+  // state: 'idle' (grey) | 'pending' (amber pulse) | 'ok' (green) | 'err' (red)
+  function setWxLed(state){
+    var led = qs('#m-wxLed', div);
+    if(!led) return;
+    var map = {
+      idle:    {bg:'#cbd5e1', border:'#94a3b8', shadow:'none'},
+      pending: {bg:'#fcd34d', border:'#b45309', shadow:'0 0 8px rgba(252,211,77,.7)'},
+      ok:      {bg:'#22c55e', border:'#047857', shadow:'0 0 10px rgba(34,197,94,.7)'},
+      err:     {bg:'#ef4444', border:'#be123c', shadow:'0 0 8px rgba(239,68,68,.6)'}
+    };
+    var s = map[state] || map.idle;
+    led.style.background = s.bg;
+    led.style.borderColor = s.border;
+    led.style.boxShadow = s.shadow;
+  }
+  setWxLed('idle');
 
-      var off = getTimeSpinner('m-chocksOff',div);
-      var on  = getTimeSpinner('m-chocksOn',div);
+  // Run a weather fetch. silent=true suppresses toasts/loud status messages
+  // (used by the auto-trigger when times are entered).
+  function doWxFetch(silent){
+    var icaos = [1,2,3,4].map(function(n){
+      return (qs('#m-wxIcao'+n,div).value||'').trim().toUpperCase();
+    });
+    var validCount = icaos.filter(function(s){return s.length>=3;}).length;
+    if(!validCount){
+      if(!silent) toast('Enter at least one ICAO code');
+      return;
+    }
+    var status=qs('#m-wxStatus',div);
+    status.textContent='Fetching... (this may take a few seconds)';
+    status.style.color='#0369a1';
+    setWxLed('pending');
 
-      var done=0, expected=validCount, errors=[];
-      icaos.forEach(function(icao,i){
-        if(icao.length<3) return;
-        var n = i+1;
-        var block=qs('#m-wxBlock'+n,div);
-        if(block) block.style.display='';
-        var lbl=qs('#m-wxBlockTitle'+n,div);
-        if(lbl) lbl.textContent = icao + '  (fetching...)';
+    var off = getTimeSpinner('m-chocksOff',div);
+    var on  = getTimeSpinner('m-chocksOn',div);
 
-        fetchWx(icao, function(metar, taf, errMsg){
-          var filtered = filterMetars(metar, off, on);
-          var mEl=qs('#m-wxMetar'+n,div);
-          var tEl=qs('#m-wxTaf'+n,div);
-          if(mEl) mEl.value = filtered || '';
-          if(tEl) tEl.value = taf || '';
-          if(lbl) lbl.textContent = icao + (errMsg?'  (FAILED)':'');
-          if(errMsg) errors.push(icao+': '+errMsg);
-          done++;
-          if(done >= expected){
-            if(errors.length){
-              status.textContent = 'Errors: '+errors.join(' | ');
-              status.style.color='#be123c';
-            } else {
-              var hasFlightTimes = (off||on) ? true : false;
-              status.textContent = hasFlightTimes
-                ? 'Done (METARs filtered to ±1 hr of flight window)'
-                : 'Done (METARs filtered to ±1 hr of current UTC time)';
-              status.style.color='#047857';
-            }
+    var done=0, expected=validCount, errors=[];
+    icaos.forEach(function(icao,i){
+      if(icao.length<3) return;
+      var n = i+1;
+      var block=qs('#m-wxBlock'+n,div);
+      if(block) block.style.display='';
+      var lbl=qs('#m-wxBlockTitle'+n,div);
+      if(lbl) lbl.textContent = icao + '  (fetching...)';
+
+      fetchWx(icao, function(metar, taf, errMsg){
+        var filtered = filterMetars(metar, off, on);
+        var mEl=qs('#m-wxMetar'+n,div);
+        var tEl=qs('#m-wxTaf'+n,div);
+        if(mEl) mEl.value = filtered || '';
+        if(tEl) tEl.value = taf || '';
+        if(lbl) lbl.textContent = icao + (errMsg?'  (FAILED)':'');
+        if(errMsg) errors.push(icao+': '+errMsg);
+        done++;
+        if(done >= expected){
+          if(errors.length){
+            status.textContent = 'Errors: '+errors.join(' | ');
+            status.style.color='#be123c';
+            setWxLed('err');
+          } else {
+            var hasFlightTimes = (off||on) ? true : false;
+            var t = new Date();
+            var ts = ('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2);
+            status.textContent = (hasFlightTimes ? 'Captured at '+ts+' (filtered to flight window)' : 'Captured at '+ts+' (filtered to now)');
+            status.style.color='#047857';
+            setWxLed('ok');
           }
-        });
+        }
       });
     });
   }
+
+  // Fetch button - manual trigger
+  var fetchBtn=qs('#m-wxFetch',div);
+  if(fetchBtn){
+    fetchBtn.addEventListener('click', function(){ doWxFetch(false); });
+  }
+
+  // If editing a flight that already has METAR/TAF saved, show green LED
+  var hasSaved = [1,2,3,4].some(function(n){
+    return (f['wxMetar'+n]||'').length>10 || (f['wxTaf'+n]||'').length>10;
+  });
+  if(hasSaved){
+    setWxLed('ok');
+    var s = qs('#m-wxStatus', div);
+    if(s){ s.textContent = 'Loaded saved weather'; s.style.color = '#047857'; }
+  }
+
+  // Auto-trigger: when both chocks-off + chocks-on are set AND at least one
+  // ICAO is filled in, fetch weather automatically (debounced).
+  var autoWxTimer = null;
+  function maybeAutoFetchWx(){
+    var off = getTimeSpinner('m-chocksOff',div);
+    var on  = getTimeSpinner('m-chocksOn',div);
+    if(!off || !on) return;
+    var hasIcao = [1,2,3,4].some(function(n){
+      var el=qs('#m-wxIcao'+n,div); return el && el.value.trim().length>=3;
+    });
+    if(!hasIcao) return;
+    // Reset LED to pending while we wait for the debounce + fetch
+    setWxLed('pending');
+    clearTimeout(autoWxTimer);
+    autoWxTimer = setTimeout(function(){ doWxFetch(true); }, 1500);
+  }
+  // Hook into the time spinners and ICAO inputs
+  ['m-chocksOff','m-chocksOn','m-takeoff','m-landing'].forEach(function(id){
+    ['-h','-m'].forEach(function(sfx){
+      var el=qs('#'+id+sfx,div);
+      if(el) el.addEventListener('change', maybeAutoFetchWx);
+    });
+  });
+  [1,2,3,4].forEach(function(n){
+    var el=qs('#m-wxIcao'+n,div);
+    if(el) el.addEventListener('change', maybeAutoFetchWx);
+  });
 
   function liveCalc(){
     var g=function(id){ return qs('#'+id,div).value; };
@@ -1871,6 +2082,7 @@ function openFlModal(ex){
     f.departure=g('m-dep').toUpperCase(); f.destination=g('m-dest').toUpperCase();
     f.pic=g('m-pic'); f.student=g('m-student');
     f.touchGoes=g('m-touchGoes');
+    f.tzOffset=g('m-tzOffset');
     f.chocksOff=getTimeSpinner('m-chocksOff',div); f.takeoff=getTimeSpinner('m-takeoff',div);
     f.landing=getTimeSpinner('m-landing',div); f.chocksOn=getTimeSpinner('m-chocksOn',div);
     f.lessonStart=getTimeSpinner('m-lessonStart',div); f.lessonEnd=getTimeSpinner('m-lessonEnd',div);
@@ -2188,7 +2400,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v79');
+  lines.push('','-- Sent from FlightDeck v82');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -2239,7 +2451,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v79');
+  lines.push('','-- FlightDeck v82');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
