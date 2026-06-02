@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v82</title>
+<title>FlightDeck v84</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -167,7 +167,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v82</span>
+      <span class="logo-sub">v84</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -1112,25 +1112,39 @@ function renderFlDetail(){
   box.appendChild(fcard);
 
   // ============== WEATHER (violet) ==============
-  var hasWxData = f.wxTAS || f.wxFreezFL || f.wxCloudBase || f.wxSurfDir ||
+  var hasWxData = f.wxTAS || f.wxSurfDir || f.wxW2kSpd || f.wxW5kSpd ||
                   f.rwy1 || f.rwy2 || f.rwy3 || f.rwy4 ||
                   f.wxMetar1 || f.wxMetar2 || f.wxMetar3 || f.wxMetar4 ||
                   f.wxTaf1 || f.wxTaf2 || f.wxTaf3 || f.wxTaf4;
   if(hasWxData){
     var wcard=el('div','scard s-wx');
     var html = '<div class="scard-head"><span class="ico">&#9925;</span> Weather</div>';
-    if(f.wxTAS||f.wxFreezFL||f.wxCloudBase){
-      html += '<div class="g3" style="gap:10px;margin-bottom:10px">'+
-        '<div><div class="sec-lbl">TAS</div><div class="sec-box">'+(f.wxTAS?f.wxTAS+' kt':'--')+'</div></div>'+
-        '<div><div class="sec-lbl">Freezing Level</div><div class="sec-box">'+(f.wxFreezFL?f.wxFreezFL+' ft':'--')+'</div></div>'+
-        '<div><div class="sec-lbl">Cloud Base</div><div class="sec-box">'+(f.wxCloudBase?f.wxCloudBase+' ft':'--')+'</div></div>'+
+    if(f.wxTAS){
+      // Compute max drift using selected source
+      var driftSrc = f.wxDriftSrc || 'surface';
+      var driftSpdRaw, driftSrcLabel;
+      if(driftSrc==='2000'){ driftSpdRaw=f.wxW2kSpd; driftSrcLabel="2000'"; }
+      else if(driftSrc==='5000'){ driftSpdRaw=f.wxW5kSpd; driftSrcLabel="5000'"; }
+      else { driftSpdRaw=f.wxSurfSpd; driftSrcLabel="surface"; }
+      var tasN = parseFloat(f.wxTAS), spdN = parseFloat(driftSpdRaw);
+      var driftTxt = (!isNaN(tasN)&&tasN>0&&!isNaN(spdN)) ? ((spdN/tasN)*60).toFixed(1)+'\u00b0' : '--';
+      html += '<div class="g2" style="gap:10px;margin-bottom:10px">'+
+        '<div><div class="sec-lbl">TAS</div><div class="sec-box">'+f.wxTAS+' kt</div></div>'+
+        '<div><div class="sec-lbl">Max Drift ('+driftSrcLabel+')</div><div class="sec-box calc-num" style="color:#6d28d9">'+driftTxt+'</div></div>'+
       '</div>';
     }
+    if(f.wxSurfDir||f.wxSurfSpd||f.wxW2kDir||f.wxW2kSpd||f.wxW5kDir||f.wxW5kSpd){
+      var windRows = [];
+      if(f.wxSurfDir||f.wxSurfSpd) windRows.push(['Surface', (f.wxSurfDir||'--')+'\u00b0 / '+(f.wxSurfSpd||'--')+' kt']);
+      if(f.wxW2kDir||f.wxW2kSpd)   windRows.push(["2000' wind", (f.wxW2kDir||'--')+'\u00b0 / '+(f.wxW2kSpd||'--')+' kt']);
+      if(f.wxW5kDir||f.wxW5kSpd)   windRows.push(["5000' wind", (f.wxW5kDir||'--')+'\u00b0 / '+(f.wxW5kSpd||'--')+' kt']);
+      html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">';
+      windRows.forEach(function(r){
+        html += '<div class="sec"><div class="sec-lbl">'+r[0]+'</div><div class="sec-box">'+r[1]+'</div></div>';
+      });
+      html += '</div>';
+    }
     if(f.wxSurfDir||f.wxSurfSpd){
-      html += '<div class="sec" style="margin-bottom:10px">'+
-        '<div class="sec-lbl">Surface Wind</div>'+
-        '<div class="sec-box">'+(f.wxSurfDir||'--')+'&deg; / '+(f.wxSurfSpd||'--')+' kt</div>'+
-      '</div>';
       var rwRows = [];
       [f.rwy1,f.rwy2,f.rwy3,f.rwy4].forEach(function(rwy){
         if(!rwy) return;
@@ -1206,7 +1220,6 @@ function renderFlDetail(){
 
 function openFlModal(ex){
   var f=ex||{id:uid(),date:'',aircraft:'',departure:'',destination:'',pic:'',student:'',category:'Dual',
-    tzOffset:'',
     touchGoes:'',
     chocksOff:'',takeoff:'',landing:'',chocksOn:'',
     lessonStart:'',lessonEnd:'',circuitStart:'',circuitEnd:'',
@@ -1214,7 +1227,9 @@ function openFlModal(ex){
     fob:'',burnRate:'',
     fuelTaxi:'',fuelTrip:'',fuelContPct:'5',
     fuelAlt:'',fuelFinal:'',fuelExtra:'',fuelUplifted:'',fuelLanding:'',
-    wxTAS:'',wxFreezFL:'',wxCloudBase:'',wxSurfDir:'',wxSurfSpd:'',
+    wxTAS:'',wxSurfDir:'',wxSurfSpd:'',
+    wxW2kDir:'',wxW2kSpd:'',wxW5kDir:'',wxW5kSpd:'',
+    wxDriftSrc:'surface',
     rwy1:'',rwy2:'',rwy3:'',rwy4:'',
     wxIcao1:'',wxIcao2:'',wxIcao3:'',wxIcao4:'',
     wxMetar1:'',wxMetar2:'',wxMetar3:'',wxMetar4:'',
@@ -1258,37 +1273,22 @@ function openFlModal(ex){
       '<div class="field"><label>Tacho Start</label><input class="inp" id="m-tachoStart" type="number" step="0.1" placeholder="1234.5" value="'+(f.tachoStart||'')+'"/></div>'+
       '<div class="field"><label>Hobbs Start</label><input class="inp" id="m-hobbsStart" type="number" step="0.1" placeholder="2345.6" value="'+(f.hobbsStart||'')+'"/></div>'+
     '</div>'+
-    '<div class="sdiv">Block &amp; Air Times</div>'+
-    '<div class="field" style="margin-bottom:14px">'+
-      '<label>Local Time Offset (hours from UTC at Departure)</label>'+
-      '<div style="display:flex;gap:6px;align-items:center;max-width:240px">'+
-        '<input class="inp" id="m-tzOffset" type="number" step="0.5" placeholder="+1" value="'+(f.tzOffset||'')+'" style="flex:1"/>'+
-        '<span style="font-size:13px;color:var(--muted)">e.g. +1 for UK BST</span>'+
-      '</div>'+
-    '</div>'+
+    '<div class="sdiv">Block &amp; Air Times (UTC)</div>'+
     '<div class="g4">'+
-      '<div class="field"><label>Chocks Off (UTC)</label>'+
+      '<div class="field"><label>Chocks Off</label>'+
         timeSpinnerHtml('m-chocksOff', f.chocksOff)+
-        '<div style="margin-top:6px"><label style="font-size:11px;color:var(--muted);margin-bottom:3px">Local</label>'+
-        timeSpinnerHtml('m-chocksOffLocal', '')+'</div>'+
         '<button type="button" class="btn btn-g m-now-btn" data-target="m-chocksOff" style="width:100%;margin-top:6px;padding:4px;font-size:13px">Now</button>'+
       '</div>'+
-      '<div class="field"><label>Takeoff (UTC)</label>'+
+      '<div class="field"><label>Takeoff</label>'+
         timeSpinnerHtml('m-takeoff', f.takeoff)+
-        '<div style="margin-top:6px"><label style="font-size:11px;color:var(--muted);margin-bottom:3px">Local</label>'+
-        timeSpinnerHtml('m-takeoffLocal', '')+'</div>'+
         '<button type="button" class="btn btn-g m-now-btn" data-target="m-takeoff" style="width:100%;margin-top:6px;padding:4px;font-size:13px">Now</button>'+
       '</div>'+
-      '<div class="field"><label>Landing (UTC)</label>'+
+      '<div class="field"><label>Landing</label>'+
         timeSpinnerHtml('m-landing', f.landing)+
-        '<div style="margin-top:6px"><label style="font-size:11px;color:var(--muted);margin-bottom:3px">Local</label>'+
-        timeSpinnerHtml('m-landingLocal', '')+'</div>'+
         '<button type="button" class="btn btn-g m-now-btn" data-target="m-landing" style="width:100%;margin-top:6px;padding:4px;font-size:13px">Now</button>'+
       '</div>'+
-      '<div class="field"><label>Chocks On (UTC)</label>'+
+      '<div class="field"><label>Chocks On</label>'+
         timeSpinnerHtml('m-chocksOn', f.chocksOn)+
-        '<div style="margin-top:6px"><label style="font-size:11px;color:var(--muted);margin-bottom:3px">Local</label>'+
-        timeSpinnerHtml('m-chocksOnLocal', '')+'</div>'+
         '<button type="button" class="btn btn-g m-now-btn" data-target="m-chocksOn" style="width:100%;margin-top:6px;padding:4px;font-size:13px">Now</button>'+
       '</div>'+
     '</div>'+
@@ -1351,16 +1351,33 @@ function openFlModal(ex){
     '<div id="m-section-wx" class="scard s-wx" style="display:none">'+
       '<div class="scard-head"><span class="ico">&#9925;</span> Weather</div>'+
     '<div class="sdiv">Planning</div>'+
-    '<div class="g3">'+
+    '<div class="g2">'+
       '<div class="field"><label>TAS (kt)</label><input class="inp" id="m-wxTAS" type="number" step="1" placeholder="90" value="'+(f.wxTAS||'')+'"/></div>'+
-      '<div class="field"><label>Freezing Level (ft)</label><input class="inp" id="m-wxFreezFL" type="number" step="100" placeholder="8000" value="'+(f.wxFreezFL||'')+'"/></div>'+
-      '<div class="field"><label>Cloud Base (ft)</label><input class="inp" id="m-wxCloudBase" type="number" step="100" placeholder="3000" value="'+(f.wxCloudBase||'')+'"/></div>'+
+      '<div class="field"><label>Max Drift (auto, &deg;)</label>'+
+        '<div style="background:rgba(109,40,217,.06);border:1px solid rgba(109,40,217,.25);border-radius:7px;padding:9px;display:flex;align-items:center;gap:10px">'+
+          '<span class="calc-num" id="m-wxMaxDrift" style="font-size:18px;color:#6d28d9">--</span>'+
+          '<span id="m-wxMaxDriftFormula" style="font-size:11px;color:var(--muted);font-family:JetBrains Mono,monospace"></span>'+
+        '</div>'+
+        '<div style="display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;font-size:12px">'+
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="m-wxDriftSrc" value="surface"'+(f.wxDriftSrc==='2000'||f.wxDriftSrc==='5000'?'':' checked')+'/> Surface</label>'+
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="m-wxDriftSrc" value="2000"'+(f.wxDriftSrc==='2000'?' checked':'')+'/> 2000\' </label>'+
+          '<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="m-wxDriftSrc" value="5000"'+(f.wxDriftSrc==='5000'?' checked':'')+'/> 5000\'</label>'+
+        '</div>'+
+      '</div>'+
     '</div>'+
 
     '<div class="sdiv">Surface Wind</div>'+
     '<div class="g2">'+
       '<div class="field"><label>Direction (&deg; mag)</label><input class="inp" id="m-wxSurfDir" type="number" step="1" placeholder="180" value="'+(f.wxSurfDir||'')+'"/></div>'+
       '<div class="field"><label>Speed (kt)</label><input class="inp" id="m-wxSurfSpd" type="number" step="1" placeholder="15" value="'+(f.wxSurfSpd||'')+'"/></div>'+
+    '</div>'+
+    '<div class="g2">'+
+      '<div class="field"><label>2000\' Wind Dir (&deg;)</label><input class="inp" id="m-wxW2kDir" type="number" step="1" placeholder="200" value="'+(f.wxW2kDir||'')+'"/></div>'+
+      '<div class="field"><label>2000\' Wind Spd (kt)</label><input class="inp" id="m-wxW2kSpd" type="number" step="1" placeholder="20" value="'+(f.wxW2kSpd||'')+'"/></div>'+
+    '</div>'+
+    '<div class="g2">'+
+      '<div class="field"><label>5000\' Wind Dir (&deg;)</label><input class="inp" id="m-wxW5kDir" type="number" step="1" placeholder="220" value="'+(f.wxW5kDir||'')+'"/></div>'+
+      '<div class="field"><label>5000\' Wind Spd (kt)</label><input class="inp" id="m-wxW5kSpd" type="number" step="1" placeholder="25" value="'+(f.wxW5kSpd||'')+'"/></div>'+
     '</div>'+
 
     '<div class="sdiv">Runways (enter two-digit number 01-36)</div>'+
@@ -1583,105 +1600,18 @@ function openFlModal(ex){
     });
   });
 
-  // ----- UTC <-> Local cross-conversion -----
-  // Pairs are: m-chocksOff <-> m-chocksOffLocal, etc. The user's tz offset
-  // (hours from UTC) is in m-tzOffset. When a UTC pair changes, the Local
-  // shows offset-added; when Local changes, UTC shows offset-subtracted.
-  // Guards prevent the change handlers from re-triggering each other.
-  var conversionInFlight = false;
-  function getTzOffset(){
-    var el = qs('#m-tzOffset', div);
-    if(!el) return 0;
-    var v = parseFloat(el.value);
-    return isNaN(v) ? 0 : v;
-  }
-  // Add hours to "HH:MM", returning "HH:MM" rounded to nearest 6 min (0.1 hr).
-  // Returns '' for invalid input.
-  function addHoursToHM(hm, hrs){
-    if(!hm || !/^\d{1,2}:\d{2}$/.test(hm)) return '';
-    var parts = hm.split(':');
-    var totalMin = parseInt(parts[0])*60 + parseInt(parts[1]) + Math.round(hrs*60);
-    // Wrap modulo 24*60
-    totalMin = ((totalMin % 1440) + 1440) % 1440;
-    // Round to nearest 6 minutes (so the value fits the dropdown options)
-    totalMin = Math.round(totalMin/6) * 6;
-    if(totalMin >= 1440) totalMin -= 1440;
-    var hh = Math.floor(totalMin/60);
-    var mm = totalMin % 60;
-    return ('0'+hh).slice(-2)+':'+('0'+mm).slice(-2);
-  }
-  // Write a "HH:MM" value into a spinner pair (h + m selects).
-  function setSpinnerValue(baseId, hm){
-    var h = qs('#'+baseId+'-h', div);
-    var m = qs('#'+baseId+'-m', div);
-    if(!h || !m) return;
-    if(!hm){ h.value=''; m.value=''; return; }
-    var p = hm.split(':');
-    h.value = p[0];
-    m.value = p[1];
-  }
-  // The four UTC/Local pairs
-  var TZ_PAIRS = [
-    {utc:'m-chocksOff',  local:'m-chocksOffLocal'},
-    {utc:'m-takeoff',    local:'m-takeoffLocal'},
-    {utc:'m-landing',    local:'m-landingLocal'},
-    {utc:'m-chocksOn',   local:'m-chocksOnLocal'}
-  ];
-  function utcToLocalAll(){
-    if(conversionInFlight) return;
-    conversionInFlight = true;
-    var off = getTzOffset();
-    TZ_PAIRS.forEach(function(p){
-      var utc = getTimeSpinner(p.utc, div);
-      if(!utc) return;
-      setSpinnerValue(p.local, addHoursToHM(utc, off));
-    });
-    conversionInFlight = false;
-  }
-  function onUtcChange(pair){
-    if(conversionInFlight) return;
-    conversionInFlight = true;
-    var off = getTzOffset();
-    var utc = getTimeSpinner(pair.utc, div);
-    setSpinnerValue(pair.local, addHoursToHM(utc, off));
-    conversionInFlight = false;
-  }
-  function onLocalChange(pair){
-    if(conversionInFlight) return;
-    conversionInFlight = true;
-    var off = getTzOffset();
-    var loc = getTimeSpinner(pair.local, div);
-    setSpinnerValue(pair.utc, addHoursToHM(loc, -off));
-    conversionInFlight = false;
-    liveCalc();
-  }
-  TZ_PAIRS.forEach(function(p){
-    ['-h','-m'].forEach(function(sfx){
-      var u = qs('#'+p.utc+sfx, div);
-      if(u) u.addEventListener('change', function(){ onUtcChange(p); });
-      var l = qs('#'+p.local+sfx, div);
-      if(l) l.addEventListener('change', function(){ onLocalChange(p); });
-    });
-  });
-  // Offset change re-derives all local times from existing UTC
-  var tzEl = qs('#m-tzOffset', div);
-  if(tzEl) tzEl.addEventListener('input', utcToLocalAll);
-  // Default tz offset for a new flight: estimate UK BST/GMT from today's date
-  if(!ex && !f.tzOffset && tzEl){
-    var now = new Date();
-    var month = now.getUTCMonth(); // 0=Jan
-    // BST roughly late March to late October
-    tzEl.value = (month>=2 && month<=9) ? '1' : '0';
-  }
-  // Initial sync: populate Local fields from existing UTC values
-  utcToLocalAll();
 
   // All numeric fields trigger recalc
   ['m-tachoStart','m-tachoEnd','m-hobbsStart','m-hobbsEnd',
    'm-fuelContPct',
-   'm-wxTAS','m-wxFreezFL','m-wxCloudBase','m-wxSurfDir','m-wxSurfSpd',
+   'm-wxTAS','m-wxSurfDir','m-wxSurfSpd',
+   'm-wxW2kDir','m-wxW2kSpd','m-wxW5kDir','m-wxW5kSpd',
    'm-rwy1','m-rwy2','m-rwy3','m-rwy4'].forEach(function(id){
     var el=qs('#'+id,div); if(el) el.addEventListener('input', liveCalc);
+  });
+  // Drift source radio buttons
+  div.querySelectorAll('input[name="m-wxDriftSrc"]').forEach(function(r){
+    r.addEventListener('change', liveCalc);
   });
 
   // Wire bidirectional USG/L pairs - calc fires after either side updates
@@ -1711,33 +1641,43 @@ function openFlModal(ex){
   syncWxBlocks();
 
   // Auto-populate ICAO slots from Departure and Destination.
-  // dep+dest take slots 1+2 (deduped); other manually-entered codes are kept
-  // in remaining slots unless they duplicate dep/dest.
+  // Only accepts complete 4-letter codes to avoid inserting partial values
+  // mid-typing. Tracks which slots were filled by route-sync so we can
+  // overwrite them cleanly when dep/dest change.
   function syncIcaosFromRoute(){
     var dep  = (qs('#m-dep',  div).value || '').trim().toUpperCase();
     var dest = (qs('#m-dest', div).value || '').trim().toUpperCase();
-    var current = [1,2,3,4].map(function(n){
-      return (qs('#m-wxIcao'+n,div).value || '').trim().toUpperCase();
-    });
+    var depOk  = /^[A-Z]{4}$/.test(dep)  ? dep  : '';
+    var destOk = /^[A-Z]{4}$/.test(dest) ? dest : '';
+    // Build canonical list: route codes first (deduped), then keep any
+    // user-typed codes from slots that weren't auto-filled.
     var seen = {};
     var result = [];
     function add(code){
-      if(!code || code.length<3) return;
+      if(!code || code.length!==4) return;
       if(seen[code]) return;
       if(result.length>=4) return;
       seen[code] = true;
       result.push(code);
     }
-    add(dep);
-    add(dest);
-    current.forEach(add);
+    add(depOk);
+    add(destOk);
+    // Keep manually-entered codes from slots not previously auto-filled
+    [1,2,3,4].forEach(function(n){
+      var el = qs('#m-wxIcao'+n, div);
+      if(!el) return;
+      if(el.dataset.autofill === '1') return; // was auto-filled, replace it
+      var v = (el.value || '').trim().toUpperCase();
+      if(/^[A-Z]{4}$/.test(v)) add(v);
+    });
     [1,2,3,4].forEach(function(n,i){
-      var el = qs('#m-wxIcao'+n,div);
+      var el = qs('#m-wxIcao'+n, div);
       if(!el) return;
       var newVal = result[i] || '';
-      if(el.value !== newVal){
-        el.value = newVal;
-      }
+      // Mark slot as auto-filled if it came from dep/dest, otherwise clear flag
+      var fromRoute = (i===0 && newVal===depOk && depOk) || (i===1 && newVal===destOk && destOk && destOk!==depOk);
+      el.dataset.autofill = fromRoute ? '1' : '';
+      if(el.value !== newVal) el.value = newVal;
     });
     syncWxBlocks();
   }
@@ -2068,6 +2008,35 @@ function openFlModal(ex){
       });
       wxEl.innerHTML = rows.length ? rows.join('') : '<div style="color:var(--muted);font-size:12px">Enter at least one runway, plus wind direction and speed.</div>';
     }
+
+    // Max Drift = (selected wind speed / TAS) * 60
+    var driftEl = qs('#m-wxMaxDrift', div);
+    var driftFormulaEl = qs('#m-wxMaxDriftFormula', div);
+    if(driftEl){
+      var srcRadio = div.querySelector('input[name="m-wxDriftSrc"]:checked');
+      var src = srcRadio ? srcRadio.value : 'surface';
+      var tasN = parseFloat(g('m-wxTAS'));
+      var spdN;
+      var srcLabel;
+      if(src === '2000'){
+        spdN = parseFloat(g('m-wxW2kSpd'));
+        srcLabel = '2000\' wind';
+      } else if(src === '5000'){
+        spdN = parseFloat(g('m-wxW5kSpd'));
+        srcLabel = '5000\' wind';
+      } else {
+        spdN = parseFloat(g('m-wxSurfSpd'));
+        srcLabel = 'surface wind';
+      }
+      if(!isNaN(tasN) && tasN>0 && !isNaN(spdN)){
+        var drift = (spdN / tasN) * 60;
+        driftEl.textContent = drift.toFixed(1) + '\u00b0';
+        if(driftFormulaEl) driftFormulaEl.textContent = '('+spdN+'/'+tasN+')\u00d760 ['+srcLabel+']';
+      } else {
+        driftEl.textContent = '--';
+        if(driftFormulaEl) driftFormulaEl.textContent = (isNaN(tasN)||tasN<=0)?'enter TAS':'enter '+srcLabel+' speed';
+      }
+    }
   }
 
   if(ex) setTimeout(liveCalc,0);
@@ -2082,7 +2051,6 @@ function openFlModal(ex){
     f.departure=g('m-dep').toUpperCase(); f.destination=g('m-dest').toUpperCase();
     f.pic=g('m-pic'); f.student=g('m-student');
     f.touchGoes=g('m-touchGoes');
-    f.tzOffset=g('m-tzOffset');
     f.chocksOff=getTimeSpinner('m-chocksOff',div); f.takeoff=getTimeSpinner('m-takeoff',div);
     f.landing=getTimeSpinner('m-landing',div); f.chocksOn=getTimeSpinner('m-chocksOn',div);
     f.lessonStart=getTimeSpinner('m-lessonStart',div); f.lessonEnd=getTimeSpinner('m-lessonEnd',div);
@@ -2095,8 +2063,12 @@ function openFlModal(ex){
     f.fuelFinal=g('m-fuelFinal'); f.fuelExtra=g('m-fuelExtra');
     f.fuelUplifted=g('m-fuelUplifted');
     f.fuelLanding=g('m-fuelLanding');
-    f.wxTAS=g('m-wxTAS'); f.wxFreezFL=g('m-wxFreezFL'); f.wxCloudBase=g('m-wxCloudBase');
+    f.wxTAS=g('m-wxTAS');
     f.wxSurfDir=g('m-wxSurfDir'); f.wxSurfSpd=g('m-wxSurfSpd');
+    f.wxW2kDir=g('m-wxW2kDir'); f.wxW2kSpd=g('m-wxW2kSpd');
+    f.wxW5kDir=g('m-wxW5kDir'); f.wxW5kSpd=g('m-wxW5kSpd');
+    var dr = div.querySelector('input[name="m-wxDriftSrc"]:checked');
+    f.wxDriftSrc = dr ? dr.value : 'surface';
     f.rwy1=g('m-rwy1'); f.rwy2=g('m-rwy2'); f.rwy3=g('m-rwy3'); f.rwy4=g('m-rwy4');
     [1,2,3,4].forEach(function(n){
       f['wxIcao'+n]=g('m-wxIcao'+n);
@@ -2204,17 +2176,29 @@ function openFlModal(ex){
 // Build weather text block for emails/exports. Returns array of lines.
 function weatherTextLines(f){
   var lines = [];
-  var hasAny = f.wxTAS||f.wxFreezFL||f.wxCloudBase||f.wxSurfDir||
+  var hasAny = f.wxTAS||f.wxSurfDir||f.wxW2kSpd||f.wxW5kSpd||
                f.rwy1||f.rwy2||f.rwy3||f.rwy4||
                f.wxMetar1||f.wxMetar2||f.wxMetar3||f.wxMetar4||
                f.wxTaf1||f.wxTaf2||f.wxTaf3||f.wxTaf4;
   if(!hasAny) return lines;
   logBanner('WEATHER').forEach(function(l){ lines.push(l); });
-  if(f.wxTAS)       lines.push(logRow('TAS', f.wxTAS+' kt'));
-  if(f.wxFreezFL)   lines.push(logRow('Freezing Level', f.wxFreezFL+' ft'));
-  if(f.wxCloudBase) lines.push(logRow('Cloud Base', f.wxCloudBase+' ft'));
+  if(f.wxTAS) lines.push(logRow('TAS', f.wxTAS+' kt'));
+  // Max drift calc
+  if(f.wxTAS){
+    var src = f.wxDriftSrc || 'surface';
+    var spdRaw, srcLabel;
+    if(src==='2000'){ spdRaw=f.wxW2kSpd; srcLabel="2000'"; }
+    else if(src==='5000'){ spdRaw=f.wxW5kSpd; srcLabel="5000'"; }
+    else { spdRaw=f.wxSurfSpd; srcLabel="surface"; }
+    var tasN = parseFloat(f.wxTAS), spdN = parseFloat(spdRaw);
+    if(!isNaN(tasN) && tasN>0 && !isNaN(spdN)){
+      lines.push(logRow('Max Drift ('+srcLabel+')', ((spdN/tasN)*60).toFixed(1)+' deg', true));
+    }
+  }
+  if(f.wxSurfDir||f.wxSurfSpd) lines.push(logRow('Surface Wind', (f.wxSurfDir||'--')+'deg / '+(f.wxSurfSpd||'--')+' kt'));
+  if(f.wxW2kDir||f.wxW2kSpd)   lines.push(logRow("2000' Wind", (f.wxW2kDir||'--')+'deg / '+(f.wxW2kSpd||'--')+' kt'));
+  if(f.wxW5kDir||f.wxW5kSpd)   lines.push(logRow("5000' Wind", (f.wxW5kDir||'--')+'deg / '+(f.wxW5kSpd||'--')+' kt'));
   if(f.wxSurfDir||f.wxSurfSpd){
-    lines.push(logRow('Surface Wind', (f.wxSurfDir||'--')+'deg / '+(f.wxSurfSpd||'--')+' kt'));
     [f.rwy1,f.rwy2,f.rwy3,f.rwy4].forEach(function(rwy){
       if(!rwy) return;
       var c = rwyWind(rwy, f.wxSurfDir, f.wxSurfSpd);
@@ -2400,7 +2384,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v82');
+  lines.push('','-- Sent from FlightDeck v84');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -2451,7 +2435,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v82');
+  lines.push('','-- FlightDeck v84');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
