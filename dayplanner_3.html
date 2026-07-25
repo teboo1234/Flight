@@ -1,0 +1,3703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Day Planner">
+<meta name="theme-color" content="#ffffff">
+<title>Day Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #ffffff;
+    color: #000000;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-feature-settings: "tnum" 1;
+    min-height: 100vh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    -webkit-font-smoothing: antialiased;
+    font-size: 16px;
+    line-height: 1.4;
+  }
+
+  /* ---------- Layout shell ---------- */
+  .layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+  }
+  .sidebar {
+    border-right: 1px solid #ddd;
+    background: #fafafa;
+    padding: 20px 14px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .main { padding: 24px 24px 60px; max-width: 760px; }
+
+  /* Sidebar */
+  .sb-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+  }
+  .sb-head h2 {
+    margin: 0; font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: #555;
+  }
+  .sb-new {
+    background: #000; color: #fff; border: none;
+    padding: 6px 10px; border-radius: 4px;
+    font-family: inherit; font-size: 12px; font-weight: 600;
+    cursor: pointer;
+  }
+  .sb-new:hover { background: #c41e1e; }
+
+  ul.plans { list-style: none; margin: 0; padding: 0; }
+  ul.plans li {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 2px;
+    transition: background 0.1s;
+  }
+  ul.plans li:hover { background: #f0f0f0; }
+  ul.plans li.active { background: #000; color: #fff; }
+  ul.plans li.active .pl-meta { color: #ccc; }
+  ul.plans li .pl-name {
+    flex: 1; font-size: 14px; font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  ul.plans li .pl-meta {
+    font-size: 11px; color: #888;
+    font-variant-numeric: tabular-nums;
+  }
+  ul.plans li .pl-x {
+    background: none; border: none; color: inherit;
+    cursor: pointer; font-size: 16px; opacity: 0.4;
+    width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 3px;
+  }
+  ul.plans li .pl-x:hover { opacity: 1; background: rgba(196,30,30,0.15); color: #c41e1e; }
+  ul.plans li.active .pl-x:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+  ul.plans li .pl-name-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 2px 4px;
+    border-radius: 3px;
+    outline: 1px solid rgba(255,255,255,0.4);
+    width: 100%;
+  }
+
+  /* Drawer toggle (mobile) */
+  .menu-btn {
+    display: none;
+    background: none; border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin-right: 12px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  .head-right { display: flex; align-items: center; gap: 12px; }
+  .sync-btn {
+    background: #f0f0f0; border: 1px solid #ddd;
+    border-radius: 50%; width: 32px; height: 32px;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0; font-family: inherit;
+    font-size: 15px;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .sync-btn:hover { background: #e0e0e0; }
+  .sync-btn.state-signedout { color: #888; }
+  .sync-btn.state-syncing { color: #1a5fb4; }
+  .sync-btn.state-synced { color: #167a2b; background: #e5f4e8; border-color: #167a2b; }
+  .sync-btn.state-error { color: #c41e1e; background: #fbeaea; border-color: #c41e1e; }
+  .sync-icon { line-height: 1; }
+
+  .sync-content {
+    font-size: 14px; color: #333; line-height: 1.5;
+    margin-bottom: 18px;
+  }
+  .sync-content .sync-email {
+    font-weight: 600; color: #000; word-break: break-all;
+  }
+  .sync-content .sync-status-line {
+    margin-top: 8px; font-size: 13px; color: #666;
+  }
+  .sync-content .sync-google-btn {
+    display: block; margin: 0 auto;
+    background: #fff; border: 1px solid #dadce0;
+    border-radius: 6px; padding: 10px 20px;
+    font-family: inherit; font-size: 14px; font-weight: 500;
+    color: #3c4043; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .sync-content .sync-google-btn:hover { background: #f8f9fa; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+  .sync-content .sync-signout-btn {
+    background: #f0f0f0; border: 1px solid #ddd;
+    border-radius: 6px; padding: 8px 16px;
+    font-family: inherit; font-size: 14px;
+    color: #c41e1e; cursor: pointer; margin-top: 12px;
+  }
+  .sync-content .sync-signout-btn:hover { background: #fbeaea; }
+
+  /* Header */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #000;
+  }
+  .head-left { display: flex; align-items: center; }
+  h1 {
+    font-size: 20px; font-weight: 700; margin: 0;
+    letter-spacing: -0.3px; color: #000;
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  h1 .plan-name {
+    font-size: 14px; font-weight: 500; color: #888;
+  }
+  .clock { font-size: 14px; color: #000; font-variant-numeric: tabular-nums; font-weight: 500; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #ccc;
+  }
+  .tabs button {
+    background: none; border: none; cursor: pointer;
+    color: #888; font-family: inherit;
+    font-size: 14px; font-weight: 600;
+    padding: 10px 16px;
+    margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tabs button.active { color: #000; border-bottom-color: #000; }
+  .tabs button:hover:not(.active) { color: #444; }
+
+  .day-tabs {
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #ddd;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .day-tabs::-webkit-scrollbar { height: 4px; }
+  .day-tabs::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+  .day-tab {
+    flex: 0 0 auto;
+    background: #f4f4f4;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.2;
+    white-space: nowrap;
+    transition: background 0.1s, color 0.1s, border-color 0.1s;
+  }
+  .day-tab:hover { color: #000; }
+  .day-tab.active {
+    background: #000;
+    color: #fff;
+    border-color: #000;
+  }
+  .day-tab .day-meta {
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;
+  }
+  .day-tab.active .day-meta { opacity: 0.85; }
+  .day-tab .day-x {
+    background: none; border: none; color: inherit;
+    font-size: 14px; line-height: 1;
+    margin-left: 2px; padding: 0 2px;
+    opacity: 0.5; cursor: pointer; border-radius: 3px;
+  }
+  .day-tab .day-x:hover {
+    opacity: 1;
+    background: rgba(196,30,30,0.15);
+    color: #c41e1e;
+  }
+  .day-tab.active .day-x:hover { background: rgba(255,255,255,0.2); color: #fff; }
+  .day-tab-add {
+    flex: 0 0 auto;
+    background: none;
+    border: 1px dashed #aaa;
+    color: #555;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .day-tab-add:hover { color: #000; border-color: #000; }
+  .day-tab-edit {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 3px;
+    color: inherit;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 2px 6px;
+    outline: none;
+    min-width: 100px;
+    max-width: 180px;
+  }
+  .day-tab:not(.active) .day-tab-edit {
+    background: #fff;
+    border-color: #000;
+    color: #000;
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    font-size: 12px;
+    margin-bottom: 16px;
+    color: #555;
+  }
+  .legend .item { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .swatch {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border-radius: 3px;
+  }
+  .legend .swatch.primary { background: #c41e1e; }
+  .legend .swatch.travel  { background: #1a5fb4; }
+  .legend .swatch.wiggle  { background: #7e3ec1; }
+  .legend .swatch.free    { background: #1f7a3a; }
+  .legend .label.primary { color: #c41e1e; font-weight: 600; }
+  .legend .label.travel  { color: #1a5fb4; font-weight: 600; }
+  .legend .label.wiggle  { color: #7e3ec1; font-weight: 600; }
+  .legend .label.free    { color: #1f7a3a; font-weight: 600; }
+
+  .day-banner {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 10px 0;
+    margin-bottom: 4px;
+    border-bottom: 1px solid #000;
+    font-size: 13px;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  .day-banner .val {
+    font-size: 16px; font-weight: 700; color: #000;
+    font-variant-numeric: tabular-nums;
+    text-transform: none; letter-spacing: 0;
+  }
+
+  /* Confirmation modal */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-panel {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 340px; width: 100%;
+    padding: 20px 22px 16px;
+  }
+  .modal-msg {
+    font-size: 16px; font-weight: 500; color: #000;
+    margin-bottom: 18px; text-align: center;
+    line-height: 1.35;
+  }
+  .modal-actions {
+    display: flex; gap: 10px; justify-content: flex-end;
+  }
+  .modal-btn {
+    background: #f0f0f0; border: 1px solid #ddd;
+    color: #000; font-family: inherit; font-size: 15px;
+    padding: 8px 18px; border-radius: 6px;
+    cursor: pointer; font-weight: 500;
+    min-width: 80px;
+  }
+  .modal-btn.modal-ok { background: #c41e1e; border-color: #c41e1e; color: #fff; }
+  .modal-btn.modal-ok:hover { background: #a01818; border-color: #a01818; }
+  .modal-btn:hover:not(.modal-ok) { background: #e0e0e0; }
+
+  .conflict-banner {
+    display: none;
+    padding: 10px 14px;
+    background: #fff4dc;
+    border: 1px solid #d99300;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #6b4400;
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+  .conflict-banner.show { display: block; }
+  .conflict-banner .ic { margin-right: 6px; }
+
+  ul.tasks { list-style: none; margin: 0; padding: 0; }
+  ul.tasks li {
+    display: grid;
+    grid-template-columns: auto auto auto auto auto minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #ddd;
+    position: relative;
+    background: #fff;
+    transition: background 0.1s;
+  }
+
+  .row-menu-btn {
+    width: 32px; height: 32px;
+    background: #f0f0f0; border: 1px solid #ddd;
+    color: #333; font-size: 18px; line-height: 1;
+    border-radius: 4px; cursor: pointer;
+    padding: 0; margin: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: inherit;
+    transition: background 0.1s, color 0.1s, border-color 0.1s;
+  }
+  .row-menu-btn:hover { background: #000; color: #fff; border-color: #000; }
+
+  .row-menu {
+    display: none;
+    position: fixed;
+    z-index: 200;
+    background: #fff;
+    border: 1px solid #000;
+    border-radius: 6px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    padding: 4px;
+    min-width: 180px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  ul.tasks li.menu-open .row-menu { display: flex; }
+  .row-menu-item {
+    display: block !important;
+    width: auto;
+    background: none;
+    border: none;
+    padding: 10px 12px;
+    margin: 0;
+    font-family: inherit; font-size: 14px;
+    color: #000; text-align: left;
+    cursor: pointer;
+    border-radius: 3px;
+    text-decoration: none;
+    white-space: nowrap;
+    line-height: 1.2;
+    box-sizing: border-box;
+  }
+  .row-menu-item:hover:not(:disabled) { background: #000; color: #fff; }
+  .row-menu-item:disabled { opacity: 0.3; cursor: default; }
+  .row-menu-item.danger { color: #c41e1e; }
+  .row-menu-item.danger:hover { background: #c41e1e; color: #fff; }
+  a.row-menu-item.link-open { color: #1a5fb4; }
+  a.row-menu-item.link-open:hover { background: #1a5fb4; color: #fff; }
+
+  ul.tasks li.conflict {
+    background: #fff4dc;
+    border-left: 3px solid #d99300;
+    padding-left: 8px;
+    margin-left: -11px;
+    border-radius: 0 4px 4px 0;
+  }
+  .conflict-flag {
+    position: absolute; right: 36px; top: 50%;
+    transform: translateY(-50%);
+    color: #d99300; font-size: 16px; pointer-events: none;
+  }
+
+  .star-box {
+    appearance: none; -webkit-appearance: none;
+    width: 20px; height: 20px;
+    border: 1.5px solid #999; border-radius: 4px;
+    background: #fff; cursor: pointer; margin: 0;
+    position: relative; flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .star-box:hover { border-color: #c41e1e; }
+  .star-box:checked { background: #c41e1e; border-color: #c41e1e; }
+  .star-box:checked::after {
+    content: '★'; position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%, -54%);
+    color: #fff; font-size: 14px; line-height: 1;
+  }
+
+  ul.tasks li.primary .t-input,
+  ul.tasks li.primary .title-input,
+  ul.tasks li.primary .dur-input,
+  ul.tasks li.primary .t-dash { color: #c41e1e; }
+  ul.tasks li.primary .title-input { font-weight: 700; }
+  ul.tasks li.primary .dur-input { background: #fbeaea; }
+  ul.tasks li.primary .dur-input:focus { background: #fff; }
+
+  ul.tasks li.travel .t-input,
+  ul.tasks li.travel .title-input,
+  ul.tasks li.travel .dur-input,
+  ul.tasks li.travel .t-dash { color: #1a5fb4; }
+  ul.tasks li.travel .dur-input { background: #e7f0fb; }
+  ul.tasks li.travel .dur-input:focus { background: #fff; }
+
+  ul.tasks li.wiggle .t-input,
+  ul.tasks li.wiggle .title-input,
+  ul.tasks li.wiggle .dur-input,
+  ul.tasks li.wiggle .t-dash { color: #7e3ec1; }
+  ul.tasks li.wiggle .dur-input { background: #f1e8fb; }
+  ul.tasks li.wiggle .dur-input:focus { background: #fff; }
+
+  ul.tasks li.primary.travel .title-input,
+  ul.tasks li.primary.wiggle .title-input { font-style: italic; }
+
+  ul.tasks li.free {
+    color: #1f7a3a;
+    border-bottom: 1px solid #cfe9d7;
+    padding: 10px 0;
+  }
+  ul.tasks li.free .t-time,
+  ul.tasks li.free .dur-display,
+  ul.tasks li.free .title-display { color: #1f7a3a; }
+  .t-time {
+    font-size: 15px; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    width: 60px; padding: 4px 0;
+  }
+  .dur-display {
+    font-size: 14px; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    width: 64px; text-align: center;
+    padding: 4px 8px; border-radius: 4px;
+    background: #e8f5ec; color: #1f7a3a;
+  }
+  .title-display {
+    font-size: 16px; font-weight: 600;
+    padding: 4px 0; font-style: italic;
+  }
+
+  .t-input {
+    border: none; background: transparent;
+    font-family: inherit; font-size: 15px;
+    color: #000; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    padding: 4px 0; outline: none; width: 60px;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s;
+  }
+  .t-input:focus { border-bottom-color: #000; }
+  .t-input:disabled { color: #bbb; background: transparent; }
+  .t-input::-webkit-calendar-picker-indicator { display: none; }
+  .t-dash { color: #000; font-weight: 400; padding: 0 2px; }
+
+  .dur-input {
+    border: none; background: #f4f4f4;
+    font-family: inherit; font-size: 14px;
+    color: #000; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    padding: 4px 8px; outline: none; width: 64px;
+    text-align: center; border-radius: 4px;
+    border: 1px solid transparent;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .dur-input:focus { border-color: #000; background: #fff; }
+
+  .title-input {
+    border: none; background: transparent;
+    font-family: inherit; font-size: 16px;
+    color: #000; font-weight: 500;
+    padding: 4px 0; width: 100%;
+    outline: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s;
+  }
+  .title-input:focus { border-bottom-color: #000; }
+  .title-input::placeholder { color: #aaa; font-weight: 400; }
+
+  .x-btn {
+    background: none; border: none; cursor: pointer;
+    color: #000; font-size: 20px;
+    width: 28px; height: 28px;
+    border-radius: 4px;
+    display: inline-flex; align-items: center; justify-content: center;
+    line-height: 1;
+    transition: background 0.15s;
+  }
+  .x-btn:hover { background: #f0f0f0; }
+  .x-btn.free-x { color: #1f7a3a; }
+  .x-btn.free-x:hover { background: #e8f5ec; color: #155728; }
+
+  /* Convert-free button (turn free time into a task) */
+  .convert-free {
+    border: none; background: transparent;
+    color: #1f7a3a; cursor: pointer;
+    font-family: inherit; font-size: 12px; font-weight: 600;
+    padding: 4px 10px; margin-right: 4px;
+    border-radius: 4px;
+    border: 1px solid #1f7a3a;
+    transition: background 0.15s;
+  }
+  .convert-free:hover { background: #e8f5ec; }
+
+  /* Date row */
+  .date-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .date-row label {
+    font-size: 12px; color: #666; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .date-row input[type="date"] {
+    border: 1px solid #ccc; border-radius: 4px;
+    background: #fff; color: #000;
+    font-family: inherit; font-size: 15px; font-weight: 500;
+    padding: 6px 10px;
+    outline: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .date-row input[type="date"]:focus { border-color: #000; }
+  .date-row input[type="text"]#dayLabel {
+    flex: 1; min-width: 140px;
+    border: 1px solid #ccc; border-radius: 4px;
+    background: #fff; color: #000;
+    font-family: inherit; font-size: 15px; font-weight: 500;
+    padding: 6px 10px;
+    outline: none;
+  }
+  .date-row input[type="text"]#dayLabel:focus { border-color: #000; }
+
+  /* Link icon button on tasks */
+  .link-btn {
+    background: none; border: none; cursor: pointer;
+    color: #888; font-size: 16px;
+    width: 24px; height: 24px;
+    border-radius: 4px;
+    display: inline-flex; align-items: center; justify-content: center;
+    line-height: 1;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+  .link-btn:hover { background: #f0f0f0; color: #1a5fb4; }
+  .link-btn.has-link { color: #1a5fb4; }
+  .link-btn.has-link:hover { background: #e7f0fb; }
+
+  /* Link editor row (appears when ⊕ is clicked) */
+  .link-edit-row {
+    display: none;
+    grid-column: 1 / -1;
+    padding: 8px 0 4px 26px;
+  }
+  .task.show-link-edit .link-edit-row { display: flex; gap: 6px; align-items: center; }
+  .link-edit-row input {
+    flex: 1;
+    border: 1px solid #ccc; border-radius: 4px;
+    padding: 6px 10px;
+    font-family: inherit; font-size: 13px;
+    color: #000; outline: none;
+    background: #fff;
+  }
+  .link-edit-row input:focus { border-color: #000; }
+  .link-edit-row button {
+    background: none; border: 1px solid #ccc; cursor: pointer;
+    padding: 6px 10px; border-radius: 4px;
+    font-family: inherit; font-size: 12px;
+    color: #000;
+  }
+  .link-edit-row button:hover { background: #f0f0f0; }
+  .x-spacer { width: 28px; }
+  .star-spacer { width: 20px; }
+
+  .empty {
+    padding: 24px 0; color: #000;
+    text-align: center; font-size: 15px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .add-btn {
+    background: none; border: none; cursor: pointer;
+    color: #000;
+    font-family: inherit; font-size: 16px; font-weight: 600;
+    padding: 14px 0; text-align: left; width: 100%;
+    border-bottom: 1px solid #ddd;
+  }
+  .add-btn:hover { background: #f8f8f8; }
+
+  .add-row {
+    display: flex; align-items: stretch;
+    border-bottom: 1px solid #ddd;
+  }
+  .add-row .add-btn-main {
+    flex: 1; border-bottom: none;
+  }
+  .add-btn-side {
+    background: none; border: none; cursor: pointer;
+    color: #000;
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    padding: 14px 14px;
+    border-left: 1px solid #eee;
+    white-space: nowrap;
+  }
+  .add-btn-side:hover { background: #f8f8f8; }
+  @media (max-width: 480px) {
+    .add-btn-side { font-size: 12px; padding: 14px 10px; }
+  }
+
+  .totals {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #000;
+  }
+  .totals .row {
+    display: flex; justify-content: space-between;
+    padding: 6px 0; font-size: 15px; color: #000;
+  }
+  .totals .row.free { color: #1f7a3a; }
+  .totals .row.primary { color: #c41e1e; }
+  .totals .row.travel { color: #1a5fb4; }
+  .totals .row.wiggle { color: #7e3ec1; }
+  .totals .row .lbl { font-weight: 500; }
+  .totals .row .val { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .menu-row {
+    margin-top: 28px;
+    display: flex; gap: 16px; flex-wrap: wrap;
+    font-size: 13px;
+  }
+  .menu-row button {
+    background: none; border: none; cursor: pointer;
+    color: #000; font-family: inherit;
+    font-size: 13px; padding: 4px 0;
+    text-decoration: underline;
+  }
+  .menu-row button:hover { opacity: 0.6; }
+
+  .col-headers {
+    display: grid;
+    grid-template-columns: 18px auto auto auto auto auto 1fr auto auto;
+    gap: 8px; padding: 0 0 6px;
+    font-size: 11px; color: #666; font-weight: 600;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    border-bottom: 1px solid #000;
+  }
+  .col-headers .c-handle { width: 18px; }
+  .col-headers .c-star { width: 20px; text-align: center; }
+  .col-headers .c-start { width: 60px; }
+  .col-headers .c-dash { padding: 0 2px; }
+  .col-headers .c-end { width: 60px; }
+  .col-headers .c-dur { width: 64px; text-align: center; }
+  .col-headers .c-link { width: 24px; }
+  .col-headers .c-x { width: 28px; }
+
+  /* Packing */
+  .pack-headers {
+    display: grid;
+    grid-template-columns: 14px 50px 1fr 1fr 70px 70px 28px;
+    gap: 10px; padding: 0 0 6px;
+    font-size: 11px; color: #666; font-weight: 600;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    border-bottom: 1px solid #000;
+  }
+  .pack-headers .c-qty { text-align: right; }
+  .pack-headers .c-kg { text-align: right; }
+  .pack-headers .c-lb { text-align: right; }
+
+  ul.pack { list-style: none; margin: 0; padding: 0; }
+  ul.pack li {
+    display: grid;
+    grid-template-columns: 14px 50px 1fr 1fr 70px 70px 28px;
+    gap: 10px; align-items: center;
+    padding: 12px 0; border-bottom: 1px solid #ddd;
+    position: relative;
+  }
+  .person-bar {
+    width: 6px; height: 28px; border-radius: 3px;
+    background: #ddd;
+    transition: background 0.15s;
+  }
+
+  .pack-input {
+    border: none; background: transparent;
+    font-family: inherit; font-size: 15px;
+    color: #000; font-weight: 500;
+    padding: 4px 0; width: 100%;
+    outline: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .pack-input:focus { border-bottom-color: #000; }
+  .pack-input::placeholder { color: #aaa; font-weight: 400; }
+  .pack-input.p-person { font-weight: 600; }
+
+  .wt-input {
+    border: none; background: #f4f4f4;
+    font-family: inherit; font-size: 14px;
+    color: #000; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    padding: 4px 8px; outline: none; width: 70px;
+    text-align: right; border-radius: 4px;
+    border: 1px solid transparent;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .wt-input:focus { border-color: #000; background: #fff; }
+  .wt-input::placeholder { color: #ccc; font-weight: 400; }
+
+  .qty-input {
+    border: none; background: #f4f4f4;
+    font-family: inherit; font-size: 14px;
+    color: #000; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    padding: 4px 8px; outline: none; width: 50px;
+    text-align: right; border-radius: 4px;
+    border: 1px solid transparent;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .qty-input:focus { border-color: #000; background: #fff; }
+  .qty-input::placeholder { color: #ccc; font-weight: 400; }
+
+  .pack-totals {
+    margin-top: 24px; padding-top: 16px;
+    border-top: 1px solid #000;
+  }
+  .pack-totals .row {
+    display: flex; justify-content: space-between;
+    padding: 6px 0; font-size: 15px;
+  }
+  .pack-totals .row .lbl { font-weight: 500; }
+  .pack-totals .row .val { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pack-totals .row.grand .val { font-size: 17px; }
+
+  .person-totals { margin-top: 8px; }
+  .person-totals .pt-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 0; font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .person-totals .pt-bar {
+    width: 6px; height: 16px; border-radius: 3px; flex-shrink: 0;
+  }
+  .person-totals .pt-name { flex: 1; font-weight: 600; color: #000; }
+  .person-totals .pt-val { color: #555; }
+  .person-totals .pt-detail {
+    color: #888; font-size: 11px;
+    margin-left: 8px;
+  }
+
+  /* Budget tab */
+  .budget-headers {
+    display: grid;
+    grid-template-columns: 14px 20px 50px 1fr 1fr 86px 60px 86px 28px;
+    gap: 10px; padding: 0 0 6px;
+    font-size: 11px; color: #666; font-weight: 600;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    border-bottom: 1px solid #000;
+  }
+  .budget-headers .c-qty { text-align: right; }
+  .budget-headers .c-cost,
+  .budget-headers .c-rate,
+  .budget-headers .c-incl { text-align: right; }
+
+  ul.budget { list-style: none; margin: 0; padding: 0; }
+  ul.budget li {
+    display: grid;
+    grid-template-columns: 14px 20px 50px 1fr 1fr 86px 60px 86px 28px;
+    gap: 10px; align-items: center;
+    padding: 12px 0; border-bottom: 1px solid #ddd;
+    position: relative;
+  }
+
+  /* Excluded item: strike-through and dim */
+  ul.budget li.excluded .pack-input,
+  ul.budget li.excluded .money-input,
+  ul.budget li.excluded .rate-input,
+  ul.budget li.excluded .qty-input {
+    text-decoration: line-through;
+    color: #999;
+  }
+  ul.budget li.excluded .person-bar { opacity: 0.35; }
+
+  /* Exclude checkbox — similar styling to the star, but neutral grey */
+  .excl-box {
+    appearance: none; -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border: 1.5px solid #aaa; border-radius: 4px;
+    background: #fff; cursor: pointer; margin: 0;
+    position: relative; flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .excl-box:hover { border-color: #666; }
+  .excl-box:checked { background: #888; border-color: #888; }
+  .excl-box:checked::after {
+    content: '✓'; position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%, -55%);
+    color: #fff; font-size: 12px; line-height: 1;
+  }
+
+  .money-input {
+    border: none; background: #f4f4f4;
+    font-family: inherit; font-size: 14px;
+    color: #000; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    padding: 4px 8px; outline: none; width: 86px;
+    text-align: right; border-radius: 4px;
+    border: 1px solid transparent;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .money-input:focus { border-color: #000; background: #fff; }
+  .money-input::placeholder { color: #ccc; font-weight: 400; }
+
+  .rate-input {
+    border: none; background: #f4f4f4;
+    font-family: inherit; font-size: 14px;
+    color: #000; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    padding: 4px 8px; outline: none; width: 60px;
+    text-align: right; border-radius: 4px;
+    border: 1px solid transparent;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .rate-input:focus { border-color: #000; background: #fff; }
+  .rate-input::placeholder { color: #ccc; font-weight: 400; }
+
+  .budget-totals {
+    margin-top: 24px; padding-top: 16px;
+    border-top: 1px solid #000;
+  }
+  .budget-totals .row {
+    display: flex; justify-content: space-between;
+    padding: 6px 0; font-size: 15px;
+  }
+  .budget-totals .row .lbl { font-weight: 500; }
+  .budget-totals .row .val { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .budget-totals .row.grand .val { font-size: 17px; }
+  .budget-totals .row.split {
+    border-top: 1px dashed #ccc;
+    margin-top: 6px;
+    padding-top: 10px;
+    color: #555;
+  }
+
+  /* Mobile / drawer */
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh; width: 80%; max-width: 280px;
+      transform: translateX(-100%);
+      transition: transform 0.2s;
+      z-index: 100;
+      box-shadow: 4px 0 24px rgba(0,0,0,0.1);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 99;
+    }
+    .sidebar-overlay.open { display: block; }
+    .menu-btn { display: inline-flex; align-items: center; }
+    .main { padding: 18px 14px 40px; }
+  }
+
+  @media (max-width: 480px) {
+    .t-input, .t-time { width: 44px; font-size: 13px; }
+    .dur-input, .dur-display { width: 44px; font-size: 12px; padding: 4px 3px; }
+    .title-input, .title-display { font-size: 15px; }
+    .t-dash { padding: 0; }
+    ul.tasks li {
+      grid-template-columns: auto auto auto auto auto minmax(0, 1fr) auto;
+      gap: 4px; padding: 11px 0;
+    }
+    .row-menu-btn { width: 28px; height: 28px; font-size: 16px; }
+    .col-headers .c-start, .col-headers .c-end { width: 44px; }
+    .col-headers .c-dur { width: 44px; }
+    .legend { gap: 10px; font-size: 11px; }
+    .pack-headers, ul.pack li {
+      grid-template-columns: 8px 42px 1fr 90px 60px 60px 24px;
+      gap: 6px;
+    }
+    .wt-input { width: 60px; font-size: 13px; padding: 4px 6px; }
+    .qty-input { width: 42px; font-size: 13px; padding: 4px 4px; }
+    .pack-input { font-size: 14px; }
+    .budget-headers, ul.budget li {
+      grid-template-columns: 8px 18px 42px 1fr 1fr 70px 50px 70px 24px;
+      gap: 6px;
+    }
+    .money-input { width: 70px; font-size: 13px; padding: 4px 6px; }
+    .rate-input { width: 50px; font-size: 13px; padding: 4px 4px; }
+    .tabs button { padding: 10px 12px; font-size: 13px; }
+  }
+
+  /* ---------- Print styles ---------- */
+  @media print {
+    body { background: #fff !important; padding: 0; }
+    .sidebar, .sidebar-overlay, .menu-btn, .tabs, .menu-row, .add-btn, .x-btn, .row-menu-btn, .row-menu, .star-box, .conflict-banner, .legend, .clock, .convert-free, .link-btn, .link-edit-row {
+      display: none !important;
+    }
+    .layout { display: block; }
+    .main { max-width: none; padding: 20px; }
+    header { border-bottom: 1px solid #000; }
+    .tab-content { display: block !important; page-break-after: always; }
+    .tab-content:last-child { page-break-after: auto; }
+    .date-row { margin-bottom: 12px; }
+    .date-row label { color: #000; }
+    .date-row input[type="date"] { border: none !important; padding: 0; }
+    .date-row input[type="text"]#dayLabel { border: none !important; padding: 0; font-weight: 700; }
+    /* Show plan name prominently */
+    h1 { font-size: 22px; }
+    h1 .plan-name { color: #000; font-weight: 600; }
+    /* Make inputs look like printed text */
+    input, button {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .dur-input, .dur-display, .wt-input, .person-bar, .pt-bar {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    ul.tasks li, ul.pack li { break-inside: avoid; padding: 8px 0; }
+    .totals, .pack-totals { break-inside: avoid; }
+    /* Ensure colors print */
+    ul.tasks li.primary .t-input,
+    ul.tasks li.primary .title-input,
+    ul.tasks li.primary .dur-input { color: #c41e1e !important; }
+    ul.tasks li.travel .t-input,
+    ul.tasks li.travel .title-input,
+    ul.tasks li.travel .dur-input { color: #1a5fb4 !important; }
+    ul.tasks li.wiggle .t-input,
+    ul.tasks li.wiggle .title-input,
+    ul.tasks li.wiggle .dur-input { color: #7e3ec1 !important; }
+    ul.tasks li.free { color: #1f7a3a !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="layout">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-head">
+      <h2>Plans</h2>
+      <button class="sb-new" id="btnNewPlan">+ New</button>
+    </div>
+    <ul class="plans" id="planList"></ul>
+  </aside>
+
+  <main class="main">
+
+    <header>
+      <div class="head-left">
+        <button class="menu-btn" id="btnMenu" aria-label="Plans">☰</button>
+        <h1>Day Planner <span class="plan-name" id="planName">—</span></h1>
+      </div>
+      <div class="head-right">
+        <button class="sync-btn" id="btnSync" aria-label="Cloud sync" title="Cloud sync">
+          <span class="sync-icon" id="syncIcon">☁</span>
+        </button>
+        <span class="clock" id="liveClock">--:--</span>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="day">Day</button>
+      <button class="tab-btn" data-tab="pack">Packing</button>
+      <button class="tab-btn" data-tab="budget">Budget</button>
+    </div>
+
+    <!-- ============ DAY TAB ============ -->
+    <div class="tab-content active" id="tab-day">
+
+      <div class="day-tabs" id="dayTabs"></div>
+
+      <div class="legend">
+        <span class="item"><span class="swatch primary"></span><span class="label primary">Primary</span></span>
+        <span class="item"><span class="swatch travel"></span><span class="label travel">Travel</span></span>
+        <span class="item"><span class="swatch wiggle"></span><span class="label wiggle">Wiggle</span></span>
+        <span class="item"><span class="swatch free"></span><span class="label free">Free</span></span>
+      </div>
+
+      <div class="date-row">
+        <label for="planDate">Date</label>
+        <input type="date" id="planDate">
+        <label for="dayLabel" class="day-label-lbl">Label</label>
+        <input type="text" id="dayLabel" placeholder="e.g. Travel day" maxlength="40">
+      </div>
+
+      <div class="conflict-banner" id="conflictBanner">
+        <span class="ic">⚠</span>
+        <span id="conflictText">There are scheduling conflicts.</span>
+      </div>
+
+      <div class="day-banner" id="dayBannerTop" style="display:none;">
+        <span>Day starts</span>
+        <span class="val" id="dayStartTop">—</span>
+      </div>
+
+      <div class="col-headers" id="colHeaders" style="display:none;">
+        <span class="c-handle"></span>
+        <span class="c-star">★</span>
+        <span class="c-start">Start</span>
+        <span class="c-dash"></span>
+        <span class="c-end">End</span>
+        <span class="c-dur">Duration</span>
+        <span class="c-title">Task</span>
+        <span class="c-link"></span>
+        <span class="c-x"></span>
+      </div>
+
+      <ul class="tasks" id="taskList"></ul>
+      <div class="empty" id="emptyMsg" style="display:none;">No tasks yet</div>
+
+      <div class="add-row">
+        <button class="add-btn add-btn-main" id="btnAdd">+ Add task</button>
+        <button class="add-btn-side" id="btnAddStart" title="Add at start of day">↑ At start</button>
+        <button class="add-btn-side" id="btnAddEnd" title="Add at end of day">↓ At end</button>
+      </div>
+
+      <div class="totals" id="totals" style="display:none;">
+        <div class="row"><span class="lbl">Day starts</span><span class="val" id="dayStart">—</span></div>
+        <div class="row"><span class="lbl">Day ends</span><span class="val" id="dayEnd">—</span></div>
+        <div class="row"><span class="lbl">Total scheduled</span><span class="val" id="totalScheduled">—</span></div>
+        <div class="row primary"><span class="lbl">Primary tasks</span><span class="val" id="totalPrimary">—</span></div>
+        <div class="row travel"><span class="lbl">Travel</span><span class="val" id="totalTravel">—</span></div>
+        <div class="row wiggle"><span class="lbl">Wiggle</span><span class="val" id="totalWiggle">—</span></div>
+        <div class="row free"><span class="lbl">Free time</span><span class="val" id="totalFree">—</span></div>
+      </div>
+
+      <div class="menu-row">
+        <button id="btnCompact">Compact</button>
+        <button id="btnPrint">PDF</button>
+        <button id="btnEmail">Email</button>
+        <button id="btnExportCsv">CSV</button>
+        <button id="btnExport">Text</button>
+        <button id="btnClear">Clear all</button>
+      </div>
+
+    </div>
+
+    <!-- ============ PACKING TAB ============ -->
+    <div class="tab-content" id="tab-pack">
+
+      <div class="pack-headers" id="packHeaders" style="display:none;">
+        <span></span>
+        <span class="c-qty">Qty</span>
+        <span class="c-item">Item</span>
+        <span class="c-person">Person</span>
+        <span class="c-kg">kg</span>
+        <span class="c-lb">lb</span>
+        <span></span>
+      </div>
+
+      <ul class="pack" id="packList"></ul>
+      <div class="empty" id="packEmpty" style="display:none;">No items yet</div>
+
+      <button class="add-btn" id="btnAddItem">+ Add item</button>
+
+      <div class="pack-totals" id="packTotals" style="display:none;">
+        <div class="row grand">
+          <span class="lbl">Total weight</span>
+          <span class="val" id="packTotal">—</span>
+        </div>
+        <div class="person-totals" id="personTotals"></div>
+      </div>
+
+      <div class="menu-row">
+        <button id="btnPrintPack">PDF</button>
+        <button id="btnEmailPack">Email</button>
+        <button id="btnExportCsvPack">CSV</button>
+        <button id="btnExportPack">Text</button>
+        <button id="btnClearPack">Clear all</button>
+      </div>
+
+    </div>
+
+    <!-- ============ BUDGET TAB ============ -->
+    <div class="tab-content" id="tab-budget">
+
+      <div class="budget-headers" id="budgetHeaders" style="display:none;">
+        <span></span>
+        <span></span>
+        <span class="c-qty">Qty</span>
+        <span class="c-item">Item</span>
+        <span class="c-person">Person</span>
+        <span class="c-cost">Ex tax</span>
+        <span class="c-rate">Tax %</span>
+        <span class="c-incl">Inc tax</span>
+        <span></span>
+      </div>
+
+      <ul class="budget" id="budgetList"></ul>
+      <div class="empty" id="budgetEmpty" style="display:none;">No expenses yet</div>
+
+      <button class="add-btn" id="btnAddBudget">+ Add expense</button>
+
+      <div class="budget-totals" id="budgetTotals" style="display:none;">
+        <div class="row grand">
+          <span class="lbl">Total ex tax</span>
+          <span class="val" id="budgetTotalEx">—</span>
+        </div>
+        <div class="row grand">
+          <span class="lbl">Total inc tax</span>
+          <span class="val" id="budgetTotalInc">—</span>
+        </div>
+        <div class="row">
+          <span class="lbl">Tax amount</span>
+          <span class="val" id="budgetTaxAmt">—</span>
+        </div>
+        <div class="row split">
+          <span class="lbl">Split equally <span id="budgetPplCount"></span></span>
+          <span class="val" id="budgetSplit">—</span>
+        </div>
+        <div class="person-totals" id="budgetPersonTotals"></div>
+      </div>
+
+      <div class="menu-row">
+        <button id="btnPrintBudget">PDF</button>
+        <button id="btnEmailBudget">Email</button>
+        <button id="btnExportCsvBudget">CSV</button>
+        <button id="btnExportBudget">Text</button>
+        <button id="btnClearBudget">Clear all</button>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<div class="modal-backdrop" id="confirmBackdrop" style="display:none;">
+  <div class="modal-panel" role="dialog" aria-modal="true">
+    <div class="modal-msg" id="confirmMsg">Delete ?</div>
+    <div class="modal-actions">
+      <button type="button" class="modal-btn modal-cancel" id="confirmCancel">Cancel</button>
+      <button type="button" class="modal-btn modal-ok" id="confirmOk">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="syncBackdrop" style="display:none;">
+  <div class="modal-panel" role="dialog" aria-modal="true">
+    <div class="modal-msg" id="syncTitle">Cloud sync</div>
+    <div class="sync-content" id="syncContent"></div>
+    <div class="modal-actions">
+      <button type="button" class="modal-btn modal-cancel" id="syncClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyD7i0RYN3GXhVnzvl-p22IW2td0GfA9cSM",
+    authDomain: "flight-tools-20482.firebaseapp.com",
+    projectId: "flight-tools-20482",
+    storageBucket: "flight-tools-20482.firebasestorage.app",
+    messagingSenderId: "1006989116001",
+    appId: "1:1006989116001:web:8e1f762cf4f365c0b86020"
+  };
+  firebase.initializeApp(firebaseConfig);
+  window.__auth = firebase.auth();
+  window.__db = firebase.firestore();
+  window.__sessionId = Math.random().toString(36).slice(2, 10);
+</script>
+
+<script>
+const STORAGE_KEY = 'dayplanner.simple.v11';
+
+/* ---------- Multi-plan storage shape ---------- */
+let plans = {};            // { id: { id, name, tasks, packItems, updatedAt } }
+let activePlanId = null;
+let activeTab = 'day';
+
+function uid() { return Math.random().toString(36).slice(2, 9); }
+function pad2(n) { return String(n).padStart(2, '0'); }
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+/* Show a custom confirmation dialog with the given message. Returns a
+ * promise that resolves true if OK, false if cancelled. Used instead of
+ * the native confirm() so we control the message text exactly. */
+function confirmDialog(message, okLabel = 'Delete', cancelLabel = 'Cancel') {
+  return new Promise(resolve => {
+    const backdrop = document.getElementById('confirmBackdrop');
+    const msg = document.getElementById('confirmMsg');
+    const ok = document.getElementById('confirmOk');
+    const cancel = document.getElementById('confirmCancel');
+    msg.textContent = message;
+    ok.textContent = okLabel;
+    cancel.textContent = cancelLabel;
+    backdrop.style.display = 'flex';
+    const cleanup = (result) => {
+      backdrop.style.display = 'none';
+      ok.removeEventListener('click', okHandler);
+      cancel.removeEventListener('click', cancelHandler);
+      backdrop.removeEventListener('click', bgHandler);
+      document.removeEventListener('keydown', keyHandler);
+      resolve(result);
+    };
+    const okHandler = () => cleanup(true);
+    const cancelHandler = () => cleanup(false);
+    const bgHandler = (e) => { if (e.target === backdrop) cleanup(false); };
+    const keyHandler = (e) => {
+      if (e.key === 'Escape') cleanup(false);
+      if (e.key === 'Enter') cleanup(true);
+    };
+    ok.addEventListener('click', okHandler);
+    cancel.addEventListener('click', cancelHandler);
+    backdrop.addEventListener('click', bgHandler);
+    document.addEventListener('keydown', keyHandler);
+  });
+}
+function timeToMin(t) {
+  if (!t || !/^\d{1,2}:\d{2}$/.test(t)) return null;
+  const [h, m] = t.split(':').map(Number);
+  if (h > 23 || m > 59) return null;
+  return h * 60 + m;
+}
+function minToClock(min) {
+  if (min == null || isNaN(min)) return '--:--';
+  let m = ((min % 1440) + 1440) % 1440;
+  return `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`;
+}
+function minToHumanDur(min) {
+  if (min == null || isNaN(min)) return '0m';
+  if (min === 0) return '0m';
+  const h = Math.floor(min / 60), m = min % 60;
+  if (h && m) return `${h}h ${m}m`;
+  if (h) return `${h}h`;
+  return `${m}m`;
+}
+function parseDuration(s) {
+  if (s == null) return null;
+  s = String(s).trim().toLowerCase();
+  if (!s) return null;
+  if (/^\d+$/.test(s)) return parseInt(s, 10);
+  if (/^\d+:\d{1,2}$/.test(s)) {
+    const [h, m] = s.split(':').map(Number);
+    return h * 60 + m;
+  }
+  let total = 0; let matched = false;
+  const hMatch = s.match(/(\d+(?:\.\d+)?)\s*h/);
+  if (hMatch) { total += Math.round(parseFloat(hMatch[1]) * 60); matched = true; }
+  const mMatch = s.match(/(\d+)\s*m(?!s)/);
+  if (mMatch) { total += parseInt(mMatch[1], 10); matched = true; }
+  return matched ? total : null;
+}
+function nowMin() { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function isTravel(title) { return /\btravel\b/i.test(title || ''); }
+function isWiggle(title) { return /\bwiggle\b/i.test(title || ''); }
+
+/* ---------- Person colors ---------- */
+const PERSON_PALETTE = [
+  '#1a5fb4', // blue
+  '#7e3ec1', // purple
+  '#1f7a3a', // green
+  '#c2691f', // orange
+  '#b8328d', // pink
+  '#3a8a8a', // teal
+  '#8a6d1f', // mustard
+  '#5a4a8a', // indigo
+];
+function personColor(name) {
+  const n = (name || '').trim().toLowerCase();
+  if (!n) return '#aaaaaa';
+  let h = 0;
+  for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0;
+  return PERSON_PALETTE[h % PERSON_PALETTE.length];
+}
+
+/* ---------- Weight conversion ---------- */
+const KG_PER_LB = 0.45359237;
+const LB_PER_KG = 1 / KG_PER_LB;
+function kgToLb(kg) { return kg * LB_PER_KG; }
+function lbToKg(lb) { return lb * KG_PER_LB; }
+function fmtWeight(n) {
+  if (n == null || isNaN(n) || n === 0) return '';
+  return (Math.round(n * 100) / 100).toFixed(2).replace(/\.?0+$/, '');
+}
+
+/* ---------- Persistence ---------- */
+function persistAll() {
+  // Update activeTime stamp on the active plan
+  if (activePlanId && plans[activePlanId]) {
+    plans[activePlanId].updatedAt = Date.now();
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ plans, activePlanId }));
+}
+function loadAll() {
+  let raw = {};
+  try { raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { raw = {}; }
+
+  // Migration: very old format = array of tasks
+  if (Array.isArray(raw)) raw = { tasks: raw };
+
+  // Migration: old "flat" plan format with top-level tasks/packItems/budgetItems
+  if (raw.tasks || raw.packItems || raw.budgetItems) {
+    const id = uid();
+    plans = {
+      [id]: makePlanFromLegacy(id, 'My Day', raw)
+    };
+    activePlanId = id;
+  } else {
+    plans = raw.plans || {};
+    Object.values(plans).forEach(p => normalizePlanInPlace(p));
+    activePlanId = raw.activePlanId && plans[raw.activePlanId] ? raw.activePlanId : null;
+  }
+
+  if (!activePlanId || !plans[activePlanId]) {
+    if (Object.keys(plans).length === 0) {
+      const id = uid();
+      plans[id] = emptyPlan(id, 'My Plan');
+      activePlanId = id;
+    } else {
+      activePlanId = Object.keys(plans)[0];
+    }
+  }
+}
+
+function emptyPlan(id, name) {
+  const dayId = uid();
+  return {
+    id, name,
+    days: [{ id: dayId, date: '', label: '', tasks: [] }],
+    activeDayId: dayId,
+    packItems: [],
+    budgetItems: [],
+    updatedAt: Date.now()
+  };
+}
+
+function makePlanFromLegacy(id, name, legacy) {
+  const dayId = uid();
+  return {
+    id, name,
+    days: [{
+      id: dayId,
+      date: legacy.date || '',
+      label: '',
+      tasks: normalizeTasks(legacy.tasks || [])
+    }],
+    activeDayId: dayId,
+    packItems: normalizePack(legacy.packItems || []),
+    budgetItems: normalizeBudget(legacy.budgetItems || []),
+    updatedAt: Date.now()
+  };
+}
+
+function normalizePlanInPlace(p) {
+  // Migrate per-plan single-day shape into multi-day shape
+  if (!p.days) {
+    const dayId = uid();
+    p.days = [{
+      id: dayId,
+      date: p.date || '',
+      label: '',
+      tasks: normalizeTasks(p.tasks || [])
+    }];
+    p.activeDayId = dayId;
+    delete p.date;
+    delete p.tasks;
+  } else {
+    p.days = p.days.map(d => ({
+      id: d.id || uid(),
+      date: d.date || '',
+      label: d.label || '',
+      tasks: normalizeTasks(d.tasks || [])
+    }));
+    if (!p.activeDayId || !p.days.find(d => d.id === p.activeDayId)) {
+      p.activeDayId = p.days[0] ? p.days[0].id : null;
+    }
+    if (p.days.length === 0) {
+      const dayId = uid();
+      p.days.push({ id: dayId, date: '', label: '', tasks: [] });
+      p.activeDayId = dayId;
+    }
+  }
+  p.packItems = normalizePack(p.packItems || []);
+  p.budgetItems = normalizeBudget(p.budgetItems || []);
+}
+
+function normalizeTasks(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(t => ({
+    id: t.id || uid(),
+    title: t.title || '',
+    link: t.link || '',
+    start: typeof t.start === 'number' ? clamp(t.start, 0, 1439) : 540,
+    duration: typeof t.duration === 'number' ? Math.max(0, t.duration) : 30,
+    primary: !!t.primary
+  }));
+}
+function normalizePack(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(i => ({
+    id: i.id || uid(),
+    item: i.item || '',
+    person: i.person || '',
+    qty: typeof i.qty === 'number' && i.qty > 0 ? i.qty : 1,
+    kg: typeof i.kg === 'number' ? i.kg : 0
+  }));
+}
+function normalizeBudget(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(i => ({
+    id: i.id || uid(),
+    item: i.item || '',
+    person: i.person || '',
+    qty: typeof i.qty === 'number' && i.qty > 0 ? i.qty : 1,
+    cost: typeof i.cost === 'number' ? i.cost : 0,
+    taxRate: typeof i.taxRate === 'number' ? i.taxRate : 0,
+    excluded: !!i.excluded
+  }));
+}
+
+/* ---------- Active plan helpers ---------- */
+function activePlan() { return plans[activePlanId]; }
+function activeDay() {
+  const p = activePlan();
+  if (!p || !p.days) return null;
+  return p.days.find(d => d.id === p.activeDayId) || p.days[0] || null;
+}
+function tasks() { const d = activeDay(); return d ? d.tasks : []; }
+function packItems() { return activePlan().packItems; }
+function budgetItems() { return activePlan().budgetItems; }
+
+/* ============ DAY TAB ============ */
+
+function sortedTasks() {
+  return [...tasks()].sort((a, b) => a.start - b.start || a.duration - b.duration);
+}
+
+/* Shift every non-primary task EXCEPT `exceptId` by `delta` minutes.
+ * Used when a primary's start/end is edited: everything else slides with
+ * it so relative spacing is preserved. Other primaries stay anchored. */
+function shiftOthersBy(exceptId, delta) {
+  if (!delta) return;
+  for (const t of tasks()) {
+    if (t.id === exceptId || t.primary) continue;
+    let s = t.start + delta;
+    if (s < 0) s = 0;
+    if (s + t.duration > 1440) s = Math.max(0, 1440 - t.duration);
+    t.start = s;
+  }
+}
+
+/* Two tasks overlap if their ranges intersect (touching is OK). For
+ * 0-duration tasks: only count as overlap if STRICTLY contained inside
+ * a positive-duration range. */
+function tasksOverlap(a, b) {
+  if (a.duration === 0 && b.duration === 0) return false; // both markers, touching OK
+  if (a.duration === 0) return a.start > b.start && a.start < b.start + b.duration;
+  if (b.duration === 0) return b.start > a.start && b.start < a.start + a.duration;
+  return a.start < b.start + b.duration && b.start < a.start + a.duration;
+}
+
+/* The resolver's ONLY job is to mark `hasConflict` on any task that
+ * overlaps another. It NEVER moves tasks — repositioning only happens
+ * in direct response to user actions (in the input handlers).
+ *
+ * Conflict rules:
+ *  - Two positive-duration tasks overlap → both conflict.
+ *  - A positive-duration task strictly containing a 0-duration primary's
+ *    instant → both conflict.
+ *  - Any task extending past midnight → conflict.
+ *  - Two primaries overlapping → both conflict (primaries are anchors). */
+function resolveOverlaps() {
+  const ts = tasks();
+  ts.forEach(t => t.hasConflict = false);
+
+  for (let i = 0; i < ts.length; i++) {
+    for (let j = i + 1; j < ts.length; j++) {
+      if (tasksOverlap(ts[i], ts[j])) {
+        ts[i].hasConflict = true;
+        ts[j].hasConflict = true;
+      }
+    }
+  }
+  ts.forEach(t => { if (t.duration > 0 && t.start + t.duration > 1440) t.hasConflict = true; });
+}
+
+/* Helper: compute the order-preserving bounds for `task`. The task's
+ * start must be >= bounds.min and start+duration must be <= bounds.max.
+ * Bounds are derived from the task's immediate neighbours in the current
+ * visual order (sorted by start). */
+function orderBounds(task) {
+  const ts = tasks();
+  const ordered = [...ts]
+    .filter(t => t.duration > 0 || t.primary)
+    .sort((a, b) => a.start - b.start);
+  const idx = ordered.findIndex(t => t.id === task.id);
+  const prev = idx > 0 ? ordered[idx - 1] : null;
+  const next = idx >= 0 && idx < ordered.length - 1 ? ordered[idx + 1] : null;
+  return {
+    min: prev ? prev.start + prev.duration : 0,
+    max: next ? next.start + next.duration : 1440
+  };
+}
+
+/* Find the nearest free slot for `task` that doesn't overlap any other
+ * task. If `bounds` is provided, the slot must fit within bounds.
+ * Returns null if no fitting slot exists. */
+function findNearestFreeSlot(task, bounds) {
+  const dur = task.duration;
+  if (dur === 0) return task.start;
+  if (dur > 1440) return null;
+  const allTasks = tasks();
+
+  // Build occupied intervals from positive-duration tasks (excluding self)
+  const occupied = allTasks
+    .filter(o => o.id !== task.id && o.duration > 0)
+    .map(o => ({ start: Math.max(0, o.start), end: Math.min(1440, o.start + o.duration) }))
+    .filter(o => o.end > o.start)
+    .sort((a, b) => a.start - b.start);
+
+  const merged = [];
+  for (const o of occupied) {
+    if (merged.length && o.start <= merged[merged.length - 1].end) {
+      merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, o.end);
+    } else { merged.push({ ...o }); }
+  }
+
+  const rawGaps = [];
+  let cursor = 0;
+  for (const m of merged) {
+    if (m.start > cursor) rawGaps.push({ start: cursor, end: m.start });
+    cursor = Math.max(cursor, m.end);
+  }
+  if (cursor < 1440) rawGaps.push({ start: cursor, end: 1440 });
+
+  // 0-duration primaries split gaps — they act as point anchors
+  const anchors = allTasks
+    .filter(o => o.id !== task.id && o.primary && o.duration === 0)
+    .map(o => o.start)
+    .sort((a, b) => a - b);
+
+  const gaps = [];
+  for (const g of rawGaps) {
+    const inside = anchors.filter(a => a > g.start && a < g.end);
+    if (inside.length === 0) { gaps.push(g); continue; }
+    let prev = g.start;
+    for (const a of inside) {
+      gaps.push({ start: prev, end: a });
+      prev = a;
+    }
+    gaps.push({ start: prev, end: g.end });
+  }
+
+  // Apply bounds if provided
+  let candidates = bounds
+    ? gaps.map(g => ({
+        start: Math.max(g.start, bounds.min),
+        end: Math.min(g.end, bounds.max)
+      })).filter(g => g.end - g.start >= dur)
+    : gaps.filter(g => g.end - g.start >= dur);
+  if (candidates.length === 0) return null;
+
+  const desired = task.start;
+  let best = null, bestDist = Infinity;
+  for (const g of candidates) {
+    const candidate = Math.max(g.start, Math.min(g.end - dur, desired));
+    const dist = Math.abs(candidate - desired);
+    if (dist < bestDist) { bestDist = dist; best = candidate; }
+  }
+  return best;
+}
+
+/* Used when a primary's duration grows: pushes the immediately-following
+ * non-primary task later if it now overlaps the primary, but only by the
+ * minimum needed and without crossing any other anchor. */
+function pushLaterTasksFromPrimary(primary) {
+  const ts = tasks();
+  const ordered = [...ts]
+    .filter(t => t.duration > 0 || t.primary)
+    .sort((a, b) => a.start - b.start);
+  const idx = ordered.findIndex(t => t.id === primary.id);
+  if (idx === -1) return;
+  let cursor = primary.start + primary.duration;
+  for (let i = idx + 1; i < ordered.length; i++) {
+    const t = ordered[i];
+    if (t.primary) {
+      // primary stops the cascade — don't move past another primary
+      break;
+    }
+    if (t.start < cursor) {
+      const newEnd = cursor + t.duration;
+      if (newEnd > 1440) break; // can't fit — leave overlap, conflict will be flagged
+      t.start = cursor;
+      cursor = newEnd;
+    } else {
+      // no overlap — done cascading
+      break;
+    }
+  }
+}
+
+function buildDisplayList() {
+  const sorted = sortedTasks();
+  const display = [];
+
+  // Compute occupied intervals from positive-duration tasks for gap detection
+  const intervals = sorted
+    .filter(t => t.duration > 0)
+    .map(t => ({
+      start: Math.max(0, t.start),
+      end: Math.min(1440, t.start + t.duration)
+    }))
+    .filter(i => i.end > i.start)
+    .sort((a, b) => a.start - b.start);
+
+  // Merge overlapping intervals so gaps are computed correctly
+  const merged = [];
+  for (const iv of intervals) {
+    if (merged.length && iv.start <= merged[merged.length - 1].end) {
+      merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, iv.end);
+    } else {
+      merged.push({ ...iv });
+    }
+  }
+
+  // Helper: any task starts/ends at this clock time? (used to skip degenerate gaps)
+  // Walk sorted tasks and emit task rows. After each task, if there's a gap
+  // before the next task (in the merged occupied timeline), emit a Free block.
+  for (let i = 0; i < sorted.length; i++) {
+    const t = sorted[i];
+    display.push({ kind: 'task', task: t });
+
+    if (i + 1 >= sorted.length) continue;
+
+    const myEnd = t.start + t.duration;
+    const nextStart = sorted[i + 1].start;
+
+    // Only emit a Free block when:
+    //  - There IS a gap (nextStart > myEnd)
+    //  - And nothing else in the merged timeline occupies that gap
+    if (nextStart <= myEnd) continue;
+
+    // Find the merged interval containing myEnd (or the next one after it)
+    const gapStart = myEnd;
+    const gapEnd = nextStart;
+
+    // Check that no merged interval overlaps [gapStart, gapEnd)
+    const overlapping = merged.some(m => m.start < gapEnd && m.end > gapStart);
+    if (overlapping) continue;
+
+    if (gapEnd > gapStart) {
+      display.push({ kind: 'free', start: gapStart, duration: gapEnd - gapStart });
+    }
+  }
+
+  return display;
+}
+
+function renderTasks() {
+  const list = document.getElementById('taskList');
+  const empty = document.getElementById('emptyMsg');
+  const headers = document.getElementById('colHeaders');
+  const dayBannerTop = document.getElementById('dayBannerTop');
+  const ts = tasks();
+  list.innerHTML = '';
+  const display = buildDisplayList();
+
+  empty.style.display = ts.length === 0 ? 'block' : 'none';
+  headers.style.display = ts.length === 0 ? 'none' : 'grid';
+
+  if (ts.length > 0) {
+    const earliest = Math.min(...ts.map(t => t.start));
+    document.getElementById('dayStartTop').textContent = minToClock(earliest);
+    dayBannerTop.style.display = 'flex';
+  } else {
+    dayBannerTop.style.display = 'none';
+  }
+
+  display.forEach(item => {
+    if (item.kind === 'free') {
+      const li = document.createElement('li');
+      li.className = 'free';
+      li.dataset.kind = 'free';
+      const gStart = item.start;
+      const gEnd = item.start + item.duration;
+      li.innerHTML = `
+        <span></span>
+        <span class="star-spacer"></span>
+        <span class="t-time">${minToClock(gStart)}</span>
+        <span class="t-dash">–</span>
+        <span class="t-time">${minToClock(gEnd)}</span>
+        <span class="dur-display">${minToHumanDur(item.duration)}</span>
+        <span class="title-display">Free</span>
+        <button type="button" class="convert-free" aria-label="Convert to task" title="Turn this free time into a task">+ Task</button>
+        <button type="button" class="x-btn free-x" aria-label="Close gap" title="Close gap — pack tasks together">×</button>
+      `;
+      list.appendChild(li);
+      const $closeGap = li.querySelector('.free-x');
+      const $convert = li.querySelector('.convert-free');
+      $closeGap.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        closeGap(gStart, gEnd);
+        resolveOverlaps();
+        persistAll();
+        renderTasks();
+      });
+      $convert.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        // Insert a new task with this start/duration; focus its title.
+        const t = {
+          id: uid(),
+          title: '',
+          link: '',
+          start: gStart,
+          duration: item.duration,
+          primary: false
+        };
+        tasks().push(t);
+        resolveOverlaps();
+        persistAll();
+        renderTasks();
+        setTimeout(() => {
+          const liEl = document.querySelector(`#taskList li[data-id="${t.id}"]`);
+          if (liEl) liEl.querySelector('.title-input').focus();
+        }, 0);
+      });
+      return;
+    }
+
+    const task = item.task;
+    const endMin = task.start + task.duration;
+    const li = document.createElement('li');
+    li.dataset.id = task.id;
+    li.dataset.kind = 'task';
+    if (task.primary) li.classList.add('primary');
+    if (isTravel(task.title)) li.classList.add('travel');
+    if (isWiggle(task.title)) li.classList.add('wiggle');
+    if (task.hasConflict) li.classList.add('conflict');
+    const canMove = !task.primary;
+    li.innerHTML = `
+      <input type="checkbox" class="star-box" ${task.primary ? 'checked' : ''} aria-label="Primary task">
+      <input type="time" class="t-input t-start" value="${minToClock(task.start)}">
+      <span class="t-dash">${task.duration === 0 ? '' : '–'}</span>
+      ${task.duration === 0
+        ? '<span class="t-input t-end-empty" style="width:60px"></span>'
+        : `<input type="time" class="t-input t-end" value="${minToClock(endMin)}">`}
+      <input type="text" class="dur-input" value="${minToHumanDur(task.duration)}">
+      <input type="text" class="title-input" value="${escapeHtml(task.title)}" placeholder="Task">
+      ${task.hasConflict ? '<span class="conflict-flag" title="Scheduling conflict">⚠</span>' : ''}
+      <button type="button" class="row-menu-btn" aria-label="More actions" title="More">⋯</button>
+      <div class="row-menu" role="menu">
+        <button type="button" class="row-menu-item reorder-up" ${canMove ? '' : 'disabled'}>Move up</button>
+        <button type="button" class="row-menu-item reorder-down" ${canMove ? '' : 'disabled'}>Move down</button>
+        ${task.link
+          ? `<a class="row-menu-item link-open" href="${escapeHtml(task.link)}" target="_blank" rel="noopener noreferrer">Open link</a>
+             <button type="button" class="row-menu-item link-btn">Edit link</button>`
+          : '<button type="button" class="row-menu-item link-btn">Add link</button>'}
+        <button type="button" class="row-menu-item danger x-btn">Delete</button>
+      </div>
+      <div class="link-edit-row">
+        <input type="url" class="link-input" placeholder="https://…" value="${escapeHtml(task.link)}">
+        <button type="button" class="link-save">Save</button>
+        <button type="button" class="link-cancel">Cancel</button>
+      </div>
+    `;
+    list.appendChild(li);
+
+    const $star = li.querySelector('.star-box');
+    const $start = li.querySelector('.t-start');
+    const $end = li.querySelector('.t-end'); // may be null when duration is 0
+    const $dur = li.querySelector('.dur-input');
+    const $title = li.querySelector('.title-input');
+    const $del = li.querySelector('.x-btn');
+    const $up = li.querySelector('.reorder-up');
+    const $down = li.querySelector('.reorder-down');
+    const $menuBtn = li.querySelector('.row-menu-btn');
+    const $menu = li.querySelector('.row-menu');
+    const $linkBtn = li.querySelector('.link-btn');
+    const $linkInput = li.querySelector('.link-input');
+    const $linkSave = li.querySelector('.link-save');
+    const $linkCancel = li.querySelector('.link-cancel');
+
+    // Link button in the row menu: opens the inline editor (whether adding
+    // or editing). If a link exists, an <a> "Open link" is separately in the
+    // menu and just navigates.
+    if ($linkBtn) {
+      $linkBtn.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAllRowMenus();
+        li.classList.add('show-link-edit');
+        $linkInput.focus();
+      });
+    }
+    $linkSave.addEventListener('click', () => {
+      let v = ($linkInput.value || '').trim();
+      if (v && !/^[a-z]+:\/\//i.test(v) && !/^mailto:/i.test(v)) {
+        v = 'https://' + v;
+      }
+      task.link = v;
+      li.classList.remove('show-link-edit');
+      persistAll(); renderTasks();
+    });
+    $linkCancel.addEventListener('click', () => {
+      li.classList.remove('show-link-edit');
+    });
+    $linkInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') $linkSave.click();
+      if (e.key === 'Escape') $linkCancel.click();
+    });
+
+    $star.addEventListener('change', e => {
+      task.primary = e.target.checked;
+      resolveOverlaps(); persistAll(); renderTasks();
+    });
+
+    let startPending = false;
+    let startOldStart = null;
+    const applyStartChange = (rawValue) => {
+      const m = timeToMin(rawValue);
+      if (m == null) return;
+      if (startOldStart == null) startOldStart = task.start;
+      if (m === task.start) return; // no change
+      task.start = m;
+      startPending = true;
+      persistAll();
+    };
+    $start.addEventListener('focus', () => { startOldStart = task.start; });
+    $start.addEventListener('change', e => applyStartChange(e.target.value));
+    $start.addEventListener('blur', () => {
+      // Fallback: if change didn't fire, apply current value
+      applyStartChange($start.value);
+      if (!startPending) { startOldStart = null; return; }
+      startPending = false;
+      const oldStart = startOldStart;
+      startOldStart = null;
+      if (task.primary && oldStart != null) {
+        const delta = task.start - oldStart;
+        if (delta !== 0) shiftOthersBy(task.id, delta);
+      }
+      resolveOverlaps(); persistAll(); renderTasks();
+    });
+
+    let endPending = false;
+    let endOldStart = null;
+    if ($end) {
+      const applyEndChange = (rawValue) => {
+        if (task.duration === 0) return;
+        const m = timeToMin(rawValue);
+        if (m == null) return;
+        if (endOldStart == null) endOldStart = task.start;
+        let newStart = m - task.duration;
+        if (newStart < 0) newStart = 0;
+        if (newStart === task.start) return;
+        task.start = newStart;
+        endPending = true;
+        persistAll();
+      };
+      $end.addEventListener('focus', () => { endOldStart = task.start; });
+      $end.addEventListener('change', e => applyEndChange(e.target.value));
+      $end.addEventListener('blur', () => {
+        applyEndChange($end.value);
+        if (!endPending) { endOldStart = null; return; }
+        endPending = false;
+        const oldStart = endOldStart;
+        endOldStart = null;
+        if (task.primary && oldStart != null) {
+          const delta = task.start - oldStart;
+          if (delta !== 0) shiftOthersBy(task.id, delta);
+        }
+        resolveOverlaps(); persistAll(); renderTasks();
+      });
+    }
+
+    const applyDurChange = (rawValue) => {
+      const d = parseDuration(rawValue);
+      if (d == null || d < 0) { $dur.value = minToHumanDur(task.duration); return; }
+      if (d === task.duration) { $dur.value = minToHumanDur(task.duration); return; }
+      const oldDuration = task.duration;
+      task.duration = d;
+
+      if (task.primary) {
+        // Primary: when duration grows, push immediately-following non-primaries
+        // (cascade stops at next primary). Shrinking moves nothing.
+        if (d > oldDuration) pushLaterTasksFromPrimary(task);
+      } else {
+        // Non-primary: if growing causes an overlap, try to find a new slot
+        // for THIS task within its order-preserving bounds. Never reorder.
+        if (d > oldDuration) {
+          const bounds = orderBounds(task);
+          if (bounds.max - bounds.min >= d) {
+            const newStart = findNearestFreeSlot(task, bounds);
+            if (newStart != null) task.start = newStart;
+          }
+        }
+      }
+      resolveOverlaps();
+      persistAll(); renderTasks();
+    };
+    $dur.addEventListener('change', e => applyDurChange(e.target.value));
+    $dur.addEventListener('blur', e => applyDurChange(e.target.value));
+    $dur.addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+    $dur.addEventListener('focus', e => e.target.select());
+
+    $title.addEventListener('input', e => {
+      task.title = e.target.value;
+      li.classList.toggle('travel', isTravel(task.title));
+      li.classList.toggle('wiggle', isWiggle(task.title));
+      persistAll();
+      renderTotals();
+    });
+
+    $del.addEventListener('click', async () => {
+      closeAllRowMenus();
+      const ok = await confirmDialog('Delete ?');
+      if (!ok) return;
+      const idx = ts.findIndex(t => t.id === task.id);
+      if (idx > -1) {
+        ts.splice(idx, 1);
+        resolveOverlaps(); persistAll(); renderTasks();
+      }
+    });
+
+    if (canMove) {
+      $up.addEventListener('click', e => { e.preventDefault(); closeAllRowMenus(); moveTaskInList(task.id, -1); });
+      $down.addEventListener('click', e => { e.preventDefault(); closeAllRowMenus(); moveTaskInList(task.id, 1); });
+    }
+
+    $menuBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const wasOpen = li.classList.contains('menu-open');
+      closeAllRowMenus();
+      if (!wasOpen) {
+        li.classList.add('menu-open');
+        positionRowMenu($menuBtn, $menu);
+      }
+    });
+    // Prevent menu clicks bubbling to document (which would close it)
+    $menu.addEventListener('click', e => e.stopPropagation());
+  });
+
+  renderTotals();
+  renderConflictBanner();
+}
+
+/* Position a row menu near the tapped button, flipping above/below and
+ * clamping to viewport edges. Uses position:fixed so parent overflow
+ * doesn't clip it. */
+function positionRowMenu(btn, menu) {
+  // Force display for measurement (inline style beats CSS)
+  menu.style.display = 'flex';
+  menu.style.visibility = 'hidden';
+  menu.style.top = '0px';
+  menu.style.left = '0px';
+  // Force layout
+  const menuW = menu.offsetWidth || 200;
+  const menuH = menu.offsetHeight || 200;
+  const btnRect = btn.getBoundingClientRect();
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const margin = 8;
+
+  let top = btnRect.bottom + 4;
+  if (top + menuH + margin > vh) {
+    top = Math.max(margin, btnRect.top - menuH - 4);
+  }
+  let left = btnRect.right - menuW;
+  if (left < margin) left = margin;
+  if (left + menuW > vw - margin) left = vw - menuW - margin;
+
+  menu.style.top = top + 'px';
+  menu.style.left = left + 'px';
+  menu.style.visibility = 'visible';
+}
+
+/* Close any open row menus (called on outside click or before opening another). */
+function closeAllRowMenus() {
+  document.querySelectorAll('#taskList li.menu-open').forEach(li => {
+    li.classList.remove('menu-open');
+    const menu = li.querySelector('.row-menu');
+    if (menu) {
+      menu.style.display = '';
+      menu.style.visibility = '';
+      menu.style.top = '';
+      menu.style.left = '';
+    }
+  });
+}
+
+/* Global: click outside a row menu closes it. Escape also closes. */
+document.addEventListener('click', () => closeAllRowMenus());
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAllRowMenus(); });
+window.addEventListener('scroll', () => closeAllRowMenus(), true);
+window.addEventListener('resize', () => closeAllRowMenus());
+
+/* Move a non-primary task earlier (dir=-1) or later (dir=+1) by one position
+ * in the sorted list. Behaviour by neighbour type:
+ *   - Non-primary neighbour touching this task (no gap) → swap start times.
+ *   - Primary neighbour touching this task → leapfrog past it (primary stays).
+ *   - Gap adjacent to this task (no neighbour touching) → jump the task
+ *     across the gap to abut the next task on that side (or the day edge).
+ * Durations are always preserved. */
+function moveTaskInList(taskId, dir) {
+  const ts = tasks();
+  const sorted = [...ts].sort((a, b) => a.start - b.start || a.duration - b.duration);
+  const idx = sorted.findIndex(t => t.id === taskId);
+  if (idx === -1) return;
+  const task = sorted[idx];
+  if (task.primary) return;
+
+  const taskEnd = task.start + task.duration;
+  const neighbour = dir < 0 ? sorted[idx - 1] : sorted[idx + 1];
+
+  // Detect an adjacent gap: if the neighbour (in this direction) doesn't
+  // touch this task, or there's no neighbour but there's room on that side.
+  const hasGapAfter  = dir > 0 && (!neighbour || neighbour.start > taskEnd);
+  const hasGapBefore = dir < 0 && (!neighbour || neighbour.start + neighbour.duration < task.start);
+
+  if (hasGapAfter) {
+    // Jump task later to abut the next task (or end of day if none).
+    let newStart = neighbour ? neighbour.start - task.duration : 1440 - task.duration;
+    if (newStart < taskEnd) newStart = taskEnd; // safety: never go backwards
+    if (newStart + task.duration > 1440) newStart = Math.max(0, 1440 - task.duration);
+    task.start = newStart;
+  } else if (hasGapBefore) {
+    // Jump task earlier to abut the previous task (or 0 if none).
+    let newStart = neighbour ? neighbour.start + neighbour.duration : 0;
+    if (newStart > task.start) newStart = task.start; // safety: never go forwards
+    task.start = newStart;
+  } else if (!neighbour) {
+    return; // shouldn't happen given the gap checks above, but safety
+  } else if (!neighbour.primary) {
+    // Non-primary neighbour touching → swap start times.
+    const tmp = task.start;
+    task.start = neighbour.start;
+    neighbour.start = tmp;
+  } else {
+    // Primary neighbour touching → leapfrog past it.
+    if (dir < 0) {
+      let newStart = neighbour.start - task.duration;
+      if (newStart < 0) newStart = 0;
+      task.start = newStart;
+    } else {
+      let newStart = neighbour.start + neighbour.duration;
+      if (newStart + task.duration > 1440) newStart = Math.max(0, 1440 - task.duration);
+      task.start = newStart;
+    }
+  }
+
+  cascadeFromDrop(task);
+  resolveOverlaps();
+  persistAll();
+  renderTasks();
+}
+
+
+/* When a non-primary is moved (via the reorder buttons), OTHER non-primary
+ * tasks that overlap may need to slide out of the way. Their durations stay
+ * locked; only start times shift. Primaries are anchors that can't move
+ * and block the cascade. This is the ONLY place automatic non-primary
+ * repositioning happens. */
+function cascadeFromDrop(dropped) {
+  if (dropped.primary) return;
+  // Determine whether to push others FORWARD (later) or BACKWARD (earlier)
+  // based on which side has more overlap. By default we try forward first;
+  // if forward is blocked by a primary, we cascade backward instead.
+  for (let iter = 0; iter < 20; iter++) {
+    const ts = tasks();
+    // Find any non-primary that overlaps `dropped` (or has been pushed and
+    // now overlaps something else)
+    let didSomething = false;
+    // Snapshot of all positive-duration tasks sorted by start
+    const sorted = [...ts]
+      .filter(t => t.duration > 0)
+      .sort((a, b) => a.start - b.start);
+    // Walk forward: if any task overlaps the previous, push it later
+    let cursor = -Infinity;
+    let lastEnd = -Infinity;
+    for (let i = 0; i < sorted.length; i++) {
+      const t = sorted[i];
+      const tEnd = t.start + t.duration;
+      // Find what `t` overlaps with: look at all previous tasks
+      let overlapAmount = 0;
+      let blockingPrimary = false;
+      for (let j = 0; j < i; j++) {
+        const prev = sorted[j];
+        const prevEnd = prev.start + prev.duration;
+        if (prevEnd > t.start) {
+          // Overlap; how much would we need to push t to clear prev?
+          const needed = prevEnd - t.start;
+          if (needed > overlapAmount) overlapAmount = needed;
+          if (prev.primary) blockingPrimary = true;
+        }
+      }
+      if (overlapAmount > 0 && !t.primary && t.id !== dropped.id) {
+        // Push t later by overlapAmount, but cap at 1440 - duration
+        const newStart = Math.min(t.start + overlapAmount, 1440 - t.duration);
+        if (newStart !== t.start) {
+          t.start = newStart;
+          didSomething = true;
+        }
+      }
+    }
+    if (!didSomething) break;
+  }
+  // Now walk backward: any non-primary that overlaps a FOLLOWING primary
+  // (which can't move) should be pulled earlier.
+  for (let iter = 0; iter < 20; iter++) {
+    const ts = tasks();
+    let didSomething = false;
+    const sorted = [...ts]
+      .filter(t => t.duration > 0)
+      .sort((a, b) => a.start - b.start);
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      const t = sorted[i];
+      if (t.primary || t.id === dropped.id) continue;
+      const tEnd = t.start + t.duration;
+      // Does t overlap with any later task?
+      for (let j = i + 1; j < sorted.length; j++) {
+        const nxt = sorted[j];
+        if (nxt.start < tEnd) {
+          // Overlap; pull t earlier
+          const needed = tEnd - nxt.start;
+          const newStart = Math.max(0, t.start - needed);
+          if (newStart !== t.start) {
+            t.start = newStart;
+            didSomething = true;
+          }
+          break; // recheck on next iteration
+        } else {
+          break; // sorted, so no further later tasks overlap
+        }
+      }
+    }
+    if (!didSomething) break;
+  }
+  // Final fallback: any non-primary still overlapping something (other than
+  // the dropped task) tries to relocate to the NEAREST free slot in the day.
+  // This lets tasks jump into distant free time when linear pushing can't
+  // resolve the conflict.
+  for (let iter = 0; iter < 20; iter++) {
+    const ts = tasks();
+    let didSomething = false;
+    for (const t of ts) {
+      if (t.primary || t.id === dropped.id || t.duration === 0) continue;
+      // Does t currently overlap anything?
+      const overlaps = ts.some(o =>
+        o.id !== t.id && o.duration > 0 &&
+        o.start < t.start + t.duration && o.start + o.duration > t.start
+      );
+      if (!overlaps) continue;
+      const newStart = findNearestFreeSlot(t);
+      if (newStart != null && newStart !== t.start) {
+        t.start = newStart;
+        didSomething = true;
+      }
+    }
+    if (!didSomething) break;
+  }
+}
+
+function renderConflictBanner() {
+  const banner = document.getElementById('conflictBanner');
+  const conflicts = tasks().filter(t => t.hasConflict);
+  if (conflicts.length === 0) { banner.classList.remove('show'); return; }
+  banner.classList.add('show');
+  const names = conflicts
+    .map(t => t.title || '(untitled)')
+    .slice(0, 3)
+    .join(', ');
+  const more = conflicts.length > 3 ? ` and ${conflicts.length - 3} more` : '';
+  const msg = conflicts.length === 1
+    ? `${names} can't fit — no free space.`
+    : `${conflicts.length} tasks can't fit: ${names}${more}.`;
+  document.getElementById('conflictText').textContent = msg;
+}
+
+function renderTotals() {
+  const totalsEl = document.getElementById('totals');
+  const ts = tasks();
+  if (ts.length === 0) { totalsEl.style.display = 'none'; return; }
+  totalsEl.style.display = 'block';
+
+  const starts = ts.map(t => t.start);
+  const ends = ts.map(t => t.start + t.duration);
+  const minStart = Math.min(...starts);
+  document.getElementById('dayStart').textContent = minToClock(minStart);
+  document.getElementById('dayEnd').textContent = minToClock(Math.max(...ends));
+  document.getElementById('dayStartTop').textContent = minToClock(minStart);
+
+  const totalScheduled = ts.reduce((s, t) => s + t.duration, 0);
+  document.getElementById('totalScheduled').textContent = minToHumanDur(totalScheduled);
+
+  function categoryRow(matchFn, valId) {
+    const matched = ts.filter(matchFn);
+    const tot = matched.reduce((s, t) => s + t.duration, 0);
+    const row = document.getElementById(valId).parentElement;
+    if (matched.length) {
+      row.style.display = 'flex';
+      document.getElementById(valId).textContent = `${matched.length} · ${minToHumanDur(tot)}`;
+    } else { row.style.display = 'none'; }
+  }
+  categoryRow(t => t.primary, 'totalPrimary');
+  categoryRow(t => isTravel(t.title), 'totalTravel');
+  categoryRow(t => isWiggle(t.title), 'totalWiggle');
+
+  const totalFree = buildDisplayList().filter(d => d.kind === 'free').reduce((s, d) => s + d.duration, 0);
+  document.getElementById('totalFree').textContent = minToHumanDur(totalFree);
+}
+
+document.getElementById('btnAdd').addEventListener('click', () => {
+  let start;
+  const sorted = sortedTasks();
+  if (sorted.length) {
+    start = sorted[sorted.length - 1].start + sorted[sorted.length - 1].duration;
+    if (start > 1440 - 30) start = Math.max(0, 1440 - 30);
+  } else {
+    const m = nowMin();
+    start = Math.ceil(m / 15) * 15;
+    if (start > 1440 - 30) start = Math.max(0, 1440 - 30);
+  }
+  const t = { id: uid(), title: '', link: '', start, duration: 30, primary: false };
+  tasks().push(t);
+  resolveOverlaps(); persistAll(); renderTasks();
+  setTimeout(() => {
+    const li = document.querySelector(`#taskList li[data-id="${t.id}"]`);
+    if (li) li.querySelector('.title-input').focus();
+  }, 0);
+});
+
+document.getElementById('btnAddStart').addEventListener('click', () => {
+  // Place a new 30-min task ending right when the earliest existing task begins
+  // (or at 09:00 if empty). Other tasks don't move.
+  const sorted = sortedTasks();
+  const duration = 30;
+  let start;
+  if (sorted.length) {
+    const earliest = sorted[0].start;
+    start = earliest - duration;
+    if (start < 0) start = 0;
+  } else {
+    start = 540; // 09:00
+  }
+  const t = { id: uid(), title: '', link: '', start, duration, primary: false };
+  tasks().push(t);
+  resolveOverlaps(); persistAll(); renderTasks();
+  setTimeout(() => {
+    const li = document.querySelector(`#taskList li[data-id="${t.id}"]`);
+    if (li) li.querySelector('.title-input').focus();
+  }, 0);
+});
+
+document.getElementById('btnAddEnd').addEventListener('click', () => {
+  // Place a new 30-min task starting right after the latest existing task ends
+  // (or at 17:00 if empty). Other tasks don't move.
+  const sorted = sortedTasks();
+  const duration = 30;
+  let start;
+  if (sorted.length) {
+    const last = sorted[sorted.length - 1];
+    start = last.start + last.duration;
+    if (start + duration > 1440) start = Math.max(0, 1440 - duration);
+  } else {
+    start = 1020; // 17:00
+  }
+  const t = { id: uid(), title: '', link: '', start, duration, primary: false };
+  tasks().push(t);
+  resolveOverlaps(); persistAll(); renderTasks();
+  setTimeout(() => {
+    const li = document.querySelector(`#taskList li[data-id="${t.id}"]`);
+    if (li) li.querySelector('.title-input').focus();
+  }, 0);
+});
+
+document.getElementById('btnClear').addEventListener('click', () => {
+  if (tasks().length === 0) return;
+  if (!confirm('Clear all tasks for this plan?')) return;
+  activePlan().tasks = [];
+  persistAll(); renderTasks();
+});
+
+/* Compact: pack non-primary tasks tight against the previous task (or
+ * primary, or start of the first non-primary's current time). Preserves
+ * each task's order in time and its duration. Primary tasks never move. */
+function compactNonPrimaries() {
+  const ts = tasks();
+  if (ts.length === 0) return;
+
+  const primaries = ts.filter(t => t.primary).sort((a, b) => a.start - b.start);
+  const nonPrimaries = ts.filter(t => !t.primary).sort((a, b) => a.start - b.start);
+  if (nonPrimaries.length === 0) return;
+
+  // Anchor: keep the first non-primary's current start time as the
+  // earliest packing point, unless a primary requires it to be later.
+  const anchor = nonPrimaries[0].start;
+
+  // Walk forward, placing each non-primary as early as possible.
+  // The "earliest available" cursor advances past primaries when we
+  // encounter them.
+  let cursor = anchor;
+  // Sort primaries by start to walk them alongside
+  let primIdx = 0;
+
+  for (const np of nonPrimaries) {
+    // Skip past any primaries that end at or before the cursor
+    while (primIdx < primaries.length && primaries[primIdx].start + primaries[primIdx].duration <= cursor) {
+      primIdx++;
+    }
+    // If the next primary starts before cursor + np.duration, we collide:
+    // jump cursor past that primary.
+    while (primIdx < primaries.length && primaries[primIdx].start < cursor + np.duration) {
+      cursor = primaries[primIdx].start + primaries[primIdx].duration;
+      primIdx++;
+    }
+    // Place np at cursor
+    np.start = cursor;
+    cursor = cursor + np.duration;
+    // Clamp inside the day
+    if (np.start + np.duration > 1440) {
+      // Can't fit — leave it where it lands and let resolveOverlaps flag
+      np.start = Math.max(0, 1440 - np.duration);
+    }
+  }
+}
+
+document.getElementById('btnCompact').addEventListener('click', () => {
+  compactNonPrimaries();
+  resolveOverlaps();
+  persistAll();
+  renderTasks();
+});
+
+/* Close a free gap [gapStart, gapEnd) by pulling tasks together from
+ * BOTH sides:
+ *   - Tasks that begin at or after gapEnd slide EARLIER (toward gapStart),
+ *     stopping at primaries or each other.
+ *   - Tasks that end at or before gapStart slide LATER (toward gapEnd),
+ *     stopping at primaries or each other.
+ * Primaries never move. Each task keeps its duration. */
+function closeGap(gapStart, gapEnd) {
+  const ts = tasks();
+  if (!ts.length) return;
+  if (gapEnd <= gapStart) return;
+
+  const sorted = [...ts].sort((a, b) => a.start - b.start);
+
+  // ---- Pass 1: slide tasks AFTER the gap earlier ----
+  let fwdCursor = gapStart;
+  for (const t of sorted) {
+    if (t.start < gapEnd) {
+      if (t.primary) fwdCursor = Math.max(fwdCursor, t.start + t.duration);
+      continue;
+    }
+    if (t.primary) {
+      fwdCursor = Math.max(fwdCursor, t.start + t.duration);
+      continue;
+    }
+    const newStart = Math.min(t.start, Math.max(0, fwdCursor));
+    t.start = newStart;
+    fwdCursor = newStart + t.duration;
+  }
+
+  // ---- Pass 2: slide tasks BEFORE the gap later ----
+  // Walk in reverse (latest first). bwdCursor = latest END that next
+  // sliding task may have. Starts at gapEnd, jumps earlier past primaries.
+  let bwdCursor = gapEnd;
+  // Re-sort because pass 1 may have changed positions
+  const sortedRev = [...ts].sort((a, b) => b.start - a.start);
+  for (const t of sortedRev) {
+    const tEnd = t.start + t.duration;
+    if (tEnd > gapStart) {
+      // Task ends after the gap starts — it's at/after the gap, not before it.
+      // If it's a primary that overlaps gap region from above, lower bwdCursor.
+      if (t.primary) bwdCursor = Math.min(bwdCursor, t.start);
+      continue;
+    }
+    if (t.primary) {
+      bwdCursor = Math.min(bwdCursor, t.start);
+      continue;
+    }
+    // Non-primary entirely before the gap: slide it later if possible.
+    // Latest allowed end is bwdCursor; latest allowed start is bwdCursor - duration.
+    const newStart = Math.max(t.start, bwdCursor - t.duration);
+    t.start = newStart;
+    bwdCursor = newStart; // next earlier task can end no later than this start
+  }
+}
+
+/* ============ PACKING TAB ============ */
+function renderPack() {
+  const list = document.getElementById('packList');
+  const empty = document.getElementById('packEmpty');
+  const headers = document.getElementById('packHeaders');
+  const items = packItems();
+  list.innerHTML = '';
+
+  empty.style.display = items.length === 0 ? 'block' : 'none';
+  headers.style.display = items.length === 0 ? 'none' : 'grid';
+
+  items.forEach(it => {
+    const color = personColor(it.person);
+    const li = document.createElement('li');
+    li.dataset.id = it.id;
+    li.innerHTML = `
+      <span class="person-bar" style="background:${color}"></span>
+      <input type="text" class="qty-input p-qty" inputmode="numeric" value="${it.qty || 1}">
+      <input type="text" class="pack-input p-item" value="${escapeHtml(it.item)}" placeholder="Item">
+      <input type="text" class="pack-input p-person" value="${escapeHtml(it.person)}" placeholder="Person" style="color:${(it.person||'').trim() ? color : ''}">
+      <input type="text" class="wt-input p-kg" inputmode="decimal" value="${fmtWeight(it.kg)}" placeholder="0">
+      <input type="text" class="wt-input p-lb" inputmode="decimal" value="${fmtWeight(kgToLb(it.kg))}" placeholder="0">
+      <button class="x-btn" aria-label="Delete">×</button>
+    `;
+    list.appendChild(li);
+
+    const $bar = li.querySelector('.person-bar');
+    const $qty = li.querySelector('.p-qty');
+    const $item = li.querySelector('.p-item');
+    const $person = li.querySelector('.p-person');
+    const $kg = li.querySelector('.p-kg');
+    const $lb = li.querySelector('.p-lb');
+    const $del = li.querySelector('.x-btn');
+
+    $qty.addEventListener('input', e => {
+      const v = parseInt(e.target.value, 10);
+      it.qty = (isNaN(v) || v < 1) ? 1 : v;
+      persistAll(); renderPackTotals();
+    });
+    $qty.addEventListener('blur', e => { e.target.value = it.qty || 1; });
+    $qty.addEventListener('focus', e => e.target.select());
+
+    $item.addEventListener('input', e => { it.item = e.target.value; persistAll(); });
+    $person.addEventListener('input', e => {
+      it.person = e.target.value;
+      const c = personColor(it.person);
+      $bar.style.background = c;
+      $person.style.color = (it.person || '').trim() ? c : '';
+      persistAll(); renderPackTotals();
+    });
+
+    $kg.addEventListener('input', e => {
+      const v = parseFloat(e.target.value);
+      it.kg = isNaN(v) ? 0 : v;
+      $lb.value = fmtWeight(kgToLb(it.kg));
+      persistAll(); renderPackTotals();
+    });
+    $lb.addEventListener('input', e => {
+      const v = parseFloat(e.target.value);
+      it.kg = isNaN(v) ? 0 : lbToKg(v);
+      $kg.value = fmtWeight(it.kg);
+      persistAll(); renderPackTotals();
+    });
+    $kg.addEventListener('blur', e => { e.target.value = fmtWeight(it.kg); });
+    $lb.addEventListener('blur', e => { e.target.value = fmtWeight(kgToLb(it.kg)); });
+    $kg.addEventListener('focus', e => e.target.select());
+    $lb.addEventListener('focus', e => e.target.select());
+
+    $del.addEventListener('click', () => {
+      const idx = items.findIndex(p => p.id === it.id);
+      if (idx > -1) { items.splice(idx, 1); persistAll(); renderPack(); }
+    });
+  });
+
+  renderPackTotals();
+}
+
+function renderPackTotals() {
+  const totEl = document.getElementById('packTotals');
+  const items = packItems();
+  if (items.length === 0) { totEl.style.display = 'none'; return; }
+  totEl.style.display = 'block';
+
+  const totalKg = items.reduce((s, i) => s + (i.kg || 0) * (i.qty || 1), 0);
+  const totalLb = kgToLb(totalKg);
+  const totalCount = items.reduce((s, i) => s + (i.qty || 1), 0);
+  document.getElementById('packTotal').textContent =
+    `${fmtWeight(totalKg) || '0'} kg / ${fmtWeight(totalLb) || '0'} lb · ${totalCount} item${totalCount === 1 ? '' : 's'}`;
+
+  const byPerson = {};
+  items.forEach(i => {
+    const name = (i.person || '').trim() || '(unassigned)';
+    if (!byPerson[name]) byPerson[name] = { kg: 0, count: 0 };
+    byPerson[name].kg += (i.kg || 0) * (i.qty || 1);
+    byPerson[name].count += (i.qty || 1);
+  });
+  const ptEl = document.getElementById('personTotals');
+  const names = Object.keys(byPerson).sort();
+  ptEl.innerHTML = names.map(name => {
+    const v = byPerson[name];
+    const lb = kgToLb(v.kg);
+    const c = name === '(unassigned)' ? '#aaaaaa' : personColor(name);
+    return `<div class="pt-row">
+      <span class="pt-bar" style="background:${c}"></span>
+      <span class="pt-name" style="color:${c}">${escapeHtml(name)}</span>
+      <span class="pt-val">${fmtWeight(v.kg) || '0'} kg / ${fmtWeight(lb) || '0'} lb <span class="pt-detail">· ${v.count}</span></span>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('btnAddItem').addEventListener('click', () => {
+  const it = { id: uid(), item: '', person: '', qty: 1, kg: 0 };
+  packItems().push(it);
+  persistAll(); renderPack();
+  setTimeout(() => {
+    const li = document.querySelector(`#packList li[data-id="${it.id}"]`);
+    if (li) li.querySelector('.p-item').focus();
+  }, 0);
+});
+
+document.getElementById('btnClearPack').addEventListener('click', () => {
+  if (packItems().length === 0) return;
+  if (!confirm('Clear all packing items for this plan?')) return;
+  activePlan().packItems = [];
+  persistAll(); renderPack();
+});
+
+/* ============ BUDGET TAB ============ */
+function fmtMoney(n) {
+  if (n == null || isNaN(n)) return '0.00';
+  // Always 2 decimals for money
+  return (Math.round(n * 100) / 100).toFixed(2);
+}
+function parseMoney(s) {
+  if (s == null) return 0;
+  const n = parseFloat(String(s).replace(/[, ]/g, ''));
+  return isNaN(n) ? 0 : n;
+}
+function inclFromExcl(cost, rate) { return cost * (1 + (rate || 0) / 100); }
+function exclFromIncl(incl, rate) {
+  const r = (rate || 0) / 100;
+  return r === -1 ? incl : incl / (1 + r);
+}
+
+function renderBudget() {
+  const list = document.getElementById('budgetList');
+  const empty = document.getElementById('budgetEmpty');
+  const headers = document.getElementById('budgetHeaders');
+  const items = budgetItems();
+  list.innerHTML = '';
+
+  empty.style.display = items.length === 0 ? 'block' : 'none';
+  headers.style.display = items.length === 0 ? 'none' : 'grid';
+
+  items.forEach(it => {
+    const color = personColor(it.person);
+    const li = document.createElement('li');
+    li.dataset.id = it.id;
+    if (it.excluded) li.classList.add('excluded');
+    li.innerHTML = `
+      <span class="person-bar" style="background:${color}"></span>
+      <input type="checkbox" class="excl-box b-excluded" ${it.excluded ? 'checked' : ''} aria-label="Exclude from totals">
+      <input type="text" class="qty-input b-qty" inputmode="numeric" value="${it.qty || 1}">
+      <input type="text" class="pack-input b-item" value="${escapeHtml(it.item)}" placeholder="Expense">
+      <input type="text" class="pack-input b-person" value="${escapeHtml(it.person)}" placeholder="Person" style="color:${(it.person||'').trim() ? color : ''}">
+      <input type="text" class="money-input b-extax" inputmode="decimal" value="${fmtMoney(it.cost)}" placeholder="0.00">
+      <input type="text" class="rate-input b-rate" inputmode="decimal" value="${it.taxRate || ''}" placeholder="0">
+      <input type="text" class="money-input b-incl" inputmode="decimal" value="${fmtMoney(inclFromExcl(it.cost, it.taxRate))}" placeholder="0.00">
+      <button class="x-btn" aria-label="Delete">×</button>
+    `;
+    list.appendChild(li);
+
+    const $bar = li.querySelector('.person-bar');
+    const $excluded = li.querySelector('.b-excluded');
+    const $qty = li.querySelector('.b-qty');
+    const $item = li.querySelector('.b-item');
+    const $person = li.querySelector('.b-person');
+    const $extax = li.querySelector('.b-extax');
+    const $rate = li.querySelector('.b-rate');
+    const $incl = li.querySelector('.b-incl');
+    const $del = li.querySelector('.x-btn');
+
+    $excluded.addEventListener('change', e => {
+      it.excluded = e.target.checked;
+      li.classList.toggle('excluded', it.excluded);
+      persistAll();
+      renderBudgetTotals();
+    });
+
+    $qty.addEventListener('input', e => {
+      const v = parseInt(e.target.value, 10);
+      it.qty = (isNaN(v) || v < 1) ? 1 : v;
+      persistAll(); renderBudgetTotals();
+    });
+    $qty.addEventListener('blur', e => { e.target.value = it.qty || 1; });
+    $qty.addEventListener('focus', e => e.target.select());
+
+    $item.addEventListener('input', e => { it.item = e.target.value; persistAll(); });
+    $person.addEventListener('input', e => {
+      it.person = e.target.value;
+      const c = personColor(it.person);
+      $bar.style.background = c;
+      $person.style.color = (it.person || '').trim() ? c : '';
+      persistAll(); renderBudgetTotals();
+    });
+
+    // Ex-tax → recompute inc-tax
+    $extax.addEventListener('input', e => {
+      it.cost = parseMoney(e.target.value);
+      $incl.value = fmtMoney(inclFromExcl(it.cost, it.taxRate));
+      persistAll(); renderBudgetTotals();
+    });
+    // Tax rate → recompute inc-tax (keeping ex-tax fixed)
+    $rate.addEventListener('input', e => {
+      const r = parseMoney(e.target.value);
+      it.taxRate = r;
+      $incl.value = fmtMoney(inclFromExcl(it.cost, it.taxRate));
+      persistAll(); renderBudgetTotals();
+    });
+    // Inc-tax → recompute ex-tax (keeping rate fixed)
+    $incl.addEventListener('input', e => {
+      const inc = parseMoney(e.target.value);
+      it.cost = exclFromIncl(inc, it.taxRate);
+      $extax.value = fmtMoney(it.cost);
+      persistAll(); renderBudgetTotals();
+    });
+
+    $extax.addEventListener('blur', () => { $extax.value = fmtMoney(it.cost); });
+    $incl.addEventListener('blur', () => { $incl.value = fmtMoney(inclFromExcl(it.cost, it.taxRate)); });
+    $rate.addEventListener('blur', () => { $rate.value = it.taxRate ? String(it.taxRate) : ''; });
+    $extax.addEventListener('focus', e => e.target.select());
+    $incl.addEventListener('focus', e => e.target.select());
+    $rate.addEventListener('focus', e => e.target.select());
+
+    $del.addEventListener('click', () => {
+      const idx = items.findIndex(p => p.id === it.id);
+      if (idx > -1) { items.splice(idx, 1); persistAll(); renderBudget(); }
+    });
+  });
+
+  renderBudgetTotals();
+}
+
+function renderBudgetTotals() {
+  const totEl = document.getElementById('budgetTotals');
+  const items = budgetItems();
+  if (items.length === 0) { totEl.style.display = 'none'; return; }
+  totEl.style.display = 'block';
+
+  let totalEx = 0, totalInc = 0;
+  items.forEach(i => {
+    if (i.excluded) return;
+    const q = i.qty || 1;
+    totalEx += (i.cost || 0) * q;
+    totalInc += inclFromExcl(i.cost, i.taxRate) * q;
+  });
+  const totalTax = totalInc - totalEx;
+
+  document.getElementById('budgetTotalEx').textContent = fmtMoney(totalEx);
+  document.getElementById('budgetTotalInc').textContent = fmtMoney(totalInc);
+  document.getElementById('budgetTaxAmt').textContent = fmtMoney(totalTax);
+
+  // Per-person totals (excluded items skipped)
+  const byPerson = {};
+  items.forEach(i => {
+    if (i.excluded) return;
+    const name = (i.person || '').trim() || '(unassigned)';
+    if (!byPerson[name]) byPerson[name] = { ex: 0, inc: 0, count: 0 };
+    const q = i.qty || 1;
+    byPerson[name].ex += (i.cost || 0) * q;
+    byPerson[name].inc += inclFromExcl(i.cost, i.taxRate) * q;
+    byPerson[name].count += q;
+  });
+  const names = Object.keys(byPerson).sort();
+  // Count distinct "real" people (exclude unassigned) for the split
+  const realPeople = names.filter(n => n !== '(unassigned)');
+  const splitCount = Math.max(1, realPeople.length);
+  const splitEx = totalEx / splitCount;
+  const splitInc = totalInc / splitCount;
+
+  const splitLabel = document.getElementById('budgetPplCount');
+  splitLabel.textContent = realPeople.length
+    ? `(÷ ${realPeople.length} ${realPeople.length === 1 ? 'person' : 'people'})`
+    : '';
+  document.getElementById('budgetSplit').textContent =
+    `${fmtMoney(splitEx)} ex / ${fmtMoney(splitInc)} inc`;
+
+  // Per-person row
+  const ptEl = document.getElementById('budgetPersonTotals');
+  ptEl.innerHTML = names.map(name => {
+    const v = byPerson[name];
+    const c = name === '(unassigned)' ? '#aaaaaa' : personColor(name);
+    return `<div class="pt-row">
+      <span class="pt-bar" style="background:${c}"></span>
+      <span class="pt-name" style="color:${c}">${escapeHtml(name)}</span>
+      <span class="pt-val">${fmtMoney(v.ex)} ex / ${fmtMoney(v.inc)} inc <span class="pt-detail">· ${v.count}</span></span>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('btnAddBudget').addEventListener('click', () => {
+  // Inherit the most recent tax rate if any item has one set
+  const items = budgetItems();
+  const lastRate = items.length ? (items[items.length - 1].taxRate || 0) : 0;
+  const it = { id: uid(), item: '', person: '', qty: 1, cost: 0, taxRate: lastRate, excluded: false };
+  items.push(it);
+  persistAll(); renderBudget();
+  setTimeout(() => {
+    const li = document.querySelector(`#budgetList li[data-id="${it.id}"]`);
+    if (li) li.querySelector('.b-item').focus();
+  }, 0);
+});
+
+document.getElementById('btnClearBudget').addEventListener('click', () => {
+  if (budgetItems().length === 0) return;
+  if (!confirm('Clear all budget items for this plan?')) return;
+  activePlan().budgetItems = [];
+  persistAll(); renderBudget();
+});
+
+function buildBudgetText() {
+  const items = budgetItems();
+  const cur = activePlan();
+  const lines = [];
+  lines.push(`${cur.name || 'Plan'} — Budget`);
+  if (((activeDay()&&activeDay().date)||cur.date)) lines.push(((activeDay()&&activeDay().date)||cur.date));
+  lines.push('');
+  if (!items.length) { lines.push('(no expenses)'); return lines.join('\n'); }
+  lines.push('Qty  Item                     Person          Ex tax    Tax %   Inc tax');
+  lines.push('-----------------------------------------------------------------------');
+  items.forEach(i => {
+    const q = i.qty || 1;
+    const qStr = String(q).padStart(3);
+    const item = (i.item || '(unnamed)').padEnd(24).slice(0, 24);
+    const person = (i.person || '—').padEnd(14).slice(0, 14);
+    const ex = fmtMoney((i.cost || 0) * q).padStart(8);
+    const rate = ((i.taxRate || 0) + '').padStart(5);
+    const inc = fmtMoney(inclFromExcl(i.cost, i.taxRate) * q).padStart(8);
+    const marker = i.excluded ? ' [excluded]' : '';
+    lines.push(`${qStr}  ${item}  ${person}  ${ex}  ${rate}%  ${inc}${marker}`);
+  });
+
+  let totalEx = 0, totalInc = 0;
+  items.forEach(i => {
+    if (i.excluded) return;
+    const q = i.qty || 1;
+    totalEx += (i.cost || 0) * q;
+    totalInc += inclFromExcl(i.cost, i.taxRate) * q;
+  });
+  const totalTax = totalInc - totalEx;
+
+  const byPerson = {};
+  items.forEach(i => {
+    if (i.excluded) return;
+    const q = i.qty || 1;
+    const name = (i.person || '').trim() || '(unassigned)';
+    if (!byPerson[name]) byPerson[name] = { ex: 0, inc: 0, count: 0 };
+    byPerson[name].ex += (i.cost || 0) * q;
+    byPerson[name].inc += inclFromExcl(i.cost, i.taxRate) * q;
+    byPerson[name].count += q;
+  });
+  const names = Object.keys(byPerson).sort();
+  const realPeople = names.filter(n => n !== '(unassigned)');
+  const splitCount = Math.max(1, realPeople.length);
+
+  lines.push('');
+  lines.push(`Total ex tax:    ${fmtMoney(totalEx)}`);
+  lines.push(`Total inc tax:   ${fmtMoney(totalInc)}`);
+  lines.push(`Tax amount:      ${fmtMoney(totalTax)}`);
+  if (realPeople.length) {
+    lines.push(`Split ÷ ${splitCount}:      ${fmtMoney(totalEx/splitCount)} ex  /  ${fmtMoney(totalInc/splitCount)} inc`);
+  }
+  if (names.length > 1) {
+    lines.push('');
+    names.forEach(name => {
+      const v = byPerson[name];
+      lines.push(`  ${name.padEnd(14)}  ${fmtMoney(v.ex).padStart(8)} ex  /  ${fmtMoney(v.inc).padStart(8)} inc · ${v.count}`);
+    });
+  }
+  return lines.join('\n');
+}
+
+function buildBudgetCsv() {
+  const items = budgetItems();
+  const cur = activePlan();
+  const rows = [];
+  rows.push(['Plan', cur.name || '']);
+  if (((activeDay()&&activeDay().date)||cur.date)) rows.push(['Date', ((activeDay()&&activeDay().date)||cur.date)]);
+  rows.push([]);
+  rows.push(['Qty', 'Item', 'Person', 'Unit ex', 'Tax %', 'Unit inc', 'Line ex', 'Line inc', 'Excluded']);
+  items.forEach(i => {
+    const q = i.qty || 1;
+    rows.push([
+      q,
+      i.item || '',
+      i.person || '',
+      fmtMoney(i.cost),
+      (i.taxRate || 0),
+      fmtMoney(inclFromExcl(i.cost, i.taxRate)),
+      fmtMoney((i.cost || 0) * q),
+      fmtMoney(inclFromExcl(i.cost, i.taxRate) * q),
+      i.excluded ? 'yes' : ''
+    ]);
+  });
+  if (items.length) {
+    let totalEx = 0, totalInc = 0;
+    items.forEach(i => {
+      if (i.excluded) return;
+      const q = i.qty || 1;
+      totalEx += (i.cost || 0) * q;
+      totalInc += inclFromExcl(i.cost, i.taxRate) * q;
+    });
+    const totalCount = items.reduce((s, i) => s + (i.excluded ? 0 : (i.qty || 1)), 0);
+    const byPerson = {};
+    items.forEach(i => {
+      if (i.excluded) return;
+      const q = i.qty || 1;
+      const name = (i.person || '').trim() || '(unassigned)';
+      if (!byPerson[name]) byPerson[name] = { ex: 0, inc: 0, count: 0 };
+      byPerson[name].ex += (i.cost || 0) * q;
+      byPerson[name].inc += inclFromExcl(i.cost, i.taxRate) * q;
+      byPerson[name].count += q;
+    });
+    const names = Object.keys(byPerson).sort();
+    const realPeople = names.filter(n => n !== '(unassigned)');
+    const splitCount = Math.max(1, realPeople.length);
+    rows.push([]);
+    rows.push([totalCount, 'Total', '', '', '', '', fmtMoney(totalEx), fmtMoney(totalInc)]);
+    rows.push(['', 'Tax amount', '', '', '', '', fmtMoney(totalInc - totalEx)]);
+    if (realPeople.length) {
+      rows.push(['', `Split / ${splitCount}`, '', '', '', '', fmtMoney(totalEx/splitCount), fmtMoney(totalInc/splitCount)]);
+    }
+    rows.push([]);
+    names.forEach(name => {
+      const v = byPerson[name];
+      rows.push([v.count, '', name, '', '', '', fmtMoney(v.ex), fmtMoney(v.inc)]);
+    });
+  }
+  return rows.map(r => r.map(csvEscape).join(',')).join('\r\n');
+}
+
+document.getElementById('btnExportBudget').addEventListener('click', () => {
+  const baseName = (activePlan().name || 'plan').replace(/[^a-z0-9-_]+/gi, '_');
+  downloadText(baseName + '-budget.txt', buildBudgetText());
+});
+document.getElementById('btnExportCsvBudget').addEventListener('click', () => {
+  const baseName = (activePlan().name || 'plan').replace(/[^a-z0-9-_]+/gi, '_');
+  downloadText(baseName + '-budget.csv', buildBudgetCsv(), 'text/csv');
+});
+document.getElementById('btnPrintBudget').addEventListener('click', printActiveTab);
+document.getElementById('btnEmailBudget').addEventListener('click', () => {
+  emailText(`${activePlan().name || 'Plan'} — Budget`, buildBudgetText());
+});
+
+/* ============ PLANS SIDEBAR ============ */
+function renderPlanList() {
+  const list = document.getElementById('planList');
+  list.innerHTML = '';
+  const arr = Object.values(plans).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  arr.forEach(p => {
+    const li = document.createElement('li');
+    li.dataset.id = p.id;
+    if (p.id === activePlanId) li.classList.add('active');
+    const dayCount = (p.days || []).length;
+    const taskCount = (p.days || []).reduce((s, d) => s + (d.tasks || []).length, 0);
+    const itemCount = (p.packItems || []).length;
+    const budgetCount = (p.budgetItems || []).length;
+    let meta = '';
+    if (dayCount > 1) meta += `${dayCount}d`;
+    if (taskCount) meta += (meta ? ' · ' : '') + `${taskCount}t`;
+    if (itemCount) meta += (meta ? ' · ' : '') + `${itemCount}i`;
+    if (budgetCount) meta += (meta ? ' · ' : '') + `${budgetCount}$`;
+    li.innerHTML = `
+      <span class="pl-name">${escapeHtml(p.name || 'Untitled')}</span>
+      <span class="pl-meta">${meta}</span>
+      <button class="pl-x" aria-label="Delete plan">×</button>
+    `;
+    list.appendChild(li);
+
+    li.addEventListener('click', e => {
+      if (e.target.classList.contains('pl-x')) return;
+      // double-click to rename
+      if (e.detail === 2 && p.id === activePlanId) {
+        startRename(li, p);
+        return;
+      }
+      switchPlan(p.id);
+    });
+
+    li.querySelector('.pl-x').addEventListener('click', e => {
+      e.stopPropagation();
+      deletePlan(p.id);
+    });
+  });
+
+  // update header
+  const cur = activePlan();
+  document.getElementById('planName').textContent = cur ? cur.name : '';
+  // Sync the date + label inputs with the active day
+  const $date = document.getElementById('planDate');
+  const $label = document.getElementById('dayLabel');
+  const d = activeDay();
+  if ($date) $date.value = (d && d.date) ? d.date : '';
+  if ($label) $label.value = (d && d.label) ? d.label : '';
+}
+
+function startRename(li, plan) {
+  const nameEl = li.querySelector('.pl-name');
+  const cur = plan.name || '';
+  nameEl.outerHTML = `<input class="pl-name-input" value="${escapeHtml(cur)}">`;
+  const input = li.querySelector('.pl-name-input');
+  input.focus();
+  input.select();
+  const commit = () => {
+    plan.name = (input.value || '').trim() || 'Untitled';
+    persistAll(); renderPlanList();
+  };
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') input.blur();
+    if (e.key === 'Escape') { input.value = cur; input.blur(); }
+  });
+}
+
+function switchPlan(id) {
+  if (!plans[id]) return;
+  activePlanId = id;
+  persistAll();
+  renderAll();
+  closeSidebar();
+}
+
+function deletePlan(id) {
+  if (!plans[id]) return;
+  const p = plans[id];
+  if (!confirm(`Delete plan "${p.name || 'Untitled'}"?`)) return;
+  delete plans[id];
+  if (activePlanId === id) {
+    const remaining = Object.keys(plans);
+    if (remaining.length === 0) {
+      const newId = uid();
+      plans[newId] = { id: newId, name: 'My Day', tasks: [], packItems: [], updatedAt: Date.now() };
+      activePlanId = newId;
+    } else {
+      activePlanId = remaining[0];
+    }
+  }
+  persistAll(); renderAll();
+}
+
+document.getElementById('btnNewPlan').addEventListener('click', () => {
+  const id = uid();
+  plans[id] = emptyPlan(id, 'New plan');
+  activePlanId = id;
+  persistAll(); renderAll();
+  // open inline rename right away
+  setTimeout(() => {
+    const li = document.querySelector(`#planList li[data-id="${id}"]`);
+    if (li) startRename(li, plans[id]);
+  }, 0);
+});
+
+document.getElementById('planDate').addEventListener('change', e => {
+  const d = activeDay();
+  if (!d) return;
+  d.date = e.target.value || '';
+  sortDaysByDate();
+  persistAll();
+  renderDayTabs();
+});
+
+/* Sort the active plan's days chronologically by date. Days without a
+ * date keep their relative order and go to the end of the list. */
+function sortDaysByDate() {
+  const p = activePlan();
+  if (!p || !p.days || p.days.length < 2) return;
+  // Preserve original index for stable sort of dateless days
+  const indexed = p.days.map((d, i) => ({ d, i }));
+  indexed.sort((a, b) => {
+    const ad = a.d.date || '';
+    const bd = b.d.date || '';
+    if (ad && bd) {
+      if (ad < bd) return -1;
+      if (ad > bd) return 1;
+      return a.i - b.i; // same date → preserve original order
+    }
+    if (ad && !bd) return -1; // dated first
+    if (!ad && bd) return 1;
+    return a.i - b.i; // both dateless → preserve original order
+  });
+  p.days = indexed.map(x => x.d);
+}
+
+document.getElementById('dayLabel').addEventListener('input', e => {
+  const d = activeDay();
+  if (!d) return;
+  d.label = e.target.value || '';
+  persistAll();
+});
+document.getElementById('dayLabel').addEventListener('blur', () => {
+  renderDayTabs();
+});
+document.getElementById('dayLabel').addEventListener('keydown', e => {
+  if (e.key === 'Enter') e.target.blur();
+});
+
+/* ---------- Sidebar drawer (mobile) ---------- */
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+document.getElementById('btnMenu').addEventListener('click', openSidebar);
+document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+
+/* ============ Print / Email / Export ============ */
+function buildDayText() {
+  const display = buildDisplayList();
+  const ts = tasks();
+  const lines = [];
+  const cur = activePlan();
+  const day = activeDay();
+  lines.push(`${cur.name || 'Day Plan'}`);
+  const dateStr = (day && day.date) || '';
+  const labelStr = (day && day.label) ? day.label.trim() : '';
+  if (dateStr && labelStr) lines.push(`${dateStr} — ${labelStr}`);
+  else if (dateStr) lines.push(dateStr);
+  else if (labelStr) lines.push(labelStr);
+  if (!ts.length) { lines.push(''); lines.push('(no tasks)'); return lines.join('\n'); }
+  const minStart = Math.min(...ts.map(t => t.start));
+  lines.push(`Day starts: ${minToClock(minStart)}`);
+  lines.push('');
+  display.forEach(item => {
+    if (item.kind === 'free') {
+      const time = `${minToClock(item.start)}–${minToClock(item.start + item.duration)}`;
+      lines.push(`   ${time}  ${minToHumanDur(item.duration).padEnd(7)}  Free`);
+    } else {
+      const t = item.task;
+      const star = t.primary ? ' ★ ' : '   ';
+      const flag = t.hasConflict ? ' ⚠' : '';
+      if (t.duration === 0) {
+        lines.push(`${star}${minToClock(t.start)}        0m       ${t.title || '(untitled)'}${flag}`);
+      } else {
+        const time = `${minToClock(t.start)}–${minToClock(t.start + t.duration)}`;
+        lines.push(`${star}${time}  ${minToHumanDur(t.duration).padEnd(7)}  ${t.title || '(untitled)'}${flag}`);
+      }
+      if (t.link) lines.push(`           ↳ ${t.link}`);
+    }
+  });
+  const ends = ts.map(t => t.start + t.duration);
+  const totalScheduled = ts.reduce((s, t) => s + t.duration, 0);
+  const primaryT = ts.filter(t => t.primary);
+  const travelT  = ts.filter(t => isTravel(t.title));
+  const wiggleT  = ts.filter(t => isWiggle(t.title));
+  const totalFree = display.filter(d => d.kind === 'free').reduce((s, d) => s + d.duration, 0);
+  const conflicts = ts.filter(t => t.hasConflict).length;
+  lines.push('');
+  lines.push(`Day ends:        ${minToClock(Math.max(...ends))}`);
+  lines.push(`Total scheduled: ${minToHumanDur(totalScheduled)}`);
+  if (primaryT.length) lines.push(`Primary tasks:   ${primaryT.length} · ${minToHumanDur(primaryT.reduce((s,t)=>s+t.duration,0))}`);
+  if (travelT.length)  lines.push(`Travel:          ${travelT.length} · ${minToHumanDur(travelT.reduce((s,t)=>s+t.duration,0))}`);
+  if (wiggleT.length)  lines.push(`Wiggle:          ${wiggleT.length} · ${minToHumanDur(wiggleT.reduce((s,t)=>s+t.duration,0))}`);
+  lines.push(`Free time:       ${minToHumanDur(totalFree)}`);
+  if (conflicts) lines.push(`Conflicts:       ${conflicts} ⚠`);
+  return lines.join('\n');
+}
+
+function buildPackText() {
+  const items = packItems();
+  const cur = activePlan();
+  const lines = [];
+  lines.push(`${cur.name || 'Plan'} — Packing List`);
+  if (((activeDay()&&activeDay().date)||cur.date)) lines.push(((activeDay()&&activeDay().date)||cur.date));
+  lines.push('');
+  if (!items.length) { lines.push('(no items)'); return lines.join('\n'); }
+  items.forEach(i => {
+    const q = i.qty || 1;
+    const qStr = (q > 1 ? `${q}×` : '').padStart(3);
+    const item = (i.item || '(unnamed)').padEnd(22).slice(0, 22);
+    const person = (i.person || '—').padEnd(14).slice(0, 14);
+    const lineKg = (i.kg || 0) * q;
+    const kg = (fmtWeight(lineKg) || '0') + ' kg';
+    const lb = (fmtWeight(kgToLb(lineKg)) || '0') + ' lb';
+    lines.push(`${qStr} ${item}  ${person}  ${kg.padStart(8)}  ${lb.padStart(8)}`);
+  });
+  const totalKg = items.reduce((s, i) => s + (i.kg || 0) * (i.qty || 1), 0);
+  const totalCount = items.reduce((s, i) => s + (i.qty || 1), 0);
+  lines.push('');
+  lines.push(`Total: ${fmtWeight(totalKg) || '0'} kg / ${fmtWeight(kgToLb(totalKg)) || '0'} lb · ${totalCount} items`);
+  const byPerson = {};
+  items.forEach(i => {
+    const name = (i.person || '').trim() || '(unassigned)';
+    if (!byPerson[name]) byPerson[name] = { kg: 0, count: 0 };
+    byPerson[name].kg += (i.kg || 0) * (i.qty || 1);
+    byPerson[name].count += (i.qty || 1);
+  });
+  const names = Object.keys(byPerson).sort();
+  if (names.length > 1) {
+    lines.push('');
+    names.forEach(name => {
+      const v = byPerson[name];
+      lines.push(`  ${name.padEnd(14)}  ${(fmtWeight(v.kg) || '0').padStart(6)} kg / ${(fmtWeight(kgToLb(v.kg)) || '0').padStart(6)} lb · ${v.count}`);
+    });
+  }
+  return lines.join('\n');
+}
+
+function downloadText(name, text, mime = 'text/plain') {
+  if (navigator.clipboard && mime === 'text/plain') {
+    navigator.clipboard.writeText(text).catch(() => {});
+  }
+  // BOM helps Excel detect UTF-8 in CSVs
+  const body = mime === 'text/csv' ? '\uFEFF' + text : text;
+  const blob = new Blob([body], { type: mime + ';charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function csvEscape(v) {
+  if (v == null) return '';
+  const s = String(v);
+  if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function buildDayCsv() {
+  const display = buildDisplayList();
+  const ts = tasks();
+  const cur = activePlan();
+  const day = activeDay();
+  const rows = [];
+  rows.push(['Plan', cur.name || '']);
+  if (day && day.date) rows.push(['Date', day.date]);
+  if (day && day.label) rows.push(['Label', day.label]);
+  rows.push([]);
+  rows.push(['#', 'Type', 'Start', 'End', 'Duration (min)', 'Duration', 'Title', 'Primary', 'Link', 'Conflict']);
+  let n = 0;
+  display.forEach(item => {
+    if (item.kind === 'free') {
+      rows.push([
+        '',
+        'Free',
+        minToClock(item.start),
+        minToClock(item.start + item.duration),
+        item.duration,
+        minToHumanDur(item.duration),
+        'Free time',
+        '', '', ''
+      ]);
+    } else {
+      n++;
+      const t = item.task;
+      rows.push([
+        n,
+        isTravel(t.title) ? 'Travel' : isWiggle(t.title) ? 'Wiggle' : (t.primary ? 'Primary' : 'Task'),
+        minToClock(t.start),
+        t.duration === 0 ? '' : minToClock(t.start + t.duration),
+        t.duration,
+        minToHumanDur(t.duration),
+        t.title || '',
+        t.primary ? 'Yes' : '',
+        t.link || '',
+        t.hasConflict ? 'Yes' : ''
+      ]);
+    }
+  });
+
+  if (ts.length) {
+    const totalScheduled = ts.reduce((s, t) => s + t.duration, 0);
+    const minStart = Math.min(...ts.map(t => t.start));
+    const maxEnd = Math.max(...ts.map(t => t.start + t.duration));
+    const totalFree = display.filter(d => d.kind === 'free').reduce((s, d) => s + d.duration, 0);
+    rows.push([]);
+    rows.push(['Day starts', minToClock(minStart)]);
+    rows.push(['Day ends', minToClock(maxEnd)]);
+    rows.push(['Total scheduled', minToHumanDur(totalScheduled)]);
+    rows.push(['Free time', minToHumanDur(totalFree)]);
+  }
+  return rows.map(r => r.map(csvEscape).join(',')).join('\r\n');
+}
+
+function buildPackCsv() {
+  const items = packItems();
+  const cur = activePlan();
+  const rows = [];
+  rows.push(['Plan', cur.name || '']);
+  if (((activeDay()&&activeDay().date)||cur.date)) rows.push(['Date', ((activeDay()&&activeDay().date)||cur.date)]);
+  rows.push([]);
+  rows.push(['Qty', 'Item', 'Person', 'Unit kg', 'Unit lb', 'Total kg', 'Total lb']);
+  items.forEach(i => {
+    const q = i.qty || 1;
+    rows.push([
+      q,
+      i.item || '',
+      i.person || '',
+      fmtWeight(i.kg) || '0',
+      fmtWeight(kgToLb(i.kg)) || '0',
+      fmtWeight((i.kg || 0) * q) || '0',
+      fmtWeight(kgToLb((i.kg || 0) * q)) || '0'
+    ]);
+  });
+  if (items.length) {
+    const totalKg = items.reduce((s, i) => s + (i.kg || 0) * (i.qty || 1), 0);
+    const totalCount = items.reduce((s, i) => s + (i.qty || 1), 0);
+    const byPerson = {};
+    items.forEach(i => {
+      const name = (i.person || '').trim() || '(unassigned)';
+      if (!byPerson[name]) byPerson[name] = { kg: 0, count: 0 };
+      byPerson[name].kg += (i.kg || 0) * (i.qty || 1);
+      byPerson[name].count += (i.qty || 1);
+    });
+    rows.push([]);
+    rows.push([totalCount, 'Total', '', '', '', fmtWeight(totalKg) || '0', fmtWeight(kgToLb(totalKg)) || '0']);
+    Object.keys(byPerson).sort().forEach(name => {
+      const v = byPerson[name];
+      rows.push([v.count, '', name, '', '', fmtWeight(v.kg) || '0', fmtWeight(kgToLb(v.kg)) || '0']);
+    });
+  }
+  return rows.map(r => r.map(csvEscape).join(',')).join('\r\n');
+}
+
+function emailText(subject, body) {
+  // mailto links have practical length limits; trim if huge.
+  const safeBody = body.length > 1900 ? body.slice(0, 1900) + '\n\n[Truncated — paste from clipboard for full version]' : body;
+  if (navigator.clipboard) navigator.clipboard.writeText(body).catch(() => {});
+  const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(safeBody)}`;
+  window.location.href = url;
+}
+
+function printActiveTab() {
+  // Hide other tabs by toggling .active on the tab-content wrappers, the
+  // print stylesheet already only shows .tab-content.active in normal flow
+  // but we want to print only the active one:
+  const allTabs = document.querySelectorAll('.tab-content');
+  const wasActive = Array.from(allTabs).map(el => el.classList.contains('active'));
+  // Force only the current activeTab to be visible during print
+  allTabs.forEach(el => el.classList.toggle('active', el.id === 'tab-' + activeTab));
+  window.print();
+  // Restore (browsers may run print synchronously; restore after)
+  setTimeout(() => {
+    allTabs.forEach((el, i) => el.classList.toggle('active', wasActive[i]));
+  }, 100);
+}
+
+document.getElementById('btnExport').addEventListener('click', () => {
+  const baseName = (activePlan().name || 'day').replace(/[^a-z0-9-_]+/gi, '_');
+  downloadText(baseName + '-day.txt', buildDayText());
+});
+document.getElementById('btnExportPack').addEventListener('click', () => {
+  const baseName = (activePlan().name || 'plan').replace(/[^a-z0-9-_]+/gi, '_');
+  downloadText(baseName + '-packing.txt', buildPackText());
+});
+document.getElementById('btnExportCsv').addEventListener('click', () => {
+  const baseName = (activePlan().name || 'day').replace(/[^a-z0-9-_]+/gi, '_');
+  downloadText(baseName + '-day.csv', buildDayCsv(), 'text/csv');
+});
+document.getElementById('btnExportCsvPack').addEventListener('click', () => {
+  const baseName = (activePlan().name || 'plan').replace(/[^a-z0-9-_]+/gi, '_');
+  downloadText(baseName + '-packing.csv', buildPackCsv(), 'text/csv');
+});
+document.getElementById('btnPrint').addEventListener('click', printActiveTab);
+document.getElementById('btnPrintPack').addEventListener('click', printActiveTab);
+document.getElementById('btnEmail').addEventListener('click', () => {
+  emailText(`${activePlan().name || 'Day Plan'} — Day`, buildDayText());
+});
+document.getElementById('btnEmailPack').addEventListener('click', () => {
+  emailText(`${activePlan().name || 'Plan'} — Packing List`, buildPackText());
+});
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeTab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + activeTab));
+  });
+});
+
+/* ---------- Master render ---------- */
+function renderAll() {
+  resolveOverlaps();
+  renderTasks();
+  renderPack();
+  renderBudget();
+  renderPlanList();
+  renderDayTabs();
+}
+
+/* ============ DAY TABS (multi-day) ============ */
+function renderDayTabs() {
+  const el = document.getElementById('dayTabs');
+  if (!el) return;
+  const p = activePlan();
+  if (!p || !p.days) { el.innerHTML = ''; return; }
+  const days = p.days;
+  const parts = [];
+  days.forEach((d, idx) => {
+    const isActive = d.id === p.activeDayId;
+    const dateText = d.date ? formatDayLabel(d.date) : `Day ${idx + 1}`;
+    const labelText = (d.label || '').trim();
+    // Show "Date — Label" when both, otherwise just whichever is present
+    let chipText;
+    if (labelText && d.date) chipText = `${dateText} — ${labelText}`;
+    else if (labelText) chipText = labelText;
+    else chipText = dateText;
+    const taskCount = (d.tasks || []).length;
+    const meta = taskCount ? ` <span class="day-meta">${taskCount}</span>` : '';
+    const canDelete = days.length > 1;
+    parts.push(`
+      <button type="button" class="day-tab ${isActive ? 'active' : ''}" data-id="${d.id}" title="Double-click to rename">
+        <span class="day-tab-text">${escapeHtml(chipText)}</span>${meta}
+        ${canDelete ? `<span class="day-x" data-act="del" data-id="${d.id}" aria-label="Remove day">×</span>` : ''}
+      </button>
+    `);
+  });
+  parts.push(`<button type="button" class="day-tab-add" id="btnAddDay">+ Day</button>`);
+  el.innerHTML = parts.join('');
+
+  // Wire clicks
+  el.querySelectorAll('.day-tab').forEach(btn => {
+    btn.addEventListener('click', e => {
+      if (e.target.classList.contains('day-x')) {
+        e.stopPropagation();
+        deleteDay(e.target.dataset.id);
+        return;
+      }
+      // Double-click on active tab to rename inline
+      if (e.detail === 2 && btn.dataset.id === activePlan().activeDayId) {
+        startDayLabelEdit(btn);
+        return;
+      }
+      switchDay(btn.dataset.id);
+    });
+  });
+  const $add = document.getElementById('btnAddDay');
+  if ($add) $add.addEventListener('click', addDay);
+}
+
+function startDayLabelEdit(chipEl) {
+  const dayId = chipEl.dataset.id;
+  const p = activePlan();
+  const day = p && p.days.find(d => d.id === dayId);
+  if (!day) return;
+  const original = day.label || '';
+  const textEl = chipEl.querySelector('.day-tab-text');
+  if (!textEl) return;
+  textEl.innerHTML = `<input class="day-tab-edit" value="${escapeHtml(original)}" placeholder="Label" maxlength="40">`;
+  const input = textEl.querySelector('.day-tab-edit');
+  input.focus();
+  input.select();
+  const commit = () => {
+    day.label = (input.value || '').trim();
+    persistAll();
+    renderDayTabs();
+    // Refresh the dayLabel field if this is the active day
+    if (dayId === activePlan().activeDayId) {
+      const $label = document.getElementById('dayLabel');
+      if ($label) $label.value = day.label;
+    }
+  };
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') input.blur();
+    if (e.key === 'Escape') { day.label = original; input.blur(); }
+  });
+  input.addEventListener('click', e => e.stopPropagation());
+}
+
+function formatDayLabel(dateStr) {
+  // dateStr is YYYY-MM-DD. Render "Mon 17" or "17 Aug" depending on context.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) return dateStr;
+  const day = d.toLocaleDateString(undefined, { weekday: 'short' });
+  const dnum = d.getDate();
+  const mon = d.toLocaleDateString(undefined, { month: 'short' });
+  return `${day} ${dnum} ${mon}`;
+}
+
+function switchDay(dayId) {
+  const p = activePlan();
+  if (!p || !p.days.find(d => d.id === dayId)) return;
+  p.activeDayId = dayId;
+  persistAll();
+  // Re-render the day-dependent parts
+  resolveOverlaps();
+  renderTasks();
+  renderDayTabs();
+  renderPlanList();
+}
+
+function addDay() {
+  const p = activePlan();
+  if (!p) return;
+  // Compute next date if the last day has a date set
+  const last = p.days[p.days.length - 1];
+  let newDate = '';
+  if (last && last.date && /^\d{4}-\d{2}-\d{2}$/.test(last.date)) {
+    const d = new Date(last.date + 'T00:00:00');
+    if (!isNaN(d.getTime())) {
+      d.setDate(d.getDate() + 1);
+      newDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+  }
+  const newDay = { id: uid(), date: newDate, label: '', tasks: [] };
+  p.days.push(newDay);
+  p.activeDayId = newDay.id;
+  persistAll();
+  renderAll();
+}
+
+function deleteDay(dayId) {
+  const p = activePlan();
+  if (!p) return;
+  if (p.days.length <= 1) return;
+  const day = p.days.find(d => d.id === dayId);
+  if (!day) return;
+  const label = day.date ? formatDayLabel(day.date) : 'this day';
+  if (!confirm(`Remove ${label}? Tasks on this day will be lost.`)) return;
+  const idx = p.days.findIndex(d => d.id === dayId);
+  p.days.splice(idx, 1);
+  if (p.activeDayId === dayId) {
+    p.activeDayId = (p.days[idx] || p.days[idx - 1] || p.days[0]).id;
+  }
+  persistAll();
+  renderAll();
+}
+
+/* ---------- Clock ---------- */
+function updateClock() {
+  const d = new Date();
+  document.getElementById('liveClock').textContent = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+setInterval(updateClock, 30000);
+updateClock();
+
+/* ============ Firebase Cloud Sync ============ */
+const CloudSync = (() => {
+  const auth = window.__auth;
+  const db = window.__db;
+  const sessionId = window.__sessionId;
+  let currentUser = null;
+  let unsub = null;
+  let syncState = 'signedout'; // signedout | syncing | synced | error
+  let saveTimer = null;
+  let applyingRemote = false;
+
+  const setState = (state) => {
+    syncState = state;
+    const btn = document.getElementById('btnSync');
+    if (!btn) return;
+    btn.classList.remove('state-signedout','state-syncing','state-synced','state-error');
+    btn.classList.add('state-' + state);
+    const icon = document.getElementById('syncIcon');
+    if (icon) icon.textContent = state === 'syncing' ? '⟳' : '☁';
+  };
+
+  const docRef = (uid) => db.collection('users').doc(uid).collection('apps').doc('dayplanner');
+
+  const readCloud = async (uid) => {
+    const snap = await docRef(uid).get();
+    return snap.exists ? snap.data() : null;
+  };
+
+  const writeCloud = async (uid) => {
+    if (!uid) return;
+    const payload = {
+      plans, activePlanId,
+      updatedAt: Date.now(),
+      sessionId
+    };
+    await docRef(uid).set(payload);
+  };
+
+  const scheduleWrite = () => {
+    if (!currentUser) return;
+    setState('syncing');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async () => {
+      try {
+        await writeCloud(currentUser.uid);
+        setState('synced');
+      } catch (e) {
+        setState('error');
+      }
+    }, 800);
+  };
+
+  const applyRemote = (data) => {
+    if (!data) return;
+    applyingRemote = true;
+    try {
+      plans = data.plans || {};
+      Object.values(plans).forEach(p => normalizePlanInPlace(p));
+      activePlanId = data.activePlanId && plans[data.activePlanId] ? data.activePlanId : Object.keys(plans)[0] || null;
+      // Persist to localStorage too so offline still works
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ plans, activePlanId }));
+      renderAll();
+    } finally {
+      applyingRemote = false;
+    }
+  };
+
+  const subscribe = (uid) => {
+    if (unsub) unsub();
+    unsub = docRef(uid).onSnapshot(snap => {
+      if (!snap.exists) return;
+      const data = snap.data();
+      // Ignore our own writes to prevent echo
+      if (data.sessionId === sessionId) return;
+      applyRemote(data);
+    }, err => {
+      console.warn('Firestore snapshot error:', err);
+      setState('error');
+    });
+  };
+
+  const onSignedIn = async (user) => {
+    currentUser = user;
+    setState('syncing');
+    try {
+      const cloud = await readCloud(user.uid);
+      const localUpdatedAt = Math.max(
+        0, ...Object.values(plans).map(p => p.updatedAt || 0)
+      );
+      const cloudUpdatedAt = cloud ? (cloud.updatedAt || 0) : 0;
+
+      if (!cloud || cloudUpdatedAt < localUpdatedAt) {
+        // Local is newer (or cloud is empty) → push local to cloud
+        await writeCloud(user.uid);
+      } else if (cloud && cloudUpdatedAt > localUpdatedAt) {
+        // Cloud is newer → replace local
+        applyRemote(cloud);
+      }
+      subscribe(user.uid);
+      setState('synced');
+    } catch (e) {
+      console.warn('Sync init failed:', e);
+      setState('error');
+    }
+  };
+
+  const onSignedOut = () => {
+    currentUser = null;
+    if (unsub) { unsub(); unsub = null; }
+    setState('signedout');
+  };
+
+  auth.onAuthStateChanged(user => {
+    if (user) onSignedIn(user);
+    else onSignedOut();
+    renderSyncModal();
+  });
+
+  // ---- UI wiring ----
+  const openModal = () => {
+    document.getElementById('syncBackdrop').style.display = 'flex';
+    renderSyncModal();
+  };
+  const closeModal = () => {
+    document.getElementById('syncBackdrop').style.display = 'none';
+  };
+  const renderSyncModal = () => {
+    const container = document.getElementById('syncContent');
+    if (!container) return;
+    if (currentUser) {
+      const state =
+        syncState === 'synced' ? 'Synced' :
+        syncState === 'syncing' ? 'Syncing…' :
+        syncState === 'error' ? 'Sync error — offline' : '';
+      container.innerHTML = `
+        <div>Signed in as <span class="sync-email"></span></div>
+        <div class="sync-status-line">${escapeHtml(state)}</div>
+        <button type="button" class="sync-signout-btn" id="btnSignOut">Sign out</button>
+      `;
+      container.querySelector('.sync-email').textContent = currentUser.email || currentUser.displayName || '';
+      container.querySelector('#btnSignOut').addEventListener('click', async () => {
+        try { await auth.signOut(); } catch (e) { console.warn(e); }
+      });
+    } else {
+      container.innerHTML = `
+        <div>Sign in to sync your plans across devices.</div>
+        <div style="text-align:center; margin-top:14px;">
+          <button type="button" class="sync-google-btn" id="btnSignIn">Sign in with Google</button>
+        </div>
+      `;
+      container.querySelector('#btnSignIn').addEventListener('click', async () => {
+        try {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          await auth.signInWithPopup(provider);
+        } catch (e) {
+          console.warn(e);
+          alert('Sign-in failed: ' + (e.message || e));
+        }
+      });
+    }
+  };
+
+  document.getElementById('btnSync').addEventListener('click', openModal);
+  document.getElementById('syncClose').addEventListener('click', closeModal);
+  document.getElementById('syncBackdrop').addEventListener('click', e => {
+    if (e.target === document.getElementById('syncBackdrop')) closeModal();
+  });
+
+  return {
+    notifyChange: () => { if (currentUser && !applyingRemote) scheduleWrite(); }
+  };
+})();
+
+// Hook into persistAll to push changes to the cloud whenever data changes
+const _persistAll = persistAll;
+persistAll = function() {
+  _persistAll.apply(this, arguments);
+  CloudSync.notifyChange();
+};
+
+loadAll();
+renderAll();
+</script>
+
+</body>
+</html>
