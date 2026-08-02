@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <meta name="theme-color" content="#0f172a"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%2C-apple-system%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
-<title>FlightDeck v145</title>
+<title>FlightDeck v146</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -18,7 +18,7 @@
   --amber:#b45309;--rose:#be123c;--violet:#6d28d9;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 button{cursor:pointer;font-family:inherit}
@@ -198,7 +198,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v145</span>
+      <span class="logo-sub">v146</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -2400,38 +2400,17 @@ function renderFlDetail(){
     box.appendChild(scard);
   }
 
-  // Clearance card (rose)
-  var hasIfr = f.ifrTo||f.ifrVia||f.ifrClimb||f.ifrSquawk||f.ifrNotes||f.scribbleIfr;
-  var hasTaxi = f.taxiTo||f.taxiVia||f.taxiHoldShort||f.taxiQnh||f.taxiNotes||f.scribbleTaxi;
-  if(hasIfr || hasTaxi || f.clearance){
+  // Clearance card (rose) — scribbles only
+  if(f.scribbleIfr || f.scribbleTaxi){
     var clrCard = el('div', 'scard s-clr');
     var ch = '<div class="scard-head"><span class="ico">&#128075;</span> Clearance</div>';
-    if(hasIfr){
-      var ifrBits = [];
-      if(f.ifrTo) ifrBits.push('CLEARED TO '+f.ifrTo);
-      if(f.ifrVia && f.ifrVia.trim()) ifrBits.push('VIA '+f.ifrVia.trim().toUpperCase());
-      if(f.ifrClimb) ifrBits.push('CLIMB '+f.ifrClimb+' ft');
-      if(f.ifrSquawk) ifrBits.push('SQUAWK '+f.ifrSquawk);
-      var ifrStr = ifrBits.join(', ');
-      if(f.ifrNotes && f.ifrNotes.trim()) ifrStr += (ifrStr?'\n':'')+'NOTES: '+f.ifrNotes.trim();
-      ch += '<div class="sec-lbl">IFR</div>';
-      if(ifrStr) ch += '<div class="sec-box" style="font-family:JetBrains Mono,monospace;font-size:13px;color:#be123c;font-weight:600;margin-bottom:10px;white-space:pre-wrap">'+escapeHtml(ifrStr)+'</div>';
-      if(f.scribbleIfr) ch += '<div style="background:#fff;border:1px solid var(--border);border-radius:9px;padding:6px;margin-bottom:10px"><img src="'+f.scribbleIfr+'" style="max-width:100%;display:block;border-radius:5px" alt="IFR scribble"/></div>';
+    if(f.scribbleIfr){
+      ch += '<div class="sec-lbl">IFR</div>'+
+        '<div style="background:#fff;border:1px solid var(--border);border-radius:9px;padding:6px;margin-bottom:12px"><img src="'+f.scribbleIfr+'" style="max-width:100%;display:block;border-radius:5px" alt="IFR scribble"/></div>';
     }
-    if(hasTaxi){
-      var taxiBits = [];
-      if(f.taxiTo) taxiBits.push('TAXI TO '+f.taxiTo);
-      if(f.taxiVia && f.taxiVia.trim()) taxiBits.push('VIA '+f.taxiVia.trim().toUpperCase());
-      if(f.taxiHoldShort && f.taxiHoldShort.trim()) taxiBits.push('HOLD SHORT '+f.taxiHoldShort.trim().toUpperCase());
-      if(f.taxiQnh) taxiBits.push('QNH '+f.taxiQnh);
-      var taxiStr = taxiBits.join(', ');
-      if(f.taxiNotes && f.taxiNotes.trim()) taxiStr += (taxiStr?'\n':'')+'NOTES: '+f.taxiNotes.trim();
-      ch += '<div class="sec-lbl">Taxi</div>';
-      if(taxiStr) ch += '<div class="sec-box" style="font-family:JetBrains Mono,monospace;font-size:13px;color:#be123c;font-weight:600;margin-bottom:10px;white-space:pre-wrap">'+escapeHtml(taxiStr)+'</div>';
-      if(f.scribbleTaxi) ch += '<div style="background:#fff;border:1px solid var(--border);border-radius:9px;padding:6px;margin-bottom:10px"><img src="'+f.scribbleTaxi+'" style="max-width:100%;display:block;border-radius:5px" alt="Taxi scribble"/></div>';
-    }
-    if(f.clearance){
-      ch += '<div class="sec-lbl">Legacy notes</div><div class="sec-box" style="white-space:pre-wrap">'+escapeHtml(f.clearance)+'</div>';
+    if(f.scribbleTaxi){
+      ch += '<div class="sec-lbl">Taxi</div>'+
+        '<div style="background:#fff;border:1px solid var(--border);border-radius:9px;padding:6px"><img src="'+f.scribbleTaxi+'" style="max-width:100%;display:block;border-radius:5px" alt="Taxi scribble"/></div>';
     }
     clrCard.innerHTML = ch;
     box.appendChild(clrCard);
@@ -2469,8 +2448,6 @@ function openFlModal(ex){
     wxTaf1:'',wxTaf2:'',wxTaf3:'',wxTaf4:'',
     oilLevel:'',oilAdded:'',maneuvers:'',defects:'',notes:'',
     scribbleIfr:'',scribbleTaxi:'',
-    ifrTo:'',ifrVia:'',ifrClimb:'',ifrSquawk:'',ifrNotes:'',
-    taxiTo:'',taxiVia:'',taxiHoldShort:'',taxiQnh:'',taxiNotes:'',
     atisEntry:null,
     frequencies:[]};
 
@@ -2530,50 +2507,16 @@ function openFlModal(ex){
       '<div class="scard-head"><span class="ico">&#128075;</span> Clearance</div>'+
 
       '<div class="sdiv">IFR Clearance</div>'+
-      '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px">'+
-        '<button type="button" class="atis-fld" data-clrfld="ifrTo" data-val="'+escapeHtml(f.ifrTo||'')+'"><span class="atis-lbl">Cleared To</span><span class="atis-v">'+(f.ifrTo||'--')+'</span></button>'+
-        '<button type="button" class="atis-fld" data-clrfld="ifrSquawk" data-val="'+escapeHtml(f.ifrSquawk||'')+'"><span class="atis-lbl">Squawk</span><span class="atis-v">'+(f.ifrSquawk||'--')+'</span></button>'+
+      '<button type="button" class="btn btn-p" id="m-scribble-ifr" style="width:100%;padding:14px;font-size:15px;font-weight:700;margin-bottom:10px">&#9998; Open IFR Scribble</button>'+
+      '<div id="m-scribble-ifr-preview" style="margin-bottom:18px">'+
+        (f.scribbleIfr ? '<img src="'+f.scribbleIfr+'" style="max-width:100%;max-height:220px;border:1px solid var(--border);border-radius:6px;background:#fff;padding:4px" alt="IFR scribble"/>' : '')+
       '</div>'+
-      '<button type="button" class="atis-fld" data-clrfld="ifrClimb" data-val="'+escapeHtml(f.ifrClimb||'')+'" style="width:100%;margin-bottom:8px"><span class="atis-lbl">Climb To (altitude / FL)</span><span class="atis-v">'+(f.ifrClimb||'--')+'</span></button>'+
-      '<div class="field"><label>Via (SID / route / waypoints)</label>'+
-        '<textarea class="inp" id="m-ifrVia" rows="2" placeholder="e.g. DVR1G, then DVR direct" style="resize:vertical;min-height:56px;line-height:1.4">'+escapeHtml(f.ifrVia||'')+'</textarea>'+
-      '</div>'+
-      '<div class="field"><label>IFR Notes</label>'+
-        '<textarea class="inp" id="m-ifrNotes" rows="2" placeholder="Departure frequency, expect FL later..." style="resize:vertical;min-height:56px;line-height:1.4">'+escapeHtml(f.ifrNotes||'')+'</textarea>'+
-      '</div>'+
-      '<div style="display:flex;gap:8px;margin-bottom:6px">'+
-        '<button type="button" class="btn btn-p" id="m-ifr-submit" style="flex:1;padding:12px;font-size:14px;font-weight:700">&#10003; Read Back IFR</button>'+
-        '<button type="button" class="btn btn-p" id="m-scribble-ifr" style="flex:0 0 auto;padding:12px 14px;font-size:13px">&#9998; Scribble</button>'+
-        '<button type="button" class="btn btn-d" id="m-ifr-clear" style="flex:0 0 auto;padding:12px 16px;font-size:13px">Clear</button>'+
-      '</div>'+
-      '<div id="m-scribble-ifr-preview" style="margin-bottom:10px">'+
-        (f.scribbleIfr ? '<img src="'+f.scribbleIfr+'" style="max-width:100%;max-height:180px;border:1px solid var(--border);border-radius:6px;background:#fff;padding:4px" alt="IFR scribble"/>' : '')+
-      '</div>'+
-      '<div id="m-ifr-summary" style="display:none;margin-bottom:16px;padding:12px 14px;background:rgba(4,120,87,.08);border:1px solid rgba(4,120,87,.3);border-radius:9px;font-family:JetBrains Mono,monospace;font-size:13px;color:#047857;line-height:1.6;white-space:pre-wrap;font-weight:600"></div>'+
 
-      '<div class="sdiv" style="margin-top:14px">Taxi Clearance</div>'+
-      '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px">'+
-        '<button type="button" class="atis-fld" data-clrfld="taxiTo" data-val="'+escapeHtml(f.taxiTo||'')+'"><span class="atis-lbl">Taxi To</span><span class="atis-v">'+(f.taxiTo||'--')+'</span></button>'+
-        '<button type="button" class="atis-fld" data-clrfld="taxiQnh" data-val="'+escapeHtml(f.taxiQnh||'')+'"><span class="atis-lbl">QNH</span><span class="atis-v">'+(f.taxiQnh?f.taxiQnh+' hPa':'--')+'</span></button>'+
+      '<div class="sdiv">Taxi Clearance</div>'+
+      '<button type="button" class="btn btn-p" id="m-scribble-taxi" style="width:100%;padding:14px;font-size:15px;font-weight:700;margin-bottom:10px">&#9998; Open Taxi Scribble</button>'+
+      '<div id="m-scribble-taxi-preview">'+
+        (f.scribbleTaxi ? '<img src="'+f.scribbleTaxi+'" style="max-width:100%;max-height:220px;border:1px solid var(--border);border-radius:6px;background:#fff;padding:4px" alt="Taxi scribble"/>' : '')+
       '</div>'+
-      '<div class="field"><label>Via (taxiways)</label>'+
-        '<textarea class="inp" id="m-taxiVia" rows="2" placeholder="e.g. Alpha, Bravo, hold short Delta" style="resize:vertical;min-height:56px;line-height:1.4">'+escapeHtml(f.taxiVia||'')+'</textarea>'+
-      '</div>'+
-      '<div class="field"><label>Hold Short</label>'+
-        '<input class="inp" id="m-taxiHoldShort" value="'+escapeHtml(f.taxiHoldShort||'')+'" placeholder="e.g. RWY 26L, Charlie"/>'+
-      '</div>'+
-      '<div class="field"><label>Taxi Notes</label>'+
-        '<textarea class="inp" id="m-taxiNotes" rows="2" placeholder="Line up runway 26, expect immediate departure..." style="resize:vertical;min-height:56px;line-height:1.4">'+escapeHtml(f.taxiNotes||'')+'</textarea>'+
-      '</div>'+
-      '<div style="display:flex;gap:8px;margin-bottom:6px">'+
-        '<button type="button" class="btn btn-p" id="m-taxi-submit" style="flex:1;padding:12px;font-size:14px;font-weight:700">&#10003; Read Back Taxi</button>'+
-        '<button type="button" class="btn btn-p" id="m-scribble-taxi" style="flex:0 0 auto;padding:12px 14px;font-size:13px">&#9998; Scribble</button>'+
-        '<button type="button" class="btn btn-d" id="m-taxi-clear" style="flex:0 0 auto;padding:12px 16px;font-size:13px">Clear</button>'+
-      '</div>'+
-      '<div id="m-scribble-taxi-preview" style="margin-bottom:10px">'+
-        (f.scribbleTaxi ? '<img src="'+f.scribbleTaxi+'" style="max-width:100%;max-height:180px;border:1px solid var(--border);border-radius:6px;background:#fff;padding:4px" alt="Taxi scribble"/>' : '')+
-      '</div>'+
-      '<div id="m-taxi-summary" style="display:none;padding:12px 14px;background:rgba(4,120,87,.08);border:1px solid rgba(4,120,87,.3);border-radius:9px;font-family:JetBrains Mono,monospace;font-size:13px;color:#047857;line-height:1.6;white-space:pre-wrap;font-weight:600"></div>'+
     '</div>'+ // close #m-section-clr
 
     '<div id="m-section-times" class="scard s-times" style="display:none">'+
@@ -3690,7 +3633,7 @@ function openFlModal(ex){
           '</table>'+
         '</div>'+
 
-        '<div class="foot">FlightDeck v145 &middot; '+new Date().toLocaleString()+'</div>'+
+        '<div class="foot">FlightDeck v146 &middot; '+new Date().toLocaleString()+'</div>'+
         '</body></html>';
       win.document.open();
       win.document.write(html);
@@ -3975,111 +3918,7 @@ function openFlModal(ex){
     });
   });
 
-  // ============ CLEARANCE section wiring ============
-  // Configs for numeric clearance fields
-  var clrConfigs = {
-    ifrSquawk: { title:'Squawk Code', digits:4, suffix:'', min:0, max:7777, help:'octal-safe 4 digits' },
-    ifrClimb:  { title:'Climb Altitude (ft)', digits:5, suffix:'ft', min:0, max:60000, help:'e.g. 3000 or 07000 for FL070' },
-    taxiQnh:   { title:'QNH', digits:4, suffix:'hPa', min:900, max:1100, help:'hectopascals' }
-  };
-  div.querySelectorAll('button.atis-fld[data-clrfld]').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      var fld = btn.getAttribute('data-clrfld');
-      if(fld === 'ifrTo' || fld === 'taxiTo'){
-        // Free-text short entry — inline prompt is simplest here
-        var v = prompt(fld==='ifrTo' ? 'Cleared to (ICAO / destination):' : 'Taxi to (holding point / runway):', btn.dataset.val || '');
-        if(v !== null){
-          btn.dataset.val = (v||'').toUpperCase();
-          btn.querySelector('.atis-v').textContent = btn.dataset.val || '--';
-        }
-      } else if(clrConfigs[fld]){
-        openNumericKeypad(clrConfigs[fld], btn.dataset.val || '', function(v){
-          btn.dataset.val = v;
-          var vEl = btn.querySelector('.atis-v');
-          if(fld === 'taxiQnh') vEl.textContent = v ? v+' hPa' : '--';
-          else if(fld === 'ifrClimb') vEl.textContent = v ? v+' ft' : '--';
-          else vEl.textContent = v || '--';
-        });
-      }
-    });
-  });
-
-  function readClrFld(fld){
-    var b = div.querySelector('button.atis-fld[data-clrfld="'+fld+'"]');
-    return b ? (b.dataset.val||'') : '';
-  }
-  function ifrReadback(){
-    var to = readClrFld('ifrTo');
-    var sq = readClrFld('ifrSquawk');
-    var clm = readClrFld('ifrClimb');
-    var via = (qs('#m-ifrVia',div)||{}).value || '';
-    var nts = (qs('#m-ifrNotes',div)||{}).value || '';
-    var bits = [];
-    if(to) bits.push('CLEARED TO '+to);
-    if(via.trim()) bits.push('VIA '+via.trim().toUpperCase());
-    if(clm) bits.push('CLIMB '+clm+' ft');
-    if(sq) bits.push('SQUAWK '+sq);
-    var out = bits.join(', ');
-    if(nts.trim()) out += (out?'\n':'')+'NOTES: '+nts.trim();
-    return out;
-  }
-  function taxiReadback(){
-    var to = readClrFld('taxiTo');
-    var qnh = readClrFld('taxiQnh');
-    var via = (qs('#m-taxiVia',div)||{}).value || '';
-    var hs = (qs('#m-taxiHoldShort',div)||{}).value || '';
-    var nts = (qs('#m-taxiNotes',div)||{}).value || '';
-    var bits = [];
-    if(to) bits.push('TAXI TO '+to);
-    if(via.trim()) bits.push('VIA '+via.trim().toUpperCase());
-    if(hs.trim()) bits.push('HOLD SHORT '+hs.trim().toUpperCase());
-    if(qnh) bits.push('QNH '+qnh);
-    var out = bits.join(', ');
-    if(nts.trim()) out += (out?'\n':'')+'NOTES: '+nts.trim();
-    return out;
-  }
-  function showSummary(el, text){
-    if(!el) return;
-    if(!text.trim()){
-      el.style.display='block';
-      el.style.background='rgba(180,83,9,.08)';
-      el.style.borderColor='rgba(180,83,9,.3)';
-      el.style.color='#b45309';
-      el.textContent='Nothing entered yet.';
-      return;
-    }
-    el.style.display='block';
-    el.style.background='rgba(4,120,87,.08)';
-    el.style.borderColor='rgba(4,120,87,.3)';
-    el.style.color='#047857';
-    el.textContent=text;
-  }
-  var ifrSubBtn = qs('#m-ifr-submit', div);
-  if(ifrSubBtn) ifrSubBtn.addEventListener('click', function(){ showSummary(qs('#m-ifr-summary',div), ifrReadback()); });
-  var taxiSubBtn = qs('#m-taxi-submit', div);
-  if(taxiSubBtn) taxiSubBtn.addEventListener('click', function(){ showSummary(qs('#m-taxi-summary',div), taxiReadback()); });
-  function clearClrGroup(prefix, fields, summaryId){
-    if(!confirm('Clear all '+prefix+' clearance fields?')) return;
-    div.querySelectorAll('button.atis-fld[data-clrfld]').forEach(function(b){
-      var f = b.getAttribute('data-clrfld');
-      if(f && f.indexOf(prefix)===0){
-        b.dataset.val = '';
-        b.querySelector('.atis-v').textContent = '--';
-      }
-    });
-    fields.forEach(function(id){
-      var el = qs('#'+id, div);
-      if(el) el.value = '';
-    });
-    var s = qs('#'+summaryId, div);
-    if(s) s.style.display='none';
-  }
-  var ifrClrBtn = qs('#m-ifr-clear', div);
-  if(ifrClrBtn) ifrClrBtn.addEventListener('click', function(){ clearClrGroup('ifr', ['m-ifrVia','m-ifrNotes'], 'm-ifr-summary'); });
-  var taxiClrBtn = qs('#m-taxi-clear', div);
-  if(taxiClrBtn) taxiClrBtn.addEventListener('click', function(){ clearClrGroup('taxi', ['m-taxiVia','m-taxiHoldShort','m-taxiNotes'], 'm-taxi-summary'); });
-
-  // Scribble buttons (one per clearance type)
+  // ============ CLEARANCE section wiring (scribbles only) ============
   function wireScribbleBtn(btnId, fieldKey, previewId){
     var btn = qs('#'+btnId, div);
     if(!btn) return;
@@ -4088,7 +3927,7 @@ function openFlModal(ex){
         var prev = qs('#'+previewId, div);
         if(prev){
           prev.innerHTML = f[fieldKey]
-            ? '<img src="'+f[fieldKey]+'" style="max-width:100%;max-height:180px;border:1px solid var(--border);border-radius:6px;background:#fff;padding:4px" alt="Scribble"/>'
+            ? '<img src="'+f[fieldKey]+'" style="max-width:100%;max-height:220px;border:1px solid var(--border);border-radius:6px;background:#fff;padding:4px" alt="Scribble"/>'
             : '';
         }
         saveDraft(true);
@@ -4136,14 +3975,11 @@ function openFlModal(ex){
     // Clear legacy flat ATIS fields
     ['atis','atisInfo','atisRwy','atisWind','atisVis','atisQnh','atisTemp','atisDew',
      'atisCloud1','atisCloud2','atisCloud3','atisNotes'].forEach(function(k){ delete f[k]; });
-    // Clearance: read button data-vals + textareas
-    ['ifrTo','ifrSquawk','ifrClimb','taxiTo','taxiQnh'].forEach(function(fld){
-      var b = div.querySelector('button.atis-fld[data-clrfld="'+fld+'"]');
-      f[fld] = b ? (b.dataset.val||'') : '';
-    });
-    f.ifrVia = g('m-ifrVia'); f.ifrNotes = g('m-ifrNotes');
-    f.taxiVia = g('m-taxiVia'); f.taxiHoldShort = g('m-taxiHoldShort'); f.taxiNotes = g('m-taxiNotes');
-    delete f.clearance; // legacy free-form field removed
+    // Clearance: only scribbles are captured (saved directly by the scribble overlay).
+    // Purge legacy structured clearance fields so they don't linger in storage.
+    ['ifrTo','ifrVia','ifrClimb','ifrSquawk','ifrNotes',
+     'taxiTo','taxiVia','taxiHoldShort','taxiQnh','taxiNotes',
+     'clearance'].forEach(function(k){ delete f[k]; });
     // Collect frequencies from dynamic rows
     f.frequencies = [];
     var fContainer = qs('#m-freq-container', div);
@@ -4498,7 +4334,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v145');
+  lines.push('','-- Sent from FlightDeck v146');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -4547,7 +4383,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v145');
+  lines.push('','-- FlightDeck v146');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
@@ -5105,21 +4941,12 @@ function openScribbleForFlight(f, fieldKey, onSaved){
 
   var bar = document.createElement('div');
   bar.style.cssText = 'display:flex;gap:8px;align-items:center;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap';
-  var colors = ['#0f172a','#be123c','#0369a1','#047857','#b45309','#6d28d9'];
   var currentColor = '#0f172a';
   var currentSize = 3;
   var currentTool = 'pen';
 
   bar.innerHTML =
     '<button class="btn btn-g" id="sc-close" style="padding:6px 12px">&larr; Save &amp; Close</button>'+
-    '<div style="width:1px;height:24px;background:var(--border)"></div>'+
-    colors.map(function(c,i){
-      return '<button class="sc-color" data-color="'+c+'" style="width:32px;height:32px;border-radius:50%;border:'+(i===0?'3px solid #0f172a':'2px solid var(--border)')+';background:'+c+';cursor:pointer;padding:0"></button>';
-    }).join('')+
-    '<div style="width:1px;height:24px;background:var(--border)"></div>'+
-    '<label style="font-size:12px;color:var(--muted);font-family:JetBrains Mono,monospace">Size:</label>'+
-    '<input type="range" id="sc-size" min="1" max="20" value="3" style="width:100px"/>'+
-    '<span id="sc-size-v" style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--muted);width:20px">3</span>'+
     '<div style="width:1px;height:24px;background:var(--border)"></div>'+
     '<button class="btn btn-g" id="sc-eraser" style="padding:6px 12px">Eraser</button>'+
     '<button class="btn btn-g" id="sc-undo" style="padding:6px 12px">Undo</button>'+
@@ -5223,23 +5050,14 @@ function openScribbleForFlight(f, fieldKey, onSaved){
   canvas.addEventListener('pointerup', endStroke);
   canvas.addEventListener('pointercancel', endStroke);
 
-  bar.querySelectorAll('.sc-color').forEach(function(b){
-    b.addEventListener('click', function(){
-      currentColor = b.getAttribute('data-color');
-      currentTool = 'pen';
-      bar.querySelectorAll('.sc-color').forEach(function(x){ x.style.border = '2px solid var(--border)'; });
-      b.style.border = '3px solid '+currentColor;
-      bar.querySelector('#sc-eraser').style.background = '';
-    });
-  });
-  var sizeInp = bar.querySelector('#sc-size');
-  sizeInp.addEventListener('input', function(){
-    currentSize = parseInt(sizeInp.value);
-    bar.querySelector('#sc-size-v').textContent = currentSize;
-  });
   bar.querySelector('#sc-eraser').addEventListener('click', function(){
-    currentTool = 'eraser';
-    bar.querySelector('#sc-eraser').style.background = 'rgba(239,68,68,.15)';
+    if(currentTool === 'eraser'){
+      currentTool = 'pen';
+      bar.querySelector('#sc-eraser').style.background = '';
+    } else {
+      currentTool = 'eraser';
+      bar.querySelector('#sc-eraser').style.background = 'rgba(239,68,68,.15)';
+    }
   });
   bar.querySelector('#sc-undo').addEventListener('click', function(){
     if(history.length<=1) return;
