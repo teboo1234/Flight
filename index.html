@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%2C-apple-system%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
-<title>FlightDeck v143</title>
+<title>FlightDeck v145</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -126,19 +126,28 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 .calc-num{font-family:'JetBrains Mono',monospace;font-weight:700}
 /* Spectrum strip on flight list cards: small coloured bars showing what's filled in */
 .spec{display:flex;height:4px;border-radius:2px;overflow:hidden;margin-bottom:8px;background:rgba(203,213,225,.4)}
-.ttcafe-time{flex:0 0 70px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:#b45309;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:7px;padding:8px 4px;outline:none}
 /* ATIS structured field buttons */
 .atis-fld{display:flex;flex-direction:column;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;min-height:66px;cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s;text-align:left}
 .atis-fld:hover{background:var(--card);border-color:#1e3a8a}
 .atis-fld:active{background:var(--border)}
 .atis-fld .atis-lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:'JetBrains Mono',monospace;margin-bottom:5px}
 .atis-fld .atis-v{font-size:20px;font-weight:700;color:#1e3a8a;font-family:'JetBrains Mono',monospace}
-/* TTCAFE input rows — each in its own bordered card. Wrap on narrow screens. */
-.ttcafe-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,255,255,.55);border:1px solid rgba(180,83,9,.22);border-radius:9px;transition:background .15s,border-color .15s;box-sizing:border-box;max-width:100%;overflow:hidden}
+/* TTCAFE input rows — always two lines: main row (letter | name | duration)
+   plus a body row underneath (amount | unit | converted output). Every row
+   uses the same grid template so columns align across all rows and devices. */
+.ttcafe-row{display:grid;grid-template-columns:32px 1fr 108px;grid-template-areas:"letter name dur" ".      body body";gap:6px 8px;align-items:center;padding:10px 12px;background:rgba(255,255,255,.55);border:1px solid rgba(180,83,9,.22);border-radius:9px;transition:background .15s,border-color .15s;box-sizing:border-box;max-width:100%;overflow:hidden}
 .ttcafe-row:hover{background:rgba(255,255,255,.85);border-color:rgba(180,83,9,.4)}
 .ttcafe-row:focus-within{background:rgba(255,255,255,.9);border-color:#b45309;box-shadow:0 0 0 2px rgba(245,158,11,.15)}
-.ttcafe-letter{flex:0 0 30px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:#b45309;color:#fff;border-radius:7px;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:14px}
-.ttcafe-name{flex:0 0 100px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.ttcafe-letter{grid-area:letter;width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:#b45309;color:#fff;border-radius:7px;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:14px}
+.ttcafe-name{grid-area:name;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.ttcafe-time{grid-area:dur;text-align:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:#b45309;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:7px;padding:8px 4px;outline:none;justify-self:end;min-width:88px}
+.ttcafe-body{grid-area:body;display:flex;align-items:center;gap:6px;min-width:0}
+.ttcafe-body .fuel-inp,.ttcafe-body input[type="number"]{flex:0 0 74px;text-align:right;min-width:0}
+.ttcafe-body .fuel-unit,.ttcafe-body .ttcafe-unit-static{flex:0 0 58px;text-align:center;padding:8px 4px;font-family:'JetBrains Mono',monospace;font-size:13px}
+.ttcafe-body .ttcafe-unit-static{display:flex;align-items:center;justify-content:center;height:36px;box-sizing:border-box}
+.ttcafe-body .ttcafe-out{flex:1 1 auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:#0369a1;font-weight:600;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* Duration spinner inside the dur cell fills the fixed column neatly */
+.ttcafe-row .dur-spin{grid-area:dur;justify-self:end}
 /* USG vs Litres colour differentiation */
 .fuel-usg{color:#b45309;font-weight:700}
 .fuel-usg-lbl{color:#b45309;font-size:11px;opacity:.75;font-weight:600}
@@ -189,7 +198,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v143</span>
+      <span class="logo-sub">v145</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -1620,6 +1629,19 @@ function fuelPairHtml(baseId, usgVal, ph){
     '<span id="'+baseId+'-out" style="flex:0 1 auto;font-family:JetBrains Mono,monospace;font-size:12px;color:#0369a1;font-weight:600;padding:0 2px;white-space:nowrap"></span>'+
   '</div>';
 }
+// Same as fuelPairHtml but returns three raw elements (no wrapper), so they
+// can be placed directly inside a .ttcafe-body flex container.
+function fuelPairInline(baseId, usgVal, ph){
+  var u = usgVal||'';
+  var initialDisplay = (u !== '' && !isNaN(parseFloat(u))) ? String(Math.round(parseFloat(u))) : '';
+  var initialUsg = u;
+  return '<input class="inp fuel-inp" id="'+baseId+'" type="number" step="1" inputmode="numeric" placeholder="'+(ph||'')+'" value="'+initialDisplay+'" data-usg="'+initialUsg+'" data-unit="USG"/>'+
+    '<select class="inp fuel-unit" id="'+baseId+'-u">'+
+      '<option value="USG" selected>USG</option>'+
+      '<option value="L">L</option>'+
+    '</select>'+
+    '<span id="'+baseId+'-out" class="ttcafe-out"></span>';
+}
 
 // Wire a fuel input: keep canonical USG in dataset.usg; converting values
 // on unit switch or user input; output span shows "X.XX USG / Y.YY L".
@@ -2369,26 +2391,18 @@ function renderFlDetail(){
   }
   var atisMetar = atisEntry ? _toMetar(atisEntry).trim() : '';
   var hasAnyAtis = !!atisMetar;
-  if(f.scribble || f.scribbleText || hasAnyAtis){
+  if(hasAnyAtis){
     var scard=el('div','scard s-notes');
     var sh = '<div class="scard-head"><span class="ico">&#9998;</span> Scribble &amp; Notes</div>';
-    if(hasAnyAtis){
-      sh += '<div class="sec-lbl">ATIS</div>'+
-        '<div class="sec-box" style="font-family:JetBrains Mono,monospace;font-size:14px;color:#1e3a8a;font-weight:600;margin-bottom:10px;white-space:pre-wrap">'+escapeHtml(atisMetar)+'</div>';
-    }
-    if(f.scribble){
-      sh += '<div style="background:#fff;border:1px solid var(--border);border-radius:9px;padding:6px;margin-bottom:10px"><img src="'+f.scribble+'" style="max-width:100%;display:block;border-radius:5px" alt="Scribble"/></div>';
-    }
-    if(f.scribbleText){
-      sh += '<div class="sec-lbl">Converted / typed text</div><div class="sec-box" style="white-space:pre-wrap">'+escapeHtml(f.scribbleText)+'</div>';
-    }
+    sh += '<div class="sec-lbl">ATIS</div>'+
+      '<div class="sec-box" style="font-family:JetBrains Mono,monospace;font-size:14px;color:#1e3a8a;font-weight:600;margin-bottom:10px;white-space:pre-wrap">'+escapeHtml(atisMetar)+'</div>';
     scard.innerHTML = sh;
     box.appendChild(scard);
   }
 
   // Clearance card (rose)
-  var hasIfr = f.ifrTo||f.ifrVia||f.ifrClimb||f.ifrSquawk||f.ifrNotes;
-  var hasTaxi = f.taxiTo||f.taxiVia||f.taxiHoldShort||f.taxiQnh||f.taxiNotes;
+  var hasIfr = f.ifrTo||f.ifrVia||f.ifrClimb||f.ifrSquawk||f.ifrNotes||f.scribbleIfr;
+  var hasTaxi = f.taxiTo||f.taxiVia||f.taxiHoldShort||f.taxiQnh||f.taxiNotes||f.scribbleTaxi;
   if(hasIfr || hasTaxi || f.clearance){
     var clrCard = el('div', 'scard s-clr');
     var ch = '<div class="scard-head"><span class="ico">&#128075;</span> Clearance</div>';
@@ -2400,7 +2414,9 @@ function renderFlDetail(){
       if(f.ifrSquawk) ifrBits.push('SQUAWK '+f.ifrSquawk);
       var ifrStr = ifrBits.join(', ');
       if(f.ifrNotes && f.ifrNotes.trim()) ifrStr += (ifrStr?'\n':'')+'NOTES: '+f.ifrNotes.trim();
-      ch += '<div class="sec-lbl">IFR</div><div class="sec-box" style="font-family:JetBrains Mono,monospace;font-size:13px;color:#be123c;font-weight:600;margin-bottom:10px;white-space:pre-wrap">'+escapeHtml(ifrStr)+'</div>';
+      ch += '<div class="sec-lbl">IFR</div>';
+      if(ifrStr) ch += '<div class="sec-box" style="font-family:JetBrains Mono,monospace;font-size:13px;color:#be123c;font-weight:600;margin-bottom:10px;white-space:pre-wrap">'+escapeHtml(ifrStr)+'</div>';
+      if(f.scribbleIfr) ch += '<div style="background:#fff;border:1px solid var(--border);border-radius:9px;padding:6px;margin-bottom:10px"><img src="'+f.scribbleIfr+'" style="max-width:100%;display:block;border-radius:5px" alt="IFR scribble"/></div>';
     }
     if(hasTaxi){
       var taxiBits = [];
@@ -2410,7 +2426,9 @@ function renderFlDetail(){
       if(f.taxiQnh) taxiBits.push('QNH '+f.taxiQnh);
       var taxiStr = taxiBits.join(', ');
       if(f.taxiNotes && f.taxiNotes.trim()) taxiStr += (taxiStr?'\n':'')+'NOTES: '+f.taxiNotes.trim();
-      ch += '<div class="sec-lbl">Taxi</div><div class="sec-box" style="font-family:JetBrains Mono,monospace;font-size:13px;color:#be123c;font-weight:600;margin-bottom:10px;white-space:pre-wrap">'+escapeHtml(taxiStr)+'</div>';
+      ch += '<div class="sec-lbl">Taxi</div>';
+      if(taxiStr) ch += '<div class="sec-box" style="font-family:JetBrains Mono,monospace;font-size:13px;color:#be123c;font-weight:600;margin-bottom:10px;white-space:pre-wrap">'+escapeHtml(taxiStr)+'</div>';
+      if(f.scribbleTaxi) ch += '<div style="background:#fff;border:1px solid var(--border);border-radius:9px;padding:6px;margin-bottom:10px"><img src="'+f.scribbleTaxi+'" style="max-width:100%;display:block;border-radius:5px" alt="Taxi scribble"/></div>';
     }
     if(f.clearance){
       ch += '<div class="sec-lbl">Legacy notes</div><div class="sec-box" style="white-space:pre-wrap">'+escapeHtml(f.clearance)+'</div>';
@@ -2449,7 +2467,8 @@ function openFlModal(ex){
     wxIcao1:'',wxIcao2:'',wxIcao3:'',wxIcao4:'',
     wxMetar1:'',wxMetar2:'',wxMetar3:'',wxMetar4:'',
     wxTaf1:'',wxTaf2:'',wxTaf3:'',wxTaf4:'',
-    oilLevel:'',oilAdded:'',maneuvers:'',defects:'',notes:'',scribble:'',scribbleText:'',
+    oilLevel:'',oilAdded:'',maneuvers:'',defects:'',notes:'',
+    scribbleIfr:'',scribbleTaxi:'',
     ifrTo:'',ifrVia:'',ifrClimb:'',ifrSquawk:'',ifrNotes:'',
     taxiTo:'',taxiVia:'',taxiHoldShort:'',taxiQnh:'',taxiNotes:'',
     atisEntry:null,
@@ -2475,13 +2494,6 @@ function openFlModal(ex){
     '<div class="field"><label>ATIS</label>'+
       '<div id="m-atis-readback" style="display:none;margin-bottom:10px;padding:12px 14px;background:rgba(4,120,87,.08);border:1px solid rgba(4,120,87,.3);border-radius:9px;font-family:JetBrains Mono,monospace;font-size:14px;color:#047857;line-height:1.6;white-space:pre-wrap;font-weight:600"></div>'+
       '<div id="m-atis-container"></div>'+
-    '</div>'+
-    '<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;margin-top:10px">'+
-      '<button type="button" class="btn btn-p" id="m-scribble-open" style="padding:8px 14px">&#9998; Open Scribble Pad</button>'+
-      '<span id="m-scribble-status" style="font-size:12px;color:var(--muted);font-family:JetBrains Mono,monospace">'+((f.scribble||f.scribbleText)?'Has content':'Empty')+'</span>'+
-    '</div>'+
-    '<div id="m-scribble-preview" style="margin-bottom:14px">'+
-      (f.scribble ? '<img src="'+f.scribble+'" style="max-width:200px;max-height:120px;border:1px solid var(--border);border-radius:6px;background:#fff;padding:4px" alt="Scribble preview"/>' : '')+
     '</div>'+
 
     '<div class="sdiv">Flight Details</div>'+
@@ -2531,7 +2543,11 @@ function openFlModal(ex){
       '</div>'+
       '<div style="display:flex;gap:8px;margin-bottom:6px">'+
         '<button type="button" class="btn btn-p" id="m-ifr-submit" style="flex:1;padding:12px;font-size:14px;font-weight:700">&#10003; Read Back IFR</button>'+
+        '<button type="button" class="btn btn-p" id="m-scribble-ifr" style="flex:0 0 auto;padding:12px 14px;font-size:13px">&#9998; Scribble</button>'+
         '<button type="button" class="btn btn-d" id="m-ifr-clear" style="flex:0 0 auto;padding:12px 16px;font-size:13px">Clear</button>'+
+      '</div>'+
+      '<div id="m-scribble-ifr-preview" style="margin-bottom:10px">'+
+        (f.scribbleIfr ? '<img src="'+f.scribbleIfr+'" style="max-width:100%;max-height:180px;border:1px solid var(--border);border-radius:6px;background:#fff;padding:4px" alt="IFR scribble"/>' : '')+
       '</div>'+
       '<div id="m-ifr-summary" style="display:none;margin-bottom:16px;padding:12px 14px;background:rgba(4,120,87,.08);border:1px solid rgba(4,120,87,.3);border-radius:9px;font-family:JetBrains Mono,monospace;font-size:13px;color:#047857;line-height:1.6;white-space:pre-wrap;font-weight:600"></div>'+
 
@@ -2551,7 +2567,11 @@ function openFlModal(ex){
       '</div>'+
       '<div style="display:flex;gap:8px;margin-bottom:6px">'+
         '<button type="button" class="btn btn-p" id="m-taxi-submit" style="flex:1;padding:12px;font-size:14px;font-weight:700">&#10003; Read Back Taxi</button>'+
+        '<button type="button" class="btn btn-p" id="m-scribble-taxi" style="flex:0 0 auto;padding:12px 14px;font-size:13px">&#9998; Scribble</button>'+
         '<button type="button" class="btn btn-d" id="m-taxi-clear" style="flex:0 0 auto;padding:12px 16px;font-size:13px">Clear</button>'+
+      '</div>'+
+      '<div id="m-scribble-taxi-preview" style="margin-bottom:10px">'+
+        (f.scribbleTaxi ? '<img src="'+f.scribbleTaxi+'" style="max-width:100%;max-height:180px;border:1px solid var(--border);border-radius:6px;background:#fff;padding:4px" alt="Taxi scribble"/>' : '')+
       '</div>'+
       '<div id="m-taxi-summary" style="display:none;padding:12px 14px;background:rgba(4,120,87,.08);border:1px solid rgba(4,120,87,.3);border-radius:9px;font-family:JetBrains Mono,monospace;font-size:13px;color:#047857;line-height:1.6;white-space:pre-wrap;font-weight:600"></div>'+
     '</div>'+ // close #m-section-clr
@@ -2715,47 +2735,45 @@ function openFlModal(ex){
       '<div class="ttcafe-row">'+
         '<div class="ttcafe-letter">T</div>'+
         '<div class="ttcafe-name">Taxi</div>'+
-        '<div style="flex:1">'+fuelPairHtml('m-fuelTaxi',f.fuelTaxi,'1.0')+'</div>'+
         durationHtml('m-fuelTaxi-time')+
+        '<div class="ttcafe-body">'+fuelPairInline('m-fuelTaxi',f.fuelTaxi,'1.0')+'</div>'+
       '</div>'+
       '<div class="ttcafe-row">'+
         '<div class="ttcafe-letter">T</div>'+
         '<div class="ttcafe-name">Trip</div>'+
-        '<div style="flex:1">'+fuelPairHtml('m-fuelTrip',f.fuelTrip,'20.0')+'</div>'+
         durationHtml('m-fuelTrip-time')+
+        '<div class="ttcafe-body">'+fuelPairInline('m-fuelTrip',f.fuelTrip,'20.0')+'</div>'+
       '</div>'+
       '<div class="ttcafe-row">'+
         '<div class="ttcafe-letter">C</div>'+
         '<div class="ttcafe-name">Contingency</div>'+
-        '<div style="flex:1;display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0">'+
-          '<div style="display:flex;flex-wrap:nowrap;align-items:center;gap:2px;flex:0 0 auto">'+
-            '<input class="inp" id="m-fuelContPct" type="number" step="1" placeholder="5" value="'+(f.fuelContPct||'5')+'" style="flex:0 0 68px;text-align:right;min-width:0"/>'+
-            '<span style="flex:0 0 32px;text-align:center;padding:8px 2px;font-family:JetBrains Mono,monospace;font-size:13px;color:var(--muted);font-weight:700">%</span>'+
-          '</div>'+
-          '<span style="flex:0 1 auto;font-family:JetBrains Mono,monospace;font-size:12px;font-weight:600;padding:0 2px;white-space:nowrap">'+
+        '<span class="ttcafe-time" id="m-fuelCont-time" style="opacity:.75">--</span>'+
+        '<div class="ttcafe-body">'+
+          '<input class="inp" id="m-fuelContPct" type="number" step="1" placeholder="5" value="'+(f.fuelContPct||'5')+'"/>'+
+          '<span class="ttcafe-unit-static" style="font-family:JetBrains Mono,monospace;font-size:13px;color:var(--muted);font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:6px">%</span>'+
+          '<span class="ttcafe-out">'+
             '<span id="m-contUSG" class="fuel-usg">--</span> <span class="fuel-usg-lbl">USG</span> / '+
             '<span id="m-contL" class="fuel-l">--</span> <span class="fuel-l-lbl">L</span>'+
           '</span>'+
         '</div>'+
-        '<span id="m-fuelCont-time" style="flex:0 0 104px;text-align:center;font-family:JetBrains Mono,monospace;font-size:13px;font-weight:600;color:#b45309;opacity:.7">--</span>'+
       '</div>'+
       '<div class="ttcafe-row">'+
         '<div class="ttcafe-letter">A</div>'+
         '<div class="ttcafe-name">Alternate</div>'+
-        '<div style="flex:1">'+fuelPairHtml('m-fuelAlt',f.fuelAlt,'3.0')+'</div>'+
         durationHtml('m-fuelAlt-time')+
+        '<div class="ttcafe-body">'+fuelPairInline('m-fuelAlt',f.fuelAlt,'3.0')+'</div>'+
       '</div>'+
       '<div class="ttcafe-row">'+
         '<div class="ttcafe-letter">F</div>'+
         '<div class="ttcafe-name">Final Reserve</div>'+
-        '<div style="flex:1">'+fuelPairHtml('m-fuelFinal',f.fuelFinal,'6.0')+'</div>'+
         durationHtml('m-fuelFinal-time')+
+        '<div class="ttcafe-body">'+fuelPairInline('m-fuelFinal',f.fuelFinal,'6.0')+'</div>'+
       '</div>'+
       '<div class="ttcafe-row">'+
         '<div class="ttcafe-letter">E</div>'+
         '<div class="ttcafe-name">Extra</div>'+
-        '<div style="flex:1">'+fuelPairHtml('m-fuelExtra',f.fuelExtra,'0')+'</div>'+
         durationHtml('m-fuelExtra-time')+
+        '<div class="ttcafe-body">'+fuelPairInline('m-fuelExtra',f.fuelExtra,'0')+'</div>'+
       '</div>'+
     '</div>'+
     '<div style="background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);border-radius:9px;padding:12px;margin-bottom:10px">'+
@@ -3125,25 +3143,6 @@ function openFlModal(ex){
     renderReadback();
     // Always render exactly ONE editable block, empty
     renderAtisBlock(null);
-    // Scribble button on the Flight Info tab
-    var scribbleBtn = qs('#m-scribble-open', div);
-    if(scribbleBtn){
-      scribbleBtn.addEventListener('click', function(){
-        openScribbleForFlight(f, function(){
-          // Update preview + status inline
-          var prev = qs('#m-scribble-preview', div);
-          var stat = qs('#m-scribble-status', div);
-          if(prev){
-            prev.innerHTML = f.scribble
-              ? '<img src="'+f.scribble+'" style="max-width:200px;max-height:120px;border:1px solid var(--border);border-radius:6px;background:#fff;padding:4px" alt="Scribble preview"/>'
-              : '';
-          }
-          if(stat) stat.textContent = (f.scribble||f.scribbleText) ? 'Has content' : 'Empty';
-          // Trigger auto-save
-          saveDraft(true);
-        });
-      });
-    }
     // === FREQUENCIES: dynamic rows ===
     // Migrate legacy freq1-5 fields into f.frequencies array on first open
     if(!Array.isArray(f.frequencies)){
@@ -3691,7 +3690,7 @@ function openFlModal(ex){
           '</table>'+
         '</div>'+
 
-        '<div class="foot">FlightDeck v143 &middot; '+new Date().toLocaleString()+'</div>'+
+        '<div class="foot">FlightDeck v145 &middot; '+new Date().toLocaleString()+'</div>'+
         '</body></html>';
       win.document.open();
       win.document.write(html);
@@ -4079,6 +4078,25 @@ function openFlModal(ex){
   if(ifrClrBtn) ifrClrBtn.addEventListener('click', function(){ clearClrGroup('ifr', ['m-ifrVia','m-ifrNotes'], 'm-ifr-summary'); });
   var taxiClrBtn = qs('#m-taxi-clear', div);
   if(taxiClrBtn) taxiClrBtn.addEventListener('click', function(){ clearClrGroup('taxi', ['m-taxiVia','m-taxiHoldShort','m-taxiNotes'], 'm-taxi-summary'); });
+
+  // Scribble buttons (one per clearance type)
+  function wireScribbleBtn(btnId, fieldKey, previewId){
+    var btn = qs('#'+btnId, div);
+    if(!btn) return;
+    btn.addEventListener('click', function(){
+      openScribbleForFlight(f, fieldKey, function(){
+        var prev = qs('#'+previewId, div);
+        if(prev){
+          prev.innerHTML = f[fieldKey]
+            ? '<img src="'+f[fieldKey]+'" style="max-width:100%;max-height:180px;border:1px solid var(--border);border-radius:6px;background:#fff;padding:4px" alt="Scribble"/>'
+            : '';
+        }
+        saveDraft(true);
+      });
+    });
+  }
+  wireScribbleBtn('m-scribble-ifr',  'scribbleIfr',  'm-scribble-ifr-preview');
+  wireScribbleBtn('m-scribble-taxi', 'scribbleTaxi', 'm-scribble-taxi-preview');
 
   if(ex) setTimeout(liveCalc,0);
 
@@ -4480,7 +4498,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v143');
+  lines.push('','-- Sent from FlightDeck v145');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -4529,7 +4547,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v143');
+  lines.push('','-- FlightDeck v145');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
@@ -5070,23 +5088,18 @@ if(location.protocol === 'file:'){
 }
 
 // ============================================================
-// SCRIBBLE PAD — per-flight canvas notebook with OCR
-// Attaches to a specific flight's data (f.scribble PNG + f.scribbleText).
-// Uses Tesseract.js (lazy-loaded from CDN) for handwriting recognition.
-// Apple Scribble also works if you write with Pencil directly in the
-// text output field on iPad.
+// SCRIBBLE PAD — per-flight canvas notebook.
+// Attaches to a specific field on the flight object (base64 PNG).
+// Signature: openScribbleForFlight(f, fieldKey, onSaved)
+// fieldKey defaults to 'scribble' for backwards compatibility.
 // ============================================================
-var TESSERACT_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-function loadTesseract(cb){
-  if(window.Tesseract){ cb(null); return; }
-  var s = document.createElement('script');
-  s.src = TESSERACT_URL;
-  s.onload = function(){ cb(null); };
-  s.onerror = function(){ cb('Failed to load OCR library (check internet)'); };
-  document.body.appendChild(s);
-}
+function openScribbleForFlight(f, fieldKey, onSaved){
+  // Back-compat: allow (f, cb) signature
+  if(typeof fieldKey === 'function'){ onSaved = fieldKey; fieldKey = 'scribble'; }
+  if(!fieldKey) fieldKey = 'scribble';
+  var titleMap = { scribbleIfr:'IFR Scribble', scribbleTaxi:'Taxi Scribble', scribble:'Scribble' };
+  var title = titleMap[fieldKey] || 'Scribble';
 
-function openScribbleForFlight(f, onSaved){
   var ov = document.createElement('div');
   ov.style.cssText = 'position:fixed;inset:0;background:var(--bg);z-index:180;display:flex;flex-direction:column';
 
@@ -5110,14 +5123,13 @@ function openScribbleForFlight(f, onSaved){
     '<div style="width:1px;height:24px;background:var(--border)"></div>'+
     '<button class="btn btn-g" id="sc-eraser" style="padding:6px 12px">Eraser</button>'+
     '<button class="btn btn-g" id="sc-undo" style="padding:6px 12px">Undo</button>'+
-    '<button class="btn btn-p" id="sc-ocr" style="padding:6px 12px">&#9998;&#8594;T Convert to Text</button>'+
     '<div style="flex:1"></div>'+
     '<span style="font-size:12px;color:var(--muted);font-family:JetBrains Mono,monospace">'+
-      (f.date||'?')+' &middot; '+(f.aircraft||'?')+
+      title+' &middot; '+(f.date||'?')+' '+(f.aircraft||'')+
     '</span>'+
     '<button class="btn btn-d" id="sc-clear" style="padding:6px 12px">Clear</button>';
 
-  // Canvas + text output side by side (or stacked on narrow screens)
+  // Full-width canvas — no side text pane, no OCR
   var body = document.createElement('div');
   body.style.cssText = 'flex:1;display:flex;overflow:hidden';
 
@@ -5127,16 +5139,7 @@ function openScribbleForFlight(f, onSaved){
   canvas.style.cssText = 'display:block;touch-action:none;background:#fff';
   canvasWrap.appendChild(canvas);
 
-  var textPane = document.createElement('div');
-  textPane.style.cssText = 'flex:0 0 320px;display:flex;flex-direction:column;background:var(--surface);border-left:1px solid var(--border);padding:12px;gap:8px';
-  textPane.innerHTML =
-    '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Converted Text</div>'+
-    '<div id="sc-ocr-status" style="font-size:12px;color:var(--muted);font-family:JetBrains Mono,monospace;min-height:14px"></div>'+
-    '<textarea id="sc-text" style="flex:1;width:100%;font-family:-apple-system,sans-serif;font-size:14px;padding:10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);resize:none" placeholder="Handwriting-to-text output. You can also write here directly with Apple Pencil (Scribble).">'+(f.scribbleText||'')+'</textarea>'+
-    '<div style="font-size:11px;color:var(--muted);line-height:1.5">Tap <strong>Convert to Text</strong> to run OCR on the whole page. Result is appended (with a divider) so nothing you\'ve typed is lost. On iPad, you can also write with Apple Pencil directly into this text field.</div>';
-
   body.appendChild(canvasWrap);
-  body.appendChild(textPane);
   ov.appendChild(bar);
   ov.appendChild(body);
   document.body.appendChild(ov);
@@ -5170,15 +5173,15 @@ function openScribbleForFlight(f, onSaved){
     } catch(e){}
   }
 
-  // Load existing scribble for this flight
-  if(f.scribble){
+  // Load existing scribble from the target field
+  if(f[fieldKey]){
     var img = new Image();
     img.onload = function(){
       var r = canvasWrap.getBoundingClientRect();
       ctx.drawImage(img, 0, 0, r.width, r.height);
       snapshot();
     };
-    img.src = f.scribble;
+    img.src = f[fieldKey];
   } else {
     snapshot();
   }
@@ -5252,57 +5255,16 @@ function openScribbleForFlight(f, onSaved){
     img.src = prev;
   });
   bar.querySelector('#sc-clear').addEventListener('click', function(){
-    if(!confirm('Clear the entire scribble page? (Converted text below is preserved.)')) return;
+    if(!confirm('Clear the entire scribble page?')) return;
     var r = canvasWrap.getBoundingClientRect();
     ctx.globalCompositeOperation = 'source-over';
     ctx.clearRect(0, 0, r.width, r.height);
     snapshot();
   });
 
-  // OCR
-  bar.querySelector('#sc-ocr').addEventListener('click', function(){
-    var status = document.getElementById('sc-ocr-status');
-    var textEl = document.getElementById('sc-text');
-    status.textContent = 'Loading OCR library...';
-    status.style.color = '#0369a1';
-    loadTesseract(function(err){
-      if(err){ status.textContent = err; status.style.color = '#be123c'; return; }
-      status.textContent = 'Recognising... (may take 10-30s)';
-      var url = canvas.toDataURL('image/png');
-      window.Tesseract.recognize(url, 'eng', {
-        logger: function(m){
-          if(m.status === 'recognizing text'){
-            status.textContent = 'Recognising... '+Math.round(m.progress*100)+'%';
-          } else if(m.status){
-            status.textContent = m.status;
-          }
-        }
-      }).then(function(result){
-        var newText = (result.data.text || '').trim();
-        if(!newText){
-          status.textContent = 'No text detected.';
-          status.style.color = '#b45309';
-          return;
-        }
-        var existing = textEl.value.trim();
-        var stamp = new Date().toISOString().substring(11,16)+'Z';
-        var appended = existing
-          ? existing + '\n\n--- ['+stamp+'] ---\n' + newText
-          : newText;
-        textEl.value = appended;
-        status.textContent = 'Done. '+newText.length+' chars added.';
-        status.style.color = '#047857';
-      }).catch(function(e){
-        status.textContent = 'OCR failed: '+e;
-        status.style.color = '#be123c';
-      });
-    });
-  });
-
   bar.querySelector('#sc-close').addEventListener('click', function(){
-    // Persist canvas as PNG and the text field into the flight object
-    try { f.scribble = canvas.toDataURL('image/png'); } catch(e){}
-    f.scribbleText = document.getElementById('sc-text').value;
+    // Persist canvas as PNG into the target field
+    try { f[fieldKey] = canvas.toDataURL('image/png'); } catch(e){}
     if(typeof onSaved === 'function') onSaved();
     document.body.removeChild(ov);
   });
