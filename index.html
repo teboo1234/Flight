@@ -2,12 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<meta name="theme-color" content="#020617"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0f172a"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
-<title>FlightDeck v139</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%2C-apple-system%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
+<title>FlightDeck v140</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -185,7 +187,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v139</span>
+      <span class="logo-sub">v140</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -628,45 +630,56 @@ function openTempDewKeypad(currentValue, onDone){
     return html;
   }
   function assembled(){
-    if(tempDigits.length<2 || dewDigits.length<2) return '';
-    return (tempNeg?'M':'')+tempDigits+'/'+(dewNeg?'M':'')+dewDigits;
+    if(tempDigits.length<1 || dewDigits.length<1) return '';
+    var t = tempDigits.length===1 ? '0'+tempDigits : tempDigits;
+    var d = dewDigits.length===1 ? '0'+dewDigits : dewDigits;
+    return (tempNeg?'M':'')+t+'/'+(dewNeg?'M':'')+d;
   }
-  function complete(){ return tempDigits.length===2 && dewDigits.length===2; }
+  function complete(){ return tempDigits.length>=1 && dewDigits.length>=1; }
   box.innerHTML =
-    '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;font-family:JetBrains Mono,monospace">Temperature / Dewpoint</div>'+
-    '<div style="text-align:center;padding:14px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;font-size:30px;font-weight:700"><span id="td-display">'+fmt()+'</span></div>'+
-    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">'+
-      '<button class="fc-key" data-k="1">1</button>'+
-      '<button class="fc-key" data-k="2">2</button>'+
-      '<button class="fc-key" data-k="3">3</button>'+
-      '<button class="fc-key" data-k="4">4</button>'+
-      '<button class="fc-key" data-k="5">5</button>'+
-      '<button class="fc-key" data-k="6">6</button>'+
-      '<button class="fc-key" data-k="7">7</button>'+
-      '<button class="fc-key" data-k="8">8</button>'+
-      '<button class="fc-key" data-k="9">9</button>'+
-      '<button class="fc-key" data-k="neg" style="background:rgba(190,18,60,.08);color:#be123c;border-color:rgba(190,18,60,.25)">&plusmn;</button>'+
-      '<button class="fc-key" data-k="0">0</button>'+
-      '<button class="fc-key fc-key-clear" data-k="clear">C</button>'+
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:JetBrains Mono,monospace">Temperature / Dewpoint</div>'+
+    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;font-size:32px;font-weight:700"><span id="td-display">'+fmt()+'</span></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">'+
+      '<button class="td-k" data-k="1">1</button>'+
+      '<button class="td-k" data-k="2">2</button>'+
+      '<button class="td-k" data-k="3">3</button>'+
+      '<button class="td-k" data-k="4">4</button>'+
+      '<button class="td-k" data-k="5">5</button>'+
+      '<button class="td-k" data-k="6">6</button>'+
+      '<button class="td-k" data-k="7">7</button>'+
+      '<button class="td-k" data-k="8">8</button>'+
+      '<button class="td-k" data-k="9">9</button>'+
+      '<button class="td-k td-k-neg" data-k="neg">&plusmn;</button>'+
+      '<button class="td-k" data-k="0">0</button>'+
+      '<button class="td-k td-k-next" data-k="next">Next</button>'+
     '</div>'+
-    '<button type="button" class="btn btn-p" id="td-ok" style="width:100%;padding:12px;margin-bottom:8px" '+(complete()?'':'disabled')+'>Save</button>'+
-    '<button type="button" class="btn btn-g" id="td-cancel" style="width:100%;padding:10px">Cancel</button>';
+    '<button type="button" class="btn btn-p" id="td-ok" style="width:100%;padding:18px;font-size:18px;font-weight:700" '+(complete()?'':'disabled')+'>Enter</button>';
   ov.appendChild(box);
   document.body.appendChild(ov);
+  var tdCss = document.createElement('style');
+  tdCss.textContent = '.td-k{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.td-k:active{background:var(--border)}.td-k-neg{background:rgba(190,18,60,.08);color:#be123c;border-color:rgba(190,18,60,.25)}.td-k-neg:active{background:rgba(190,18,60,.18)}.td-k-next{background:rgba(3,105,161,.1);color:#0369a1;border-color:rgba(3,105,161,.3);font-size:16px}.td-k-next:active{background:rgba(3,105,161,.2)}';
+  box.appendChild(tdCss);
   function refresh(){
     var d = qs('#td-display', box);
     if(d) d.innerHTML = fmt();
     var ok = qs('#td-ok', box);
     if(ok) ok.disabled = !complete();
   }
-  box.querySelectorAll('.fc-key').forEach(function(k){
+  box.querySelectorAll('.td-k').forEach(function(k){
     k.addEventListener('click', function(){
       var v = k.getAttribute('data-k');
-      if(v === 'clear'){ tempNeg=false; tempDigits=''; dewNeg=false; dewDigits=''; }
-      else if(v === 'neg'){
-        // Toggle sign of currently active section
-        if(stage()==='temp' || (stage()==='done' && dewDigits.length===2 && tempDigits.length<2)) tempNeg = !tempNeg;
+      if(v === 'neg'){
+        var st = stage();
+        if(st === 'temp' || (st === 'dew' && dewDigits.length===0)) tempNeg = !tempNeg;
         else dewNeg = !dewNeg;
+      } else if(v === 'next'){
+        // Skip to next section: pad current with leading 0 if single digit
+        var st = stage();
+        if(st === 'temp' && tempDigits.length >= 1){
+          if(tempDigits.length === 1) tempDigits = '0' + tempDigits;
+        } else if(st === 'dew' && dewDigits.length >= 1){
+          if(dewDigits.length === 1) dewDigits = '0' + dewDigits;
+        }
       } else {
         var st = stage();
         if(st === 'temp'){
@@ -674,7 +687,6 @@ function openTempDewKeypad(currentValue, onDone){
         } else if(st === 'dew'){
           if(dewDigits.length>=2) dewDigits = v; else dewDigits += v;
         } else {
-          // done - restart temp
           tempDigits = v; dewDigits=''; tempNeg=false; dewNeg=false;
         }
       }
@@ -685,7 +697,6 @@ function openTempDewKeypad(currentValue, onDone){
     var a = assembled();
     if(a){ onDone(a); document.body.removeChild(ov); }
   });
-  qs('#td-cancel', box).addEventListener('click', function(){ document.body.removeChild(ov); });
   ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
 }
 
@@ -858,29 +869,31 @@ function openNumericKeypad(config, currentValue, onDone){
     return '';
   }
   box.innerHTML =
-    '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;font-family:JetBrains Mono,monospace">'+cfg.title+'</div>'+
-    '<div style="display:flex;align-items:baseline;justify-content:center;padding:14px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:8px;font-family:\'JetBrains Mono\',monospace;font-size:32px;font-weight:700">'+
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:JetBrains Mono,monospace">'+cfg.title+'</div>'+
+    '<div style="display:flex;align-items:baseline;justify-content:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:8px;font-family:\'JetBrains Mono\',monospace;font-size:32px;font-weight:700">'+
       '<span id="fnk-display">'+fmtDisplay()+'</span>'+
     '</div>'+
     '<div id="fnk-status" style="font-size:12px;text-align:center;min-height:16px;margin-bottom:14px;font-family:JetBrains Mono,monospace;color:var(--muted)">'+(cfg.help||'&nbsp;')+'</div>'+
-    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'+
-      '<button class="fc-key" data-k="1">1</button>'+
-      '<button class="fc-key" data-k="2">2</button>'+
-      '<button class="fc-key" data-k="3">3</button>'+
-      '<button class="fc-key" data-k="4">4</button>'+
-      '<button class="fc-key" data-k="5">5</button>'+
-      '<button class="fc-key" data-k="6">6</button>'+
-      '<button class="fc-key" data-k="7">7</button>'+
-      '<button class="fc-key" data-k="8">8</button>'+
-      '<button class="fc-key" data-k="9">9</button>'+
-      (cfg.allowNeg ? '<button class="fc-key" data-k="neg" style="background:rgba(190,18,60,.08);color:#be123c;border-color:rgba(190,18,60,.25)">&plusmn;</button>' :
-        '<button class="fc-key fc-key-clear" data-k="clear">C</button>')+
-      '<button class="fc-key" data-k="0">0</button>'+
-      '<button class="fc-key fc-key-ok" data-k="ok">OK</button>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">'+
+      '<button class="nk-k" data-k="1">1</button>'+
+      '<button class="nk-k" data-k="2">2</button>'+
+      '<button class="nk-k" data-k="3">3</button>'+
+      '<button class="nk-k" data-k="4">4</button>'+
+      '<button class="nk-k" data-k="5">5</button>'+
+      '<button class="nk-k" data-k="6">6</button>'+
+      '<button class="nk-k" data-k="7">7</button>'+
+      '<button class="nk-k" data-k="8">8</button>'+
+      '<button class="nk-k" data-k="9">9</button>'+
+      (cfg.allowNeg ? '<button class="nk-k nk-k-neg" data-k="neg">&plusmn;</button>' : '<span></span>')+
+      '<button class="nk-k" data-k="0">0</button>'+
+      '<span></span>'+
     '</div>'+
-    '<button type="button" class="btn btn-g" id="fnk-cancel" style="width:100%;margin-top:12px;padding:10px">Cancel</button>';
+    '<button type="button" class="btn btn-p" id="fnk-ok" style="width:100%;padding:18px;font-size:18px;font-weight:700">Enter</button>';
   ov.appendChild(box);
   document.body.appendChild(ov);
+  var nkCss = document.createElement('style');
+  nkCss.textContent = '.nk-k{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.nk-k:active{background:var(--border)}.nk-k-neg{background:rgba(190,18,60,.08);color:#be123c;border-color:rgba(190,18,60,.25)}.nk-k-neg:active{background:rgba(190,18,60,.18)}';
+  box.appendChild(nkCss);
   function refresh(){
     var d = qs('#fnk-display', box);
     if(d) d.innerHTML = fmtDisplay();
@@ -890,21 +903,20 @@ function openNumericKeypad(config, currentValue, onDone){
     if(err){ s.textContent = err; s.style.color='#b45309'; }
     else { s.textContent = cfg.help || '\u00a0'; s.style.color='var(--muted)'; }
   }
-  box.querySelectorAll('.fc-key').forEach(function(k){
+  box.querySelectorAll('.nk-k').forEach(function(k){
     k.addEventListener('click', function(){
       var v = k.getAttribute('data-k');
-      if(v === 'clear'){ digits=''; negative=false; }
-      else if(v === 'neg'){ negative = !negative; }
-      else if(v === 'ok'){
-        if(!validate()){ onDone(assembled()); document.body.removeChild(ov); return; }
-      } else {
+      if(v === 'neg'){ negative = !negative; }
+      else {
         if(digits.length >= cfg.digits) digits = v;
         else digits += v;
       }
       refresh();
     });
   });
-  qs('#fnk-cancel', box).addEventListener('click', function(){ document.body.removeChild(ov); });
+  qs('#fnk-ok', box).addEventListener('click', function(){
+    if(!validate()){ onDone(assembled()); document.body.removeChild(ov); }
+  });
   ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
 }
 
@@ -2403,8 +2415,8 @@ function openFlModal(ex){
 
     '<div class="sdiv">Scribble &amp; Notes</div>'+
     '<div class="field"><label>ATIS</label>'+
-      '<div id="m-atis-container" style="display:flex;flex-direction:column;gap:14px;margin-bottom:8px"></div>'+
-      '<button type="button" class="btn btn-g" id="m-atis-add" style="padding:8px 16px;font-size:13px">+ Add ATIS</button>'+
+      '<div id="m-atis-submitted" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>'+
+      '<div id="m-atis-container"></div>'+
     '</div>'+
     '<div class="field"><label>Clearance</label>'+
       '<textarea class="inp" id="m-clearance" rows="2" placeholder="Cleared to X via Y, climb to Z, squawk 1234..." style="resize:vertical;min-height:60px;line-height:1.4">'+escapeHtml(f.clearance||'')+'</textarea>'+
@@ -2865,10 +2877,7 @@ function openFlModal(ex){
         return m[1]+' '+(parseInt(m[2])*100)+' ft';
       }
       block.innerHTML =
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
-          '<div class="sec-lbl" style="margin:0">ATIS '+idx+'</div>'+
-          '<button type="button" class="btn btn-d atis-remove" style="padding:4px 10px;font-size:11px">&times; Remove</button>'+
-        '</div>'+
+        '<div class="sec-lbl" style="margin:0 0 10px 0">Current ATIS entry</div>'+
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'+
           '<div>'+
             '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:JetBrains Mono,monospace;margin-bottom:5px">Time (UTC)</div>'+
@@ -2884,10 +2893,8 @@ function openFlModal(ex){
           '<button type="button" class="atis-fld" data-fld="rwy" data-val="'+escapeHtml(e.rwy||'')+'"><span class="atis-lbl">Runway</span><span class="atis-v">'+(e.rwy||'--')+'</span></button>'+
         '</div>'+
         '<button type="button" class="atis-fld" data-fld="wind" data-val="'+escapeHtml(e.wind||'')+'" style="width:100%;margin-bottom:10px"><span class="atis-lbl">Wind (DDD/SS or DDD/SSGXX)</span><span class="atis-v">'+(e.wind||'--')+'</span></button>'+
-        '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px">'+
-          '<button type="button" class="atis-fld" data-fld="vis" data-val="'+escapeHtml(e.vis||'')+'"><span class="atis-lbl">Visibility</span><span class="atis-v">'+dispVis(e.vis)+'</span></button>'+
-          '<button type="button" class="atis-fld" data-fld="qnh" data-val="'+escapeHtml(e.qnh||'')+'"><span class="atis-lbl">QNH</span><span class="atis-v">'+dispQnh(e.qnh)+'</span></button>'+
-        '</div>'+
+        '<button type="button" class="atis-fld" data-fld="vis" data-val="'+escapeHtml(e.vis||'')+'" style="width:100%;margin-bottom:10px"><span class="atis-lbl">Visibility</span><span class="atis-v">'+dispVis(e.vis)+'</span></button>'+
+        '<button type="button" class="atis-fld" data-fld="qnh" data-val="'+escapeHtml(e.qnh||'')+'" style="width:100%;margin-bottom:10px"><span class="atis-lbl">QNH</span><span class="atis-v">'+dispQnh(e.qnh)+'</span></button>'+
         '<button type="button" class="atis-fld" data-fld="tempDew" data-val="'+escapeHtml(e.tempDew||'')+'" style="width:100%;margin-bottom:10px"><span class="atis-lbl">Temp / Dewpoint</span><span class="atis-v">'+dispTempDew(e.tempDew)+'</span></button>'+
         '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px">'+
           '<button type="button" class="atis-fld" data-fld="cloud1" data-val="'+escapeHtml(e.cloud1||'')+'"><span class="atis-lbl">Cloud 1</span><span class="atis-v" style="font-size:16px">'+dispCloud(e.cloud1)+'</span></button>'+
@@ -2896,10 +2903,9 @@ function openFlModal(ex){
         '</div>'+
         '<textarea class="inp atis-notes" rows="2" placeholder="Additional ATIS notes (remarks, NOTAMs...)" style="resize:vertical;min-height:60px;line-height:1.4;margin-bottom:10px">'+escapeHtml(e.notes||'')+'</textarea>'+
         '<div style="display:flex;gap:8px">'+
-          '<button type="button" class="btn btn-p atis-submit" style="flex:1;padding:10px;font-size:13px">&#10003; Submit ATIS</button>'+
-          '<button type="button" class="btn btn-d atis-clear" style="flex:0 0 auto;padding:10px 16px;font-size:13px">Clear</button>'+
-        '</div>'+
-        '<div class="atis-summary" style="display:none;margin-top:10px;padding:12px 14px;background:rgba(4,120,87,.08);border:1px solid rgba(4,120,87,.3);border-radius:9px;font-family:JetBrains Mono,monospace;font-size:14px;color:#047857;line-height:1.6;white-space:pre-wrap;font-weight:600"></div>';
+          '<button type="button" class="btn btn-p atis-submit" style="flex:1;padding:12px;font-size:14px;font-weight:700">&#10003; Submit ATIS</button>'+
+          '<button type="button" class="btn btn-d atis-clear" style="flex:0 0 auto;padding:12px 16px;font-size:13px">Clear</button>'+
+        '</div>';
       atisContainer.appendChild(block);
 
       // Uppercase ICAO input
@@ -2970,30 +2976,19 @@ function openFlModal(ex){
         };
       }
 
-      // Submit shows METAR-style string
+      // Submit: save current block to atisEntries[], render into submitted list, clear block
       block.querySelector('.atis-submit').addEventListener('click', function(){
         var entry = readBlock();
-        var out = toMetar(entry);
-        var sumEl = block.querySelector('.atis-summary');
-        if(!out.trim()){
-          sumEl.style.background='rgba(180,83,9,.08)';
-          sumEl.style.borderColor='rgba(180,83,9,.3)';
-          sumEl.style.color='#b45309';
-          sumEl.textContent='No ATIS fields entered yet.';
-        } else {
-          sumEl.style.background='rgba(4,120,87,.08)';
-          sumEl.style.borderColor='rgba(4,120,87,.3)';
-          sumEl.style.color='#047857';
-          sumEl.textContent = out;
-        }
-        sumEl.style.display='block';
-      });
-      // Clear
-      block.querySelector('.atis-clear').addEventListener('click', function(){
-        if(!confirm('Clear all fields in this ATIS?')) return;
+        // Skip if fully empty
+        var empty = !entry.icao && !entry.time && !entry.info && !entry.rwy && !entry.wind && !entry.vis && !entry.qnh && !entry.tempDew && !entry.cloud1 && !entry.cloud2 && !entry.cloud3 && !(entry.notes||'').trim();
+        if(empty){ toast('Nothing to submit'); return; }
+        f.atisEntries.push(entry);
+        renderSubmittedList();
+        // Clear all block fields
         block.querySelectorAll('.atis-fld').forEach(function(b){
           b.dataset.val = '';
-          b.querySelector('.atis-v').textContent = '--';
+          var vEl = b.querySelector('.atis-v');
+          if(vEl) vEl.textContent = '--';
         });
         block.querySelector('.atis-notes').value = '';
         block.querySelector('.atis-icao').value = '';
@@ -3001,37 +2996,54 @@ function openFlModal(ex){
           var el = qs('#m-atis-time-'+idx+sfx, block);
           if(el) el.value = '';
         });
-        block.querySelector('.atis-summary').style.display='none';
+        toast('ATIS added');
       });
-      // Remove entire block
-      block.querySelector('.atis-remove').addEventListener('click', function(){
-        var count = atisContainer.querySelectorAll('.atis-block').length;
-        if(count<=1){ toast('Keep at least one ATIS block'); return; }
-        if(confirm('Remove this ATIS entry?')) block.remove();
-        renumberAtisBlocks();
+      // Clear the current block without submitting
+      block.querySelector('.atis-clear').addEventListener('click', function(){
+        if(!confirm('Clear the current ATIS entry?')) return;
+        block.querySelectorAll('.atis-fld').forEach(function(b){
+          b.dataset.val = '';
+          var vEl = b.querySelector('.atis-v');
+          if(vEl) vEl.textContent = '--';
+        });
+        block.querySelector('.atis-notes').value = '';
+        block.querySelector('.atis-icao').value = '';
+        ['-h','-m'].forEach(function(sfx){
+          var el = qs('#m-atis-time-'+idx+sfx, block);
+          if(el) el.value = '';
+        });
       });
     }
 
-    function renumberAtisBlocks(){
-      atisContainer.querySelectorAll('.atis-block').forEach(function(b, i){
-        var lbl = b.querySelector('.sec-lbl');
-        if(lbl) lbl.textContent = 'ATIS '+(i+1);
+    // Initial render: submitted entries above, one blank editable block below
+    var atisSubmittedEl = qs('#m-atis-submitted', div);
+    function renderSubmittedList(){
+      if(!atisSubmittedEl) return;
+      atisSubmittedEl.innerHTML = '';
+      if(!f.atisEntries.length){ atisSubmittedEl.style.display='none'; return; }
+      atisSubmittedEl.style.display='flex';
+      f.atisEntries.forEach(function(e, i){
+        var m = toMetar(e);
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:8px;align-items:flex-start;padding:10px 12px;background:rgba(4,120,87,.06);border:1px solid rgba(4,120,87,.25);border-radius:9px';
+        row.innerHTML =
+          '<div style="flex:1;font-family:JetBrains Mono,monospace;font-size:13px;color:#047857;font-weight:600;line-height:1.5;white-space:pre-wrap">'+escapeHtml(m||'(empty)')+'</div>'+
+          '<button type="button" class="btn btn-d atis-sub-del" data-i="'+i+'" style="padding:2px 8px;font-size:14px;line-height:1;flex:0 0 auto" title="Remove">&times;</button>';
+        atisSubmittedEl.appendChild(row);
+      });
+      atisSubmittedEl.querySelectorAll('.atis-sub-del').forEach(function(b){
+        b.addEventListener('click', function(){
+          var i = parseInt(b.getAttribute('data-i'));
+          if(isNaN(i)) return;
+          if(!confirm('Remove this submitted ATIS?')) return;
+          f.atisEntries.splice(i,1);
+          renderSubmittedList();
+        });
       });
     }
-
-    // Initial render
-    if(f.atisEntries.length){
-      f.atisEntries.forEach(renderAtisBlock);
-    } else {
-      renderAtisBlock(null);
-    }
-    var atisAddBtn = qs('#m-atis-add', div);
-    if(atisAddBtn){
-      atisAddBtn.addEventListener('click', function(){
-        renderAtisBlock(null);
-        renumberAtisBlocks();
-      });
-    }
+    renderSubmittedList();
+    // Always render exactly ONE editable block
+    renderAtisBlock(null);
     // Scribble button on the Flight Info tab
     var scribbleBtn = qs('#m-scribble-open', div);
     if(scribbleBtn){
@@ -3600,7 +3612,7 @@ function openFlModal(ex){
           '</table>'+
         '</div>'+
 
-        '<div class="foot">FlightDeck v139 &middot; '+new Date().toLocaleString()+'</div>'+
+        '<div class="foot">FlightDeck v140 &middot; '+new Date().toLocaleString()+'</div>'+
         '</body></html>';
       win.document.open();
       win.document.write(html);
@@ -3876,25 +3888,27 @@ function openFlModal(ex){
     f.date=g('m-date'); f.aircraft=g('m-aircraft');
     f.departure=g('m-dep').toUpperCase(); f.destination=g('m-dest').toUpperCase();
     f.student=g('m-student');
-    // ATIS: collect each block into atisEntries[]
-    f.atisEntries = [];
+    // ATIS: preserve the existing atisEntries array; auto-submit the current block if it has content
     var atisCont = qs('#m-atis-container', div);
     if(atisCont){
-      atisCont.querySelectorAll('.atis-block').forEach(function(block){
+      var block = atisCont.querySelector('.atis-block');
+      if(block){
         var idx = block.dataset.idx;
         var flds = {};
         block.querySelectorAll('.atis-fld').forEach(function(b){
           flds[b.getAttribute('data-fld')] = b.dataset.val || '';
         });
-        f.atisEntries.push({
+        var e = {
           icao: (block.querySelector('.atis-icao').value||'').toUpperCase(),
           time: getTimeSpinner('m-atis-time-'+idx, block),
           info: flds.info||'', rwy: flds.rwy||'', wind: flds.wind||'',
           vis: flds.vis||'', qnh: flds.qnh||'', tempDew: flds.tempDew||'',
           cloud1: flds.cloud1||'', cloud2: flds.cloud2||'', cloud3: flds.cloud3||'',
           notes: (block.querySelector('.atis-notes').value||'')
-        });
-      });
+        };
+        var empty = !e.icao && !e.time && !e.info && !e.rwy && !e.wind && !e.vis && !e.qnh && !e.tempDew && !e.cloud1 && !e.cloud2 && !e.cloud3 && !(e.notes||'').trim();
+        if(!empty) f.atisEntries.push(e);
+      }
     }
     // Clear legacy flat ATIS fields
     ['atis','atisInfo','atisRwy','atisWind','atisVis','atisQnh','atisTemp','atisDew',
@@ -4244,7 +4258,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v139');
+  lines.push('','-- Sent from FlightDeck v140');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -4293,7 +4307,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v139');
+  lines.push('','-- FlightDeck v140');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
