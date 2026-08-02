@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%2C-apple-system%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
-<title>FlightDeck v140</title>
+<title>FlightDeck v143</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -114,7 +114,9 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 .s-times .scard-head{color:#0e7490}
 .s-wx     {background:rgba(109,40,217,.06);border-color:rgba(109,40,217,.18);border-left-color:#6d28d9}
 .s-wx .scard-head{color:#6d28d9}
-.s-fuel   {background:rgba(180,83,9,.06);border-color:rgba(180,83,9,.18);border-left-color:#b45309}
+.s-fuel   {background:rgba(180,83,9,.06);border-color:rgba(180,83,9,.18);border-left-color:#b45309;min-width:0;overflow-x:hidden}
+.s-clr    {background:rgba(190,18,60,.05);border-color:rgba(190,18,60,.2);border-left-color:#be123c}
+.s-clr .scard-head{color:#be123c}
 .s-fuel .scard-head{color:#b45309}
 .s-defects{background:rgba(190,18,60,.07);border-color:rgba(190,18,60,.22);border-left-color:#be123c}
 .s-defects .scard-head{color:#be123c}
@@ -131,12 +133,12 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 .atis-fld:active{background:var(--border)}
 .atis-fld .atis-lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:'JetBrains Mono',monospace;margin-bottom:5px}
 .atis-fld .atis-v{font-size:20px;font-weight:700;color:#1e3a8a;font-family:'JetBrains Mono',monospace}
-/* TTCAFE input rows — each in its own bordered card */
-.ttcafe-row{display:flex;align-items:center;gap:12px;padding:10px 12px;background:rgba(255,255,255,.55);border:1px solid rgba(180,83,9,.22);border-radius:9px;transition:background .15s,border-color .15s}
+/* TTCAFE input rows — each in its own bordered card. Wrap on narrow screens. */
+.ttcafe-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,255,255,.55);border:1px solid rgba(180,83,9,.22);border-radius:9px;transition:background .15s,border-color .15s;box-sizing:border-box;max-width:100%;overflow:hidden}
 .ttcafe-row:hover{background:rgba(255,255,255,.85);border-color:rgba(180,83,9,.4)}
 .ttcafe-row:focus-within{background:rgba(255,255,255,.9);border-color:#b45309;box-shadow:0 0 0 2px rgba(245,158,11,.15)}
-.ttcafe-letter{flex:0 0 32px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#b45309;color:#fff;border-radius:7px;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:14px}
-.ttcafe-name{flex:0 0 138px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.ttcafe-letter{flex:0 0 30px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:#b45309;color:#fff;border-radius:7px;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:14px}
+.ttcafe-name{flex:0 0 100px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
 /* USG vs Litres colour differentiation */
 .fuel-usg{color:#b45309;font-weight:700}
 .fuel-usg-lbl{color:#b45309;font-size:11px;opacity:.75;font-weight:600}
@@ -187,7 +189,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v140</span>
+      <span class="logo-sub">v143</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -1603,16 +1605,19 @@ var USG_TO_L = 3.785;
 // input.dataset.usg on every change).
 function fuelPairHtml(baseId, usgVal, ph){
   var u = usgVal||'';
-  // Display initial value rounded to integer for user-facing input field
   var initialDisplay = (u !== '' && !isNaN(parseFloat(u))) ? String(Math.round(parseFloat(u))) : '';
   var initialUsg = u;
-  return '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+
-    '<input class="inp fuel-inp" id="'+baseId+'" type="number" step="1" inputmode="numeric" placeholder="'+(ph||'')+'" value="'+initialDisplay+'" data-usg="'+initialUsg+'" data-unit="USG" style="flex:0 0 100px;text-align:right"/>'+
-    '<select class="inp fuel-unit" id="'+baseId+'-u" style="flex:0 0 68px;padding:8px 4px;text-align:center">'+
-      '<option value="USG" selected>USG</option>'+
-      '<option value="L">L</option>'+
-    '</select>'+
-    '<span id="'+baseId+'-out" style="flex:1;min-width:120px;font-family:JetBrains Mono,monospace;font-size:13px;color:#0369a1;font-weight:600;padding:0 4px"></span>'+
+  return '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;max-width:100%">'+
+    // Amount + unit welded together — never wrap between them
+    '<div style="display:flex;flex-wrap:nowrap;align-items:center;gap:2px;flex:0 0 auto">'+
+      '<input class="inp fuel-inp" id="'+baseId+'" type="number" step="1" inputmode="numeric" placeholder="'+(ph||'')+'" value="'+initialDisplay+'" data-usg="'+initialUsg+'" data-unit="USG" style="flex:0 0 68px;text-align:right;min-width:0"/>'+
+      '<select class="inp fuel-unit" id="'+baseId+'-u" style="flex:0 0 58px;padding:8px 2px;text-align:center;min-width:0">'+
+        '<option value="USG" selected>USG</option>'+
+        '<option value="L">L</option>'+
+      '</select>'+
+    '</div>'+
+    // Converted output — sits inline when there is room, wraps to next line when not
+    '<span id="'+baseId+'-out" style="flex:0 1 auto;font-family:JetBrains Mono,monospace;font-size:12px;color:#0369a1;font-weight:600;padding:0 2px;white-space:nowrap"></span>'+
   '</div>';
 }
 
@@ -1899,7 +1904,29 @@ function getStationCache(){
     return JSON.parse(raw);
   } catch(e){ return null; }
 }
-// Return true if a frequency string like "122.400" fits our COM band spinner
+// Parse a stored wind string like "240/12" or "240/12G18" into {dir,spd,gust}
+function parseWind(w){
+  if(!w) return null;
+  var m = String(w).match(/^(\d{1,3})\/(\d{1,2})(?:G(\d{1,2}))?$/);
+  if(!m) return null;
+  return { dir: parseInt(m[1]), spd: parseInt(m[2]), gust: m[3] ? parseInt(m[3]) : null };
+}
+// Migration: pack legacy dir+spd fields into combined "DDD/SS" strings.
+function migrateWindFields(f){
+  ['Surf','W1k','W2k','W5k'].forEach(function(k){
+    var winKey = 'wx'+k+'Wind';
+    if(f[winKey]) return;
+    var d = f['wx'+k+'Dir'], s = f['wx'+k+'Spd'];
+    if(d && s){
+      var ds = String(d).replace(/[^0-9]/g,'');
+      while(ds.length<3) ds = '0'+ds;
+      var ss = String(s).replace(/[^0-9]/g,'');
+      while(ss.length<2) ss = '0'+ss;
+      f[winKey] = ds+'/'+ss;
+    }
+  });
+}
+
 // (117-137 MHz, 5 kHz increments — covering all 8.33 kHz + 25 kHz + 50 kHz + 100 kHz channels).
 function isValidComChannel(freqStr){
   var m = freqStr && freqStr.match(/^(\d+)\.(\d{1,3})$/);
@@ -2323,9 +2350,12 @@ function renderFlDetail(){
     if(e.notes && e.notes.trim()) out += '\nRMK: '+e.notes.trim();
     return out;
   }
-  var atisEntries = Array.isArray(f.atisEntries) ? f.atisEntries : [];
-  // Legacy fallback: build a single entry from old flat fields if array is empty
-  if(atisEntries.length===0 && (f.atisInfo||f.atisRwy||f.atisWind||f.atisVis||f.atisQnh||f.atisTemp||f.atisDew||f.atisCloud1||f.atisCloud2||f.atisCloud3||f.atisNotes||f.atis)){
+  // Determine the single ATIS entry to display: use f.atisEntry, or migrate from legacy array/flat fields
+  var atisEntry = f.atisEntry || null;
+  if(!atisEntry && Array.isArray(f.atisEntries) && f.atisEntries.length){
+    atisEntry = f.atisEntries[f.atisEntries.length-1];
+  }
+  if(!atisEntry && (f.atisInfo||f.atisRwy||f.atisWind||f.atisVis||f.atisQnh||f.atisTemp||f.atisDew||f.atisCloud1||f.atisCloud2||f.atisCloud3||f.atisNotes||f.atis)){
     var tempDew = '';
     if(f.atisTemp||f.atisDew){
       var t=f.atisTemp||'', d=f.atisDew||'';
@@ -2335,24 +2365,16 @@ function renderFlDetail(){
       if(d.length===1) d='0'+d;
       tempDew = (t?(tn?'M':'')+t:'')+'/'+(d?(dn?'M':'')+d:'');
     }
-    atisEntries = [{ icao:'', time:'', info:f.atisInfo||'', rwy:f.atisRwy||'', wind:f.atisWind||'', vis:f.atisVis||'', qnh:f.atisQnh||'', tempDew:tempDew, cloud1:f.atisCloud1||'', cloud2:f.atisCloud2||'', cloud3:f.atisCloud3||'', notes:f.atisNotes||f.atis||'' }];
+    atisEntry = { icao:'', time:'', info:f.atisInfo||'', rwy:f.atisRwy||'', wind:f.atisWind||'', vis:f.atisVis||'', qnh:f.atisQnh||'', tempDew:tempDew, cloud1:f.atisCloud1||'', cloud2:f.atisCloud2||'', cloud3:f.atisCloud3||'', notes:f.atisNotes||f.atis||'' };
   }
-  var hasAnyAtis = atisEntries.some(function(e){
-    return e.icao||e.time||e.info||e.rwy||e.wind||e.vis||e.qnh||e.tempDew||e.cloud1||e.cloud2||e.cloud3||(e.notes&&e.notes.trim());
-  });
-  if(f.scribble || f.scribbleText || f.clearance || hasAnyAtis){
+  var atisMetar = atisEntry ? _toMetar(atisEntry).trim() : '';
+  var hasAnyAtis = !!atisMetar;
+  if(f.scribble || f.scribbleText || hasAnyAtis){
     var scard=el('div','scard s-notes');
     var sh = '<div class="scard-head"><span class="ico">&#9998;</span> Scribble &amp; Notes</div>';
     if(hasAnyAtis){
-      atisEntries.forEach(function(e, i){
-        var m = _toMetar(e);
-        if(!m.trim()) return;
-        sh += '<div class="sec-lbl">ATIS '+(i+1)+'</div>'+
-          '<div class="sec-box" style="font-family:JetBrains Mono,monospace;font-size:14px;color:#1e3a8a;font-weight:600;margin-bottom:10px;white-space:pre-wrap">'+escapeHtml(m)+'</div>';
-      });
-    }
-    if(f.clearance){
-      sh += '<div class="sec-lbl">Clearance</div><div class="sec-box" style="white-space:pre-wrap;margin-bottom:10px">'+escapeHtml(f.clearance)+'</div>';
+      sh += '<div class="sec-lbl">ATIS</div>'+
+        '<div class="sec-box" style="font-family:JetBrains Mono,monospace;font-size:14px;color:#1e3a8a;font-weight:600;margin-bottom:10px;white-space:pre-wrap">'+escapeHtml(atisMetar)+'</div>';
     }
     if(f.scribble){
       sh += '<div style="background:#fff;border:1px solid var(--border);border-radius:9px;padding:6px;margin-bottom:10px"><img src="'+f.scribble+'" style="max-width:100%;display:block;border-radius:5px" alt="Scribble"/></div>';
@@ -2362,6 +2384,39 @@ function renderFlDetail(){
     }
     scard.innerHTML = sh;
     box.appendChild(scard);
+  }
+
+  // Clearance card (rose)
+  var hasIfr = f.ifrTo||f.ifrVia||f.ifrClimb||f.ifrSquawk||f.ifrNotes;
+  var hasTaxi = f.taxiTo||f.taxiVia||f.taxiHoldShort||f.taxiQnh||f.taxiNotes;
+  if(hasIfr || hasTaxi || f.clearance){
+    var clrCard = el('div', 'scard s-clr');
+    var ch = '<div class="scard-head"><span class="ico">&#128075;</span> Clearance</div>';
+    if(hasIfr){
+      var ifrBits = [];
+      if(f.ifrTo) ifrBits.push('CLEARED TO '+f.ifrTo);
+      if(f.ifrVia && f.ifrVia.trim()) ifrBits.push('VIA '+f.ifrVia.trim().toUpperCase());
+      if(f.ifrClimb) ifrBits.push('CLIMB '+f.ifrClimb+' ft');
+      if(f.ifrSquawk) ifrBits.push('SQUAWK '+f.ifrSquawk);
+      var ifrStr = ifrBits.join(', ');
+      if(f.ifrNotes && f.ifrNotes.trim()) ifrStr += (ifrStr?'\n':'')+'NOTES: '+f.ifrNotes.trim();
+      ch += '<div class="sec-lbl">IFR</div><div class="sec-box" style="font-family:JetBrains Mono,monospace;font-size:13px;color:#be123c;font-weight:600;margin-bottom:10px;white-space:pre-wrap">'+escapeHtml(ifrStr)+'</div>';
+    }
+    if(hasTaxi){
+      var taxiBits = [];
+      if(f.taxiTo) taxiBits.push('TAXI TO '+f.taxiTo);
+      if(f.taxiVia && f.taxiVia.trim()) taxiBits.push('VIA '+f.taxiVia.trim().toUpperCase());
+      if(f.taxiHoldShort && f.taxiHoldShort.trim()) taxiBits.push('HOLD SHORT '+f.taxiHoldShort.trim().toUpperCase());
+      if(f.taxiQnh) taxiBits.push('QNH '+f.taxiQnh);
+      var taxiStr = taxiBits.join(', ');
+      if(f.taxiNotes && f.taxiNotes.trim()) taxiStr += (taxiStr?'\n':'')+'NOTES: '+f.taxiNotes.trim();
+      ch += '<div class="sec-lbl">Taxi</div><div class="sec-box" style="font-family:JetBrains Mono,monospace;font-size:13px;color:#be123c;font-weight:600;margin-bottom:10px;white-space:pre-wrap">'+escapeHtml(taxiStr)+'</div>';
+    }
+    if(f.clearance){
+      ch += '<div class="sec-lbl">Legacy notes</div><div class="sec-box" style="white-space:pre-wrap">'+escapeHtml(f.clearance)+'</div>';
+    }
+    clrCard.innerHTML = ch;
+    box.appendChild(clrCard);
   }
 
   det.appendChild(box);
@@ -2395,16 +2450,19 @@ function openFlModal(ex){
     wxMetar1:'',wxMetar2:'',wxMetar3:'',wxMetar4:'',
     wxTaf1:'',wxTaf2:'',wxTaf3:'',wxTaf4:'',
     oilLevel:'',oilAdded:'',maneuvers:'',defects:'',notes:'',scribble:'',scribbleText:'',
-    clearance:'',atisEntries:[],
+    ifrTo:'',ifrVia:'',ifrClimb:'',ifrSquawk:'',ifrNotes:'',
+    taxiTo:'',taxiVia:'',taxiHoldShort:'',taxiQnh:'',taxiNotes:'',
+    atisEntry:null,
     frequencies:[]};
 
   var div=document.createElement('div');
   div.innerHTML=
     '<div style="display:flex;gap:2px;margin-bottom:14px;border-bottom:2px solid var(--border)">'+
-      '<button type="button" id="m-tab-info" class="m-tab m-tab-on" style="padding:8px 8px;background:none;border:none;border-bottom:3px solid #1e3a8a;color:#1e3a8a;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#1e3a8a">Flight Info</button>'+
-      '<button type="button" id="m-tab-times" class="m-tab" style="padding:8px 8px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#0e7490">Times</button>'+
-      '<button type="button" id="m-tab-wx" class="m-tab" style="padding:8px 8px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#6d28d9">Weather</button>'+
-      '<button type="button" id="m-tab-fuel" class="m-tab" style="padding:8px 8px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#b45309">Fuel</button>'+
+      '<button type="button" id="m-tab-info" class="m-tab m-tab-on" style="padding:8px 6px;background:none;border:none;border-bottom:3px solid #1e3a8a;color:#1e3a8a;font-weight:700;font-size:12px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#1e3a8a">Info</button>'+
+      '<button type="button" id="m-tab-clr" class="m-tab" style="padding:8px 6px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:12px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#be123c">Clearance</button>'+
+      '<button type="button" id="m-tab-times" class="m-tab" style="padding:8px 6px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:12px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#0e7490">Times</button>'+
+      '<button type="button" id="m-tab-wx" class="m-tab" style="padding:8px 6px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:12px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#6d28d9">Weather</button>'+
+      '<button type="button" id="m-tab-fuel" class="m-tab" style="padding:8px 6px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:12px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#b45309">Fuel</button>'+
     '</div>'+
     '<div id="m-section-info" class="scard s-info">'+
       '<div class="scard-head"><span class="ico">&#9992;</span> Flight Info</div>'+
@@ -2415,11 +2473,8 @@ function openFlModal(ex){
 
     '<div class="sdiv">Scribble &amp; Notes</div>'+
     '<div class="field"><label>ATIS</label>'+
-      '<div id="m-atis-submitted" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>'+
+      '<div id="m-atis-readback" style="display:none;margin-bottom:10px;padding:12px 14px;background:rgba(4,120,87,.08);border:1px solid rgba(4,120,87,.3);border-radius:9px;font-family:JetBrains Mono,monospace;font-size:14px;color:#047857;line-height:1.6;white-space:pre-wrap;font-weight:600"></div>'+
       '<div id="m-atis-container"></div>'+
-    '</div>'+
-    '<div class="field"><label>Clearance</label>'+
-      '<textarea class="inp" id="m-clearance" rows="2" placeholder="Cleared to X via Y, climb to Z, squawk 1234..." style="resize:vertical;min-height:60px;line-height:1.4">'+escapeHtml(f.clearance||'')+'</textarea>'+
     '</div>'+
     '<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;margin-top:10px">'+
       '<button type="button" class="btn btn-p" id="m-scribble-open" style="padding:8px 14px">&#9998; Open Scribble Pad</button>'+
@@ -2458,6 +2513,48 @@ function openFlModal(ex){
     '<div class="field"><label>Planned Landing</label>'+timeSpinnerHtml('m-pLanding', f.pLanding)+'</div>'+
 
     '</div>'+ // close #m-section-info (will reopen Other after fuel section)
+
+    '<div id="m-section-clr" class="scard s-clr" style="display:none">'+
+      '<div class="scard-head"><span class="ico">&#128075;</span> Clearance</div>'+
+
+      '<div class="sdiv">IFR Clearance</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px">'+
+        '<button type="button" class="atis-fld" data-clrfld="ifrTo" data-val="'+escapeHtml(f.ifrTo||'')+'"><span class="atis-lbl">Cleared To</span><span class="atis-v">'+(f.ifrTo||'--')+'</span></button>'+
+        '<button type="button" class="atis-fld" data-clrfld="ifrSquawk" data-val="'+escapeHtml(f.ifrSquawk||'')+'"><span class="atis-lbl">Squawk</span><span class="atis-v">'+(f.ifrSquawk||'--')+'</span></button>'+
+      '</div>'+
+      '<button type="button" class="atis-fld" data-clrfld="ifrClimb" data-val="'+escapeHtml(f.ifrClimb||'')+'" style="width:100%;margin-bottom:8px"><span class="atis-lbl">Climb To (altitude / FL)</span><span class="atis-v">'+(f.ifrClimb||'--')+'</span></button>'+
+      '<div class="field"><label>Via (SID / route / waypoints)</label>'+
+        '<textarea class="inp" id="m-ifrVia" rows="2" placeholder="e.g. DVR1G, then DVR direct" style="resize:vertical;min-height:56px;line-height:1.4">'+escapeHtml(f.ifrVia||'')+'</textarea>'+
+      '</div>'+
+      '<div class="field"><label>IFR Notes</label>'+
+        '<textarea class="inp" id="m-ifrNotes" rows="2" placeholder="Departure frequency, expect FL later..." style="resize:vertical;min-height:56px;line-height:1.4">'+escapeHtml(f.ifrNotes||'')+'</textarea>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;margin-bottom:6px">'+
+        '<button type="button" class="btn btn-p" id="m-ifr-submit" style="flex:1;padding:12px;font-size:14px;font-weight:700">&#10003; Read Back IFR</button>'+
+        '<button type="button" class="btn btn-d" id="m-ifr-clear" style="flex:0 0 auto;padding:12px 16px;font-size:13px">Clear</button>'+
+      '</div>'+
+      '<div id="m-ifr-summary" style="display:none;margin-bottom:16px;padding:12px 14px;background:rgba(4,120,87,.08);border:1px solid rgba(4,120,87,.3);border-radius:9px;font-family:JetBrains Mono,monospace;font-size:13px;color:#047857;line-height:1.6;white-space:pre-wrap;font-weight:600"></div>'+
+
+      '<div class="sdiv" style="margin-top:14px">Taxi Clearance</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px">'+
+        '<button type="button" class="atis-fld" data-clrfld="taxiTo" data-val="'+escapeHtml(f.taxiTo||'')+'"><span class="atis-lbl">Taxi To</span><span class="atis-v">'+(f.taxiTo||'--')+'</span></button>'+
+        '<button type="button" class="atis-fld" data-clrfld="taxiQnh" data-val="'+escapeHtml(f.taxiQnh||'')+'"><span class="atis-lbl">QNH</span><span class="atis-v">'+(f.taxiQnh?f.taxiQnh+' hPa':'--')+'</span></button>'+
+      '</div>'+
+      '<div class="field"><label>Via (taxiways)</label>'+
+        '<textarea class="inp" id="m-taxiVia" rows="2" placeholder="e.g. Alpha, Bravo, hold short Delta" style="resize:vertical;min-height:56px;line-height:1.4">'+escapeHtml(f.taxiVia||'')+'</textarea>'+
+      '</div>'+
+      '<div class="field"><label>Hold Short</label>'+
+        '<input class="inp" id="m-taxiHoldShort" value="'+escapeHtml(f.taxiHoldShort||'')+'" placeholder="e.g. RWY 26L, Charlie"/>'+
+      '</div>'+
+      '<div class="field"><label>Taxi Notes</label>'+
+        '<textarea class="inp" id="m-taxiNotes" rows="2" placeholder="Line up runway 26, expect immediate departure..." style="resize:vertical;min-height:56px;line-height:1.4">'+escapeHtml(f.taxiNotes||'')+'</textarea>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;margin-bottom:6px">'+
+        '<button type="button" class="btn btn-p" id="m-taxi-submit" style="flex:1;padding:12px;font-size:14px;font-weight:700">&#10003; Read Back Taxi</button>'+
+        '<button type="button" class="btn btn-d" id="m-taxi-clear" style="flex:0 0 auto;padding:12px 16px;font-size:13px">Clear</button>'+
+      '</div>'+
+      '<div id="m-taxi-summary" style="display:none;padding:12px 14px;background:rgba(4,120,87,.08);border:1px solid rgba(4,120,87,.3);border-radius:9px;font-family:JetBrains Mono,monospace;font-size:13px;color:#047857;line-height:1.6;white-space:pre-wrap;font-weight:600"></div>'+
+    '</div>'+ // close #m-section-clr
 
     '<div id="m-section-times" class="scard s-times" style="display:none">'+
       '<div class="scard-head"><span class="ico">&#9201;</span> Times</div>'+
@@ -2548,17 +2645,17 @@ function openFlModal(ex){
       '</div>'+
     '</div>'+
 
+    '<div style="background:rgba(139,92,246,.05);border:1px solid rgba(139,92,246,.25);border-radius:9px;padding:12px;margin-bottom:10px">'+
+      '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:#6d28d9;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Wind Components (auto)</div>'+
+      '<div id="m-wxComponents" style="display:flex;flex-direction:column;gap:6px"></div>'+
+    '</div>'+
+
     '<div class="sdiv">Runways (enter two-digit number 01-36)</div>'+
     '<div class="g4">'+
       '<div class="field"><label>Runway 1</label><input class="inp" id="m-rwy1" type="number" min="1" max="36" placeholder="09" value="'+(f.rwy1||'')+'"/></div>'+
       '<div class="field"><label>Runway 2</label><input class="inp" id="m-rwy2" type="number" min="1" max="36" placeholder="27" value="'+(f.rwy2||'')+'"/></div>'+
       '<div class="field"><label>Runway 3</label><input class="inp" id="m-rwy3" type="number" min="1" max="36" placeholder="" value="'+(f.rwy3||'')+'"/></div>'+
       '<div class="field"><label>Runway 4</label><input class="inp" id="m-rwy4" type="number" min="1" max="36" placeholder="" value="'+(f.rwy4||'')+'"/></div>'+
-    '</div>'+
-
-    '<div style="background:rgba(139,92,246,.05);border:1px solid rgba(139,92,246,.25);border-radius:9px;padding:12px;margin-bottom:10px">'+
-      '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:#6d28d9;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Wind Components (auto)</div>'+
-      '<div id="m-wxComponents" style="display:flex;flex-direction:column;gap:6px"></div>'+
     '</div>'+
 
     '<div class="sdiv">METAR &amp; TAF</div>'+
@@ -2587,21 +2684,11 @@ function openFlModal(ex){
     }).join('')+
 
     '<div class="sdiv" style="margin-top:14px">Wind</div>'+
-    '<div class="g2">'+
-      '<div class="field"><label>Surface Dir (&deg; mag)</label><input class="inp" id="m-wxSurfDir" type="number" step="1" placeholder="180" value="'+(f.wxSurfDir||'')+'"/></div>'+
-      '<div class="field"><label>Surface Spd (kt)</label><input class="inp" id="m-wxSurfSpd" type="number" step="1" placeholder="15" value="'+(f.wxSurfSpd||'')+'"/></div>'+
-    '</div>'+
-    '<div class="g2">'+
-      '<div class="field"><label>1000\' Dir (&deg;)</label><input class="inp" id="m-wxW1kDir" type="number" step="1" placeholder="190" value="'+(f.wxW1kDir||'')+'"/></div>'+
-      '<div class="field"><label>1000\' Spd (kt)</label><input class="inp" id="m-wxW1kSpd" type="number" step="1" placeholder="18" value="'+(f.wxW1kSpd||'')+'"/></div>'+
-    '</div>'+
-    '<div class="g2">'+
-      '<div class="field"><label>2000\' Dir (&deg;)</label><input class="inp" id="m-wxW2kDir" type="number" step="1" placeholder="200" value="'+(f.wxW2kDir||'')+'"/></div>'+
-      '<div class="field"><label>2000\' Spd (kt)</label><input class="inp" id="m-wxW2kSpd" type="number" step="1" placeholder="20" value="'+(f.wxW2kSpd||'')+'"/></div>'+
-    '</div>'+
-    '<div class="g2">'+
-      '<div class="field"><label>5000\' Dir (&deg;)</label><input class="inp" id="m-wxW5kDir" type="number" step="1" placeholder="220" value="'+(f.wxW5kDir||'')+'"/></div>'+
-      '<div class="field"><label>5000\' Spd (kt)</label><input class="inp" id="m-wxW5kSpd" type="number" step="1" placeholder="25" value="'+(f.wxW5kSpd||'')+'"/></div>'+
+    '<div id="m-wxWindGrid" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">'+
+      '<button type="button" class="atis-fld" data-wxfld="Surf" data-val="'+escapeHtml(f.wxSurfWind||'')+'" style="width:100%"><span class="atis-lbl">Surface Wind (DDD/SS or DDD/SSGXX)</span><span class="atis-v">'+(f.wxSurfWind||'--')+'</span></button>'+
+      '<button type="button" class="atis-fld" data-wxfld="W1k" data-val="'+escapeHtml(f.wxW1kWind||'')+'" style="width:100%"><span class="atis-lbl">1000&#39; Wind</span><span class="atis-v">'+(f.wxW1kWind||'--')+'</span></button>'+
+      '<button type="button" class="atis-fld" data-wxfld="W2k" data-val="'+escapeHtml(f.wxW2kWind||'')+'" style="width:100%"><span class="atis-lbl">2000&#39; Wind</span><span class="atis-v">'+(f.wxW2kWind||'--')+'</span></button>'+
+      '<button type="button" class="atis-fld" data-wxfld="W5k" data-val="'+escapeHtml(f.wxW5kWind||'')+'" style="width:100%"><span class="atis-lbl">5000&#39; Wind</span><span class="atis-v">'+(f.wxW5kWind||'--')+'</span></button>'+
     '</div>'+
 
     '</div>'+ // close #m-section-wx
@@ -2640,10 +2727,12 @@ function openFlModal(ex){
       '<div class="ttcafe-row">'+
         '<div class="ttcafe-letter">C</div>'+
         '<div class="ttcafe-name">Contingency</div>'+
-        '<div style="flex:1;display:flex;gap:6px;align-items:center">'+
-          '<input class="inp" id="m-fuelContPct" type="number" step="1" placeholder="5" value="'+(f.fuelContPct||'5')+'" style="flex:0 0 100px;text-align:right"/>'+
-          '<span style="flex:0 0 68px;text-align:center;padding:8px 4px;font-family:JetBrains Mono,monospace;font-size:13px;color:var(--muted)">%</span>'+
-          '<span style="flex:1;min-width:120px;font-family:JetBrains Mono,monospace;font-size:13px;font-weight:600;padding:0 4px">'+
+        '<div style="flex:1;display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0">'+
+          '<div style="display:flex;flex-wrap:nowrap;align-items:center;gap:2px;flex:0 0 auto">'+
+            '<input class="inp" id="m-fuelContPct" type="number" step="1" placeholder="5" value="'+(f.fuelContPct||'5')+'" style="flex:0 0 68px;text-align:right;min-width:0"/>'+
+            '<span style="flex:0 0 32px;text-align:center;padding:8px 2px;font-family:JetBrains Mono,monospace;font-size:13px;color:var(--muted);font-weight:700">%</span>'+
+          '</div>'+
+          '<span style="flex:0 1 auto;font-family:JetBrains Mono,monospace;font-size:12px;font-weight:600;padding:0 2px;white-space:nowrap">'+
             '<span id="m-contUSG" class="fuel-usg">--</span> <span class="fuel-usg-lbl">USG</span> / '+
             '<span id="m-contL" class="fuel-l">--</span> <span class="fuel-l-lbl">L</span>'+
           '</span>'+
@@ -2756,12 +2845,14 @@ function openFlModal(ex){
   function switchTab(tab){
     var sections={
       info: [qs('#m-section-info',div), qs('#m-section-info-extra',div)],
+      clr: [qs('#m-section-clr',div)],
       times: [qs('#m-section-times',div)],
       wx: [qs('#m-section-wx',div)],
       fuel: [qs('#m-section-fuel',div)]
     };
     var btns={
       info: qs('#m-tab-info',div),
+      clr: qs('#m-tab-clr',div),
       times: qs('#m-tab-times',div),
       wx: qs('#m-tab-wx',div),
       fuel: qs('#m-tab-fuel',div)
@@ -2783,10 +2874,10 @@ function openFlModal(ex){
       }
     });
   }
-  // Wire tab buttons after DOM insert (defer so qs works)
   setTimeout(function(){
-    var bi=qs('#m-tab-info',div), bt=qs('#m-tab-times',div), bw=qs('#m-tab-wx',div), bf=qs('#m-tab-fuel',div);
+    var bi=qs('#m-tab-info',div), bc=qs('#m-tab-clr',div), bt=qs('#m-tab-times',div), bw=qs('#m-tab-wx',div), bf=qs('#m-tab-fuel',div);
     if(bi) bi.addEventListener('click', function(){ switchTab('info'); });
+    if(bc) bc.addEventListener('click', function(){ switchTab('clr'); });
     if(bt) bt.addEventListener('click', function(){ switchTab('times'); });
     if(bw) bw.addEventListener('click', function(){ switchTab('wx'); });
     if(bf) bf.addEventListener('click', function(){ switchTab('fuel'); });
@@ -2976,14 +3067,13 @@ function openFlModal(ex){
         };
       }
 
-      // Submit: save current block to atisEntries[], render into submitted list, clear block
+      // Submit: save current block to f.atisEntry (single), refresh readback, clear block
       block.querySelector('.atis-submit').addEventListener('click', function(){
         var entry = readBlock();
-        // Skip if fully empty
         var empty = !entry.icao && !entry.time && !entry.info && !entry.rwy && !entry.wind && !entry.vis && !entry.qnh && !entry.tempDew && !entry.cloud1 && !entry.cloud2 && !entry.cloud3 && !(entry.notes||'').trim();
         if(empty){ toast('Nothing to submit'); return; }
-        f.atisEntries.push(entry);
-        renderSubmittedList();
+        f.atisEntry = entry;
+        renderReadback();
         // Clear all block fields
         block.querySelectorAll('.atis-fld').forEach(function(b){
           b.dataset.val = '';
@@ -2996,11 +3086,11 @@ function openFlModal(ex){
           var el = qs('#m-atis-time-'+idx+sfx, block);
           if(el) el.value = '';
         });
-        toast('ATIS added');
+        toast('ATIS submitted');
       });
-      // Clear the current block without submitting
+      // Clear the current block and any submitted readback
       block.querySelector('.atis-clear').addEventListener('click', function(){
-        if(!confirm('Clear the current ATIS entry?')) return;
+        if(!confirm('Clear the ATIS entry and any submitted readback?')) return;
         block.querySelectorAll('.atis-fld').forEach(function(b){
           b.dataset.val = '';
           var vEl = b.querySelector('.atis-v');
@@ -3012,37 +3102,28 @@ function openFlModal(ex){
           var el = qs('#m-atis-time-'+idx+sfx, block);
           if(el) el.value = '';
         });
+        delete f.atisEntry;
+        renderReadback();
       });
     }
 
-    // Initial render: submitted entries above, one blank editable block below
-    var atisSubmittedEl = qs('#m-atis-submitted', div);
-    function renderSubmittedList(){
-      if(!atisSubmittedEl) return;
-      atisSubmittedEl.innerHTML = '';
-      if(!f.atisEntries.length){ atisSubmittedEl.style.display='none'; return; }
-      atisSubmittedEl.style.display='flex';
-      f.atisEntries.forEach(function(e, i){
-        var m = toMetar(e);
-        var row = document.createElement('div');
-        row.style.cssText = 'display:flex;gap:8px;align-items:flex-start;padding:10px 12px;background:rgba(4,120,87,.06);border:1px solid rgba(4,120,87,.25);border-radius:9px';
-        row.innerHTML =
-          '<div style="flex:1;font-family:JetBrains Mono,monospace;font-size:13px;color:#047857;font-weight:600;line-height:1.5;white-space:pre-wrap">'+escapeHtml(m||'(empty)')+'</div>'+
-          '<button type="button" class="btn btn-d atis-sub-del" data-i="'+i+'" style="padding:2px 8px;font-size:14px;line-height:1;flex:0 0 auto" title="Remove">&times;</button>';
-        atisSubmittedEl.appendChild(row);
-      });
-      atisSubmittedEl.querySelectorAll('.atis-sub-del').forEach(function(b){
-        b.addEventListener('click', function(){
-          var i = parseInt(b.getAttribute('data-i'));
-          if(isNaN(i)) return;
-          if(!confirm('Remove this submitted ATIS?')) return;
-          f.atisEntries.splice(i,1);
-          renderSubmittedList();
-        });
-      });
+    // Initial render: show the last submitted ATIS as a readback above, one blank editable block below.
+    // Migration: consolidate any prior atisEntries[] array down to a single f.atisEntry.
+    if(Array.isArray(f.atisEntries) && f.atisEntries.length && !f.atisEntry){
+      f.atisEntry = f.atisEntries[f.atisEntries.length-1];
     }
-    renderSubmittedList();
-    // Always render exactly ONE editable block
+    delete f.atisEntries;
+    var atisReadbackEl = qs('#m-atis-readback', div);
+    function renderReadback(){
+      if(!atisReadbackEl) return;
+      if(!f.atisEntry){ atisReadbackEl.style.display = 'none'; return; }
+      var m = toMetar(f.atisEntry);
+      if(!m.trim()){ atisReadbackEl.style.display = 'none'; return; }
+      atisReadbackEl.style.display = 'block';
+      atisReadbackEl.textContent = m;
+    }
+    renderReadback();
+    // Always render exactly ONE editable block, empty
     renderAtisBlock(null);
     // Scribble button on the Flight Info tab
     var scribbleBtn = qs('#m-scribble-open', div);
@@ -3230,12 +3311,10 @@ function openFlModal(ex){
   // All numeric fields trigger recalc
   ['m-tachoStart','m-tachoEnd','m-hobbsStart','m-hobbsEnd',
    'm-fuelContPct',
-   'm-wxTAS','m-wxSurfDir','m-wxSurfSpd','m-wxW1kDir','m-wxW1kSpd',
-   'm-wxW2kDir','m-wxW2kSpd','m-wxW5kDir','m-wxW5kSpd',
+   'm-wxTAS',
    'm-rwy1','m-rwy2','m-rwy3','m-rwy4'].forEach(function(id){
     var el=qs('#'+id,div); if(el) el.addEventListener('input', liveCalc);
   });
-  // Drift source radio buttons
 
   // Wire bidirectional USG/L pairs - calc fires after either side updates
   ['m-fob','m-fuelTaxi','m-fuelTrip','m-fuelAlt','m-fuelFinal','m-fuelExtra','m-fuelUplifted','m-burnRate','m-fuelLanding']
@@ -3612,7 +3691,7 @@ function openFlModal(ex){
           '</table>'+
         '</div>'+
 
-        '<div class="foot">FlightDeck v140 &middot; '+new Date().toLocaleString()+'</div>'+
+        '<div class="foot">FlightDeck v143 &middot; '+new Date().toLocaleString()+'</div>'+
         '</body></html>';
       win.document.open();
       win.document.write(html);
@@ -3834,10 +3913,13 @@ function openFlModal(ex){
       tEl.innerHTML=html;
     }
 
-    // Weather wind components for up to 4 runways
+    // Weather wind components for up to 4 runways (uses surface wind)
     var wxEl=qs('#m-wxComponents',div);
     if(wxEl){
-      var dir=g('m-wxSurfDir'), spd=g('m-wxSurfSpd');
+      var surfBtn = div.querySelector('button.atis-fld[data-wxfld="Surf"]');
+      var w = surfBtn ? parseWind(surfBtn.dataset.val) : null;
+      var dir = w ? String(w.dir) : '';
+      var spd = w ? String(w.spd) : '';
       var rows=[];
       ['m-rwy1','m-rwy2','m-rwy3','m-rwy4'].forEach(function(id,i){
         var rwy=qs('#'+id,div).value.trim();
@@ -3861,21 +3943,142 @@ function openFlModal(ex){
 
     // Max Drift = (wind speed / TAS) * 60, computed for each altitude
     var tasN = parseFloat(g('m-wxTAS'));
-    function calcDrift(spdInput, elId){
+    function readWxWind(fldKey){
+      var b = div.querySelector('button.atis-fld[data-wxfld="'+fldKey+'"]');
+      return b ? parseWind(b.dataset.val) : null;
+    }
+    function calcDrift(fldKey, elId){
       var el = qs('#'+elId, div);
       if(!el) return;
-      var spdN = parseFloat(g(spdInput));
-      if(!isNaN(tasN) && tasN>0 && !isNaN(spdN)){
-        el.textContent = ((spdN/tasN)*60).toFixed(1) + '\u00b0';
+      var w = readWxWind(fldKey);
+      if(!isNaN(tasN) && tasN>0 && w && !isNaN(w.spd)){
+        el.textContent = ((w.spd/tasN)*60).toFixed(1) + '\u00b0';
       } else {
         el.textContent = '--';
       }
     }
-    calcDrift('m-wxSurfSpd', 'm-wxDriftSurf');
-    calcDrift('m-wxW1kSpd',  'm-wxDrift1k');
-    calcDrift('m-wxW2kSpd',  'm-wxDrift2k');
-    calcDrift('m-wxW5kSpd',  'm-wxDrift5k');
+    calcDrift('Surf', 'm-wxDriftSurf');
+    calcDrift('W1k',  'm-wxDrift1k');
+    calcDrift('W2k',  'm-wxDrift2k');
+    calcDrift('W5k',  'm-wxDrift5k');
   }
+
+  // Migrate legacy dir/spd fields for wind
+  migrateWindFields(f);
+  // Wire the ATIS-style wind buttons in the weather tab
+  div.querySelectorAll('button.atis-fld[data-wxfld]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      openWindKeypad(btn.dataset.val || '', function(v){
+        btn.dataset.val = v;
+        btn.querySelector('.atis-v').textContent = v || '--';
+        liveCalc();
+      });
+    });
+  });
+
+  // ============ CLEARANCE section wiring ============
+  // Configs for numeric clearance fields
+  var clrConfigs = {
+    ifrSquawk: { title:'Squawk Code', digits:4, suffix:'', min:0, max:7777, help:'octal-safe 4 digits' },
+    ifrClimb:  { title:'Climb Altitude (ft)', digits:5, suffix:'ft', min:0, max:60000, help:'e.g. 3000 or 07000 for FL070' },
+    taxiQnh:   { title:'QNH', digits:4, suffix:'hPa', min:900, max:1100, help:'hectopascals' }
+  };
+  div.querySelectorAll('button.atis-fld[data-clrfld]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var fld = btn.getAttribute('data-clrfld');
+      if(fld === 'ifrTo' || fld === 'taxiTo'){
+        // Free-text short entry — inline prompt is simplest here
+        var v = prompt(fld==='ifrTo' ? 'Cleared to (ICAO / destination):' : 'Taxi to (holding point / runway):', btn.dataset.val || '');
+        if(v !== null){
+          btn.dataset.val = (v||'').toUpperCase();
+          btn.querySelector('.atis-v').textContent = btn.dataset.val || '--';
+        }
+      } else if(clrConfigs[fld]){
+        openNumericKeypad(clrConfigs[fld], btn.dataset.val || '', function(v){
+          btn.dataset.val = v;
+          var vEl = btn.querySelector('.atis-v');
+          if(fld === 'taxiQnh') vEl.textContent = v ? v+' hPa' : '--';
+          else if(fld === 'ifrClimb') vEl.textContent = v ? v+' ft' : '--';
+          else vEl.textContent = v || '--';
+        });
+      }
+    });
+  });
+
+  function readClrFld(fld){
+    var b = div.querySelector('button.atis-fld[data-clrfld="'+fld+'"]');
+    return b ? (b.dataset.val||'') : '';
+  }
+  function ifrReadback(){
+    var to = readClrFld('ifrTo');
+    var sq = readClrFld('ifrSquawk');
+    var clm = readClrFld('ifrClimb');
+    var via = (qs('#m-ifrVia',div)||{}).value || '';
+    var nts = (qs('#m-ifrNotes',div)||{}).value || '';
+    var bits = [];
+    if(to) bits.push('CLEARED TO '+to);
+    if(via.trim()) bits.push('VIA '+via.trim().toUpperCase());
+    if(clm) bits.push('CLIMB '+clm+' ft');
+    if(sq) bits.push('SQUAWK '+sq);
+    var out = bits.join(', ');
+    if(nts.trim()) out += (out?'\n':'')+'NOTES: '+nts.trim();
+    return out;
+  }
+  function taxiReadback(){
+    var to = readClrFld('taxiTo');
+    var qnh = readClrFld('taxiQnh');
+    var via = (qs('#m-taxiVia',div)||{}).value || '';
+    var hs = (qs('#m-taxiHoldShort',div)||{}).value || '';
+    var nts = (qs('#m-taxiNotes',div)||{}).value || '';
+    var bits = [];
+    if(to) bits.push('TAXI TO '+to);
+    if(via.trim()) bits.push('VIA '+via.trim().toUpperCase());
+    if(hs.trim()) bits.push('HOLD SHORT '+hs.trim().toUpperCase());
+    if(qnh) bits.push('QNH '+qnh);
+    var out = bits.join(', ');
+    if(nts.trim()) out += (out?'\n':'')+'NOTES: '+nts.trim();
+    return out;
+  }
+  function showSummary(el, text){
+    if(!el) return;
+    if(!text.trim()){
+      el.style.display='block';
+      el.style.background='rgba(180,83,9,.08)';
+      el.style.borderColor='rgba(180,83,9,.3)';
+      el.style.color='#b45309';
+      el.textContent='Nothing entered yet.';
+      return;
+    }
+    el.style.display='block';
+    el.style.background='rgba(4,120,87,.08)';
+    el.style.borderColor='rgba(4,120,87,.3)';
+    el.style.color='#047857';
+    el.textContent=text;
+  }
+  var ifrSubBtn = qs('#m-ifr-submit', div);
+  if(ifrSubBtn) ifrSubBtn.addEventListener('click', function(){ showSummary(qs('#m-ifr-summary',div), ifrReadback()); });
+  var taxiSubBtn = qs('#m-taxi-submit', div);
+  if(taxiSubBtn) taxiSubBtn.addEventListener('click', function(){ showSummary(qs('#m-taxi-summary',div), taxiReadback()); });
+  function clearClrGroup(prefix, fields, summaryId){
+    if(!confirm('Clear all '+prefix+' clearance fields?')) return;
+    div.querySelectorAll('button.atis-fld[data-clrfld]').forEach(function(b){
+      var f = b.getAttribute('data-clrfld');
+      if(f && f.indexOf(prefix)===0){
+        b.dataset.val = '';
+        b.querySelector('.atis-v').textContent = '--';
+      }
+    });
+    fields.forEach(function(id){
+      var el = qs('#'+id, div);
+      if(el) el.value = '';
+    });
+    var s = qs('#'+summaryId, div);
+    if(s) s.style.display='none';
+  }
+  var ifrClrBtn = qs('#m-ifr-clear', div);
+  if(ifrClrBtn) ifrClrBtn.addEventListener('click', function(){ clearClrGroup('ifr', ['m-ifrVia','m-ifrNotes'], 'm-ifr-summary'); });
+  var taxiClrBtn = qs('#m-taxi-clear', div);
+  if(taxiClrBtn) taxiClrBtn.addEventListener('click', function(){ clearClrGroup('taxi', ['m-taxiVia','m-taxiHoldShort','m-taxiNotes'], 'm-taxi-summary'); });
 
   if(ex) setTimeout(liveCalc,0);
 
@@ -3888,7 +4091,8 @@ function openFlModal(ex){
     f.date=g('m-date'); f.aircraft=g('m-aircraft');
     f.departure=g('m-dep').toUpperCase(); f.destination=g('m-dest').toUpperCase();
     f.student=g('m-student');
-    // ATIS: preserve the existing atisEntries array; auto-submit the current block if it has content
+    // ATIS: preserve the last submitted entry (f.atisEntry). If the block has
+    // unsubmitted content, that becomes the new f.atisEntry (auto-submit on save).
     var atisCont = qs('#m-atis-container', div);
     if(atisCont){
       var block = atisCont.querySelector('.atis-block');
@@ -3907,13 +4111,21 @@ function openFlModal(ex){
           notes: (block.querySelector('.atis-notes').value||'')
         };
         var empty = !e.icao && !e.time && !e.info && !e.rwy && !e.wind && !e.vis && !e.qnh && !e.tempDew && !e.cloud1 && !e.cloud2 && !e.cloud3 && !(e.notes||'').trim();
-        if(!empty) f.atisEntries.push(e);
+        if(!empty) f.atisEntry = e;
       }
     }
+    delete f.atisEntries;
     // Clear legacy flat ATIS fields
     ['atis','atisInfo','atisRwy','atisWind','atisVis','atisQnh','atisTemp','atisDew',
      'atisCloud1','atisCloud2','atisCloud3','atisNotes'].forEach(function(k){ delete f[k]; });
-    f.clearance = g('m-clearance');
+    // Clearance: read button data-vals + textareas
+    ['ifrTo','ifrSquawk','ifrClimb','taxiTo','taxiQnh'].forEach(function(fld){
+      var b = div.querySelector('button.atis-fld[data-clrfld="'+fld+'"]');
+      f[fld] = b ? (b.dataset.val||'') : '';
+    });
+    f.ifrVia = g('m-ifrVia'); f.ifrNotes = g('m-ifrNotes');
+    f.taxiVia = g('m-taxiVia'); f.taxiHoldShort = g('m-taxiHoldShort'); f.taxiNotes = g('m-taxiNotes');
+    delete f.clearance; // legacy free-form field removed
     // Collect frequencies from dynamic rows
     f.frequencies = [];
     var fContainer = qs('#m-freq-container', div);
@@ -3945,9 +4157,19 @@ function openFlModal(ex){
     f.fuelUplifted=fuelUSG('m-fuelUplifted',div);
     f.fuelLanding=fuelUSG('m-fuelLanding',div);
     f.wxTAS=g('m-wxTAS');
-    f.wxSurfDir=g('m-wxSurfDir'); f.wxSurfSpd=g('m-wxSurfSpd');
-    f.wxW2kDir=g('m-wxW2kDir'); f.wxW2kSpd=g('m-wxW2kSpd');
-    f.wxW5kDir=g('m-wxW5kDir'); f.wxW5kSpd=g('m-wxW5kSpd');
+    // Read combined wind from ATIS-style buttons
+    ['Surf','W1k','W2k','W5k'].forEach(function(k){
+      var b = div.querySelector('button.atis-fld[data-wxfld="'+k+'"]');
+      f['wx'+k+'Wind'] = b ? (b.dataset.val||'') : '';
+      // Also update legacy dir/spd for backward compat with any downstream code
+      var p = parseWind(f['wx'+k+'Wind']);
+      if(p){
+        f['wx'+k+'Dir'] = String(p.dir);
+        f['wx'+k+'Spd'] = String(p.spd);
+      } else {
+        f['wx'+k+'Dir'] = ''; f['wx'+k+'Spd'] = '';
+      }
+    });
     f.rwy1=g('m-rwy1'); f.rwy2=g('m-rwy2'); f.rwy3=g('m-rwy3'); f.rwy4=g('m-rwy4');
     [1,2,3,4].forEach(function(n){
       f['wxIcao'+n]=g('m-wxIcao'+n);
@@ -4258,7 +4480,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v140');
+  lines.push('','-- Sent from FlightDeck v143');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -4307,7 +4529,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v140');
+  lines.push('','-- FlightDeck v143');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
