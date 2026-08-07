@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%2C-apple-system%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
-<title>FlightDeck v156</title>
+<title>FlightDeck v173</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -127,11 +127,11 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 /* Spectrum strip on flight list cards: small coloured bars showing what's filled in */
 .spec{display:flex;height:4px;border-radius:2px;overflow:hidden;margin-bottom:8px;background:rgba(203,213,225,.4)}
 /* ATIS structured field buttons */
-.atis-fld{display:flex;flex-direction:column;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;min-height:66px;cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s;text-align:left}
+.atis-fld{display:flex;flex-direction:column;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;min-height:46px;cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s;text-align:left}
 .atis-fld:hover{background:var(--card);border-color:#1e3a8a}
 .atis-fld:active{background:var(--border)}
-.atis-fld .atis-lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:'JetBrains Mono',monospace;margin-bottom:5px}
-.atis-fld .atis-v{font-size:20px;font-weight:700;color:#1e3a8a;font-family:'JetBrains Mono',monospace}
+.atis-fld .atis-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-family:'JetBrains Mono',monospace;margin-bottom:2px;line-height:1.2}
+.atis-fld .atis-v{font-size:15px;font-weight:700;color:#1e3a8a;font-family:'JetBrains Mono',monospace;line-height:1.15}
 /* TTCAFE input rows — always two lines: main row (letter | name | duration)
    plus a body row underneath (amount | unit | converted output). Every row
    uses the same grid template so columns align across all rows and devices. */
@@ -200,7 +200,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v156</span>
+      <span class="logo-sub">v173</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -2529,6 +2529,9 @@ function renderFlDetail(){
 
 function openFlModal(ex){
   var f=ex||{id:uid(),date:'',aircraft:'',departure:'',destination:'',student:'',
+    depMinDA:'',depMinVis:'',destMinDA:'',destMinVis:'',
+    alt1Icao:'',alt1MinDA:'',alt1MinVis:'',alt1Time:'',
+    alt2Icao:'',alt2MinDA:'',alt2MinVis:'',alt2Time:'',
     eobt:'',ctot:'',pTakeoff:'',pLanding:'',
     chocksOff:'',takeoff:'',landing:'',chocksOn:'',
     lessonStart:'',lessonEnd:'',circuitStart:'',circuitEnd:'',
@@ -2581,8 +2584,39 @@ function openFlModal(ex){
     '</div>'+
     '<div class="field"><label>Aircraft Reg</label><input class="inp" id="m-aircraft" placeholder="VH-XXX" value="'+(f.aircraft||'')+'"/></div>'+
     '<div class="field"><label>Student / Co-pilot</label><input class="inp" id="m-student" value="'+(f.student||'')+'" placeholder="Student name"/></div>'+
-    '<div class="field"><label>Departure</label><input class="inp" id="m-dep" placeholder="YSSY" value="'+(f.departure||'')+'"/></div>'+
-    '<div class="field"><label>Destination</label><input class="inp" id="m-dest" placeholder="YMML" value="'+(f.destination||'')+'"/></div>'+
+    '<div class="field"><label>Departure</label>'+
+      '<div style="display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center">'+
+        '<input class="inp" id="m-dep" placeholder="YSSY" value="'+(f.departure||'')+'"/>'+
+        '<input class="inp" id="m-depMinDA" placeholder="DA (ft)" value="'+(f.depMinDA||'')+'" style="width:88px;font-size:12px" title="Departure minimum DA (ft)"/>'+
+        '<input class="inp" id="m-depMinVis" placeholder="Vis (m)" value="'+(f.depMinVis||'')+'" style="width:88px;font-size:12px" title="Departure minimum visibility (m)"/>'+
+      '</div>'+
+    '</div>'+
+    '<div class="field"><label>Destination</label>'+
+      '<div style="display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center">'+
+        '<input class="inp" id="m-dest" placeholder="YMML" value="'+(f.destination||'')+'"/>'+
+        '<input class="inp" id="m-destMinDA" placeholder="DA (ft)" value="'+(f.destMinDA||'')+'" style="width:88px;font-size:12px" title="Destination DA (ft)"/>'+
+        '<input class="inp" id="m-destMinVis" placeholder="Vis (m)" value="'+(f.destMinVis||'')+'" style="width:88px;font-size:12px" title="Destination visibility (m)"/>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="sdiv" style="margin-top:14px">Alternates</div>'+
+    ['alt1','alt2'].map(function(k, i){
+      var label = 'Alternate '+(i+1);
+      return '<div class="field"><label>'+label+'</label>'+
+        '<div style="display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;margin-bottom:6px">'+
+          '<input class="inp" id="m-'+k+'Icao" placeholder="Airport" value="'+(f[k+'Icao']||'')+'"/>'+
+          '<div style="display:flex;align-items:center;gap:6px;flex:0 0 auto">'+
+            '<span style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--muted)">Time</span>'+
+            durationHtml('m-'+k+'-time')+
+          '</div>'+
+        '</div>'+
+        '<div style="display:grid;grid-template-columns:auto auto 1fr;gap:6px;align-items:center">'+
+          '<input class="inp" id="m-'+k+'MinDA" placeholder="DA (ft)" value="'+(f[k+'MinDA']||'')+'" style="width:88px;font-size:12px" title="Alternate DA (ft)"/>'+
+          '<input class="inp" id="m-'+k+'MinVis" placeholder="Vis (m)" value="'+(f[k+'MinVis']||'')+'" style="width:88px;font-size:12px" title="Alternate visibility (m)"/>'+
+          '<div id="m-'+k+'-fuel-out" style="font-family:JetBrains Mono,monospace;font-size:12px;color:#b45309;text-align:right;font-weight:700;white-space:nowrap">--</div>'+
+        '</div>'+
+      '</div>';
+    }).join('')+
 
     '<div class="sdiv">Planned Times (UTC)</div>'+
     '<div class="field"><label>EOBT (Off-Block)</label>'+
@@ -2631,7 +2665,6 @@ function openFlModal(ex){
     '</div>'+ // close #m-section-clr
 
     '<div id="m-section-cl" class="scard" style="display:none;background:rgba(14,116,144,.05);border-color:rgba(14,116,144,.2);border-left-color:#0e7490">'+
-      '<div class="scard-head" style="color:#0e7490"><span class="ico">&#9744;</span> Checklist</div>'+
       '<div id="m-cl-body"></div>'+
     '</div>'+
 
@@ -3069,7 +3102,7 @@ function openFlModal(ex){
       var block = document.createElement('div');
       block.className = 'atis-block';
       block.dataset.idx = idx;
-      block.style.cssText = 'border:1px solid var(--border);border-radius:11px;padding:14px;background:rgba(30,58,138,.03)';
+      block.style.cssText = 'border:1px solid var(--border);border-radius:9px;padding:8px;background:rgba(30,58,138,.03)';
       // Display helpers
       function dispVis(v){ return v ? v+' km' : '--'; }
       function dispQnh(v){ return v ? v+' hPa' : '--'; }
@@ -3078,41 +3111,43 @@ function openFlModal(ex){
         if(!v) return '--';
         var m = v.match(/^(FEW|SCT|BKN|OVC)(\d{1,3})$/);
         if(!m) return v;
-        return m[1]+' '+(parseInt(m[2])*100)+' ft';
+        return m[1]+' '+(parseInt(m[2])*100);
       }
       block.innerHTML =
-        '<div class="sec-lbl" style="margin:0 0 10px 0">Current ATIS entry</div>'+
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'+
+        '<div class="sec-lbl" style="margin:0 0 6px 0;font-size:11px">Current ATIS entry</div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'+
           '<div>'+
-            '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:JetBrains Mono,monospace;margin-bottom:5px">Time (UTC)</div>'+
+            '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-family:JetBrains Mono,monospace;margin-bottom:2px">Time (UTC)</div>'+
             timeSpinnerHtml('m-atis-time-'+idx, e.time)+
           '</div>'+
           '<div>'+
-            '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:JetBrains Mono,monospace;margin-bottom:5px">ICAO</div>'+
-            '<input class="inp atis-icao" placeholder="EGKB" maxlength="4" value="'+escapeHtml(e.icao||'')+'" style="text-transform:uppercase;font-family:JetBrains Mono,monospace;font-weight:700;font-size:18px;text-align:center"/>'+
+            '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-family:JetBrains Mono,monospace;margin-bottom:2px">ICAO</div>'+
+            '<input class="inp atis-icao" placeholder="EGKB" maxlength="4" value="'+escapeHtml(e.icao||'')+'" style="text-transform:uppercase;font-family:JetBrains Mono,monospace;font-weight:700;font-size:14px;text-align:center;padding:6px 4px"/>'+
           '</div>'+
         '</div>'+
-        '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px">'+
+        '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:6px">'+
           '<button type="button" class="atis-fld" data-fld="info" data-val="'+escapeHtml(e.info||'')+'"><span class="atis-lbl">Info</span><span class="atis-v">'+(e.info||'--')+'</span></button>'+
           '<button type="button" class="atis-fld" data-fld="rwy" data-val="'+escapeHtml(e.rwy||'')+'"><span class="atis-lbl">Runway</span><span class="atis-v">'+(e.rwy||'--')+'</span></button>'+
         '</div>'+
-        '<button type="button" class="atis-fld" data-fld="wind" data-val="'+escapeHtml(e.wind||'')+'" style="width:100%;margin-bottom:10px"><span class="atis-lbl">Wind (DDD/SS or DDD/SSGXX or +VvvvVvvv)</span><span class="atis-v">'+(e.wind||'--')+'</span></button>'+
-        '<button type="button" class="atis-cavok atis-fld" data-fld="cavok" data-val="'+(e.cavok?'1':'')+'" style="width:100%;margin-bottom:10px;text-align:center;justify-content:center;'+(e.cavok?'background:#047857;border-color:#047857':'')+'">'+
+        '<button type="button" class="atis-fld" data-fld="wind" data-val="'+escapeHtml(e.wind||'')+'" style="width:100%;margin-bottom:6px"><span class="atis-lbl">Wind (DDD/SS[GXX] +VvvvVvvv)</span><span class="atis-v">'+(e.wind||'--')+'</span></button>'+
+        '<button type="button" class="atis-cavok atis-fld" data-fld="cavok" data-val="'+(e.cavok?'1':'')+'" style="width:100%;margin-bottom:6px;text-align:center;justify-content:center;'+(e.cavok?'background:#047857;border-color:#047857':'')+'">'+
           '<span class="atis-lbl" style="'+(e.cavok?'color:rgba(255,255,255,.85)':'')+'">Ceiling &amp; Visibility</span>'+
           '<span class="atis-v" style="'+(e.cavok?'color:#fff':'')+'">'+(e.cavok?'CAVOK &#10003;':'off')+'</span>'+
         '</button>'+
-        '<button type="button" class="atis-fld" data-fld="vis" data-val="'+escapeHtml(e.vis||'')+'" style="width:100%;margin-bottom:10px"><span class="atis-lbl">Visibility</span><span class="atis-v">'+dispVis(e.vis)+'</span></button>'+
-        '<button type="button" class="atis-fld" data-fld="qnh" data-val="'+escapeHtml(e.qnh||'')+'" style="width:100%;margin-bottom:10px"><span class="atis-lbl">QNH</span><span class="atis-v">'+dispQnh(e.qnh)+'</span></button>'+
-        '<button type="button" class="atis-fld" data-fld="tempDew" data-val="'+escapeHtml(e.tempDew||'')+'" style="width:100%;margin-bottom:10px"><span class="atis-lbl">Temp / Dewpoint</span><span class="atis-v">'+dispTempDew(e.tempDew)+'</span></button>'+
-        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px">'+
-          '<button type="button" class="atis-fld" data-fld="cloud1" data-val="'+escapeHtml(e.cloud1||'')+'"><span class="atis-lbl">Cloud 1</span><span class="atis-v" style="font-size:16px">'+dispCloud(e.cloud1)+'</span></button>'+
-          '<button type="button" class="atis-fld" data-fld="cloud2" data-val="'+escapeHtml(e.cloud2||'')+'"><span class="atis-lbl">Cloud 2</span><span class="atis-v" style="font-size:16px">'+dispCloud(e.cloud2)+'</span></button>'+
-          '<button type="button" class="atis-fld" data-fld="cloud3" data-val="'+escapeHtml(e.cloud3||'')+'"><span class="atis-lbl">Cloud 3</span><span class="atis-v" style="font-size:16px">'+dispCloud(e.cloud3)+'</span></button>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'+
+          '<button type="button" class="atis-fld" data-fld="vis" data-val="'+escapeHtml(e.vis||'')+'"><span class="atis-lbl">Visibility</span><span class="atis-v">'+dispVis(e.vis)+'</span></button>'+
+          '<button type="button" class="atis-fld" data-fld="qnh" data-val="'+escapeHtml(e.qnh||'')+'"><span class="atis-lbl">QNH</span><span class="atis-v">'+dispQnh(e.qnh)+'</span></button>'+
         '</div>'+
-        '<textarea class="inp atis-notes" rows="2" placeholder="Additional ATIS notes (remarks, NOTAMs...)" style="resize:vertical;min-height:60px;line-height:1.4;margin-bottom:10px">'+escapeHtml(e.notes||'')+'</textarea>'+
-        '<div style="display:flex;gap:8px">'+
-          '<button type="button" class="btn btn-p atis-submit" style="flex:1;padding:12px;font-size:14px;font-weight:700">&#10003; Submit ATIS</button>'+
-          '<button type="button" class="btn btn-d atis-clear" style="flex:0 0 auto;padding:12px 16px;font-size:13px">Clear</button>'+
+        '<button type="button" class="atis-fld" data-fld="tempDew" data-val="'+escapeHtml(e.tempDew||'')+'" style="width:100%;margin-bottom:6px"><span class="atis-lbl">Temp / Dewpoint</span><span class="atis-v">'+dispTempDew(e.tempDew)+'</span></button>'+
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px">'+
+          '<button type="button" class="atis-fld" data-fld="cloud1" data-val="'+escapeHtml(e.cloud1||'')+'"><span class="atis-lbl">Cloud 1</span><span class="atis-v" style="font-size:12px">'+dispCloud(e.cloud1)+'</span></button>'+
+          '<button type="button" class="atis-fld" data-fld="cloud2" data-val="'+escapeHtml(e.cloud2||'')+'"><span class="atis-lbl">Cloud 2</span><span class="atis-v" style="font-size:12px">'+dispCloud(e.cloud2)+'</span></button>'+
+          '<button type="button" class="atis-fld" data-fld="cloud3" data-val="'+escapeHtml(e.cloud3||'')+'"><span class="atis-lbl">Cloud 3</span><span class="atis-v" style="font-size:12px">'+dispCloud(e.cloud3)+'</span></button>'+
+        '</div>'+
+        '<textarea class="inp atis-notes" rows="2" placeholder="Additional notes (remarks, NOTAMs...)" style="resize:vertical;min-height:44px;line-height:1.3;margin-bottom:6px;font-size:12px;padding:6px 8px">'+escapeHtml(e.notes||'')+'</textarea>'+
+        '<div style="display:flex;gap:6px">'+
+          '<button type="button" class="btn btn-p atis-submit" style="flex:1;padding:8px;font-size:13px;font-weight:700">&#10003; Submit ATIS</button>'+
+          '<button type="button" class="btn btn-d atis-clear" style="flex:0 0 auto;padding:8px 12px;font-size:12px">Clear</button>'+
         '</div>';
       atisContainer.appendChild(block);
 
@@ -3443,9 +3478,22 @@ function openFlModal(ex){
   ['m-tachoStart','m-tachoEnd','m-hobbsStart','m-hobbsEnd',
    'm-fuelContPct',
    'm-wxTAS',
-   'm-rwy1','m-rwy2','m-rwy3','m-rwy4'].forEach(function(id){
+   'm-rwy1','m-rwy2','m-rwy3','m-rwy4',
+   'm-dep','m-dest','m-depMinDA','m-depMinVis','m-destMinDA','m-destMinVis',
+   'm-alt1Icao','m-alt1MinDA','m-alt1MinVis',
+   'm-alt2Icao','m-alt2MinDA','m-alt2MinVis'].forEach(function(id){
     var el=qs('#'+id,div); if(el) el.addEventListener('input', liveCalc);
   });
+  // Alternate time spinners → liveCalc (fires alt fuel recompute)
+  ['m-alt1-time','m-alt2-time'].forEach(function(base){
+    ['-h','-m'].forEach(function(sfx){
+      var el = qs('#'+base+sfx, div);
+      if(el) el.addEventListener('change', liveCalc);
+    });
+  });
+  // Prefill alt time spinners from saved value
+  if(f.alt1Time) setDuration('m-alt1-time', div, parseFloat(f.alt1Time));
+  if(f.alt2Time) setDuration('m-alt2-time', div, parseFloat(f.alt2Time));
 
   // Wire bidirectional USG/L pairs - calc fires after either side updates
   ['m-fob','m-fuelTaxi','m-fuelTrip','m-fuelAlt','m-fuelFinal','m-fuelExtra','m-fuelUplifted','m-burnRate','m-fuelLanding']
@@ -3822,7 +3870,7 @@ function openFlModal(ex){
           '</table>'+
         '</div>'+
 
-        '<div class="foot">FlightDeck v156 &middot; '+new Date().toLocaleString()+'</div>'+
+        '<div class="foot">FlightDeck v173 &middot; '+new Date().toLocaleString()+'</div>'+
         '</body></html>';
       win.document.open();
       win.document.write(html);
@@ -4136,6 +4184,24 @@ function openFlModal(ex){
         qnhDiffEl.textContent = sign + diff + ' ft';
       }
     }
+
+    // Alternate fuel: burn (USG/hr) × flight time (hours) → USG / L
+    var burnAlt = parseFloat(fuelUSG('m-burnRate', div));
+    if(isNaN(burnAlt) || burnAlt <= 0){
+      burnAlt = parseFloat(settings.defaultBurnRate);
+    }
+    ['alt1','alt2'].forEach(function(k){
+      var out = qs('#m-'+k+'-fuel-out', div);
+      if(!out) return;
+      var hrs = getDuration('m-'+k+'-time', div);
+      if(hrs === null || isNaN(burnAlt) || burnAlt <= 0){
+        out.textContent = '--';
+        return;
+      }
+      var usg = burnAlt * hrs;
+      out.innerHTML = usg.toFixed(1)+' <span style="font-size:10px;color:var(--muted)">USG</span> / '+
+                     (usg*USG_TO_L).toFixed(1)+' <span style="font-size:10px;color:var(--muted)">L</span>';
+    });
   }
 
   // Migrate legacy dir/spd fields for wind
@@ -4220,6 +4286,16 @@ function openFlModal(ex){
     };
     f.date=g('m-date'); f.aircraft=g('m-aircraft');
     f.departure=g('m-dep').toUpperCase(); f.destination=g('m-dest').toUpperCase();
+    f.depMinDA = g('m-depMinDA'); f.depMinVis = g('m-depMinVis');
+    f.destMinDA = g('m-destMinDA'); f.destMinVis = g('m-destMinVis');
+    ['alt1','alt2'].forEach(function(k){
+      var icao = g('m-'+k+'Icao');
+      f[k+'Icao'] = icao ? icao.toUpperCase() : '';
+      f[k+'MinDA'] = g('m-'+k+'MinDA');
+      f[k+'MinVis'] = g('m-'+k+'MinVis');
+      var hrs = getDuration('m-'+k+'-time', div);
+      f[k+'Time'] = (hrs === null) ? '' : String(hrs);
+    });
     f.student=g('m-student');
     // ATIS: preserve the last submitted entry (f.atisEntry). If the block has
     // unsubmitted content, that becomes the new f.atisEntry (auto-submit on save).
@@ -4611,7 +4687,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v156');
+  lines.push('','-- Sent from FlightDeck v173');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -4660,7 +4736,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v156');
+  lines.push('','-- FlightDeck v173');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
@@ -4734,147 +4810,134 @@ function openChecklists(){
 // Inline input values stored under f.checklistInputs[inputId].
 // ============================================================
 var CHECKLIST_DATA = [
-  // ---- Planning phase ----
-  { phase:'Planning', id:'route', title:'Route', subtitle:'Airspace & Rules', items: [
-    { id:'trans', text:'Transition level: <input class="cl-inp" data-inp-id="route.trans" style="display:inline-block;width:80px;padding:2px 6px;font-size:12px" placeholder="FL"/>' },
-    { id:'buffer', text:'Buffer between MSA and freezing level: <input class="cl-inp" data-inp-id="route.buffer" style="display:inline-block;width:72px;padding:2px 6px;font-size:12px" placeholder="ft"/>' },
-    { id:'mins', text:'Personal minimums &mdash; Visibility: <input class="cl-inp" data-inp-id="route.mins.vis" style="display:inline-block;width:72px;padding:2px 6px;font-size:12px" placeholder="km"/> &nbsp; Ceiling: <input class="cl-inp" data-inp-id="route.mins.ceil" style="display:inline-block;width:72px;padding:2px 6px;font-size:12px" placeholder="ft"/>' },
-    { id:'oxygen', text:'Oxygen required?' },
-    { id:'escape', text:'Escape plan' },
-    { id:'flightplan', text:'Flight plan / Operational flight plan filed' },
-    { id:'notams', text:'Weather &amp; IFR NOTAMs reviewed' }
+  // ---- Administration ----
+  { phase:'Planning', id:'administration', title:'Administration', items: [
+    { id:'1a', text:'Pilot licence and IR rating current' },
+    { id:'1b', text:'Logbook up to date' },
+    { id:'1c', text:'Medical certificate valid' },
+    { id:'1d', text:'Glasses/sunglasses' },
+    { id:'1e', text:'Photo ID carried' },
+    { id:'1f', text:'Correct Passport(s)' },
+    { id:'1g', text:'GAR / GENDEC submitted', hasLaw:true },
+    { id:'1h', text:'Customs/immigration informed' },
+    { id:'1i', text:'Operational flight plan prepared' },
+    { id:'1j', text:'Booked out' },
+    { id:'1k', text:'Documents/currency confirmed', type:'group', hasLaw:true, children:['C of A/ARC or Permit to Fly','C of R','Radio Licence','Insurance','Weight &amp; Balance Schedule','Pilot\'s Licence &amp; Medical'] },
+    { id:'1l', text:'Charts, Electrics, AIP and AIRAC cycle current', hasLaw:true },
+    { id:'1m', text:'Flight plan filed', hasLaw:true },
+    { id:'1n', text:'Destination', type:'group', children:['Fees','Fuel availability','PPR','Slots','Opening hours','Phone/Email details'] },
+    { id:'1o', text:'Tech Log/ hours remaining' },
+    { id:'1p', text:'No-go review', type:'group', children:['Weather','Recency','Aircraft equipment','Day/night','Complexity','Endurance','Personal limits','External pressure'], note:'Traffic-light check — e.g. cloud base <600ft is a no-fly threshold; consider whether a check flight/safety pilot is needed; don\'t mix IFR/VFR without a plan; review Single-Pilot IFR rules (800m visibility ORS exception where applicable).' },
+    { id:'1q', text:'I\'M SAFE self-assessment', type:'group', hasLaw:true, children:['Illness','Medication','Stress','Alcohol','Fatigue','Eating/Emotion'] },
+    { id:'1r', text:'Personal equipment checked', type:'group', children:['Batteries','Cables','Devices/updates','Night flight equipment/torches','Life jacket'] },
+    { id:'1s', text:'Threat &amp; Error Management', type:'group', children:['Terrain','CFIT','MSA','Emergency options'] }
   ]},
-  { phase:'Planning', id:'fuel', title:'IFR Fuel Plan', flat:true, items: [
-    { id:'complete', text:'Fuel plan complete (Taxi &middot; Trip &middot; 5% Cont &middot; Alt &middot; Final &middot; Extra &middot; ETOB)' }
+  // ---- Flight Planning & Weather ----
+  { phase:'Planning', id:'flightplanningwe', title:'Flight Planning &amp; Weather', items: [
+    { id:'2a', text:'Weather briefing obtained', type:'group', hasLaw:true, children:['Crosswind &amp; upper winds','Freezing level and ice risk','Cloud base &amp; tops','Max drift','Convective activity','Visibility','Forecast single hold drift'] },
+    { id:'2b', text:'NOTAMs checked', type:'group', hasLaw:true, children:['Departure','Destination','Alternate','En-route'] },
+    { id:'2c', text:'Aircraft equipment suitable for planned approach(es)', type:'group', hasLaw:true, children:['GNSS/SBAS certification (RNP APCH LPV/LNAV)','ILS/LOC capability'] },
+    { id:'2d', text:'GNSS status checked', type:'group', children:['RAIM/FDE prediction (AUGUR or equivalent)','GPS outage NOTAMs'] },
+    { id:'2e', text:'Personal weather minima' },
+    { id:'2f', text:'MSA to freezing level buffer checked' },
+    { id:'2g', text:'Oxygen', hasLaw:true },
+    { id:'2h', text:'Alternate(s)', hasLaw:true },
+    { id:'2i', text:'Fuel Plan Complete' },
+    { id:'2j', text:'Route/altitude selected — MSA/MOCA/grid MORA checked, terrain &amp; obstacles considered' },
+    { id:'2k', text:'Departure minima', hasLaw:true },
+    { id:'2l', text:'Transition level(s)', type:'both' },
+    { id:'2m', text:'Escape Plan' },
+    { id:'2n', text:'Operational flight plan complete' },
+    { id:'2o', text:'Approach type', type:'both' },
+    { id:'2p', text:'Minima – DA and Visibility', type:'both' },
+    { id:'2q', text:'Charts prepared', type:'group', children:['1:500,000 chart','Airways chart','UK minimum altitude chart'] },
+    { id:'2r', text:'DA/PA', note:'Consider' },
+    { id:'2s', text:'Mass and balance calculated and within limits', hasLaw:true },
+    { id:'2t', text:'Underload', type:'both', hasLaw:true },
+    { id:'2u', text:'Performance check: takeoff/landing distance vs. runway available (Hot/High/Heavy/Humid considered)' },
+    { id:'2v', text:'ETOB / CTOT noted', type:'both' }
   ]},
-  { phase:'Planning', id:'dest', title:'Destination', items: [
-    { id:'hours', text:'Opening times / customs' },
-    { id:'fuelppr', text:'Fuel &middot; PPR &middot; slots' },
-    { id:'fees', text:'Fees' },
-    { id:'minima', text:'Minima' },
-    { id:'alt', text:'Alternate airfield' },
-    { id:'gar', text:'GAR filed' },
-    { id:'escaperoute', text:'Escape route' }
+  // ---- Pre-Start & Start (moved from Planning) ----
+  { phase:'Ground', id:'prestart', title:'Pre-Start &amp; Start', flat:true, items: [
+    { id:'2w', text:'Aircraft A / Transit Check', standalone:true },
+    { id:'2x', text:'Crew/passenger brief completed', type:'group', children:['Exits','Belts','Oxygen','Life jackets','Dinghy','Emergency actions'] },
+    { id:'2y', text:'Before start check', standalone:true },
+    { id:'2z', text:'Starter warning light out' },
+    { id:'2aa', text:'Oil pressure rising' }
   ]},
-  { phase:'Planning', id:'wx', title:'Weather', items: [
-    { id:'xw', text:'Crosswind and upper winds' },
-    { id:'freezing', text:'Freezing level / ice risk' },
-    { id:'cloud', text:'Cloud base &amp; tops' },
-    { id:'drift', text:'Max drift / TS activity' },
-    { id:'vis', text:'Visibility' },
-    { id:'da', text:'Density altitude &amp; pressure altitude' },
-    { id:'forecast', text:'Forecast single-drift wind' }
+  // ---- Avionics & Nav Setup ----
+  { phase:'Ground', id:'avionicsnavsetup', title:'Avionics &amp; Nav Setup', items: [
+    { id:'3a', text:'Autopilot/Trim check' },
+    { id:'3b', text:'Compass fluid/smell checked' },
+    { id:'3c', text:'SPS, Xponder, Baro ±60\'', type:'both', hasLaw:true },
+    { id:'3d', text:'Audio panel &amp; conventional NavAids', type:'group', children:['ADF','VOR/ILS','DME','Stopwatch'] },
+    { id:'3e', text:'NAV/COM 1/2 Set' },
+    { id:'3f', text:'COM/NAV/GPS setup', type:'group', children:['COM/NAV radios set: departure freq, clearance delivery/ground, standby freqs','GPS/FMS flight plan loaded and cross-checked against clearance (Autorouter/SkyDemon route reviewed)','OBS/CDI course set for initial departure routing'] },
+    { id:'3g', text:'QNH–Transition Level (FL) difference calculated', type:'both' }
   ]},
-  { phase:'Planning', id:'charts', title:'Charts', items: [
-    { id:'vfr', text:'VFR charts up to date' },
-    { id:'ifr', text:'IFR charts (enroute &amp; terminal) up to date' }
+  // ---- Paper-check reminders (before IFR clearance) ----
+  { phase:'Ground', id:'taxichk',  title:'Taxi Checks',        standalone:true, items:[{ id:'3i', text:'Taxi Checks' }] },
+  { phase:'Ground', id:'powerchk', title:'Power Checks',       standalone:true, items:[{ id:'3j', text:'Power Checks' }] },
+  { phase:'Ground', id:'pretochk', title:'Pre-Take Off Checks', standalone:true, items:[{ id:'3k', text:'Pre-Take Off Checks' }] },
+  // ---- Departure Brief ----
+  { phase:'Ground', id:'depbrief', title:'Departure Brief', items: [
+    { id:'rwy',     text:'Runway XX Left/Right Circuit' },
+    { id:'sid',     text:'Standard departure?' },
+    { id:'wxr',     text:'Wind is.. Weather is..' },
+    { id:'prob',    text:'Problem on the ground or after departure' },
+    { id:'initalt', text:'Initial Altitude/Height restriction and Heading' },
+    { id:'threats', text:'Wind | CAS | Noise Abatement | Wake | Threats' }
   ]},
-  { phase:'Planning', id:'dispatch', title:'Dispatch', items: [
-    { id:'techlog', text:'Tech log &middot; defects &middot; hours remaining' },
-    { id:'bookppr', text:'Book out &middot; PPR' },
-    { id:'wxntm', text:'IFR NOTAMs &middot; METAR &amp; TAF' },
-    { id:'electronics', text:'Electronics and batteries updated' },
-    { id:'wb', text:'W&amp;B, performance' },
-    { id:'docs', text:'Docs &middot; glasses &middot; licence &middot; medical &middot; ID &middot; IMSAFE' }
+  // ---- IFR Clearance & Before Departure ----
+  { phase:'Ground', id:'ifrclearancebefo', title:'IFR Clearance &amp; Before Departure', items: [
+    { id:'4a', text:'ATIS re-checked', hasLaw:true },
+    { id:'4b', text:'Clearance read back and confirmed correct', hasLaw:true },
+    { id:'4c', text:'OCAS to CAS transition' },
+    { id:'4d', text:'ETOB / CTOT noted', type:'both' },
+    { id:'4e', text:'Route entered/verified in GPS or nav equipment; matches clearance' },
+    { id:'4f', text:'Departure procedure (SID or Instrument Departure Procedure) briefed if applicable', hasLaw:true },
+    { id:'4g', text:'RNAV/GNSS Loss of Integrity (LOI) contingency reviewed' }
   ]},
-  { phase:'Planning', id:'aceq', title:'Aircraft &amp; Equipment', items: [
-    { id:'dn', text:'Day / night equipment' },
-    { id:'portable', text:'Portable devices updated and configured' },
-    { id:'gnss', text:'GNSS certification' },
-    { id:'hhhh', text:'Performance: Hot &middot; High &middot; Heavy &middot; Humid' }
+  // ---- En-Route / Arrival ----
+  { phase:'Airborne', id:'enroutearrival', title:'En-Route / Arrival', items: [
+    { id:'5a', text:'SPLIITTT', note:'Mnemonic — expansion pending, let me know the breakdown.' },
+    { id:'5b', text:'Line up check', note:'Mnemonic — expansion pending, let me know the breakdown.' },
+    { id:'5c', text:'BUFFPEARL', note:'Mnemonic — expansion pending, let me know the breakdown.' },
+    { id:'5d', text:'FREDAMIT', note:'Mnemonic — expansion pending, let me know the breakdown.' },
+    { id:'5e', text:'WASP', note:'Mnemonic — expansion pending, let me know the breakdown.' },
+    { id:'5f', text:'LUC', note:'Mnemonic — expansion pending, let me know the breakdown.' }
   ]},
-  { phase:'Planning', id:'tem', title:'Threat, Error, Management', items: [
-    { id:'threats', text:'Threats identified (weather, workload, fatigue&hellip;)' },
-    { id:'mitig', text:'Mitigation strategies planned' }
+  // ---- Landing & After Landing ----
+  { phase:'Airborne', id:'landingafterland', title:'Landing &amp; After Landing', items: [
+    { id:'6a', text:'Time down (actual landing time)', type:'both' }
   ]},
-
-  // ---- Ground phase ----
-  { phase:'Ground', id:'ext', title:'External / Cabin', subtitle:'Oil &middot; Fuel &middot; Endurance &middot; CO Tester', items: [
-    { id:'pitot', text:'Pitot heater &amp; screen defroster tested' },
-    { id:'lights', text:'Internal lights operational' },
-    { id:'hobbs', text:'Hobbs &amp; Tacho recorded' },
-    { id:'etob', text:'IFR ETOB confirmed' },
-    { id:'paxbrief', text:'Passenger / co-pilot brief given' }
-  ]},
-  { phase:'Ground', id:'start', title:'After Start', flat:true, items: [
-    { id:'lookout', text:'Lookout &middot; starter warning out' },
-    { id:'oilrise', text:'Oil pressure rising' }
-  ]},
-  { phase:'Ground', id:'gnss', title:'GNSS', items: [
-    { id:'raim', text:'RAIM &middot; scale &middot; database &middot; self-test' },
-    { id:'route', text:'Route entered &amp; gross-error checked' }
-  ]},
-  { phase:'Ground', id:'inst', title:'Instruments', items: [
-    { id:'compass', text:'Compass &middot; fluid &middot; smell' },
-    { id:'audio', text:'Audio panel &middot; autopilot &middot; stopwatch' },
-    { id:'alt', text:'Altimeter cross-check (&plusmn; 60 ft)' }
-  ]},
-  { phase:'Ground', id:'radio', title:'Radios', items: [
-    { id:'nav', text:'ADF &middot; VOR/ILS &middot; DME' },
-    { id:'comm', text:'Nav 1&amp;2 &middot; Comm 1&amp;2 &middot; XPDR &middot; Baro cross-check' }
-  ]},
-  { phase:'Ground', id:'brief', title:'Departure Brief', items: [
-    { id:'rwy', text:'Runway &amp; circuit direction' },
-    { id:'sid', text:'Standard departure or non-standard?' },
-    { id:'ww', text:'Wind / weather' },
-    { id:'probgnd', text:'Problem on the ground' },
-    { id:'probair', text:'Problem after departure' },
-    { id:'initalt', text:'Initial altitude / height restriction &amp; heading' },
-    { id:'threats', text:'Wind &middot; CAS &middot; noise abatement &middot; wake &middot; threats' }
-  ]},
-  { phase:'Ground', id:'clrread', title:'Clearance and Readback', flat:true, items: [
-    { id:'obtained', text:'Clearance obtained &amp; read back' }
-  ]},
-  { phase:'Ground', id:'spliittt', title:'SPLIITTT', subtitle:'Strobes &middot; Pitot &middot; Light &middot; Instruments &middot; Ice &middot; Time &middot; Transponder &middot; Talk', mnemonic:true, items: [] },
-  { phase:'Ground', id:'lineup', title:'Line-up', subtitle:'Clearance &middot; Approach &middot; Runway &middot; Wind &nbsp;&mdash;&nbsp; Numbers &middot; Feet-to-Floor &middot; T&amp;P &middot; RPM', mnemonic:true, items: [] },
-
-  // ---- Airborne phase ----
-  { phase:'Airborne', id:'climb', title:'Climb Out', items: [
-    { id:'gear', text:'Gear up (positive rate)' },
-    { id:'flaps', text:'Flaps up' },
-    { id:'power', text:'Climb power set' },
-    { id:'cowl', text:'Cowl flaps as required' },
-    { id:'mix', text:'Mixture lean per profile' },
-    { id:'fredamit', text:'FREDAMIT (Fuel &middot; Radios &middot; Engine &middot; Direction &middot; Altitude &middot; MSA &middot; ICE &middot; Threats)' }
-  ]},
-  { phase:'Airborne', id:'cruise', title:'Cruise', items: [
-    { id:'fredamit', text:'FREDAMIT (recurring)' },
-    { id:'fuellog', text:'Fuel log &middot; endurance &middot; reserves updated' },
-    { id:'plog', text:'PLOG update' },
-    { id:'emerg', text:'Emergency options briefed' },
-    { id:'descent', text:'Descent planning (4 nm / 1000 ft @ 135 KIAS)' },
-    { id:'atis', text:'ATIS obtained' }
-  ]},
-  { phase:'Airborne', id:'app', title:'Approach', items: [
-    { id:'fredamit', text:'FREDAMIT (final check)' },
-    { id:'wasps', text:'WASPS (Weather &middot; Altitude &middot; Slow down &middot; Plates &middot; Select &middot; Identify &middot; Display)' },
-    { id:'brief', text:'Approach brief &middot; ident &middot; comms &middot; speeds' },
-    { id:'ban', text:'Approach ban / visibility check' }
-  ]},
-  { phase:'Airborne', id:'buffpearl', title:'BUFFPEARL', subtitle:'Brakes &middot; Undercarriage &middot; Flaps &middot; Fuel &middot; Power &middot; Engine &middot; Altimeter &middot; Radios &middot; Lights', mnemonic:true, items: [] },
-  { phase:'Airborne', id:'finals', title:'Finals', items: [
-    { id:'rbg', text:'Levers &mdash; RBG (Red / Blue / Green)' },
-    { id:'gear', text:'Undercarriage &mdash; down &amp; locked' },
-    { id:'clr', text:'Clearance to land confirmed' }
-  ]},
-  { phase:'Airborne', id:'vacated', title:'Runway Vacated', flat:true, items: [
-    { id:'splittt', text:'Strobe &middot; pitot &middot; landing light &middot; instruments &middot; time &middot; XPDR &middot; talk' }
-  ]},
-  { phase:'Airborne', id:'shutdown', title:'Shutdown', items: [
-    { id:'times', text:'Tacho &amp; Hobbs noted' },
-    { id:'debrief', text:'De-brief conducted' }
+  // ---- Shutdown & Securing ----
+  { phase:'Airborne', id:'shutdownsecuring', title:'Shutdown &amp; Securing', items: [
+    { id:'7a', text:'Flight plan closed if not automatically closed by tower', hasLaw:true },
+    { id:'7b', text:'Fuel remaining at shutdown', type:'both' },
+    { id:'7c', text:'Hobbs/Tacho times noted', type:'both' },
+    { id:'7d', text:'Logbook/tech log entries made if required', hasLaw:true }
   ]}
 ];
 
-// Compute a section's status: 'green' (all yes/na), 'red' (any unset)
+// Compute a section's status: counts each child of a group individually.
 function checklistSectionStatus(section, state){
-  var total = section.items.length;
-  var done = 0;
+  var total = 0, done = 0;
   section.items.forEach(function(it){
-    var s = state[section.id+'.'+it.id];
-    if(s === 'yes' || s === 'na') done++;
+    var itemId = section.id+'.'+it.id;
+    if(it.type === 'group' && it.children && it.children.length){
+      it.children.forEach(function(_, idx){
+        total++;
+        var s = state[itemId + '.' + idx];
+        if(s === 'yes' || s === 'na') done++;
+      });
+    } else {
+      total++;
+      var s = state[itemId];
+      if(s === 'yes' || s === 'na') done++;
+    }
   });
-  return { done: done, total: total, complete: done === total };
+  return { done: done, total: total, complete: total > 0 && done === total };
 }
 
 function renderChecklistTab(f, root){
@@ -4882,93 +4945,273 @@ function renderChecklistTab(f, root){
   if(!f.checklistState) f.checklistState = {};
   if(!f.checklistInputs) f.checklistInputs = {};
 
-  // Reset button at the top
-  var top = document.createElement('div');
-  top.style.cssText = 'display:flex;justify-content:flex-end;margin-bottom:10px';
-  top.innerHTML = '<button type="button" class="btn btn-d" id="m-cl-reset" style="padding:6px 14px;font-size:12px">&#8635; Reset ticks</button>';
-  root.appendChild(top);
-  top.querySelector('#m-cl-reset').addEventListener('click', function(){
+  // Overall tab styling — light-blue tinted panel to match reference design.
+  root.style.background = 'rgba(3,105,161,.04)';
+  root.style.borderRadius = '12px';
+  root.style.padding = '14px';
+  root.style.border = '1px solid rgba(3,105,161,.18)';
+
+  var activePhase = root._activePhase || 'Planning';
+
+  // Sub-tab bar — Planning / Ground / Airborne
+  var tabBar = document.createElement('div');
+  tabBar.style.cssText = 'display:flex;gap:4px;margin-bottom:12px;padding-bottom:0;border-bottom:1px solid rgba(3,105,161,.25)';
+  ['Planning','Ground','Airborne'].forEach(function(phase){
+    var isActive = (phase === activePhase);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.style.cssText = 'flex:1;padding:9px 6px;background:'+(isActive?'#1e3a8a':'transparent')+';color:'+(isActive?'#fff':'#0369a1')+';border:1px solid '+(isActive?'#1e3a8a':'rgba(3,105,161,.25)')+';border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;font-family:Syne,sans-serif;font-weight:700;font-size:13px;letter-spacing:.02em;margin-bottom:-1px';
+    // Progress badge inside tab
+    var st = phaseStatus(phase, f.checklistState);
+    var progHtml = ' <span style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:600;opacity:.9;margin-left:4px">'+st.done+'/'+st.total+'</span>';
+    btn.innerHTML = phase + progHtml;
+    btn.addEventListener('click', function(){
+      root._activePhase = phase;
+      renderChecklistTab(f, root);
+    });
+    tabBar.appendChild(btn);
+  });
+  root.appendChild(tabBar);
+
+  // Top row: total progress pill + reset button
+  var topRow = document.createElement('div');
+  topRow.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:12px;justify-content:flex-end;flex-wrap:wrap';
+  topRow.innerHTML =
+    '<div id="m-cl-total" style="display:inline-flex;align-items:center;padding:4px 14px;border:1px solid #0369a1;border-radius:999px;background:#fff;font-family:JetBrains Mono,monospace;font-size:12px;font-weight:700;color:#0369a1;flex:0 0 auto">0 / 0</div>'+
+    '<button type="button" class="btn btn-g" id="m-cl-reset" style="padding:6px 14px;font-size:12px;color:#0369a1;border-color:#0369a1;flex:0 0 auto">&#8635; Reset ticks</button>';
+  root.appendChild(topRow);
+
+  topRow.querySelector('#m-cl-reset').addEventListener('click', function(){
     if(!confirm('Clear all ✓ / N/A marks on this flight\'s checklist?')) return;
     f.checklistState = {};
     renderChecklistTab(f, root);
   });
 
-  var currentPhase = null;
-  CHECKLIST_DATA.forEach(function(section){
-    if(section.phase !== currentPhase){
-      currentPhase = section.phase;
-      var phaseHead = document.createElement('div');
-      phaseHead.style.cssText = 'font-family:Syne,sans-serif;font-weight:800;font-size:15px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px 0;padding-bottom:4px;border-bottom:1px solid var(--border)';
-      phaseHead.textContent = currentPhase;
-      root.appendChild(phaseHead);
+  function updateTotal(){
+    var total = 0, done = 0;
+    CHECKLIST_DATA.forEach(function(section){
+      var st = checklistSectionStatus(section, f.checklistState);
+      total += st.total; done += st.done;
+    });
+    var el = topRow.querySelector('#m-cl-total');
+    if(!el) return;
+    el.textContent = done + ' / ' + total;
+    if(done === total && total > 0){
+      el.style.color = '#047857'; el.style.borderColor = '#047857';
+    } else {
+      el.style.color = '#0369a1'; el.style.borderColor = '#0369a1';
     }
-    root.appendChild(renderChecklistSection(section, f));
+  }
+
+  // Render sections for the active phase only, numbered 1..N within tab.
+  var sectionNum = 0;
+  CHECKLIST_DATA.forEach(function(section){
+    if(section.phase !== activePhase) return;
+    sectionNum++;
+    root.appendChild(renderChecklistSection(section, f, sectionNum));
   });
+
+  updateTotal();
+  if(root._clTotalPoll) clearInterval(root._clTotalPoll);
+  root._clTotalPoll = setInterval(function(){ if(root.isConnected) updateTotal(); else clearInterval(root._clTotalPoll); }, 400);
 }
 
-function renderMnemonicCard(section){
+// Aggregate status for a phase (Planning / Ground / Airborne)
+function phaseStatus(phase, state){
+  var total = 0, done = 0;
+  CHECKLIST_DATA.forEach(function(section){
+    if(section.phase !== phase) return;
+    var st = checklistSectionStatus(section, state);
+    total += st.total; done += st.done;
+  });
+  return { done: done, total: total };
+}
+
+function renderMnemonicCard(section, num){
   var d = document.createElement('div');
-  d.style.cssText = 'margin-bottom:8px;padding:10px 12px;background:rgba(30,58,138,.06);border:1px solid rgba(30,58,138,.2);border-left:4px solid #1e3a8a;border-radius:0 9px 9px 0';
+  d.style.cssText = 'margin-bottom:10px;padding:10px 12px;background:rgba(30,58,138,.06);border:1px solid rgba(30,58,138,.2);border-left:4px solid #1e3a8a;border-radius:0 11px 11px 0';
+  var badge = (num != null) ? sectionBadgeHtml(num) : '';
   d.innerHTML =
-    '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:14px;color:#1e3a8a">'+section.title+'</div>'+
+    '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+badge+
+      '<span style="font-family:Syne,sans-serif;font-weight:700;font-size:14px;color:#1e3a8a">'+section.title+'</span>'+
+    '</div>'+
     (section.subtitle ? '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5">'+section.subtitle+'</div>' : '');
   return d;
 }
 
-function renderChecklistSection(section, f){
-  if(section.mnemonic) return renderMnemonicCard(section);
+// Small blue rounded-square number badge for section headers (matches PDF style)
+function sectionBadgeHtml(num){
+  return '<span style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:22px;height:22px;background:#1e3a8a;color:#fff;font-family:JetBrains Mono,monospace;font-weight:800;font-size:12px;border-radius:5px">'+num+'</span>';
+}
+// Small blue pill for item tag IDs (e.g. "1a", "2v", "3g")
+function itemTagBadgeHtml(tag){
+  if(!tag) return '';
+  return '<span style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;background:#1e3a8a;color:#fff;font-family:JetBrains Mono,monospace;font-weight:800;font-size:10px;padding:2px 6px;border-radius:4px;margin-right:6px;letter-spacing:.02em">'+tag+'</span>';
+}
+
+// Small "✓ all" / "N/A all" bulk button (used in section + group headers).
+// stopPropagation so it doesn't toggle the enclosing <details> summary.
+function makeBulkBtn(label, color, onClick){
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.style.cssText = 'padding:3px 8px;font-size:10px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:5px;cursor:pointer;background:transparent;color:'+color+';border:1px solid '+color+';flex:0 0 auto;-webkit-tap-highlight-color:transparent';
+  btn.innerHTML = label;
+  btn.addEventListener('click', function(e){
+    e.stopPropagation(); e.preventDefault();
+    onClick();
+  });
+  return btn;
+}
+
+// Set every state key for a section's items (including group children) to a value.
+function bulkSetSectionState(section, f, value){
+  section.items.forEach(function(item){
+    var itemId = section.id + '.' + item.id;
+    if(item.type === 'group' && item.children && item.children.length){
+      item.children.forEach(function(_, idx){
+        f.checklistState[itemId + '.' + idx] = value;
+      });
+    } else {
+      f.checklistState[itemId] = value;
+    }
+  });
+}
+
+function renderStandaloneCheck(section, f, num){
+  // A single bold tickable row for "run this paper checklist" reminders.
+  // No section header, no expand, just: [BOLD TITLE] [✓] [N/A], colored by state.
+  var item = section.items[0];
+  var itemId = section.id + '.' + item.id;
+  var row = document.createElement('div');
+  var badge = (num != null) ? sectionBadgeHtml(num) : '';
+  row.innerHTML =
+    badge +
+    '<span class="st-title" style="flex:1;min-width:0">'+section.title+'</span>'+
+    '<div style="display:flex;gap:4px;flex-shrink:0;align-self:center">'+
+      '<button type="button" class="cl-btn cl-btn-yes" style="padding:6px 12px;font-size:13px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">&#10003;</button>'+
+      '<button type="button" class="cl-btn cl-btn-na" style="padding:6px 10px;font-size:12px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">N/A</button>'+
+    '</div>';
+  var yesBtn = row.querySelector('.cl-btn-yes');
+  var naBtn  = row.querySelector('.cl-btn-na');
+  var titleEl = row.querySelector('.st-title');
+  function applyStyle(){
+    var s = f.checklistState[itemId];
+    var bg, bcol;
+    if(s === 'yes'){ bg='rgba(4,120,87,.10)'; bcol='#047857'; }
+    else if(s === 'na'){ bg='rgba(180,83,9,.10)'; bcol='#b45309'; }
+    else { bg='rgba(3,105,161,.06)'; bcol='#0369a1'; }
+    row.style.cssText = 'display:flex;gap:10px;align-items:center;padding:12px 14px;margin-bottom:10px;background:'+bg+';border:1px solid '+bcol+';border-left-width:4px;border-radius:0 11px 11px 0;font-family:Syne,sans-serif;font-weight:800;font-size:14px;letter-spacing:.03em';
+    titleEl.style.color = 'var(--text)';
+  }
+  function paintBtns(){
+    var s = f.checklistState[itemId];
+    if(s === 'yes'){ yesBtn.style.background='#047857'; yesBtn.style.color='#fff'; yesBtn.style.border='1px solid #047857'; }
+    else { yesBtn.style.background='transparent'; yesBtn.style.color='#047857'; yesBtn.style.border='1px solid #047857'; }
+    if(s === 'na'){ naBtn.style.background='#b45309'; naBtn.style.color='#fff'; naBtn.style.border='1px solid #b45309'; }
+    else { naBtn.style.background='transparent'; naBtn.style.color='#b45309'; naBtn.style.border='1px solid #b45309'; }
+  }
+  applyStyle(); paintBtns();
+  yesBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    f.checklistState[itemId] = (f.checklistState[itemId] === 'yes') ? '' : 'yes';
+    applyStyle(); paintBtns();
+  });
+  naBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    f.checklistState[itemId] = (f.checklistState[itemId] === 'na') ? '' : 'na';
+    applyStyle(); paintBtns();
+  });
+  return row;
+}
+
+function renderChecklistSection(section, f, num){
+  if(section.mnemonic) return renderMnemonicCard(section, num);
+  if(section.standalone) return renderStandaloneCheck(section, f, num);
 
   // flat: no <details> wrapper; header + items visible always
-  // default: <details> wrapper with click-to-expand
+  // default: <details> wrapper with click-to-expand (PDF-style ▾ / ▴ chevron)
   var wrapper, summary;
+  var sectionBg = 'rgba(3,105,161,.03)';
+  var sectionBorder = 'rgba(3,105,161,.25)';
   if(section.flat){
     wrapper = document.createElement('div');
     wrapper.className = 'cl-sect';
-    wrapper.style.cssText = 'margin-bottom:8px;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--surface)';
+    wrapper.style.cssText = 'margin-bottom:10px;border:1px solid '+sectionBorder+';border-radius:11px;overflow:hidden;background:'+sectionBg;
     summary = document.createElement('div');
     summary.className = 'cl-sect-head';
-    summary.style.cssText = 'padding:10px 12px;display:flex;align-items:center;gap:10px;font-family:Syne,sans-serif;font-weight:700;font-size:14px';
+    summary.style.cssText = 'padding:10px 12px;display:flex;align-items:center;gap:8px;font-family:Syne,sans-serif;font-weight:700;font-size:14px;flex-wrap:wrap';
     summary.innerHTML =
-      '<span class="cl-sect-title" style="flex:1"></span>'+
-      '<span class="cl-sect-status" style="font-family:JetBrains Mono,monospace;font-size:12px;font-weight:600"></span>';
+      (num != null ? sectionBadgeHtml(num) : '')+
+      '<span class="cl-sect-title" style="flex:1;min-width:0"></span>'+
+      '<span class="cl-sect-status" style="font-family:JetBrains Mono,monospace;font-size:12px;font-weight:600;flex:0 0 auto"></span>';
   } else {
     wrapper = document.createElement('details');
     wrapper.className = 'cl-sect';
-    wrapper.style.cssText = 'margin-bottom:8px;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--surface)';
-    wrapper.open = false;
+    wrapper.style.cssText = 'margin-bottom:10px;border:1px solid '+sectionBorder+';border-radius:11px;overflow:hidden;background:'+sectionBg;
+    wrapper.open = true;
     summary = document.createElement('summary');
     summary.className = 'cl-sect-head';
-    summary.style.cssText = 'padding:10px 12px;cursor:pointer;user-select:none;display:flex;align-items:center;gap:10px;list-style:none;font-family:Syne,sans-serif;font-weight:700;font-size:14px';
-    summary.innerHTML = '<span class="cl-sect-arrow" style="font-size:10px;transition:transform .15s">&#9654;</span>'+
-      '<span class="cl-sect-title" style="flex:1"></span>'+
-      '<span class="cl-sect-status" style="font-family:JetBrains Mono,monospace;font-size:12px;font-weight:600"></span>';
+    summary.style.cssText = 'padding:10px 12px;cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px;list-style:none;font-family:Syne,sans-serif;font-weight:700;font-size:14px;flex-wrap:wrap';
+    summary.innerHTML =
+      (num != null ? sectionBadgeHtml(num) : '')+
+      '<span class="cl-sect-title" style="flex:1;min-width:0"></span>'+
+      '<span class="cl-sect-status" style="font-family:JetBrains Mono,monospace;font-size:12px;font-weight:600;flex:0 0 auto"></span>'+
+      '<span class="cl-sect-arrow" style="font-size:11px;color:#0369a1;flex:0 0 auto;transition:transform .15s;transform:rotate(180deg)">&#9660;</span>';
     wrapper.addEventListener('toggle', function(){
       var arrow = summary.querySelector('.cl-sect-arrow');
-      if(arrow) arrow.style.transform = wrapper.open ? 'rotate(90deg)' : 'rotate(0)';
+      if(arrow) arrow.style.transform = wrapper.open ? 'rotate(180deg)' : 'rotate(0)';
     });
   }
   wrapper.appendChild(summary);
   var body = document.createElement('div');
   body.className = 'cl-sect-body';
-  body.style.cssText = 'padding:6px 12px 10px 12px;'+(section.flat?'':'border-top:1px solid var(--border);')+'background:rgba(0,0,0,.02)';
+  body.style.cssText = 'padding:8px 12px 10px 12px;'+(section.flat?'':'border-top:1px solid '+sectionBorder+';')+'background:rgba(255,255,255,.55)';
   wrapper.appendChild(body);
+
+  // Bulk-set buttons for the whole section, inserted into the header
+  var bulkBox = document.createElement('span');
+  bulkBox.style.cssText = 'display:inline-flex;gap:4px;flex:0 0 auto;margin-right:6px';
+  var yesAll = makeBulkBtn('&#10003;', '#047857', function(){
+    bulkSetSectionState(section, f, 'yes');
+    rebuildBody();
+  });
+  var naAll  = makeBulkBtn('N/A', '#b45309', function(){
+    bulkSetSectionState(section, f, 'na');
+    rebuildBody();
+  });
+  bulkBox.appendChild(yesAll);
+  bulkBox.appendChild(naAll);
+  // Insert before the status/count element
+  summary.insertBefore(bulkBox, summary.querySelector('.cl-sect-status'));
+
+  function rebuildBody(){
+    body.innerHTML = '';
+    section.items.forEach(function(item){
+      var itemId = section.id+'.'+item.id;
+      body.appendChild(renderChecklistItem(f, section, item, itemId, updateHeader));
+    });
+    updateHeader();
+  }
 
   function updateHeader(){
     var st = checklistSectionStatus(section, f.checklistState);
     var titleEl = summary.querySelector('.cl-sect-title');
     var statusEl = summary.querySelector('.cl-sect-status');
-    var color = st.complete ? '#047857' : '#be123c';
-    summary.style.background = st.complete ? 'rgba(4,120,87,.08)' : 'rgba(190,18,60,.08)';
+    var color = st.complete ? '#047857' : '#0369a1';
     summary.style.color = color;
     titleEl.innerHTML = section.title +
       (section.subtitle ? ' <span style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">&middot; '+section.subtitle+'</span>' : '');
     statusEl.style.color = color;
-    if(st.complete){
-      statusEl.innerHTML = '&#10003; '+st.done+'/'+st.total;
-    } else {
-      statusEl.innerHTML = '&#9888; '+(st.total - st.done)+' left';
+    statusEl.innerHTML = st.done+' / '+st.total;
+    // Auto-collapse: when the last outstanding item is ticked or set N/A,
+    // close the section so the user can move on. Only fires on the transition
+    // incomplete → complete (not on user-open of an already-complete section).
+    if(!wasComplete && st.complete && wrapper.tagName === 'DETAILS' && wrapper.open){
+      wrapper.open = false;
     }
+    wasComplete = st.complete;
   }
+  var wasComplete = checklistSectionStatus(section, f.checklistState).complete;
   updateHeader();
 
   section.items.forEach(function(item){
@@ -4978,7 +5221,54 @@ function renderChecklistSection(section, f){
   return wrapper;
 }
 
+// Concise legal / regulatory references for hasLaw items, keyed by item tag.
+// Sources: UK ANO, EASA Part-NCO, SERA. Kept brief; edit here to refine.
+var LAW_EXPLANATIONS = {
+  '1g': 'UK Border Force GAR: submit &ge;2 hr before departure/arrival for cross-border private flights. GENDEC covers customs formalities.',
+  '1k': 'ANO Art 74: aircraft must carry C of A/ARC, C of R, Radio Licence, Insurance certificate, W&amp;B schedule, and pilot\'s licence &amp; medical.',
+  '1l': 'SERA.2010(b): pre-flight action must include current aeronautical data. AIRAC cycle refreshes every 28 days.',
+  '1m': 'SERA.4001: an IFR flight plan is mandatory before commencing an IFR flight in controlled airspace.',
+  '1q': 'ANO Art 173: a person must not act as a required crew member if unfit through illness, injury, fatigue, medication, alcohol, or any other cause.',
+  '2a': 'SERA.2010(b): commander must be familiar with all available meteorological information (METAR, TAF, SIGMET, upper winds) before flight.',
+  '2b': 'SERA.2010(b): pre-flight action must include NOTAMs for departure, destination, alternate, and en-route.',
+  '2c': 'Part-NCO.IDE / AMC1 NCO.OP.116: aircraft must have equipment approved for the intended approach (RNP APCH LNAV/LPV, ILS/LOC, etc.).',
+  '2g': 'Part-NCO.OP.190: supplemental O&#8322; required above 10,000 ft cabin altitude after 30 min, and continuously above 13,000 ft.',
+  '2h': 'Part-NCO.OP.140: an IFR flight must specify a destination alternate unless the destination is above minima with acceptable weather.',
+  '2k': 'Part-NCO.OP.110: commander must not commence take-off unless reported met conditions equal or exceed the applicable departure minima.',
+  '2s': 'ANO Art 84 &amp; POH: aircraft must be operated within mass and centre-of-gravity limits at all times.',
+  '2t': 'Underload = MTOW &minus; TOW; must be positive. Part of the mass &amp; balance compliance requirement (ANO Art 84).',
+  '3c': 'Part-NCO.IDE.A.155: altimeter accuracy check &mdash; indicated elevation at a known reference must be within &plusmn;60 ft.',
+  '4a': 'SERA.8015: obtain the current ATIS before contacting ATC and before entering a controlled zone.',
+  '4b': 'SERA.8015(e): pilots must read back safety-related clearances &mdash; route, altitude/level, headings, speed, runway, squawk, altimeter, frequencies.',
+  '4f': 'SERA.8015(a): a departure clearance must be followed. SIDs are ATC clearances and must be complied with unless otherwise cleared.',
+  '7a': 'SERA.4020: an arrival report is required if the flight plan is not automatically terminated on landing.',
+  '7d': 'ANO Art 132: a personal flying logbook must be maintained; journey log / tech log entries as required by the operator.'
+};
+
+// Helper: purple LAW badge shown next to hasLaw items
+function lawBadgeHtml(){
+  return '<span title="Legal / regulatory item" style="display:inline-flex;align-items:center;justify-content:center;background:#6d28d9;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:4px;margin-left:6px;font-family:JetBrains Mono,monospace;letter-spacing:.05em">LAW</span>';
+}
+// Helper: purple-tinted law explanation note
+function lawNoteHtml(explanation){
+  return '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:10px;color:#6d28d9;font-family:JetBrains Mono,monospace;letter-spacing:.06em;text-transform:uppercase;font-weight:700;list-style:none;padding:2px 0">&#9654; Regulation</summary>'+
+    '<div style="margin-top:4px;padding:6px 10px;background:rgba(109,40,217,.06);border-left:2px solid #6d28d9;font-size:11px;color:#4c1d95;line-height:1.45;border-radius:0 4px 4px 0">'+explanation+'</div>'+
+  '</details>';
+}
+// Helper: general item note (amber)
+function noteHtml(note){
+  return '<div style="margin-top:4px;padding:4px 8px;background:rgba(180,83,9,.06);border-left:2px solid #b45309;font-size:11px;color:var(--muted);font-style:italic;line-height:1.4">'+note+'</div>';
+}
+
 function renderChecklistItem(f, section, item, itemId, onStateChange){
+  // Group items: render as a mini-panel with the parent label + each child tickable
+  if(item.type === 'group' && item.children && item.children.length){
+    return renderGroupContainer(f, section, item, itemId, onStateChange);
+  }
+  // Standalone items: bold black paper-check reminder row (2w, 2y, 3i, 3j, 3k)
+  if(item.standalone){
+    return renderStandaloneItem(f, item, itemId, onStateChange);
+  }
   var state = f.checklistState[itemId];
   var row = document.createElement('div');
   row.className = 'cl-item';
@@ -4988,30 +5278,45 @@ function renderChecklistItem(f, section, item, itemId, onStateChange){
     var bg, bcol;
     if(s === 'yes'){ bg='rgba(4,120,87,.08)'; bcol='#047857'; }
     else if(s === 'na'){ bg='rgba(180,83,9,.08)'; bcol='#b45309'; }
-    else { bg='rgba(190,18,60,.05)'; bcol='#be123c'; }
-    row.style.cssText = 'display:flex;gap:8px;align-items:flex-start;padding:8px 10px;margin-bottom:4px;background:'+bg+';border-left:3px solid '+bcol+';border-radius:0 6px 6px 0;font-size:13px;line-height:1.4';
+    else { bg='rgba(3,105,161,.06)'; bcol='#0369a1'; }
+    row.style.cssText = 'display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:start;padding:8px 10px;margin-bottom:4px;background:'+bg+';border-left:3px solid '+bcol+';border-radius:0 6px 6px 0;font-size:13px;line-height:1.4';
   }
   applyStyle();
+
+  var lawBadge = item.hasLaw ? lawBadgeHtml() : '';
+  var lawNote = (item.hasLaw && LAW_EXPLANATIONS[item.id]) ? lawNoteHtml(LAW_EXPLANATIONS[item.id]) : '';
+  var itemNote = item.note ? noteHtml(item.note) : '';
+  var bothInput = (item.type === 'both')
+    ? '<div style="margin-top:4px"><input class="cl-inp" data-inp-id="'+itemId+'.val" placeholder="value" style="width:100%;max-width:220px;padding:3px 8px;font-size:12px"/></div>'
+    : '';
+
   row.innerHTML =
-    '<span style="flex:1;min-width:0">'+item.text+'</span>'+
+    '<div class="cl-cbx" style="width:18px;height:18px;border:2px solid #0369a1;border-radius:4px;background:#fff;display:flex;align-items:center;justify-content:center;font-family:JetBrains Mono,monospace;font-weight:800;font-size:11px;line-height:1;margin-top:1px"></div>'+
+    '<div style="min-width:0">'+
+      '<div style="display:flex;align-items:center;flex-wrap:wrap">'+itemTagBadgeHtml(item.id)+'<span style="color:#1e3a8a;font-weight:700">'+item.text+'</span>'+lawBadge+'</div>'+
+      bothInput + itemNote + lawNote +
+    '</div>'+
     '<div style="display:flex;gap:4px;flex-shrink:0;align-self:center">'+
       '<button type="button" class="cl-btn cl-btn-yes" style="padding:4px 10px;font-size:12px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">&#10003;</button>'+
       '<button type="button" class="cl-btn cl-btn-na" style="padding:4px 8px;font-size:11px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">N/A</button>'+
     '</div>';
+  var cbx    = row.querySelector('.cl-cbx');
   var yesBtn = row.querySelector('.cl-btn-yes');
   var naBtn  = row.querySelector('.cl-btn-na');
   function paintBtns(){
     var s = f.checklistState[itemId];
     if(s === 'yes'){
       yesBtn.style.background = '#047857'; yesBtn.style.color = '#fff'; yesBtn.style.border = '1px solid #047857';
+      cbx.style.background = '#047857'; cbx.style.borderColor = '#047857'; cbx.innerHTML = '<span style="color:#fff">&#10003;</span>';
+    } else if(s === 'na'){
+      cbx.style.background = '#b45309'; cbx.style.borderColor = '#b45309'; cbx.innerHTML = '<span style="color:#fff;font-size:9px">N/A</span>';
+      yesBtn.style.background = 'transparent'; yesBtn.style.color = '#047857'; yesBtn.style.border = '1px solid #047857';
     } else {
       yesBtn.style.background = 'transparent'; yesBtn.style.color = '#047857'; yesBtn.style.border = '1px solid #047857';
+      cbx.style.background = '#fff'; cbx.style.borderColor = '#0369a1'; cbx.innerHTML = '';
     }
-    if(s === 'na'){
-      naBtn.style.background = '#b45309'; naBtn.style.color = '#fff'; naBtn.style.border = '1px solid #b45309';
-    } else {
-      naBtn.style.background = 'transparent'; naBtn.style.color = '#b45309'; naBtn.style.border = '1px solid #b45309';
-    }
+    if(s === 'na'){ naBtn.style.background = '#b45309'; naBtn.style.color = '#fff'; naBtn.style.border = '1px solid #b45309'; }
+    else { naBtn.style.background = 'transparent'; naBtn.style.color = '#b45309'; naBtn.style.border = '1px solid #b45309'; }
   }
   paintBtns();
   yesBtn.addEventListener('click', function(e){
@@ -5024,12 +5329,206 @@ function renderChecklistItem(f, section, item, itemId, onStateChange){
     f.checklistState[itemId] = (f.checklistState[itemId] === 'na') ? '' : 'na';
     applyStyle(); paintBtns(); onStateChange();
   });
-  // Wire inline inputs (if any) to save to f.checklistInputs
   row.querySelectorAll('.cl-inp').forEach(function(inp){
     var iid = inp.getAttribute('data-inp-id');
     if(iid && f.checklistInputs[iid]) inp.value = f.checklistInputs[iid];
-    inp.addEventListener('click', function(e){ e.stopPropagation(); }); // don't bubble to summary
+    inp.addEventListener('click', function(e){ e.stopPropagation(); });
     inp.addEventListener('input', function(){ f.checklistInputs[iid] = inp.value; });
+  });
+  return row;
+}
+
+// Render a group item as a mini-container: collapsible dropdown (like sections),
+// each child having its own tick. Header shows the parent label, LAW badge, and
+// a "Show N" / "N/M done" indicator.
+function renderGroupContainer(f, section, item, itemId, onStateChange){
+  var wrapper = document.createElement('details');
+  wrapper.className = 'cl-group';
+  wrapper.style.cssText = 'margin-bottom:8px;background:rgba(30,58,138,.04);border:1px solid rgba(30,58,138,.18);border-radius:7px;overflow:hidden';
+  wrapper.open = true;
+
+  var summary = document.createElement('summary');
+  summary.style.cssText = 'padding:8px 10px;cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-family:Syne,sans-serif;font-weight:700;font-size:13px;color:var(--text)';
+  summary.innerHTML =
+    '<span class="grp-arrow" style="font-size:10px;color:#1e3a8a;flex:0 0 auto;transition:transform .15s;transform:rotate(90deg)">&#9654;</span>'+
+    '<span class="grp-title" style="flex:1;min-width:0">'+item.text+
+      (item.hasLaw ? lawBadgeHtml() : '')+
+    '</span>'+
+    '<span class="grp-count" style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:600;flex:0 0 auto"></span>';
+  wrapper.appendChild(summary);
+
+  var body = document.createElement('div');
+  body.style.cssText = 'padding:6px 10px 10px 10px;border-top:1px solid rgba(30,58,138,.12);background:rgba(255,255,255,.5)';
+  wrapper.appendChild(body);
+
+  // Bulk-set buttons for the group's children — insert in the summary before count
+  var grpBulk = document.createElement('span');
+  grpBulk.style.cssText = 'display:inline-flex;gap:4px;flex:0 0 auto;margin-right:4px';
+  var yesAll = makeBulkBtn('&#10003;', '#047857', function(){
+    item.children.forEach(function(_, idx){ f.checklistState[itemId + '.' + idx] = 'yes'; });
+    rebuildGroupBody();
+  });
+  var naAll  = makeBulkBtn('N/A', '#b45309', function(){
+    item.children.forEach(function(_, idx){ f.checklistState[itemId + '.' + idx] = 'na'; });
+    rebuildGroupBody();
+  });
+  grpBulk.appendChild(yesAll);
+  grpBulk.appendChild(naAll);
+  summary.insertBefore(grpBulk, summary.querySelector('.grp-count'));
+
+  function rebuildGroupBody(){
+    body.innerHTML = '';
+    // Optional law reference + note render above children
+    if(item.hasLaw && LAW_EXPLANATIONS[item.id]) body.insertAdjacentHTML('beforeend', lawNoteHtml(LAW_EXPLANATIONS[item.id]));
+    if(item.note) body.insertAdjacentHTML('beforeend', noteHtml(item.note));
+    item.children.forEach(function(childText, idx){
+      var childId = itemId + '.' + idx;
+      body.appendChild(renderChildTick(f, childId, childText, function(){
+        updateCount();
+        onStateChange();
+      }));
+    });
+    updateCount();
+    onStateChange();
+  }
+
+  // Optional law reference + note render above children (only visible when open)
+  if(item.hasLaw && LAW_EXPLANATIONS[item.id]) body.insertAdjacentHTML('beforeend', lawNoteHtml(LAW_EXPLANATIONS[item.id]));
+  if(item.note) body.insertAdjacentHTML('beforeend', noteHtml(item.note));
+
+  function updateCount(){
+    var total = item.children.length, done = 0;
+    item.children.forEach(function(_, idx){
+      var s = f.checklistState[itemId + '.' + idx];
+      if(s === 'yes' || s === 'na') done++;
+    });
+    var el = summary.querySelector('.grp-count');
+    if(!el) return;
+    var pillBase = 'display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:999px;font-family:JetBrains Mono,monospace;font-size:11px;font-weight:700;background:#fff';
+    if(done === total){
+      el.innerHTML = '&#10003; '+done+' / '+total;
+      el.style.cssText = pillBase+';color:#047857;border:1px solid #047857';
+    } else if(wrapper.open){
+      el.innerHTML = done+' / '+total;
+      el.style.cssText = pillBase+';color:#0369a1;border:1px solid #0369a1';
+    } else {
+      el.innerHTML = done+' / '+total+' &nbsp;&#9656;&nbsp;Show';
+      el.style.cssText = pillBase+';color:#0369a1;border:1px solid #0369a1';
+    }
+    // Auto-collapse when the last child in the group is ticked / N/A.
+    if(!wasGroupComplete && done === total && wrapper.open){
+      wrapper.open = false;
+    }
+    wasGroupComplete = (done === total);
+  }
+  var wasGroupComplete = (function(){
+    var done = 0;
+    item.children.forEach(function(_, idx){
+      var s = f.checklistState[itemId + '.' + idx];
+      if(s === 'yes' || s === 'na') done++;
+    });
+    return done === item.children.length;
+  })();
+
+  // Rotate arrow + update count on toggle
+  wrapper.addEventListener('toggle', function(){
+    var a = summary.querySelector('.grp-arrow');
+    if(a) a.style.transform = wrapper.open ? 'rotate(90deg)' : 'rotate(0)';
+    updateCount();
+  });
+
+  // Render children
+  item.children.forEach(function(childText, idx){
+    var childId = itemId + '.' + idx;
+    body.appendChild(renderChildTick(f, childId, childText, function(){
+      updateCount();
+      onStateChange();
+    }));
+  });
+  updateCount();
+  return wrapper;
+}
+
+// Render a paper-check reminder as a bold black row with state-tinted background.
+// Used for items 2w (Aircraft/Transit), 2y (Before Start), 3i (Taxi), 3j (Power), 3k (Pre-Take Off).
+function renderStandaloneItem(f, item, itemId, onStateChange){
+  var row = document.createElement('div');
+  row.innerHTML =
+    '<span class="st-title" style="flex:1">'+item.text+'</span>'+
+    '<div style="display:flex;gap:4px;flex-shrink:0;align-self:center">'+
+      '<button type="button" class="cl-btn-yes" style="padding:6px 12px;font-size:13px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">&#10003;</button>'+
+      '<button type="button" class="cl-btn-na" style="padding:6px 10px;font-size:12px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">N/A</button>'+
+    '</div>';
+  var yesBtn = row.querySelector('.cl-btn-yes');
+  var naBtn  = row.querySelector('.cl-btn-na');
+  var titleEl = row.querySelector('.st-title');
+  function applyStyle(){
+    var s = f.checklistState[itemId];
+    var bg, bcol;
+    if(s === 'yes'){ bg='rgba(4,120,87,.10)'; bcol='#047857'; }
+    else if(s === 'na'){ bg='rgba(180,83,9,.10)'; bcol='#b45309'; }
+    else { bg='rgba(3,105,161,.06)'; bcol='#0369a1'; }
+    row.style.cssText = 'display:flex;gap:10px;align-items:center;padding:12px 14px;margin-bottom:8px;background:'+bg+';border:1px solid '+bcol+';border-left-width:4px;border-radius:0 9px 9px 0;font-family:Syne,sans-serif;font-weight:800;font-size:14px;letter-spacing:.03em';
+    titleEl.style.color = 'var(--text)';
+  }
+  function paintBtns(){
+    var s = f.checklistState[itemId];
+    if(s === 'yes'){ yesBtn.style.background='#047857'; yesBtn.style.color='#fff'; yesBtn.style.border='1px solid #047857'; }
+    else { yesBtn.style.background='transparent'; yesBtn.style.color='#047857'; yesBtn.style.border='1px solid #047857'; }
+    if(s === 'na'){ naBtn.style.background='#b45309'; naBtn.style.color='#fff'; naBtn.style.border='1px solid #b45309'; }
+    else { naBtn.style.background='transparent'; naBtn.style.color='#b45309'; naBtn.style.border='1px solid #b45309'; }
+  }
+  applyStyle(); paintBtns();
+  yesBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    f.checklistState[itemId] = (f.checklistState[itemId] === 'yes') ? '' : 'yes';
+    applyStyle(); paintBtns(); onStateChange();
+  });
+  naBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    f.checklistState[itemId] = (f.checklistState[itemId] === 'na') ? '' : 'na';
+    applyStyle(); paintBtns(); onStateChange();
+  });
+  return row;
+}
+
+// Render a single child tick row within a group container.
+function renderChildTick(f, childId, childText, onStateChange){
+  var row = document.createElement('div');
+  function applyStyle(){
+    var s = f.checklistState[childId];
+    var bg, bcol;
+    if(s === 'yes'){ bg='rgba(4,120,87,.08)'; bcol='#047857'; }
+    else if(s === 'na'){ bg='rgba(180,83,9,.08)'; bcol='#b45309'; }
+    else { bg='rgba(3,105,161,.06)'; bcol='#0369a1'; }
+    row.style.cssText = 'display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;padding:5px 8px;margin-top:3px;background:'+bg+';border-left:2px solid '+bcol+';border-radius:0 4px 4px 0;font-size:12px;line-height:1.3';
+  }
+  applyStyle();
+  row.innerHTML =
+    '<span>'+childText+'</span>'+
+    '<div style="display:flex;gap:3px;flex-shrink:0">'+
+      '<button type="button" class="cl-btn-yes" style="padding:2px 8px;font-size:11px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:4px;cursor:pointer;-webkit-tap-highlight-color:transparent">&#10003;</button>'+
+      '<button type="button" class="cl-btn-na" style="padding:2px 7px;font-size:10px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:4px;cursor:pointer;-webkit-tap-highlight-color:transparent">N/A</button>'+
+    '</div>';
+  var yesBtn = row.querySelector('.cl-btn-yes');
+  var naBtn  = row.querySelector('.cl-btn-na');
+  function paintBtns(){
+    var s = f.checklistState[childId];
+    if(s === 'yes'){ yesBtn.style.background='#047857'; yesBtn.style.color='#fff'; yesBtn.style.border='1px solid #047857'; }
+    else { yesBtn.style.background='transparent'; yesBtn.style.color='#047857'; yesBtn.style.border='1px solid #047857'; }
+    if(s === 'na'){ naBtn.style.background='#b45309'; naBtn.style.color='#fff'; naBtn.style.border='1px solid #b45309'; }
+    else { naBtn.style.background='transparent'; naBtn.style.color='#b45309'; naBtn.style.border='1px solid #b45309'; }
+  }
+  paintBtns();
+  yesBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    f.checklistState[childId] = (f.checklistState[childId] === 'yes') ? '' : 'yes';
+    applyStyle(); paintBtns(); onStateChange();
+  });
+  naBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    f.checklistState[childId] = (f.checklistState[childId] === 'na') ? '' : 'na';
+    applyStyle(); paintBtns(); onStateChange();
   });
   return row;
 }
