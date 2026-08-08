@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%2C-apple-system%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
-<title>FlightDeck v174</title>
+<title>FlightDeck v180</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -200,7 +200,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v174</span>
+      <span class="logo-sub">v180</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -3870,7 +3870,7 @@ function openFlModal(ex){
           '</table>'+
         '</div>'+
 
-        '<div class="foot">FlightDeck v174 &middot; '+new Date().toLocaleString()+'</div>'+
+        '<div class="foot">FlightDeck v180 &middot; '+new Date().toLocaleString()+'</div>'+
         '</body></html>';
       win.document.open();
       win.document.write(html);
@@ -4160,19 +4160,32 @@ function openFlModal(ex){
     }
     ['Surf','W1k','W2k','W5k','W10k'].forEach(calcLevel);
 
-    // Pressure setting delta: prefer ATIS QNH, else parse from wxMetar1
+    // Pressure setting delta: prefer live ATIS block QNH → saved atisEntry → any METAR field
     var qnhSrcEl = qs('#m-wxQnhSrc', div);
     var qnhDiffEl = qs('#m-wxQnhDiff', div);
     if(qnhSrcEl && qnhDiffEl){
       var qnh = null, srcLabel = '';
-      if(f.atisEntry && f.atisEntry.qnh){
+      // 1) Live value in the ATIS block (updates as soon as user picks a QNH, before Submit)
+      var atisQnhBtn = div.querySelector('.atis-fld[data-fld="qnh"]');
+      if(atisQnhBtn && atisQnhBtn.dataset.val){
+        var qL = parseInt(atisQnhBtn.dataset.val);
+        if(!isNaN(qL)){ qnh = qL; srcLabel = ' (ATIS)'; }
+      }
+      // 2) Saved atisEntry from a previous Submit
+      if(qnh === null && f.atisEntry && f.atisEntry.qnh){
         var q = parseInt(f.atisEntry.qnh);
         if(!isNaN(q)){ qnh = q; srcLabel = ' (ATIS)'; }
       }
+      // 3) Parse Q\d{3,4} from any of the four METAR text fields (live typing)
       if(qnh === null){
-        var metar1 = g('m-wxMetar1') || (f.wxMetar1||'');
-        var m = String(metar1).match(/Q(\d{3,4})\b/);
-        if(m){ var q2 = parseInt(m[1]); if(!isNaN(q2)){ qnh = q2; srcLabel = ' (METAR)'; } }
+        for(var mi = 1; mi <= 4; mi++){
+          var mtxt = g('m-wxMetar'+mi) || (f['wxMetar'+mi]||'');
+          var m = String(mtxt).match(/Q(\d{3,4})\b/);
+          if(m){
+            var q2 = parseInt(m[1]);
+            if(!isNaN(q2)){ qnh = q2; srcLabel = ' (METAR '+mi+')'; break; }
+          }
+        }
       }
       if(qnh === null){
         qnhSrcEl.textContent = '-- no QNH found';
@@ -4237,9 +4250,23 @@ function openFlModal(ex){
       );
     });
   });
-  // Refresh QNH \u0394 when METAR1 text changes
-  var metar1El = qs('#m-wxMetar1', div);
-  if(metar1El) metar1El.addEventListener('input', liveCalc);
+  // Refresh QNH \u0394 when any METAR text changes (all four fields)
+  for(var mi=1; mi<=4; mi++){
+    var mEl = qs('#m-wxMetar'+mi, div);
+    if(mEl) mEl.addEventListener('input', liveCalc);
+  }
+  // Refresh QNH \u0394 whenever any ATIS field is updated (before Submit).
+  // MutationObserver on data-val attributes so keypad-set values fire it.
+  var atisBlk = div.querySelector('.atis-block');
+  if(atisBlk){
+    var moAtis = new MutationObserver(function(){ liveCalc(); });
+    atisBlk.querySelectorAll('.atis-fld').forEach(function(b){
+      moAtis.observe(b, { attributes:true, attributeFilter:['data-val'] });
+    });
+    // Also refresh when the ICAO text input changes (typing directly)
+    var icaoEl = atisBlk.querySelector('.atis-icao');
+    if(icaoEl) icaoEl.addEventListener('input', liveCalc);
+  }
 
   // ============ CLEARANCE section wiring (scribbles + OCR) ============
   function renderScribblePreview(previewId, fieldKey){
@@ -4687,7 +4714,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v174');
+  lines.push('','-- Sent from FlightDeck v180');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -4736,7 +4763,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v174');
+  lines.push('','-- FlightDeck v180');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
@@ -4833,29 +4860,45 @@ var CHECKLIST_DATA = [
     { id:'1s', text:'Threat &amp; Error Management', type:'group', children:['Terrain','CFIT','MSA','Emergency options'] }
   ]},
   // ---- Flight Planning & Weather ----
-  { phase:'Planning', id:'flightplanningwe', title:'Flight Planning &amp; Weather', items: [
-    { id:'2a', text:'Weather briefing obtained', type:'group', hasLaw:true, children:['Crosswind &amp; upper winds','Freezing level and ice risk','Cloud base &amp; tops','Max drift','Convective activity','Visibility','Forecast single hold drift'] },
+  { phase:'Planning', id:'flightplanning', title:'Flight Planning', items: [
     { id:'2b', text:'NOTAMs checked', type:'group', hasLaw:true, children:['Departure','Destination','Alternate','En-route'] },
     { id:'2c', text:'Aircraft equipment suitable for planned approach(es)', type:'group', hasLaw:true, children:['GNSS/SBAS certification (RNP APCH LPV/LNAV)','ILS/LOC capability'] },
     { id:'2d', text:'GNSS status checked', type:'group', children:['RAIM/FDE prediction (AUGUR or equivalent)','GPS outage NOTAMs'] },
-    { id:'2e', text:'Personal weather minima' },
-    { id:'2f', text:'MSA to freezing level buffer checked' },
-    { id:'2g', text:'Oxygen', hasLaw:true },
     { id:'2h', text:'Alternate(s)', hasLaw:true },
     { id:'2i', text:'Fuel Plan Complete' },
     { id:'2j', text:'Route/altitude selected — MSA/MOCA/grid MORA checked, terrain &amp; obstacles considered' },
-    { id:'2k', text:'Departure minima', hasLaw:true },
     { id:'2l', text:'Transition level(s)', type:'both' },
     { id:'2m', text:'Escape Plan' },
     { id:'2n', text:'Operational flight plan complete' },
     { id:'2o', text:'Approach type', type:'both' },
     { id:'2p', text:'Minima – DA and Visibility', type:'both' },
     { id:'2q', text:'Charts prepared', type:'group', children:['1:500,000 chart','Airways chart','UK minimum altitude chart'] },
-    { id:'2r', text:'DA/PA', note:'Consider' },
     { id:'2s', text:'Mass and balance calculated and within limits', hasLaw:true },
     { id:'2t', text:'Underload', type:'both', hasLaw:true },
     { id:'2u', text:'Performance check: takeoff/landing distance vs. runway available (Hot/High/Heavy/Humid considered)' },
-    { id:'2v', text:'ETOB / CTOT noted', type:'both' }
+    { id:'2v', text:'ETOB / CTOT noted', etobCtot:true }
+  ]},
+  // ---- Sources (weather products & briefing feeds) ----
+  { phase:'Weather', id:'sources', title:'Sources', items: [
+    { id:'sp',   text:'Surface Pressure' },
+    { id:'am',   text:'Airmass Type' },
+    { id:'f214', text:'F214 &mdash; Spot Wind &amp; Temperature' },
+    { id:'f215', text:'F215 &mdash; Significant Weather Chart' },
+    { id:'gm',   text:'GAMET' },
+    { id:'rd',   text:'Radar' },
+    { id:'tmp',  text:'Temperature' },
+    { id:'sk',   text:'Skew T' }
+  ]},
+  // ---- Weather (briefing + minima) ----
+  { phase:'Weather', id:'weather', title:'Weather', items: [
+    { id:'2a', text:'Weather calculations', type:'group', hasLaw:true, children:['Crosswind &amp; upper winds','Max drift','Convective activity','SIGMET','Visibility','Forecast single hold drift'] },
+    { id:'fl',   text:'Freezing level', keypad:'alt', unit:'ft' },
+    { id:'cbase', text:'Cloud base', keypad:'alt', unit:'ft' },
+    { id:'ctop',  text:'Cloud top',  keypad:'alt', unit:'ft' },
+    { id:'2f',   text:'MSA to freezing level buffer checked', keypad:'alt', unit:'ft' },
+    { id:'2k',   text:'Departure minima', hasLaw:true },
+    { id:'2rda', text:'Density Altitude (DA)',  keypad:'alt', unit:'ft' },
+    { id:'2rpa', text:'Pressure Altitude (PA)', keypad:'alt', unit:'ft' }
   ]},
   // ---- Pre-Start & Start (moved from Planning) ----
   { phase:'Ground', id:'prestart', title:'Pre-Start &amp; Start', flat:true, items: [
@@ -4893,10 +4936,13 @@ var CHECKLIST_DATA = [
     { id:'4a', text:'ATIS re-checked', hasLaw:true },
     { id:'4b', text:'Clearance read back and confirmed correct', hasLaw:true },
     { id:'4c', text:'OCAS to CAS transition' },
-    { id:'4d', text:'ETOB / CTOT noted', type:'both' },
+    { id:'4d', text:'ETOB / CTOT noted', etobCtot:true },
     { id:'4e', text:'Route entered/verified in GPS or nav equipment; matches clearance' },
     { id:'4f', text:'Departure procedure (SID or Instrument Departure Procedure) briefed if applicable', hasLaw:true },
-    { id:'4g', text:'RNAV/GNSS Loss of Integrity (LOI) contingency reviewed' }
+    { id:'4g', text:'RNAV/GNSS Loss of Integrity (LOI) contingency reviewed' },
+    { id:'5a', text:'SPLIITTT', note:'Mnemonic — expansion pending, let me know the breakdown.' },
+    { id:'5b', text:'Line up check', note:'Mnemonic — expansion pending, let me know the breakdown.' },
+    { id:'5c', text:'BUFFPEARL', note:'Mnemonic — expansion pending, let me know the breakdown.' }
   ]},
   // ---- En-Route / Arrival ----
   { phase:'Airborne', id:'enroutearrival', title:'En-Route / Arrival', items: [
@@ -4956,11 +5002,11 @@ function renderChecklistTab(f, root){
   // Sub-tab bar — three phases across the top
   var tabBar = document.createElement('div');
   tabBar.style.cssText = 'display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid rgba(14,116,144,.25);padding-bottom:0';
-  ['Planning','Ground','Airborne'].forEach(function(phase){
+  ['Planning','Weather','Ground','Airborne'].forEach(function(phase){
     var isActive = (phase === activePhase);
     var btn = document.createElement('button');
     btn.type = 'button';
-    btn.style.cssText = 'flex:1;padding:8px 4px;background:'+(isActive?'#0e7490':'transparent')+';color:'+(isActive?'#fff':'#0e7490')+';border:1px solid '+(isActive?'#0e7490':'rgba(14,116,144,.25)')+';border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;font-family:Syne,sans-serif;font-weight:700;font-size:12px;letter-spacing:.02em;margin-bottom:-1px;-webkit-tap-highlight-color:transparent';
+    btn.style.cssText = 'flex:1;padding:8px 4px;background:'+(isActive?'#0e7490':'transparent')+';color:'+(isActive?'#fff':'#0e7490')+';border:1px solid '+(isActive?'#0e7490':'rgba(14,116,144,.25)')+';border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;font-family:Syne,sans-serif;font-weight:700;font-size:11px;letter-spacing:.02em;margin-bottom:-1px;-webkit-tap-highlight-color:transparent';
     var st = phaseStatus(phase, f.checklistState);
     btn.innerHTML = phase + ' <span style="font-family:JetBrains Mono,monospace;font-size:10px;font-weight:600;opacity:.85;margin-left:2px">'+st.done+'/'+st.total+'</span>';
     btn.addEventListener('click', function(){
@@ -5009,8 +5055,98 @@ function renderChecklistTab(f, root){
   });
 
   updateTotal();
+  updateNextHighlight();
+  updateEtobBlocks();
   if(root._clTotalPoll) clearInterval(root._clTotalPoll);
-  root._clTotalPoll = setInterval(function(){ if(root.isConnected) updateTotal(); else clearInterval(root._clTotalPoll); }, 400);
+  root._clTotalPoll = setInterval(function(){
+    if(!root.isConnected){ clearInterval(root._clTotalPoll); return; }
+    updateTotal();
+    updateNextHighlight();
+    updateEtobBlocks();
+  }, 400);
+
+  // Find the first unset item in the active phase (returns full itemId or child id)
+  function findNextInActivePhase(){
+    var found = null;
+    CHECKLIST_DATA.forEach(function(section){
+      if(found) return;
+      if(section.phase !== activePhase) return;
+      section.items.forEach(function(it){
+        if(found) return;
+        var iid = section.id+'.'+it.id;
+        if(it.type === 'group' && it.children && it.children.length){
+          it.children.forEach(function(_, idx){
+            if(found) return;
+            var cid = iid+'.'+idx;
+            if(!f.checklistState[cid]) found = cid;
+          });
+        } else {
+          if(!f.checklistState[iid]) found = iid;
+        }
+      });
+    });
+    return found;
+  }
+
+  function updateNextHighlight(){
+    // Clear previous
+    root.querySelectorAll('[data-cl-next="1"]').forEach(function(el){
+      el.removeAttribute('data-cl-next');
+      el.style.boxShadow = '';
+    });
+    var nextId = findNextInActivePhase();
+    if(!nextId) return;
+    var el = root.querySelector('[data-item-id="'+nextId+'"]');
+    if(el){
+      el.setAttribute('data-cl-next','1');
+      el.style.boxShadow = '0 0 0 2px rgba(3,105,161,.55), 0 0 14px rgba(3,105,161,.25)';
+    }
+  }
+
+  function updateEtobBlocks(){
+    var eobtEl = qs('#m-eobt',   window.__currentFlModalDiv || document);
+    var ctotEl = qs('#m-ctot',   window.__currentFlModalDiv || document);
+    // Read live EOBT/CTOT time-spinner values from the Info tab
+    function readSpinner(base){
+      var h = document.getElementById(base+'-h');
+      var m = document.getElementById(base+'-m');
+      if(!h || !m || !h.value || !m.value) return '';
+      return h.value + ':' + m.value;
+    }
+    var eobtStr = readSpinner('m-eobt') || (f.eobt || '');
+    var ctotStr = readSpinner('m-ctot') || (f.ctot || '');
+    // Compute countdown to CTOT (or EOBT if no CTOT)
+    var target = ctotStr || eobtStr;
+    var cdTxt = '--', cdCol = 'var(--muted)';
+    if(target){
+      var parts = target.split(':');
+      if(parts.length === 2){
+        var now = new Date();
+        var t = new Date(now);
+        t.setUTCHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
+        var diffMs = t.getTime() - now.getTime();
+        if(diffMs < -12*3600*1000) diffMs += 24*3600*1000;
+        var totalSec = Math.round(diffMs / 1000);
+        var absSec = Math.abs(totalSec);
+        var hrs = Math.floor(absSec / 3600);
+        var mins = Math.floor((absSec % 3600) / 60);
+        var secs = absSec % 60;
+        var pad = function(n){ return ('0'+n).slice(-2); };
+        cdTxt = (totalSec < 0 ? '+' : '') + (hrs>0 ? hrs+':' : '') + pad(mins) + ':' + pad(secs);
+        if(totalSec < 0) cdCol = '#be123c';
+        else if(totalSec < 600) cdCol = '#b45309';
+        else cdCol = '#047857';
+      }
+    }
+    root.querySelectorAll('.cl-etob-block').forEach(function(block){
+      var eE = block.querySelector('.cl-etob-eobt');
+      var eC = block.querySelector('.cl-etob-ctot');
+      var eCd = block.querySelector('.cl-etob-cd');
+      if(eE) eE.textContent = eobtStr || '--';
+      if(eC) eC.textContent = ctotStr || '--';
+      if(eCd){ eCd.textContent = cdTxt; eCd.style.color = cdCol; }
+    });
+  }
 }
 
 // Aggregate status for a phase (Planning / Ground / Airborne)
@@ -5080,6 +5216,7 @@ function renderStandaloneCheck(section, f, num){
   var item = section.items[0];
   var itemId = section.id + '.' + item.id;
   var row = document.createElement('div');
+  row.dataset.itemId = itemId;
   var badge = (num != null) ? sectionBadgeHtml(num) : '';
   row.innerHTML =
     badge +
@@ -5278,9 +5415,22 @@ function renderChecklistItem(f, section, item, itemId, onStateChange){
   var lawBadge = item.hasLaw ? lawBadgeHtml() : '';
   var lawNote = (item.hasLaw && LAW_EXPLANATIONS[item.id]) ? lawNoteHtml(LAW_EXPLANATIONS[item.id]) : '';
   var itemNote = item.note ? noteHtml(item.note) : '';
-  var bothInput = (item.type === 'both')
-    ? '<div style="margin-top:4px"><input class="cl-inp" data-inp-id="'+itemId+'.val" placeholder="value" style="width:100%;max-width:220px;padding:3px 8px;font-size:12px"/></div>'
-    : '';
+  var bothInput = '';
+  if(item.type === 'both'){
+    bothInput = '<div style="margin-top:4px"><input class="cl-inp" data-inp-id="'+itemId+'.val" placeholder="value" style="width:100%;max-width:220px;padding:3px 8px;font-size:12px"/></div>';
+  } else if(item.keypad === 'alt'){
+    var cur = f.checklistInputs[itemId+'.val'] || '';
+    var unit = item.unit || 'ft';
+    var label = cur ? (cur + ' ' + unit) : ('Tap to enter '+unit);
+    bothInput = '<div style="margin-top:4px"><button type="button" class="cl-keypad-btn" data-inp-id="'+itemId+'.val" data-unit="'+unit+'" style="background:rgba(3,105,161,.06);border:1px solid rgba(3,105,161,.35);color:#0369a1;padding:4px 12px;font-size:12px;font-family:JetBrains Mono,monospace;font-weight:700;border-radius:6px;cursor:pointer;min-width:140px;text-align:left">'+label+'</button></div>';
+  } else if(item.etobCtot){
+    // Live-linked EOBT/CTOT read-out with countdown to CTOT
+    bothInput = '<div class="cl-etob-block" style="margin-top:4px;display:flex;gap:12px;flex-wrap:wrap;font-family:JetBrains Mono,monospace;font-size:11px;padding:5px 8px;background:rgba(3,105,161,.05);border:1px solid rgba(3,105,161,.2);border-radius:6px">'+
+      '<div><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.06em">EOBT </span><span class="cl-etob-eobt" style="color:#0369a1;font-weight:700">--</span></div>'+
+      '<div><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.06em">CTOT </span><span class="cl-etob-ctot" style="color:#0369a1;font-weight:700">--</span></div>'+
+      '<div style="margin-left:auto"><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.06em">T&minus;</span> <span class="cl-etob-cd" style="font-weight:700">--</span></div>'+
+    '</div>';
+  }
 
   row.innerHTML =
     '<div style="min-width:0">'+
@@ -5316,6 +5466,21 @@ function renderChecklistItem(f, section, item, itemId, onStateChange){
     if(iid && f.checklistInputs[iid]) inp.value = f.checklistInputs[iid];
     inp.addEventListener('click', function(e){ e.stopPropagation(); });
     inp.addEventListener('input', function(){ f.checklistInputs[iid] = inp.value; });
+  });
+  row.querySelectorAll('.cl-keypad-btn').forEach(function(btn){
+    var iid = btn.getAttribute('data-inp-id');
+    var unit = btn.getAttribute('data-unit') || 'ft';
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      openNumericKeypad(
+        { title:'Altitude ('+unit+')', digits:5, suffix:' '+unit, help:item.text },
+        f.checklistInputs[iid] || '',
+        function(v){
+          f.checklistInputs[iid] = v;
+          btn.textContent = v ? (v + ' ' + unit) : ('Tap to enter '+unit);
+        }
+      );
+    });
   });
   return row;
 }
@@ -5435,6 +5600,7 @@ function renderGroupContainer(f, section, item, itemId, onStateChange){
 // Used for items 2w (Aircraft/Transit), 2y (Before Start), 3i (Taxi), 3j (Power), 3k (Pre-Take Off).
 function renderStandaloneItem(f, item, itemId, onStateChange){
   var row = document.createElement('div');
+  row.dataset.itemId = itemId;
   row.innerHTML =
     '<span class="st-title" style="flex:1">'+item.text+'</span>'+
     '<div style="display:flex;gap:4px;flex-shrink:0;align-self:center">'+
@@ -5477,6 +5643,7 @@ function renderStandaloneItem(f, item, itemId, onStateChange){
 // Render a single child tick row within a group container.
 function renderChildTick(f, childId, childText, onStateChange){
   var row = document.createElement('div');
+  row.dataset.itemId = childId;
   function applyStyle(){
     var s = f.checklistState[childId];
     var bg, bcol;
