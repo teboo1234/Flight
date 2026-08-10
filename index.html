@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%2C-apple-system%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
-<title>FlightDeck v180</title>
+<title>FlightDeck v197</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -200,7 +200,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v180</span>
+      <span class="logo-sub">v197</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -265,6 +265,58 @@ function toast(msg){
   t.textContent=msg;
   t.classList.add('show');
   setTimeout(function(){ t.classList.remove('show'); },2500);
+}
+
+// Inline text-input dialog. Replaces window.prompt() which is unreliable in
+// modals / PWAs on iOS Safari (calls silently return null).
+function inlinePrompt(message, defaultValue, onOk){
+  var over = document.createElement('div');
+  over.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  var dialog = document.createElement('div');
+  dialog.style.cssText = 'background:var(--surface,#fff);padding:18px;border-radius:12px;width:100%;max-width:360px;box-shadow:0 20px 40px rgba(0,0,0,.35)';
+  dialog.innerHTML =
+    '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:15px;margin-bottom:10px;color:var(--text)">'+message+'</div>'+
+    '<input type="text" class="ip-input" style="width:100%;padding:9px 12px;font-size:16px;border:1px solid var(--border);border-radius:6px;margin-bottom:14px;box-sizing:border-box"/>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end">'+
+      '<button type="button" class="btn btn-g ip-cancel" style="padding:6px 14px">Cancel</button>'+
+      '<button type="button" class="btn btn-p ip-ok" style="padding:6px 14px">OK</button>'+
+    '</div>';
+  over.appendChild(dialog);
+  document.body.appendChild(over);
+  var inp = dialog.querySelector('.ip-input');
+  inp.value = defaultValue || '';
+  setTimeout(function(){ try{ inp.focus(); inp.select(); }catch(e){} }, 30);
+  function close(){ if(over.parentNode) over.parentNode.removeChild(over); }
+  dialog.querySelector('.ip-cancel').addEventListener('click', close);
+  dialog.querySelector('.ip-ok').addEventListener('click', function(){
+    var v = inp.value;
+    close();
+    onOk(v);
+  });
+  inp.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); dialog.querySelector('.ip-ok').click(); }
+    if(e.key === 'Escape'){ e.preventDefault(); close(); }
+  });
+  over.addEventListener('click', function(e){ if(e.target === over) close(); });
+}
+// Inline confirm dialog (safer than window.confirm inside modals/PWAs).
+function inlineConfirm(message, onOk){
+  var over = document.createElement('div');
+  over.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  var dialog = document.createElement('div');
+  dialog.style.cssText = 'background:var(--surface,#fff);padding:18px;border-radius:12px;width:100%;max-width:360px;box-shadow:0 20px 40px rgba(0,0,0,.35)';
+  dialog.innerHTML =
+    '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:14px;margin-bottom:14px;color:var(--text);line-height:1.4">'+message+'</div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end">'+
+      '<button type="button" class="btn btn-g ic-cancel" style="padding:6px 14px">Cancel</button>'+
+      '<button type="button" class="btn btn-d ic-ok" style="padding:6px 14px">Confirm</button>'+
+    '</div>';
+  over.appendChild(dialog);
+  document.body.appendChild(over);
+  function close(){ if(over.parentNode) over.parentNode.removeChild(over); }
+  dialog.querySelector('.ic-cancel').addEventListener('click', close);
+  dialog.querySelector('.ic-ok').addEventListener('click', function(){ close(); onOk(); });
+  over.addEventListener('click', function(e){ if(e.target === over) close(); });
 }
 
 function dlFile(name,text,mime){
@@ -2349,7 +2401,13 @@ function renderFlDetail(){
 
     // Pressure Setting Δ
     var qnhForCard = null, qnhSrc = '';
-    if(f.atisEntry && f.atisEntry.qnh){
+    if(Array.isArray(f.atisEntries)){
+      for(var acI = f.atisEntries.length - 1; acI >= 0 && qnhForCard === null; acI--){
+        var qA = parseInt(f.atisEntries[acI].qnh);
+        if(!isNaN(qA)){ qnhForCard = qA; qnhSrc = ' (ATIS)'; }
+      }
+    }
+    if(qnhForCard === null && f.atisEntry && f.atisEntry.qnh){
       var q1 = parseInt(f.atisEntry.qnh);
       if(!isNaN(q1)){ qnhForCard = q1; qnhSrc = ' (ATIS)'; }
     }
@@ -2467,12 +2525,10 @@ function renderFlDetail(){
     if(e.notes && e.notes.trim()) out += '\nRMK: '+e.notes.trim();
     return out;
   }
-  // Determine the single ATIS entry to display: use f.atisEntry, or migrate from legacy array/flat fields
-  var atisEntry = f.atisEntry || null;
-  if(!atisEntry && Array.isArray(f.atisEntries) && f.atisEntries.length){
-    atisEntry = f.atisEntries[f.atisEntries.length-1];
-  }
-  if(!atisEntry && (f.atisInfo||f.atisRwy||f.atisWind||f.atisVis||f.atisQnh||f.atisTemp||f.atisDew||f.atisCloud1||f.atisCloud2||f.atisCloud3||f.atisNotes||f.atis)){
+  // Determine ATIS entries to display: use f.atisEntries[], migrate legacy singular / flat as needed
+  var atisEntries = Array.isArray(f.atisEntries) ? f.atisEntries.slice() : [];
+  if(!atisEntries.length && f.atisEntry) atisEntries.push(f.atisEntry);
+  if(!atisEntries.length && (f.atisInfo||f.atisRwy||f.atisWind||f.atisVis||f.atisQnh||f.atisTemp||f.atisDew||f.atisCloud1||f.atisCloud2||f.atisCloud3||f.atisNotes||f.atis)){
     var tempDew = '';
     if(f.atisTemp||f.atisDew){
       var t=f.atisTemp||'', d=f.atisDew||'';
@@ -2482,15 +2538,15 @@ function renderFlDetail(){
       if(d.length===1) d='0'+d;
       tempDew = (t?(tn?'M':'')+t:'')+'/'+(d?(dn?'M':'')+d:'');
     }
-    atisEntry = { icao:'', time:'', info:f.atisInfo||'', rwy:f.atisRwy||'', wind:f.atisWind||'', vis:f.atisVis||'', qnh:f.atisQnh||'', tempDew:tempDew, cloud1:f.atisCloud1||'', cloud2:f.atisCloud2||'', cloud3:f.atisCloud3||'', notes:f.atisNotes||f.atis||'' };
+    atisEntries.push({ icao:'', time:'', info:f.atisInfo||'', rwy:f.atisRwy||'', wind:f.atisWind||'', vis:f.atisVis||'', qnh:f.atisQnh||'', tempDew:tempDew, cloud1:f.atisCloud1||'', cloud2:f.atisCloud2||'', cloud3:f.atisCloud3||'', notes:f.atisNotes||f.atis||'' });
   }
-  var atisMetar = atisEntry ? _toMetar(atisEntry).trim() : '';
-  var hasAnyAtis = !!atisMetar;
+  var atisMetars = atisEntries.map(function(e){ return _toMetar(e).trim(); }).filter(function(s){ return !!s; });
+  var hasAnyAtis = atisMetars.length > 0;
   if(hasAnyAtis){
     var scard=el('div','scard s-notes');
     var sh = '<div class="scard-head"><span class="ico">&#9998;</span> Scribble &amp; Notes</div>';
     sh += '<div class="sec-lbl">ATIS</div>'+
-      '<div class="sec-box" style="font-family:JetBrains Mono,monospace;font-size:14px;color:#1e3a8a;font-weight:600;margin-bottom:10px;white-space:pre-wrap">'+escapeHtml(atisMetar)+'</div>';
+      '<div class="sec-box" style="font-family:JetBrains Mono,monospace;font-size:14px;color:#1e3a8a;font-weight:600;margin-bottom:10px;white-space:pre-wrap">'+atisMetars.map(escapeHtml).join('\n')+'</div>';
     scard.innerHTML = sh;
     box.appendChild(scard);
   }
@@ -2517,12 +2573,12 @@ function renderFlDetail(){
 
   qs('#fl-edit-btn',box).addEventListener('click',function(){ openFlModal(f); });
   qs('#fl-del-btn',box).addEventListener('click',function(){
-    if(confirm('Delete this flight record?')){
+    inlineConfirm('Delete this flight record?', function(){
       flights=flights.filter(function(x){ return x.id!==f.id; });
       flSave(); flActive=null;
       renderFlList(); renderFlDetail(); renderFlStats();
       toast('Flight deleted');
-    }
+    });
   });
   qs('#fl-exp-btn',box).addEventListener('click',function(){ exportFlight(f); });
 }
@@ -2549,7 +2605,7 @@ function openFlModal(ex){
     oilLevel:'',oilAdded:'',maneuvers:'',defects:'',notes:'',
     scribbleIfr:'',scribbleIfrText:'',scribbleTaxi:'',scribbleTaxiText:'',
     checklistState:{},checklistInputs:{},
-    atisEntry:null,
+    atisEntries:[],
     frequencies:[]};
 
   var div=document.createElement('div');
@@ -2761,7 +2817,10 @@ function openFlModal(ex){
     '</div>'+
 
     '<div style="background:rgba(3,105,161,.06);border:1px solid rgba(3,105,161,.25);border-radius:9px;padding:12px;margin-bottom:10px">'+
-      '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:#0369a1;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Pressure Setting &Delta; (auto)</div>'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
+        '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:#0369a1;text-transform:uppercase;letter-spacing:.08em">Pressure Setting &Delta; (auto)</div>'+
+        '<button type="button" id="m-wxQnhRefresh" style="padding:3px 10px;font-size:11px;font-weight:700;font-family:JetBrains Mono,monospace;background:transparent;color:#0369a1;border:1px solid #0369a1;border-radius:5px;cursor:pointer;-webkit-tap-highlight-color:transparent">&#8635; Refresh</button>'+
+      '</div>'+
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:JetBrains Mono,monospace">'+
         '<div style="display:flex;flex-direction:column">'+
           '<span style="font-size:11px;color:var(--muted);text-transform:uppercase">QNH (source)</span>'+
@@ -2824,6 +2883,38 @@ function openFlModal(ex){
           '<button type="button" class="atis-fld" data-wxfld="'+k+'" data-val="'+escapeHtml(wind)+'" style="min-height:56px;padding:10px 12px"><span class="atis-lbl">Wind</span><span class="atis-v" style="font-size:16px">'+(wind||'--')+'</span></button>'+
           '<button type="button" class="atis-fld" data-wxtemp="'+k+'" data-val="'+escapeHtml(temp)+'" style="min-height:56px;padding:10px 12px"><span class="atis-lbl">Temp</span><span class="atis-v" style="font-size:16px">'+tempDisp+'</span></button>'+
         '</div>';
+      }).join('')+
+    '</div>'+
+
+    // Weather Calculations — mirrored from Checklist Weather tab (excludes 2k Departure minima)
+    '<div class="sdiv" style="margin-top:14px">Weather Calculations</div>'+
+    '<div id="m-wxCalcGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px">'+
+      [
+        ['flightplanning.planCruise.val','Planned cruise', 'ft'],
+        ['weather.fl.val',   'Freezing level', 'ft'],
+        ['weather.cbase.val','Cloud base',     'ft'],
+        ['weather.ctop.val', 'Cloud top',      'ft']
+      ].map(function(row){
+        var k = row[0], lbl = row[1], u = row[2];
+        var v = (f.checklistInputs && f.checklistInputs[k]) || '';
+        return '<div class="field" style="margin-bottom:0"><label style="font-size:10px">'+lbl+' ('+u+')</label>'+
+          '<input class="inp m-wxCalc" data-clk="'+k+'" type="number" step="1" placeholder="--" value="'+escapeHtml(v)+'"/></div>';
+      }).join('')+
+    '</div>'+
+    '<div id="m-wxCruiseFlDelta" style="padding:6px 10px;margin-bottom:8px;background:rgba(3,105,161,.05);border:1px solid rgba(3,105,161,.2);border-radius:6px;font-family:JetBrains Mono,monospace;font-size:12px;color:#0369a1;text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center">'+
+      '<span>Cruise &minus; FL</span>'+
+      '<span id="m-wxCruiseFlDeltaVal" style="font-weight:800;font-size:14px">--</span>'+
+    '</div>'+
+    '<div id="m-wxCalcGrid2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+
+      [
+        ['weather.2f.val',   'MSA-freeze buf', 'ft'],
+        ['weather.2rda.val', 'Density Alt',    'ft'],
+        ['weather.2rpa.val', 'Pressure Alt',   'ft']
+      ].map(function(row){
+        var k = row[0], lbl = row[1], u = row[2];
+        var v = (f.checklistInputs && f.checklistInputs[k]) || '';
+        return '<div class="field" style="margin-bottom:0"><label style="font-size:10px">'+lbl+' ('+u+')</label>'+
+          '<input class="inp m-wxCalc" data-clk="'+k+'" type="number" step="1" placeholder="--" value="'+escapeHtml(v)+'"/></div>';
       }).join('')+
     '</div>'+
 
@@ -3238,14 +3329,14 @@ function openFlModal(ex){
         };
       }
 
-      // Submit: save current block to f.atisEntry (single), refresh readback, clear block
+      // Submit: append current block to f.atisEntries, refresh readback list, clear block
       block.querySelector('.atis-submit').addEventListener('click', function(){
         var entry = readBlock();
         var empty = !entry.icao && !entry.time && !entry.info && !entry.rwy && !entry.wind && !entry.cavok && !entry.vis && !entry.qnh && !entry.tempDew && !entry.cloud1 && !entry.cloud2 && !entry.cloud3 && !(entry.notes||'').trim();
         if(empty){ toast('Nothing to submit'); return; }
-        f.atisEntry = entry;
+        f.atisEntries.push(entry);
         renderReadback();
-        // Clear all block fields
+        // Clear all block fields for the next entry
         block.querySelectorAll('.atis-fld').forEach(function(b){
           b.dataset.val = '';
           var vEl = b.querySelector('.atis-v');
@@ -3264,48 +3355,67 @@ function openFlModal(ex){
           var el = qs('#m-atis-time-'+idx+sfx, block);
           if(el) el.value = '';
         });
-        toast('ATIS submitted');
+        if(typeof liveCalc === 'function') liveCalc();
+        toast('ATIS added');
       });
-      // Clear the current block and any submitted readback
+      // Clear the current editable block only (does not touch submitted entries)
       block.querySelector('.atis-clear').addEventListener('click', function(){
-        if(!confirm('Clear the ATIS entry and any submitted readback?')) return;
-        block.querySelectorAll('.atis-fld').forEach(function(b){
-          b.dataset.val = '';
-          var vEl = b.querySelector('.atis-v');
-          var lblEl = b.querySelector('.atis-lbl');
-          if(b.getAttribute('data-fld') === 'cavok'){
-            b.style.background = ''; b.style.borderColor = '';
-            if(lblEl) lblEl.style.color = '';
-            if(vEl){ vEl.style.color = ''; vEl.textContent = 'off'; }
-          } else if(vEl){
-            vEl.textContent = '--';
-          }
+        inlineConfirm('Clear the current ATIS block? Submitted entries above are kept.', function(){
+          block.querySelectorAll('.atis-fld').forEach(function(b){
+            b.dataset.val = '';
+            var vEl = b.querySelector('.atis-v');
+            var lblEl = b.querySelector('.atis-lbl');
+            if(b.getAttribute('data-fld') === 'cavok'){
+              b.style.background = ''; b.style.borderColor = '';
+              if(lblEl) lblEl.style.color = '';
+              if(vEl){ vEl.style.color = ''; vEl.textContent = 'off'; }
+            } else if(vEl){
+              vEl.textContent = '--';
+            }
+          });
+          block.querySelector('.atis-notes').value = '';
+          block.querySelector('.atis-icao').value = '';
+          ['-h','-m'].forEach(function(sfx){
+            var el = qs('#m-atis-time-'+idx+sfx, block);
+            if(el) el.value = '';
+          });
         });
-        block.querySelector('.atis-notes').value = '';
-        block.querySelector('.atis-icao').value = '';
-        ['-h','-m'].forEach(function(sfx){
-          var el = qs('#m-atis-time-'+idx+sfx, block);
-          if(el) el.value = '';
-        });
-        delete f.atisEntry;
-        renderReadback();
       });
     }
 
-    // Initial render: show the last submitted ATIS as a readback above, one blank editable block below.
-    // Migration: consolidate any prior atisEntries[] array down to a single f.atisEntry.
-    if(Array.isArray(f.atisEntries) && f.atisEntries.length && !f.atisEntry){
-      f.atisEntry = f.atisEntries[f.atisEntries.length-1];
+    // Initial render: show ALL submitted ATIS entries (each with Delete button) above,
+    // one blank editable block below.
+    // Migration priority: existing f.atisEntries[] > legacy f.atisEntry > legacy flat fields
+    if(!Array.isArray(f.atisEntries)) f.atisEntries = [];
+    if(!f.atisEntries.length && f.atisEntry){
+      f.atisEntries.push(f.atisEntry);
     }
-    delete f.atisEntries;
+    delete f.atisEntry;
     var atisReadbackEl = qs('#m-atis-readback', div);
     function renderReadback(){
       if(!atisReadbackEl) return;
-      if(!f.atisEntry){ atisReadbackEl.style.display = 'none'; return; }
-      var m = toMetar(f.atisEntry);
-      if(!m.trim()){ atisReadbackEl.style.display = 'none'; return; }
-      atisReadbackEl.style.display = 'block';
-      atisReadbackEl.textContent = m;
+      atisReadbackEl.innerHTML = '';
+      if(!f.atisEntries.length){ atisReadbackEl.style.display = 'none'; return; }
+      atisReadbackEl.style.display = 'flex';
+      atisReadbackEl.style.flexDirection = 'column';
+      atisReadbackEl.style.gap = '6px';
+      f.atisEntries.forEach(function(entry, idx){
+        var m = toMetar(entry).trim();
+        if(!m) return;
+        var card = document.createElement('div');
+        card.style.cssText = 'display:flex;gap:8px;align-items:flex-start;padding:8px 10px;background:rgba(30,58,138,.05);border:1px solid rgba(30,58,138,.2);border-radius:6px';
+        card.innerHTML =
+          '<div style="flex:1;min-width:0;font-family:JetBrains Mono,monospace;font-size:13px;color:#1e3a8a;font-weight:600;white-space:pre-wrap;word-break:break-word">'+escapeHtml(m)+'</div>'+
+          '<button type="button" class="atis-del" style="flex:0 0 auto;padding:2px 8px;font-size:11px;font-weight:800;font-family:JetBrains Mono,monospace;background:transparent;color:#be123c;border:1px solid #be123c;border-radius:5px;cursor:pointer;-webkit-tap-highlight-color:transparent">&times;</button>';
+        card.querySelector('.atis-del').addEventListener('click', function(){
+          inlineConfirm('Delete this ATIS entry?', function(){
+            f.atisEntries.splice(idx, 1);
+            renderReadback();
+            if(typeof liveCalc === 'function') liveCalc();
+          });
+        });
+        atisReadbackEl.appendChild(card);
+      });
     }
     renderReadback();
     // Always render exactly ONE editable block, empty
@@ -3870,7 +3980,7 @@ function openFlModal(ex){
           '</table>'+
         '</div>'+
 
-        '<div class="foot">FlightDeck v180 &middot; '+new Date().toLocaleString()+'</div>'+
+        '<div class="foot">FlightDeck v197 &middot; '+new Date().toLocaleString()+'</div>'+
         '</body></html>';
       win.document.open();
       win.document.write(html);
@@ -4171,10 +4281,12 @@ function openFlModal(ex){
         var qL = parseInt(atisQnhBtn.dataset.val);
         if(!isNaN(qL)){ qnh = qL; srcLabel = ' (ATIS)'; }
       }
-      // 2) Saved atisEntry from a previous Submit
-      if(qnh === null && f.atisEntry && f.atisEntry.qnh){
-        var q = parseInt(f.atisEntry.qnh);
-        if(!isNaN(q)){ qnh = q; srcLabel = ' (ATIS)'; }
+      // 2) Saved atisEntries — walk most-recent-first, pick the first with QNH
+      if(qnh === null && Array.isArray(f.atisEntries)){
+        for(var ai = f.atisEntries.length - 1; ai >= 0; ai--){
+          var qq = parseInt(f.atisEntries[ai].qnh);
+          if(!isNaN(qq)){ qnh = qq; srcLabel = ' (ATIS)'; break; }
+        }
       }
       // 3) Parse Q\d{3,4} from any of the four METAR text fields (live typing)
       if(qnh === null){
@@ -4255,6 +4367,36 @@ function openFlModal(ex){
     var mEl = qs('#m-wxMetar'+mi, div);
     if(mEl) mEl.addEventListener('input', liveCalc);
   }
+  // Manual refresh button — always triggers a full recompute
+  var qnhRefreshBtn = qs('#m-wxQnhRefresh', div);
+  if(qnhRefreshBtn) qnhRefreshBtn.addEventListener('click', function(e){ e.preventDefault(); liveCalc(); });
+  // Mirror Weather Calculations inputs into f.checklistInputs (same keys the Checklist Weather tab uses).
+  div.querySelectorAll('.m-wxCalc').forEach(function(inp){
+    if(!f.checklistInputs) f.checklistInputs = {};
+    var k = inp.getAttribute('data-clk');
+    inp.addEventListener('input', function(){
+      f.checklistInputs[k] = inp.value;
+      var clBtn = document.querySelector('.cl-keypad-btn[data-inp-id="'+k+'"]');
+      if(clBtn){
+        var u = clBtn.getAttribute('data-unit') || 'ft';
+        clBtn.textContent = inp.value ? (inp.value + ' ' + u) : ('Tap to enter '+u);
+      }
+      recomputeCruiseFlDelta();
+    });
+  });
+  function recomputeCruiseFlDelta(){
+    var el = qs('#m-wxCruiseFlDeltaVal', div);
+    if(!el) return;
+    var cruise = parseFloat((f.checklistInputs||{})['flightplanning.planCruise.val']);
+    var frz    = parseFloat((f.checklistInputs||{})['weather.fl.val']);
+    if(isNaN(cruise) || isNaN(frz)){ el.textContent = '--'; el.style.color = '#0369a1'; return; }
+    var d = cruise - frz;
+    var sign = d > 0 ? '+' : (d < 0 ? '' : '');
+    el.textContent = sign + d.toLocaleString() + ' ft';
+    // Green when cruise is safely above FL, red when below
+    el.style.color = d > 0 ? '#047857' : '#be123c';
+  }
+  recomputeCruiseFlDelta();
   // Refresh QNH \u0394 whenever any ATIS field is updated (before Submit).
   // MutationObserver on data-val attributes so keypad-set values fire it.
   var atisBlk = div.querySelector('.atis-block');
@@ -4263,7 +4405,6 @@ function openFlModal(ex){
     atisBlk.querySelectorAll('.atis-fld').forEach(function(b){
       moAtis.observe(b, { attributes:true, attributeFilter:['data-val'] });
     });
-    // Also refresh when the ICAO text input changes (typing directly)
     var icaoEl = atisBlk.querySelector('.atis-icao');
     if(icaoEl) icaoEl.addEventListener('input', liveCalc);
   }
@@ -4324,32 +4465,12 @@ function openFlModal(ex){
       f[k+'Time'] = (hrs === null) ? '' : String(hrs);
     });
     f.student=g('m-student');
-    // ATIS: preserve the last submitted entry (f.atisEntry). If the block has
-    // unsubmitted content, that becomes the new f.atisEntry (auto-submit on save).
-    var atisCont = qs('#m-atis-container', div);
-    if(atisCont){
-      var block = atisCont.querySelector('.atis-block');
-      if(block){
-        var idx = block.dataset.idx;
-        var flds = {};
-        block.querySelectorAll('.atis-fld').forEach(function(b){
-          flds[b.getAttribute('data-fld')] = b.dataset.val || '';
-        });
-        var e = {
-          icao: (block.querySelector('.atis-icao').value||'').toUpperCase(),
-          time: getTimeSpinner('m-atis-time-'+idx, block),
-          info: flds.info||'', rwy: flds.rwy||'', wind: flds.wind||'',
-          cavok: flds.cavok === '1',
-          vis: flds.vis||'', qnh: flds.qnh||'', tempDew: flds.tempDew||'',
-          cloud1: flds.cloud1||'', cloud2: flds.cloud2||'', cloud3: flds.cloud3||'',
-          notes: (block.querySelector('.atis-notes').value||'')
-        };
-        var empty = !e.icao && !e.time && !e.info && !e.rwy && !e.wind && !e.cavok && !e.vis && !e.qnh && !e.tempDew && !e.cloud1 && !e.cloud2 && !e.cloud3 && !(e.notes||'').trim();
-        if(!empty) f.atisEntry = e;
-      }
-    }
-    delete f.atisEntries;
-    // Clear legacy flat ATIS fields
+    // ATIS: only submitted entries (via the Submit button) are persisted in f.atisEntries.
+    // Anything typed into the editable block but not submitted is intentionally discarded on save
+    // — this prevents accidental duplicate cards when the user re-opens the modal.
+    if(!Array.isArray(f.atisEntries)) f.atisEntries = [];
+    // Purge deprecated singular field + legacy flat fields
+    delete f.atisEntry;
     ['atis','atisInfo','atisRwy','atisWind','atisVis','atisQnh','atisTemp','atisDew',
      'atisCloud1','atisCloud2','atisCloud3','atisNotes'].forEach(function(k){ delete f[k]; });
     // Clearance: only scribbles + their OCR text are captured.
@@ -4377,12 +4498,16 @@ function openFlModal(ex){
     [1,2,3,4,5].forEach(function(n){ delete f['freq'+n]; delete f['freq'+n+'Label']; });
     f.eobt=getTimeSpinner('m-eobt',div); f.ctot=getTimeSpinner('m-ctot',div);
     f.pTakeoff=getTimeSpinner('m-pTakeoff',div); f.pLanding=getTimeSpinner('m-pLanding',div);
-    f.chocksOff=getTimeSpinner('m-chocksOff',div); f.takeoff=getTimeSpinner('m-takeoff',div);
-    f.landing=getTimeSpinner('m-landing',div); f.chocksOn=getTimeSpinner('m-chocksOn',div);
+    f.chocksOff = getTimeSpinner('m-chocksOff', div) || f.chocksOff || '';
+    f.takeoff   = getTimeSpinner('m-takeoff',   div) || f.takeoff   || '';
+    f.landing   = getTimeSpinner('m-landing',   div) || f.landing   || '';
+    f.chocksOn  = getTimeSpinner('m-chocksOn',  div) || f.chocksOn  || '';
     f.lessonStart=getTimeSpinner('m-lessonStart',div); f.lessonEnd=getTimeSpinner('m-lessonEnd',div);
     f.circuitStart=getTimeSpinner('m-circuitStart',div); f.circuitEnd=getTimeSpinner('m-circuitEnd',div);
-    f.tachoStart=g('m-tachoStart'); f.tachoEnd=g('m-tachoEnd');
-    f.hobbsStart=g('m-hobbsStart'); f.hobbsEnd=g('m-hobbsEnd');
+    f.tachoStart = g('m-tachoStart') || f.tachoStart || '';
+    f.tachoEnd   = g('m-tachoEnd')   || f.tachoEnd   || '';
+    f.hobbsStart = g('m-hobbsStart') || f.hobbsStart || '';
+    f.hobbsEnd   = g('m-hobbsEnd')   || f.hobbsEnd   || '';
     f.fob=fuelUSG('m-fob',div); f.burnRate=fuelUSG('m-burnRate',div);
     f.fuelTaxi=fuelUSG('m-fuelTaxi',div); f.fuelTrip=fuelUSG('m-fuelTrip',div);
     f.fuelContPct=g('m-fuelContPct'); f.fuelAlt=fuelUSG('m-fuelAlt',div);
@@ -4714,7 +4839,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v180');
+  lines.push('','-- Sent from FlightDeck v197');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -4763,7 +4888,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v180');
+  lines.push('','-- FlightDeck v197');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
@@ -4853,7 +4978,9 @@ var CHECKLIST_DATA = [
     { id:'1l', text:'Charts, Electrics, AIP and AIRAC cycle current', hasLaw:true },
     { id:'1m', text:'Flight plan filed', hasLaw:true },
     { id:'1n', text:'Destination', type:'group', children:['Fees','Fuel availability','PPR','Slots','Opening hours','Phone/Email details'] },
-    { id:'1o', text:'Tech Log/ hours remaining' },
+    { id:'1o',     text:'Tech Log' },
+    { id:'1o-hrs', text:'Hours Remaining', keypad:'alt', unit:'hrs' },
+    { id:'1o-def', text:'Defects' },
     { id:'1p', text:'No-go review', type:'group', children:['Weather','Recency','Aircraft equipment','Day/night','Complexity','Endurance','Personal limits','External pressure'], note:'Traffic-light check — e.g. cloud base <600ft is a no-fly threshold; consider whether a check flight/safety pilot is needed; don\'t mix IFR/VFR without a plan; review Single-Pilot IFR rules (800m visibility ORS exception where applicable).' },
     { id:'1q', text:'I\'M SAFE self-assessment', type:'group', hasLaw:true, children:['Illness','Medication','Stress','Alcohol','Fatigue','Eating/Emotion'] },
     { id:'1r', text:'Personal equipment checked', type:'group', children:['Batteries','Cables','Devices/updates','Night flight equipment/torches','Life jacket'] },
@@ -4861,17 +4988,17 @@ var CHECKLIST_DATA = [
   ]},
   // ---- Flight Planning & Weather ----
   { phase:'Planning', id:'flightplanning', title:'Flight Planning', items: [
-    { id:'2b', text:'NOTAMs checked', type:'group', hasLaw:true, children:['Departure','Destination','Alternate','En-route'] },
-    { id:'2c', text:'Aircraft equipment suitable for planned approach(es)', type:'group', hasLaw:true, children:['GNSS/SBAS certification (RNP APCH LPV/LNAV)','ILS/LOC capability'] },
-    { id:'2d', text:'GNSS status checked', type:'group', children:['RAIM/FDE prediction (AUGUR or equivalent)','GPS outage NOTAMs'] },
-    { id:'2h', text:'Alternate(s)', hasLaw:true },
-    { id:'2i', text:'Fuel Plan Complete' },
     { id:'2j', text:'Route/altitude selected — MSA/MOCA/grid MORA checked, terrain &amp; obstacles considered' },
+    { id:'planCruise', text:'Planned cruising level', keypad:'alt', unit:'ft' },
+    { id:'2h', text:'Alternate(s)', hasLaw:true },
+    { id:'2b', text:'NOTAMs checked', type:'group', hasLaw:true, children:['Departure','Destination','Alternate','En-route'] },
+    { id:'2c', text:'Aircraft equipment suitable for planned approach(es)', type:'group', hasLaw:true, children:['GNSS/SBAS certification (RNP APCH LPV/LNAV)','ILS/LOC capability','RAIM/FDE prediction (AUGUR or equivalent)','GPS outage NOTAMs'] },
+    { id:'2i', text:'Fuel Plan Complete' },
     { id:'2l', text:'Transition level(s)', type:'both' },
     { id:'2m', text:'Escape Plan' },
     { id:'2n', text:'Operational flight plan complete' },
     { id:'2o', text:'Approach type', type:'both' },
-    { id:'2p', text:'Minima – DA and Visibility', type:'both' },
+    { id:'2p', type:'daVis' },
     { id:'2q', text:'Charts prepared', type:'group', children:['1:500,000 chart','Airways chart','UK minimum altitude chart'] },
     { id:'2s', text:'Mass and balance calculated and within limits', hasLaw:true },
     { id:'2t', text:'Underload', type:'both', hasLaw:true },
@@ -4902,8 +5029,11 @@ var CHECKLIST_DATA = [
   ]},
   // ---- Pre-Start & Start (moved from Planning) ----
   { phase:'Ground', id:'prestart', title:'Pre-Start &amp; Start', flat:true, items: [
+    { id:'bookout', text:'Booked out' },
     { id:'2w', text:'Aircraft A / Transit Check', standalone:true },
+    { id:'hobbsTachoStart', type:'hobbsTacho', variant:'start' },
     { id:'2x', text:'Crew/passenger brief completed', type:'group', children:['Exits','Belts','Oxygen','Life jackets','Dinghy','Emergency actions'] },
+    { id:'lookout', text:'Lookout' },
     { id:'2y', text:'Before start check', standalone:true },
     { id:'2z', text:'Starter warning light out' },
     { id:'2aa', text:'Oil pressure rising' }
@@ -4912,11 +5042,16 @@ var CHECKLIST_DATA = [
   { phase:'Ground', id:'avionicsnavsetup', title:'Avionics &amp; Nav Setup', items: [
     { id:'3a', text:'Autopilot/Trim check' },
     { id:'3b', text:'Compass fluid/smell checked' },
-    { id:'3c', text:'SPS, Xponder, Baro ±60\'', type:'both', hasLaw:true },
+    { id:'3c', text:'SPS, Xponder, Baro ±60\'', hasLaw:true },
     { id:'3d', text:'Audio panel &amp; conventional NavAids', type:'group', children:['ADF','VOR/ILS','DME','Stopwatch'] },
-    { id:'3e', text:'NAV/COM 1/2 Set' },
+    { id:'audioPanel', text:'Audio Panel check' },
+    { id:'annunciator', text:'Annunciator Check' },
     { id:'3f', text:'COM/NAV/GPS setup', type:'group', children:['COM/NAV radios set: departure freq, clearance delivery/ground, standby freqs','GPS/FMS flight plan loaded and cross-checked against clearance (Autorouter/SkyDemon route reviewed)','OBS/CDI course set for initial departure routing'] },
     { id:'3g', text:'QNH–Transition Level (FL) difference calculated', type:'both' }
+  ]},
+  // ---- Off Blocks (Now button — mirrors Times tab chocksOff) ----
+  { phase:'Ground', id:'chocksOffNow', title:'Off Blocks', items:[
+    { id:'chocksOff', type:'timeNow', field:'chocksOff', label:'Off Blocks' }
   ]},
   // ---- Paper-check reminders (before IFR clearance) ----
   { phase:'Ground', id:'taxichk',  title:'Taxi Checks',        standalone:true, items:[{ id:'3i', text:'Taxi Checks' }] },
@@ -4940,13 +5075,13 @@ var CHECKLIST_DATA = [
     { id:'4e', text:'Route entered/verified in GPS or nav equipment; matches clearance' },
     { id:'4f', text:'Departure procedure (SID or Instrument Departure Procedure) briefed if applicable', hasLaw:true },
     { id:'4g', text:'RNAV/GNSS Loss of Integrity (LOI) contingency reviewed' },
+    { id:'takeoff', type:'timeNow', field:'takeoff', label:'Take Off' },
     { id:'5a', text:'SPLIITTT', note:'Mnemonic — expansion pending, let me know the breakdown.' },
     { id:'5b', text:'Line up check', note:'Mnemonic — expansion pending, let me know the breakdown.' },
     { id:'5c', text:'BUFFPEARL', note:'Mnemonic — expansion pending, let me know the breakdown.' }
   ]},
   // ---- En-Route / Arrival ----
   { phase:'Airborne', id:'enroutearrival', title:'En-Route / Arrival', items: [
-    { id:'5a', text:'SPLIITTT', note:'Mnemonic — expansion pending, let me know the breakdown.' },
     { id:'5b', text:'Line up check', note:'Mnemonic — expansion pending, let me know the breakdown.' },
     { id:'5c', text:'BUFFPEARL', note:'Mnemonic — expansion pending, let me know the breakdown.' },
     { id:'5d', text:'FREDAMIT', note:'Mnemonic — expansion pending, let me know the breakdown.' },
@@ -4955,13 +5090,15 @@ var CHECKLIST_DATA = [
   ]},
   // ---- Landing & After Landing ----
   { phase:'Airborne', id:'landingafterland', title:'Landing &amp; After Landing', items: [
-    { id:'6a', text:'Time down (actual landing time)', type:'both' }
+    { id:'5a', text:'SPLIITTT', note:'Mnemonic — expansion pending, let me know the breakdown.' },
+    { id:'landing', type:'timeNow', field:'landing', label:'Landing' }
   ]},
   // ---- Shutdown & Securing ----
   { phase:'Airborne', id:'shutdownsecuring', title:'Shutdown &amp; Securing', items: [
+    { id:'chocksOn', type:'timeNow', field:'chocksOn', label:'On Blocks' },
     { id:'7a', text:'Flight plan closed if not automatically closed by tower', hasLaw:true },
+    { id:'7c', type:'hobbsTacho' },
     { id:'7b', text:'Fuel remaining at shutdown', type:'both' },
-    { id:'7c', text:'Hobbs/Tacho times noted', type:'both' },
     { id:'7d', text:'Logbook/tech log entries made if required', hasLaw:true }
   ]}
 ];
@@ -4969,6 +5106,7 @@ var CHECKLIST_DATA = [
 // Compute a section's status: counts each child of a group individually.
 function checklistSectionStatus(section, state){
   var total = 0, done = 0;
+  var inputs = null; // lazy-loaded per-item from window when needed
   section.items.forEach(function(it){
     var itemId = section.id+'.'+it.id;
     if(it.type === 'group' && it.children && it.children.length){
@@ -4977,19 +5115,90 @@ function checklistSectionStatus(section, state){
         var s = state[itemId + '.' + idx];
         if(s === 'yes' || s === 'na') done++;
       });
+    } else if(it.type === 'timeNow'){
+      total++;
+      var hEl = document.getElementById('m-'+it.field+'-h');
+      var mEl = document.getElementById('m-'+it.field+'-m');
+      if(hEl && mEl && hEl.value && mEl.value) done++;
+    } else if(it.type === 'hobbsTacho'){
+      total++;
+      var vv = it.variant || 'end';
+      var tE = document.getElementById('m-tacho'+(vv==='start'?'Start':'End'));
+      var hE = document.getElementById('m-hobbs'+(vv==='start'?'Start':'End'));
+      if(tE && hE && tE.value && hE.value) done++;
+    } else if(it.type === 'daVis'){
+      total++;
+      // Complete when tick set OR both DA and Vis fields have values.
+      var s0 = state[itemId];
+      var f0 = window._clFlight || null;
+      var kDa  = itemId+'.da', kVis = itemId+'.vis';
+      var v1 = (f0 && f0.checklistInputs && f0.checklistInputs[kDa])  || '';
+      var v2 = (f0 && f0.checklistInputs && f0.checklistInputs[kVis]) || '';
+      if(s0 === 'yes' || s0 === 'na' || (v1 && v2)) done++;
     } else {
       total++;
       var s = state[itemId];
-      if(s === 'yes' || s === 'na') done++;
+      // Keypad-entry items count as "done" once a value is present, even without a tick.
+      if(s === 'yes' || s === 'na'){
+        done++;
+      } else if(it.keypad === 'alt'){
+        var f2 = window._clFlight || null;
+        var v = (f2 && f2.checklistInputs && f2.checklistInputs[itemId+'.val']) || '';
+        if(v) done++;
+      }
     }
   });
   return { done: done, total: total, complete: total > 0 && done === total };
+}
+
+// Bidirectional unit converters shown at the top of the Aircraft Ref tab.
+// KT-to-MPH: 1 kt = 1.15078 mph.  USG-to-L: 1 USG = 3.78541 L.
+function buildConverterWidgets(){
+  var box = document.createElement('div');
+  box.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px';
+  box.innerHTML =
+    // Kt <-> Mph
+    '<div style="padding:10px 12px;background:rgba(3,105,161,.06);border:1px solid rgba(3,105,161,.25);border-radius:9px">'+
+      '<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#0369a1;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Speed &middot; kt &harr; mph</div>'+
+      '<div style="display:flex;gap:6px;align-items:center">'+
+        '<input class="cv-kt" type="number" step="0.1" placeholder="kt" style="flex:1;min-width:0;padding:5px 8px;font-size:14px;font-family:JetBrains Mono,monospace;text-align:right"/>'+
+        '<span style="color:var(--muted);font-size:11px">kt</span>'+
+        '<span style="color:var(--muted);font-size:14px;margin:0 2px">=</span>'+
+        '<input class="cv-mph" type="number" step="0.1" placeholder="mph" style="flex:1;min-width:0;padding:5px 8px;font-size:14px;font-family:JetBrains Mono,monospace;text-align:right"/>'+
+        '<span style="color:var(--muted);font-size:11px">mph</span>'+
+      '</div>'+
+    '</div>'+
+    // USG <-> L
+    '<div style="padding:10px 12px;background:rgba(180,83,9,.06);border:1px solid rgba(180,83,9,.25);border-radius:9px">'+
+      '<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#b45309;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Fuel &middot; USG &harr; L</div>'+
+      '<div style="display:flex;gap:6px;align-items:center">'+
+        '<input class="cv-usg" type="number" step="0.1" placeholder="USG" style="flex:1;min-width:0;padding:5px 8px;font-size:14px;font-family:JetBrains Mono,monospace;text-align:right"/>'+
+        '<span style="color:var(--muted);font-size:11px">USG</span>'+
+        '<span style="color:var(--muted);font-size:14px;margin:0 2px">=</span>'+
+        '<input class="cv-lit" type="number" step="0.1" placeholder="L" style="flex:1;min-width:0;padding:5px 8px;font-size:14px;font-family:JetBrains Mono,monospace;text-align:right"/>'+
+        '<span style="color:var(--muted);font-size:11px">L</span>'+
+      '</div>'+
+    '</div>';
+  var KT_TO_MPH = 1.15078;
+  var USG_TO_L  = 3.78541;
+  var kt  = box.querySelector('.cv-kt');
+  var mph = box.querySelector('.cv-mph');
+  var usg = box.querySelector('.cv-usg');
+  var lit = box.querySelector('.cv-lit');
+  function fmt(n){ return (Math.round(n * 100) / 100).toString(); }
+  kt.addEventListener('input',  function(){ mph.value = kt.value  ? fmt(parseFloat(kt.value)  * KT_TO_MPH)   : ''; });
+  mph.addEventListener('input', function(){ kt.value  = mph.value ? fmt(parseFloat(mph.value) / KT_TO_MPH)   : ''; });
+  usg.addEventListener('input', function(){ lit.value = usg.value ? fmt(parseFloat(usg.value) * USG_TO_L)    : ''; });
+  lit.addEventListener('input', function(){ usg.value = lit.value ? fmt(parseFloat(lit.value) / USG_TO_L)    : ''; });
+  return box;
 }
 
 function renderChecklistTab(f, root){
   root.innerHTML = '';
   if(!f.checklistState) f.checklistState = {};
   if(!f.checklistInputs) f.checklistInputs = {};
+  // Expose the current flight object so checklistSectionStatus() can read keypad values.
+  window._clFlight = f;
 
   // No inner panel — sits directly inside the parent scard, matching Weather/Fuel style.
   root.style.background = '';
@@ -5002,13 +5211,18 @@ function renderChecklistTab(f, root){
   // Sub-tab bar — three phases across the top
   var tabBar = document.createElement('div');
   tabBar.style.cssText = 'display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid rgba(14,116,144,.25);padding-bottom:0';
-  ['Planning','Weather','Ground','Airborne'].forEach(function(phase){
+  ['Planning','Weather','Ground','Airborne','Aircraft'].forEach(function(phase){
     var isActive = (phase === activePhase);
     var btn = document.createElement('button');
     btn.type = 'button';
-    btn.style.cssText = 'flex:1;padding:8px 4px;background:'+(isActive?'#0e7490':'transparent')+';color:'+(isActive?'#fff':'#0e7490')+';border:1px solid '+(isActive?'#0e7490':'rgba(14,116,144,.25)')+';border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;font-family:Syne,sans-serif;font-weight:700;font-size:11px;letter-spacing:.02em;margin-bottom:-1px;-webkit-tap-highlight-color:transparent';
-    var st = phaseStatus(phase, f.checklistState);
-    btn.innerHTML = phase + ' <span style="font-family:JetBrains Mono,monospace;font-size:10px;font-weight:600;opacity:.85;margin-left:2px">'+st.done+'/'+st.total+'</span>';
+    btn.style.cssText = 'flex:1;padding:8px 3px;background:'+(isActive?'#0e7490':'transparent')+';color:'+(isActive?'#fff':'#0e7490')+';border:1px solid '+(isActive?'#0e7490':'rgba(14,116,144,.25)')+';border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;font-family:Syne,sans-serif;font-weight:700;font-size:11px;letter-spacing:.02em;margin-bottom:-1px;-webkit-tap-highlight-color:transparent';
+    if(phase === 'Aircraft'){
+      // No per-phase progress badge for Aircraft (it's reference material)
+      btn.innerHTML = phase;
+    } else {
+      var st = phaseStatus(phase, f.checklistState);
+      btn.innerHTML = phase + ' <span style="font-family:JetBrains Mono,monospace;font-size:10px;font-weight:600;opacity:.85;margin-left:2px">'+st.done+'/'+st.total+'</span>';
+    }
     btn.addEventListener('click', function(){
       root._activePhase = phase;
       renderChecklistTab(f, root);
@@ -5017,28 +5231,30 @@ function renderChecklistTab(f, root){
   });
   root.appendChild(tabBar);
 
-  // Top strip: total progress + reset button, tight
+  // Top strip: total progress + reset button (not shown on Aircraft tab — no ticks there)
   var topRow = document.createElement('div');
-  topRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;justify-content:flex-end;flex-wrap:wrap';
-  topRow.innerHTML =
-    '<div id="m-cl-total" style="display:inline-flex;align-items:center;padding:3px 12px;border:1px solid #0369a1;border-radius:999px;background:#fff;font-family:JetBrains Mono,monospace;font-size:11px;font-weight:700;color:#0369a1;flex:0 0 auto">0 / 0</div>'+
-    '<button type="button" class="btn btn-g" id="m-cl-reset" style="padding:4px 10px;font-size:11px;color:#0369a1;border-color:#0369a1;flex:0 0 auto">&#8635; Reset</button>';
-  root.appendChild(topRow);
-
-  topRow.querySelector('#m-cl-reset').addEventListener('click', function(){
-    if(!confirm('Clear all ✓ / N/A marks on this flight\'s checklist?')) return;
-    f.checklistState = {};
-    renderChecklistTab(f, root);
-  });
+  if(activePhase !== 'Aircraft'){
+    topRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;justify-content:flex-end;flex-wrap:wrap';
+    topRow.innerHTML =
+      '<div id="m-cl-total" style="display:inline-flex;align-items:center;padding:3px 12px;border:1px solid #0369a1;border-radius:999px;background:#fff;font-family:JetBrains Mono,monospace;font-size:11px;font-weight:700;color:#0369a1;flex:0 0 auto">0 / 0</div>'+
+      '<button type="button" class="btn btn-g" id="m-cl-reset" style="padding:4px 10px;font-size:11px;color:#0369a1;border-color:#0369a1;flex:0 0 auto">&#8635; Reset</button>';
+    root.appendChild(topRow);
+    topRow.querySelector('#m-cl-reset').addEventListener('click', function(){
+      inlineConfirm('Clear all ✓ / N/A marks on this flight\'s checklist?', function(){
+        f.checklistState = {};
+        renderChecklistTab(f, root);
+      });
+    });
+  }
 
   function updateTotal(){
+    var el = root.querySelector('#m-cl-total');
+    if(!el) return; // Aircraft tab has no total pill
     var total = 0, done = 0;
     CHECKLIST_DATA.forEach(function(section){
       var st = checklistSectionStatus(section, f.checklistState);
       total += st.total; done += st.done;
     });
-    var el = topRow.querySelector('#m-cl-total');
-    if(!el) return;
     el.textContent = done + ' / ' + total;
     if(done === total && total > 0){
       el.style.color = '#047857'; el.style.borderColor = '#047857';
@@ -5048,22 +5264,43 @@ function renderChecklistTab(f, root){
   }
 
   var sectionNum = 0;
-  CHECKLIST_DATA.forEach(function(section){
-    if(section.phase !== activePhase) return;
-    sectionNum++;
-    root.appendChild(renderChecklistSection(section, f, sectionNum));
-  });
+  if(activePhase === 'Aircraft'){
+    // Mirror of the sidebar Aircraft Reference. Per-item conversions are inline in the AC ref itself.
+    root.appendChild(clAircraftRefEl());
+  } else {
+    CHECKLIST_DATA.forEach(function(section){
+      if(section.phase !== activePhase) return;
+      sectionNum++;
+      root.appendChild(renderChecklistSection(section, f, sectionNum));
+    });
+  }
 
   updateTotal();
   updateNextHighlight();
   updateEtobBlocks();
+  updateTimeNowRows();
+  // Snappy refresh: any tick/na/keypad-set fires 'cl-state-change' from its row,
+  // so counts + next-highlight update within ~10ms instead of waiting for the 1s poll.
+  root.addEventListener('cl-state-change', function(){
+    updateTotal();
+    updateNextHighlight();
+    updateTimeNowRows();
+  });
   if(root._clTotalPoll) clearInterval(root._clTotalPoll);
   root._clTotalPoll = setInterval(function(){
     if(!root.isConnected){ clearInterval(root._clTotalPoll); return; }
     updateTotal();
     updateNextHighlight();
     updateEtobBlocks();
-  }, 400);
+    updateTimeNowRows();
+  }, 1000);
+
+  // Repaint all timeNow rows so they mirror the Times-tab spinner values live.
+  function updateTimeNowRows(){
+    root.querySelectorAll('.cl-timenow').forEach(function(row){
+      if(typeof row._tnPaint === 'function') row._tnPaint();
+    });
+  }
 
   // Find the first unset item in the active phase (returns full itemId or child id)
   function findNextInActivePhase(){
@@ -5080,6 +5317,24 @@ function renderChecklistTab(f, root){
             var cid = iid+'.'+idx;
             if(!f.checklistState[cid]) found = cid;
           });
+        } else if(it.type === 'timeNow'){
+          var hEl = document.getElementById('m-'+it.field+'-h');
+          var mEl = document.getElementById('m-'+it.field+'-m');
+          if(!hEl || !mEl || !hEl.value || !mEl.value) found = iid;
+        } else if(it.type === 'hobbsTacho'){
+          var vv = it.variant || 'end';
+          var tE = document.getElementById('m-tacho'+(vv==='start'?'Start':'End'));
+          var hE = document.getElementById('m-hobbs'+(vv==='start'?'Start':'End'));
+          if(!tE || !hE || !tE.value || !hE.value) found = iid;
+        } else if(it.type === 'daVis'){
+          var s0 = f.checklistState[iid];
+          var v1 = (f.checklistInputs||{})[iid+'.da']  || '';
+          var v2 = (f.checklistInputs||{})[iid+'.vis'] || '';
+          if(!(s0 === 'yes' || s0 === 'na' || (v1 && v2))) found = iid;
+        } else if(it.keypad === 'alt'){
+          var s1 = f.checklistState[iid];
+          var v0 = (f.checklistInputs||{})[iid+'.val'] || '';
+          if(!(s1 === 'yes' || s1 === 'na' || v0)) found = iid;
         } else {
           if(!f.checklistState[iid]) found = iid;
         }
@@ -5093,58 +5348,64 @@ function renderChecklistTab(f, root){
     root.querySelectorAll('[data-cl-next="1"]').forEach(function(el){
       el.removeAttribute('data-cl-next');
       el.style.boxShadow = '';
+      // Remove yellow overlay if any
+      if(el._clOrigStyleText != null){
+        el.style.cssText = el._clOrigStyleText;
+        el._clOrigStyleText = null;
+      }
     });
     var nextId = findNextInActivePhase();
     if(!nextId) return;
     var el = root.querySelector('[data-item-id="'+nextId+'"]');
     if(el){
       el.setAttribute('data-cl-next','1');
-      el.style.boxShadow = '0 0 0 2px rgba(3,105,161,.55), 0 0 14px rgba(3,105,161,.25)';
+      // Save the original cssText so a later re-render can revert on the same node
+      el._clOrigStyleText = el.style.cssText;
+      // Apply yellow highlight; boxShadow keeps it visible over any state color
+      el.style.background = 'rgba(250,204,21,.55)';
+      el.style.boxShadow = '0 0 0 2px rgba(202,138,4,.85), 0 0 12px rgba(250,204,21,.35)';
     }
   }
 
   function updateEtobBlocks(){
-    var eobtEl = qs('#m-eobt',   window.__currentFlModalDiv || document);
-    var ctotEl = qs('#m-ctot',   window.__currentFlModalDiv || document);
-    // Read live EOBT/CTOT time-spinner values from the Info tab
     function readSpinner(base){
       var h = document.getElementById(base+'-h');
       var m = document.getElementById(base+'-m');
       if(!h || !m || !h.value || !m.value) return '';
       return h.value + ':' + m.value;
     }
+    function computeCd(hhmm){
+      if(!hhmm) return { txt: '--', col: 'var(--muted)' };
+      var parts = hhmm.split(':');
+      if(parts.length !== 2) return { txt: '--', col: 'var(--muted)' };
+      var now = new Date();
+      var t = new Date(now);
+      t.setUTCHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
+      var diffMs = t.getTime() - now.getTime();
+      if(diffMs < -12*3600*1000) diffMs += 24*3600*1000;
+      var totalSec = Math.round(diffMs / 1000);
+      var absSec = Math.abs(totalSec);
+      var hrs = Math.floor(absSec / 3600);
+      var mins = Math.floor((absSec % 3600) / 60);
+      var secs = absSec % 60;
+      var pad = function(n){ return ('0'+n).slice(-2); };
+      var txt = (totalSec < 0 ? '+' : 'T-') + (hrs>0 ? hrs+':' : '') + pad(mins) + ':' + pad(secs);
+      var col = totalSec < 0 ? '#be123c' : (totalSec < 600 ? '#b45309' : '#047857');
+      return { txt: txt, col: col };
+    }
     var eobtStr = readSpinner('m-eobt') || (f.eobt || '');
     var ctotStr = readSpinner('m-ctot') || (f.ctot || '');
-    // Compute countdown to CTOT (or EOBT if no CTOT)
-    var target = ctotStr || eobtStr;
-    var cdTxt = '--', cdCol = 'var(--muted)';
-    if(target){
-      var parts = target.split(':');
-      if(parts.length === 2){
-        var now = new Date();
-        var t = new Date(now);
-        t.setUTCHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
-        var diffMs = t.getTime() - now.getTime();
-        if(diffMs < -12*3600*1000) diffMs += 24*3600*1000;
-        var totalSec = Math.round(diffMs / 1000);
-        var absSec = Math.abs(totalSec);
-        var hrs = Math.floor(absSec / 3600);
-        var mins = Math.floor((absSec % 3600) / 60);
-        var secs = absSec % 60;
-        var pad = function(n){ return ('0'+n).slice(-2); };
-        cdTxt = (totalSec < 0 ? '+' : '') + (hrs>0 ? hrs+':' : '') + pad(mins) + ':' + pad(secs);
-        if(totalSec < 0) cdCol = '#be123c';
-        else if(totalSec < 600) cdCol = '#b45309';
-        else cdCol = '#047857';
-      }
-    }
+    var eobtCd = computeCd(eobtStr);
+    var ctotCd = computeCd(ctotStr);
     root.querySelectorAll('.cl-etob-block').forEach(function(block){
       var eE = block.querySelector('.cl-etob-eobt');
       var eC = block.querySelector('.cl-etob-ctot');
-      var eCd = block.querySelector('.cl-etob-cd');
+      var eEcd = block.querySelector('.cl-etob-eobt-cd');
+      var eCcd = block.querySelector('.cl-etob-ctot-cd');
       if(eE) eE.textContent = eobtStr || '--';
       if(eC) eC.textContent = ctotStr || '--';
-      if(eCd){ eCd.textContent = cdTxt; eCd.style.color = cdCol; }
+      if(eEcd){ eEcd.textContent = eobtCd.txt; eEcd.style.color = eobtCd.col; }
+      if(eCcd){ eCcd.textContent = ctotCd.txt; eCcd.style.color = ctotCd.col; }
     });
   }
 }
@@ -5249,11 +5510,13 @@ function renderStandaloneCheck(section, f, num){
     e.stopPropagation();
     f.checklistState[itemId] = (f.checklistState[itemId] === 'yes') ? '' : 'yes';
     applyStyle(); paintBtns();
+    row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
   });
   naBtn.addEventListener('click', function(e){
     e.stopPropagation();
     f.checklistState[itemId] = (f.checklistState[itemId] === 'na') ? '' : 'na';
     applyStyle(); paintBtns();
+    row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
   });
   return row;
 }
@@ -5261,6 +5524,11 @@ function renderStandaloneCheck(section, f, num){
 function renderChecklistSection(section, f, num){
   if(section.mnemonic) return renderMnemonicCard(section, num);
   if(section.standalone) return renderStandaloneCheck(section, f, num);
+  // Section with a single timeNow item renders as a compact Now-button row
+  if(section.items.length === 1 && section.items[0].type === 'timeNow'){
+    var tn = section.items[0];
+    return renderTimeNowRow(f, tn, section.id+'.'+tn.id, num);
+  }
 
   // Flat: no <details>; sdiv-style header + items visible always
   // Default: <details> with sdiv-style summary
@@ -5394,6 +5662,18 @@ function renderChecklistItem(f, section, item, itemId, onStateChange){
   if(item.type === 'group' && item.children && item.children.length){
     return renderGroupContainer(f, section, item, itemId, onStateChange);
   }
+  // Time-of-event captures (Off Blocks / Take Off / Landing / On Blocks)
+  if(item.type === 'timeNow'){
+    return renderTimeNowRow(f, item, itemId);
+  }
+  // Hobbs/Tacho end decimal pair
+  if(item.type === 'hobbsTacho'){
+    return renderHobbsTachoRow(f, item, itemId);
+  }
+  // Minima — DA (ft) and Visibility (m) as a two-field row
+  if(item.type === 'daVis'){
+    return renderDaVisRow(f, item, itemId);
+  }
   // Standalone items: bold black paper-check reminder row (2w, 2y, 3i, 3j, 3k)
   if(item.standalone){
     return renderStandaloneItem(f, item, itemId, onStateChange);
@@ -5424,11 +5704,10 @@ function renderChecklistItem(f, section, item, itemId, onStateChange){
     var label = cur ? (cur + ' ' + unit) : ('Tap to enter '+unit);
     bothInput = '<div style="margin-top:4px"><button type="button" class="cl-keypad-btn" data-inp-id="'+itemId+'.val" data-unit="'+unit+'" style="background:rgba(3,105,161,.06);border:1px solid rgba(3,105,161,.35);color:#0369a1;padding:4px 12px;font-size:12px;font-family:JetBrains Mono,monospace;font-weight:700;border-radius:6px;cursor:pointer;min-width:140px;text-align:left">'+label+'</button></div>';
   } else if(item.etobCtot){
-    // Live-linked EOBT/CTOT read-out with countdown to CTOT
-    bothInput = '<div class="cl-etob-block" style="margin-top:4px;display:flex;gap:12px;flex-wrap:wrap;font-family:JetBrains Mono,monospace;font-size:11px;padding:5px 8px;background:rgba(3,105,161,.05);border:1px solid rgba(3,105,161,.2);border-radius:6px">'+
-      '<div><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.06em">EOBT </span><span class="cl-etob-eobt" style="color:#0369a1;font-weight:700">--</span></div>'+
-      '<div><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.06em">CTOT </span><span class="cl-etob-ctot" style="color:#0369a1;font-weight:700">--</span></div>'+
-      '<div style="margin-left:auto"><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.06em">T&minus;</span> <span class="cl-etob-cd" style="font-weight:700">--</span></div>'+
+    // Live-linked EOBT/CTOT read-out with a countdown next to each planned time
+    bothInput = '<div class="cl-etob-block" style="margin-top:4px;display:flex;gap:14px;flex-wrap:wrap;font-family:JetBrains Mono,monospace;font-size:11px;padding:5px 8px;background:rgba(3,105,161,.05);border:1px solid rgba(3,105,161,.2);border-radius:6px">'+
+      '<div><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.06em">EOBT </span><span class="cl-etob-eobt" style="color:#0369a1;font-weight:700">--</span> <span class="cl-etob-eobt-cd" style="font-weight:700;margin-left:4px">--</span></div>'+
+      '<div><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.06em">CTOT </span><span class="cl-etob-ctot" style="color:#0369a1;font-weight:700">--</span> <span class="cl-etob-ctot-cd" style="font-weight:700;margin-left:4px">--</span></div>'+
     '</div>';
   }
 
@@ -5455,11 +5734,13 @@ function renderChecklistItem(f, section, item, itemId, onStateChange){
     e.stopPropagation();
     f.checklistState[itemId] = (f.checklistState[itemId] === 'yes') ? '' : 'yes';
     applyStyle(); paintBtns(); onStateChange();
+    row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
   });
   naBtn.addEventListener('click', function(e){
     e.stopPropagation();
     f.checklistState[itemId] = (f.checklistState[itemId] === 'na') ? '' : 'na';
     applyStyle(); paintBtns(); onStateChange();
+    row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
   });
   row.querySelectorAll('.cl-inp').forEach(function(inp){
     var iid = inp.getAttribute('data-inp-id');
@@ -5478,6 +5759,9 @@ function renderChecklistItem(f, section, item, itemId, onStateChange){
         function(v){
           f.checklistInputs[iid] = v;
           btn.textContent = v ? (v + ' ' + unit) : ('Tap to enter '+unit);
+          var wxInp = document.querySelector('.m-wxCalc[data-clk="'+iid+'"]');
+          if(wxInp) wxInp.value = v;
+          row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
         }
       );
     });
@@ -5596,6 +5880,174 @@ function renderGroupContainer(f, section, item, itemId, onStateChange){
   return wrapper;
 }
 
+// Render a "Now" button + time display row that binds to a Times-tab time-spinner field.
+// item: { id, type:'timeNow', field:'chocksOff'|'takeoff'|'landing'|'chocksOn', label:'Off Blocks'|... }
+function renderTimeNowRow(f, item, itemId, num){
+  var row = document.createElement('div');
+  row.dataset.itemId = itemId;
+  row.classList.add('cl-timenow');
+  // Build the row once — keep stable refs to the mutable parts.
+  row.innerHTML =
+    (num != null ? sectionBadgeHtml(num) : '')+
+    '<span class="tn-lbl" style="flex:1;min-width:0">'+item.label+'</span>'+
+    '<span class="tn-time" style="font-family:JetBrains Mono,monospace;font-size:15px;font-weight:800;min-width:70px;text-align:right">--:-- <span style="font-size:10px;color:var(--muted);letter-spacing:.06em">UTC</span></span>'+
+    '<button type="button" class="btn-now" style="padding:6px 14px;font-size:12px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">Now</button>';
+  var timeEl = row.querySelector('.tn-time');
+  var btn    = row.querySelector('.btn-now');
+
+  function readTime(){
+    var hEl = document.getElementById('m-'+item.field+'-h');
+    var mEl = document.getElementById('m-'+item.field+'-m');
+    if(hEl && mEl && hEl.value && mEl.value) return hEl.value + ':' + mEl.value;
+    return f[item.field] || '';
+  }
+  function paint(){
+    var val = readTime();
+    var isSet = !!val;
+    var bg   = isSet ? 'rgba(4,120,87,.10)' : 'rgba(3,105,161,.05)';
+    var bcol = isSet ? '#047857' : '#0369a1';
+    row.style.cssText = 'display:flex;gap:8px;align-items:center;padding:10px 12px;margin-bottom:8px;background:'+bg+';border:1px solid '+bcol+';border-left-width:4px;border-radius:0 9px 9px 0;font-family:Syne,sans-serif;font-weight:800;font-size:14px;flex-wrap:wrap';
+    timeEl.innerHTML = (val || '--:--') + ' <span style="font-size:10px;color:var(--muted);letter-spacing:.06em">UTC</span>';
+    timeEl.style.color = isSet ? '#047857' : 'var(--muted)';
+    btn.textContent = isSet ? 'Reset' : 'Now';
+    btn.style.background = isSet ? 'transparent' : '#047857';
+    btn.style.color      = isSet ? '#047857'    : '#fff';
+    btn.style.border     = '1px solid #047857';
+  }
+  // Attach the click handler ONCE, on the persistent button node.
+  btn.addEventListener('click', function(e){
+    e.stopPropagation(); e.preventDefault();
+    var now = new Date();
+    // Round to nearest 6-minute step (matches the Times-tab minute spinner options)
+    var totalMin = now.getUTCHours()*60 + now.getUTCMinutes();
+    var rounded  = Math.round(totalMin/6)*6;
+    if(rounded >= 1440) rounded = 0;
+    var hh = ('0'+Math.floor(rounded/60)).slice(-2);
+    var mm = ('0'+(rounded%60)).slice(-2);
+    var hEl = document.getElementById('m-'+item.field+'-h');
+    var mEl = document.getElementById('m-'+item.field+'-m');
+    if(hEl){ hEl.value = hh; try{ hEl.dispatchEvent(new Event('change',{bubbles:true})); }catch(err){} }
+    if(mEl){ mEl.value = mm; try{ mEl.dispatchEvent(new Event('change',{bubbles:true})); }catch(err){} }
+    f[item.field] = hh+':'+mm;
+    paint();
+    row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
+  });
+  // Expose paint so the 1s poll can refresh us if the Times tab spinner is edited there
+  row._tnPaint = paint;
+  paint();
+  return row;
+}
+
+// Render a two-field row for DA (feet) and Visibility (metres) — item 2p.
+function renderDaVisRow(f, item, itemId){
+  var row = document.createElement('div');
+  row.dataset.itemId = itemId;
+  function readVal(k){ return (f.checklistInputs && f.checklistInputs[k]) || ''; }
+  var kDa  = itemId+'.da';
+  var kVis = itemId+'.vis';
+  function paint(){
+    var da  = readVal(kDa);
+    var vis = readVal(kVis);
+    var bothSet = da && vis;
+    var s = f.checklistState[itemId];
+    var bg, bcol;
+    if(s === 'yes'){ bg='rgba(4,120,87,.07)'; bcol='#047857'; }
+    else if(s === 'na'){ bg='rgba(180,83,9,.07)'; bcol='#b45309'; }
+    else { bg = bothSet ? 'rgba(4,120,87,.03)' : 'transparent'; bcol='rgba(14,165,233,.35)'; }
+    row.style.cssText = 'padding:6px 8px;margin-bottom:3px;background:'+bg+';border-left:3px solid '+bcol+';border-radius:0 5px 5px 0;font-size:13px';
+    row.innerHTML =
+      '<div style="display:flex;align-items:center;flex-wrap:wrap;margin-bottom:5px">'+itemTagBadgeHtml(item.id)+
+        '<span style="color:var(--text);font-weight:600">Minima &mdash; DA &amp; Visibility</span>'+
+        '<div style="margin-left:auto;display:flex;gap:3px">'+
+          '<button type="button" class="dv-yes cl-btn" style="padding:3px 8px;font-size:11px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:5px;cursor:pointer;background:'+(s==='yes'?'#047857':'transparent')+';color:'+(s==='yes'?'#fff':'#047857')+';border:1px solid #047857">&#10003;</button>'+
+          '<button type="button" class="dv-na  cl-btn" style="padding:3px 6px;font-size:10px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:5px;cursor:pointer;background:'+(s==='na'?'#b45309':'transparent')+';color:'+(s==='na'?'#fff':'#b45309')+';border:1px solid #b45309">N/A</button>'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+        '<div style="flex:1;min-width:100px"><label style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:2px">DA (ft)</label>'+
+          '<input type="number" step="10" class="dv-da" placeholder="e.g. 250" value="'+escapeHtml(da)+'" style="width:100%;padding:4px 8px;font-size:13px;font-family:JetBrains Mono,monospace;border:1px solid var(--border);border-radius:5px"/></div>'+
+        '<div style="flex:1;min-width:100px"><label style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:2px">Vis (m)</label>'+
+          '<input type="number" step="50" class="dv-vis" placeholder="e.g. 1500" value="'+escapeHtml(vis)+'" style="width:100%;padding:4px 8px;font-size:13px;font-family:JetBrains Mono,monospace;border:1px solid var(--border);border-radius:5px"/></div>'+
+      '</div>';
+    var daEl  = row.querySelector('.dv-da');
+    var visEl = row.querySelector('.dv-vis');
+    daEl.addEventListener('click',  function(e){ e.stopPropagation(); });
+    visEl.addEventListener('click', function(e){ e.stopPropagation(); });
+    daEl.addEventListener('input',  function(){ if(!f.checklistInputs) f.checklistInputs={}; f.checklistInputs[kDa]  = daEl.value; });
+    visEl.addEventListener('input', function(){ if(!f.checklistInputs) f.checklistInputs={}; f.checklistInputs[kVis] = visEl.value; });
+    row.querySelector('.dv-yes').addEventListener('click', function(e){
+      e.stopPropagation();
+      f.checklistState[itemId] = (f.checklistState[itemId] === 'yes') ? '' : 'yes';
+      paint();
+      row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
+    });
+    row.querySelector('.dv-na').addEventListener('click', function(e){
+      e.stopPropagation();
+      f.checklistState[itemId] = (f.checklistState[itemId] === 'na') ? '' : 'na';
+      paint();
+      row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
+    });
+  }
+  paint();
+  return row;
+}
+
+// Render a two-field row for Hobbs & Tacho decimal readings (start or end).
+// item.variant: 'start' | 'end' (default 'end')
+function renderHobbsTachoRow(f, item, itemId){
+  var variant = item.variant || 'end';
+  var tachoField = variant === 'start' ? 'tachoStart' : 'tachoEnd';
+  var hobbsField = variant === 'start' ? 'hobbsStart' : 'hobbsEnd';
+  var labelText = variant === 'start' ? 'Hobbs &amp; Tacho start times' : 'Hobbs &amp; Tacho end times';
+  var tachoPh = variant === 'start' ? '1234.5' : '1235.2';
+  var hobbsPh = variant === 'start' ? '2345.6' : '2346.4';
+  var row = document.createElement('div');
+  row.dataset.itemId = itemId;
+  function readVal(field){
+    var el = document.getElementById('m-'+field);
+    if(el && el.value) return el.value;
+    return f[field] || '';
+  }
+  function paint(){
+    var tachoV = readVal(tachoField);
+    var hobbsV = readVal(hobbsField);
+    var bothSet = tachoV && hobbsV;
+    var bg   = bothSet ? 'rgba(4,120,87,.07)' : 'rgba(3,105,161,.05)';
+    var bcol = bothSet ? '#047857' : '#0369a1';
+    row.style.cssText = 'padding:8px 10px;margin-bottom:6px;background:'+bg+';border-left:3px solid '+bcol+';border-radius:0 5px 5px 0;font-size:13px';
+    row.innerHTML =
+      '<div style="display:flex;align-items:center;flex-wrap:wrap;margin-bottom:6px">'+itemTagBadgeHtml(item.id)+'<span style="color:var(--text);font-weight:600">'+labelText+'</span></div>'+
+      '<div style="display:flex;gap:10px;flex-wrap:wrap">'+
+        '<div style="flex:1;min-width:120px"><label style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:2px">Tacho '+(variant==='start'?'Start':'End')+'</label>'+
+          '<input type="number" step="0.1" data-cl-tacho placeholder="'+tachoPh+'" value="'+tachoV+'" style="width:100%;padding:4px 8px;font-size:13px;font-family:JetBrains Mono,monospace;border:1px solid var(--border);border-radius:5px;background:#fff"/></div>'+
+        '<div style="flex:1;min-width:120px"><label style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:2px">Hobbs '+(variant==='start'?'Start':'End')+'</label>'+
+          '<input type="number" step="0.1" data-cl-hobbs placeholder="'+hobbsPh+'" value="'+hobbsV+'" style="width:100%;padding:4px 8px;font-size:13px;font-family:JetBrains Mono,monospace;border:1px solid var(--border);border-radius:5px;background:#fff"/></div>'+
+      '</div>';
+    var tachoEl = row.querySelector('[data-cl-tacho]');
+    var hobbsEl = row.querySelector('[data-cl-hobbs]');
+    tachoEl.addEventListener('click', function(e){ e.stopPropagation(); });
+    hobbsEl.addEventListener('click', function(e){ e.stopPropagation(); });
+    tachoEl.addEventListener('input', function(){
+      f[tachoField] = tachoEl.value;
+      var master = document.getElementById('m-'+tachoField);
+      if(master) master.value = tachoEl.value;
+      var bothNow = tachoEl.value && hobbsEl.value;
+      row.style.borderLeftColor = bothNow ? '#047857' : '#0369a1';
+      row.style.background = bothNow ? 'rgba(4,120,87,.07)' : 'rgba(3,105,161,.05)';
+    });
+    hobbsEl.addEventListener('input', function(){
+      f[hobbsField] = hobbsEl.value;
+      var master = document.getElementById('m-'+hobbsField);
+      if(master) master.value = hobbsEl.value;
+      var bothNow = tachoEl.value && hobbsEl.value;
+      row.style.borderLeftColor = bothNow ? '#047857' : '#0369a1';
+      row.style.background = bothNow ? 'rgba(4,120,87,.07)' : 'rgba(3,105,161,.05)';
+    });
+  }
+  paint();
+  return row;
+}
+
 // Render a paper-check reminder as a bold black row with state-tinted background.
 // Used for items 2w (Aircraft/Transit), 2y (Before Start), 3i (Taxi), 3j (Power), 3k (Pre-Take Off).
 function renderStandaloneItem(f, item, itemId, onStateChange){
@@ -5631,11 +6083,13 @@ function renderStandaloneItem(f, item, itemId, onStateChange){
     e.stopPropagation();
     f.checklistState[itemId] = (f.checklistState[itemId] === 'yes') ? '' : 'yes';
     applyStyle(); paintBtns(); onStateChange();
+    row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
   });
   naBtn.addEventListener('click', function(e){
     e.stopPropagation();
     f.checklistState[itemId] = (f.checklistState[itemId] === 'na') ? '' : 'na';
     applyStyle(); paintBtns(); onStateChange();
+    row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
   });
   return row;
 }
@@ -5673,11 +6127,13 @@ function renderChildTick(f, childId, childText, onStateChange){
     e.stopPropagation();
     f.checklistState[childId] = (f.checklistState[childId] === 'yes') ? '' : 'yes';
     applyStyle(); paintBtns(); onStateChange();
+    row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
   });
   naBtn.addEventListener('click', function(e){
     e.stopPropagation();
     f.checklistState[childId] = (f.checklistState[childId] === 'na') ? '' : 'na';
     applyStyle(); paintBtns(); onStateChange();
+    row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
   });
   return row;
 }
@@ -5721,14 +6177,17 @@ var AC_FIELDS = [
   ['fuelToTabs','To tabs (per tank)', 'L', 'Fuel &amp; Oil'],
   ['fuelFullUsg','Full fuel', 'USG', 'Fuel &amp; Oil'],
   ['fuelTabsUsg','To tabs', 'USG', 'Fuel &amp; Oil'],
-  ['oilMin',    'Min oil (do not launch below)', 'qt', 'Fuel &amp; Oil'],
-  // Power settings — one string per phase (flexible: speed/manifold/rpm)
-  ['pwrClimbInit',   'Initial climb', '', 'Power Settings'],
-  ['pwrClimbNorm',   'Normal climb',  '', 'Power Settings'],
-  ['pwrCruise',      'Normal cruise', '', 'Power Settings'],
-  ['pwrDescent',     'Descent',       '', 'Power Settings'],
-  ['pwrHold',        'Hold',          '', 'Power Settings'],
-  ['pwrFinal',       'Final approach','', 'Power Settings']
+  ['oilMin',    'Min oil (do not launch below)', 'qt', 'Fuel &amp; Oil']
+];
+// Power Settings phases: each phase has three sub-fields — MAP (inches), RPM, Speed (kts).
+// Stored as <keyBase>Map, <keyBase>Rpm, <keyBase>Spd on the aircraft profile.
+var PWR_PHASES = [
+  ['pwrClimbInit', 'Initial climb'],
+  ['pwrClimbNorm', 'Normal climb'],
+  ['pwrCruise',    'Normal cruise'],
+  ['pwrDescent',   'Descent'],
+  ['pwrHold',      'Hold'],
+  ['pwrFinal',     'Final approach']
 ];
 // Built-in defaults for G-OMNI (PA28R-200 Arrow II).
 // User can override any field by editing.
@@ -5743,26 +6202,85 @@ function acDefaults(){
       vInitApp:'70', vApp40:'63', vFlapless:'70', vRef:'75', vLift:'40-52',
       fuelFlow:'40', fuelFull:'190', fuelUseable:'182', fuelToTabs:'60',
       fuelFullUsg:'48', fuelTabsUsg:'34', oilMin:'6',
-      pwrClimbInit:'Full &middot; 85-90 kt',
-      pwrClimbNorm:'25" / 2500 &middot; 87 kt',
-      pwrCruise:'22" / 2400 &middot; 120 kt',
-      pwrDescent:'18" / 2400 &middot; 130 kt',
-      pwrHold:'22" / 2400 &middot; 120 kt',
-      pwrFinal:'18" / 2400 &middot; 90 kt (Gear DN &middot; 2 stages flap)'
+      pwrClimbInitMap:'FULL', pwrClimbInitRpm:'FULL', pwrClimbInitSpd:'85-90',
+      pwrClimbNormMap:'25',   pwrClimbNormRpm:'2500', pwrClimbNormSpd:'87',
+      pwrCruiseMap:'22',      pwrCruiseRpm:'2400',    pwrCruiseSpd:'120',
+      pwrDescentMap:'18',     pwrDescentRpm:'2400',   pwrDescentSpd:'130',
+      pwrHoldMap:'22',        pwrHoldRpm:'2400',      pwrHoldSpd:'120',
+      pwrFinalMap:'18',       pwrFinalRpm:'2400',     pwrFinalSpd:'90'
+    },
+    // PA28-161 Warrior II — fixed-pitch prop, no MAP gauge
+    'PA28 Warrior': {
+      vne:'154', vno:'129', vfe:'103', vlo:'', vle:'',
+      vaMax:'111', vaLight:'88', xwind:'17',
+      vs:'50', vso:'44',
+      vr:'55', vy:'79', vyGear:'', vx:'63', vxGear:'',
+      vcClimb:'87', vGlide:'73', vCruise:'108',
+      vInitApp:'75', vApp40:'65', vFlapless:'75', vRef:'65', vLift:'55',
+      fuelFlow:'30', fuelFull:'182', fuelUseable:'182', fuelToTabs:'128',
+      fuelFullUsg:'48', fuelTabsUsg:'34', oilMin:'6',
+      pwrClimbInitMap:'', pwrClimbInitRpm:'2700', pwrClimbInitSpd:'79',
+      pwrClimbNormMap:'', pwrClimbNormRpm:'2500', pwrClimbNormSpd:'87',
+      pwrCruiseMap:'',    pwrCruiseRpm:'2400',    pwrCruiseSpd:'108',
+      pwrDescentMap:'',   pwrDescentRpm:'2200',   pwrDescentSpd:'120',
+      pwrHoldMap:'',      pwrHoldRpm:'2200',      pwrHoldSpd:'90',
+      pwrFinalMap:'',     pwrFinalRpm:'1800',     pwrFinalSpd:'70'
+    },
+    // PA28R-201 Arrow III — constant-speed prop, retractable gear
+    'PA28 Arrow': {
+      vne:'174', vno:'148', vfe:'103', vlo:'129', vle:'129',
+      vaMax:'118', vaLight:'100', xwind:'17',
+      vs:'55', vso:'55',
+      vr:'60', vy:'90', vyGear:'', vx:'78', vxGear:'',
+      vcClimb:'90', vGlide:'79', vCruise:'135',
+      vInitApp:'85', vApp40:'75', vFlapless:'85', vRef:'75', vLift:'55',
+      fuelFlow:'42', fuelFull:'284', fuelUseable:'265', fuelToTabs:'174',
+      fuelFullUsg:'75', fuelTabsUsg:'46', oilMin:'6',
+      pwrClimbInitMap:'FULL', pwrClimbInitRpm:'2700', pwrClimbInitSpd:'90',
+      pwrClimbNormMap:'25',   pwrClimbNormRpm:'2500', pwrClimbNormSpd:'95',
+      pwrCruiseMap:'23',      pwrCruiseRpm:'2400',    pwrCruiseSpd:'135',
+      pwrDescentMap:'18',     pwrDescentRpm:'2400',   pwrDescentSpd:'135',
+      pwrHoldMap:'22',        pwrHoldRpm:'2400',      pwrHoldSpd:'120',
+      pwrFinalMap:'15',       pwrFinalRpm:'2400',     pwrFinalSpd:'80'
+    },
+    // Cessna 172N Skyhawk — fixed-pitch prop, fixed gear
+    'C172': {
+      vne:'158', vno:'129', vfe:'85',
+      vaMax:'105', vaLight:'90', xwind:'15',
+      vs:'47', vso:'40',
+      vr:'55', vy:'74', vyGear:'', vx:'62', vxGear:'',
+      vcClimb:'80', vGlide:'65', vCruise:'122',
+      vInitApp:'70', vApp40:'60', vFlapless:'70', vRef:'60', vLift:'55',
+      fuelFlow:'30', fuelFull:'159', fuelUseable:'150', fuelToTabs:'106',
+      fuelFullUsg:'42', fuelTabsUsg:'28', oilMin:'5',
+      pwrClimbInitMap:'', pwrClimbInitRpm:'2500', pwrClimbInitSpd:'74',
+      pwrClimbNormMap:'', pwrClimbNormRpm:'2400', pwrClimbNormSpd:'80',
+      pwrCruiseMap:'',    pwrCruiseRpm:'2400',    pwrCruiseSpd:'105',
+      pwrDescentMap:'',   pwrDescentRpm:'2200',   pwrDescentSpd:'100',
+      pwrHoldMap:'',      pwrHoldRpm:'2000',      pwrHoldSpd:'80',
+      pwrFinalMap:'',     pwrFinalRpm:'1500',     pwrFinalSpd:'65'
     }
   };
 }
 function loadAcProfiles(){
+  var p = null;
   try {
     var raw = localStorage.getItem(AC_STORAGE_KEY);
     if(raw){
-      var p = JSON.parse(raw);
-      if(p && typeof p === 'object') return p;
+      var parsed = JSON.parse(raw);
+      if(parsed && typeof parsed === 'object') p = parsed;
     }
   } catch(e){}
-  var def = acDefaults();
-  saveAcProfiles(def);
-  return def;
+  if(!p) p = {};
+  // Merge in any built-in defaults the user doesn't have yet — leaves existing
+  // profiles (including any edits) untouched, but seeds newly-added ones.
+  var defaults = acDefaults();
+  var changed = false;
+  Object.keys(defaults).forEach(function(name){
+    if(!p[name]){ p[name] = defaults[name]; changed = true; }
+  });
+  if(changed) saveAcProfiles(p);
+  return p;
 }
 function saveAcProfiles(p){
   try { localStorage.setItem(AC_STORAGE_KEY, JSON.stringify(p)); } catch(e){}
@@ -5800,30 +6318,105 @@ function clAircraftRefEl(){
       byCat[cat].push(f);
     });
     var prof = profiles[selected] || {};
+    // Conversion factors: KIAS/kt→mph, L→USG, USG→L, L/hr→GPH (USG/hr).
+    // Returns {unit, factor} where value_in_conv_unit = value * factor.
+    function convertMap(unit){
+      if(unit === 'KIAS' || unit === 'kt') return { unit:'mph',    factor:1.15078 };
+      if(unit === 'L')                     return { unit:'USG',    factor:0.264172 };
+      if(unit === 'USG')                   return { unit:'L',      factor:3.78541 };
+      if(unit === 'L/hr')                  return { unit:'USG/hr', factor:0.264172 };
+      return null;
+    }
+    function fmtConv(n){ return isNaN(n) ? '' : String(Math.round(n * 100) / 100); }
     Object.keys(byCat).forEach(function(cat){
       var sect = document.createElement('div');
       sect.style.cssText = 'margin-bottom:16px';
       sect.innerHTML =
         '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:14px;color:#1e3a8a;padding:6px 10px;background:rgba(30,58,138,.08);border-left:4px solid #1e3a8a;border-radius:0 6px 6px 0;margin-bottom:8px">'+cat+'</div>';
       var grid = document.createElement('div');
-      grid.style.cssText = 'display:grid;grid-template-columns:1fr auto auto;gap:6px 10px;align-items:center;font-family:JetBrains Mono,monospace;font-size:13px';
+      grid.style.cssText = 'display:flex;flex-direction:column;gap:3px;font-family:JetBrains Mono,monospace;font-size:13px';
       byCat[cat].forEach(function(f){
         var key = f[0], label = f[1], unit = f[2];
         var val = prof[key] || '';
-        grid.innerHTML +=
-          '<div style="color:var(--text);padding:4px 0">'+label+'</div>'+
-          '<input class="inp acr-fld" data-k="'+key+'" value="'+escapeHtml(val)+'" style="width:150px;padding:5px 8px;font-size:13px;text-align:right;font-family:JetBrains Mono,monospace"/>'+
+        var cv  = convertMap(unit);
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:3px 0;flex-wrap:wrap';
+        var mainHtml =
+          '<div style="flex:1;min-width:0;color:var(--text);font-size:13px;line-height:1.3">'+label+'</div>'+
+          '<input class="inp acr-fld" data-k="'+key+'"'+(cv?' data-conv-factor="'+cv.factor+'"':'')+' value="'+escapeHtml(val)+'" style="width:52px;padding:5px 6px;font-size:13px;text-align:right;font-family:JetBrains Mono,monospace"/>'+
           '<div style="color:var(--muted);font-size:11px;min-width:34px">'+unit+'</div>';
+        if(cv){
+          var num = parseFloat(val);
+          var convVal = isNaN(num) ? '' : fmtConv(num * cv.factor);
+          mainHtml +=
+            '<input class="inp acr-conv" data-k="'+key+'" data-conv-factor="'+cv.factor+'" value="'+escapeHtml(convVal)+'" style="width:52px;padding:5px 6px;font-size:13px;text-align:right;font-family:JetBrains Mono,monospace"/>'+
+            '<div style="color:var(--muted);font-size:11px;min-width:40px">'+cv.unit+'</div>';
+        }
+        row.innerHTML = mainHtml;
+        grid.appendChild(row);
       });
       sect.appendChild(grid);
       wrap.appendChild(sect);
     });
-    // Save on every input
+    // Power Settings section — special layout (MAP / RPM / Speed per phase)
+    var pwrSect = document.createElement('div');
+    pwrSect.style.cssText = 'margin-bottom:16px';
+    pwrSect.innerHTML =
+      '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:14px;color:#1e3a8a;padding:6px 10px;background:rgba(30,58,138,.08);border-left:4px solid #1e3a8a;border-radius:0 6px 6px 0;margin-bottom:8px">Power Settings</div>'+
+      // Column headers
+      '<div style="display:grid;grid-template-columns:1fr 52px 52px 52px 52px;gap:4px 8px;align-items:center;font-family:JetBrains Mono,monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;padding:0 4px">'+
+        '<div>Phase</div><div style="text-align:right">MAP (")</div><div style="text-align:right">RPM</div><div style="text-align:right">Kt</div><div style="text-align:right">Mph</div>'+
+      '</div>';
+    var pwrGrid = document.createElement('div');
+    pwrGrid.style.cssText = 'display:grid;grid-template-columns:1fr 52px 52px 52px 52px;gap:4px 8px;align-items:center;font-family:JetBrains Mono,monospace;font-size:13px';
+    PWR_PHASES.forEach(function(row){
+      var base = row[0], label = row[1];
+      pwrGrid.innerHTML += '<div style="color:var(--text);padding:4px 0">'+label+'</div>';
+      ['Map','Rpm','Spd'].forEach(function(sub){
+        var k = base + sub;
+        var v = prof[k] || '';
+        var extra = (sub === 'Spd') ? ' data-conv-factor="1.15078"' : '';
+        pwrGrid.innerHTML += '<input class="inp acr-fld" data-k="'+k+'"'+extra+' value="'+escapeHtml(v)+'" style="width:100%;padding:5px 6px;font-size:12px;text-align:right;font-family:JetBrains Mono,monospace"/>';
+      });
+      // Speed (mph) — bidirectional conversion of the Spd column
+      var spdK = base + 'Spd';
+      var spdV = prof[spdK] || '';
+      var spdNum = parseFloat(spdV);
+      var spdMph = isNaN(spdNum) ? '' : fmtConv(spdNum * 1.15078);
+      pwrGrid.innerHTML += '<input class="inp acr-conv" data-k="'+spdK+'" data-conv-factor="1.15078" value="'+escapeHtml(spdMph)+'" style="width:100%;padding:5px 6px;font-size:12px;text-align:right;font-family:JetBrains Mono,monospace"/>';
+    });
+    pwrSect.appendChild(pwrGrid);
+    wrap.appendChild(pwrSect);
+    // Save on every input (primary field). Also refresh any paired .acr-conv display.
     wrap.querySelectorAll('.acr-fld').forEach(function(inp){
       inp.addEventListener('input', function(){
+        var k = inp.getAttribute('data-k');
         if(!profiles[selected]) profiles[selected] = {};
-        profiles[selected][inp.getAttribute('data-k')] = inp.value;
+        profiles[selected][k] = inp.value;
         saveAcProfiles(profiles);
+        var factor = parseFloat(inp.getAttribute('data-conv-factor'));
+        if(factor && !isNaN(factor)){
+          var convEl = wrap.querySelector('.acr-conv[data-k="'+k+'"]');
+          if(convEl){
+            var n = parseFloat(inp.value);
+            convEl.value = isNaN(n) ? '' : fmtConv(n * factor);
+          }
+        }
+      });
+    });
+    // Reverse binding — editing the converted value updates the primary field
+    wrap.querySelectorAll('.acr-conv').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var k = inp.getAttribute('data-k');
+        var factor = parseFloat(inp.getAttribute('data-conv-factor'));
+        if(!factor || isNaN(factor)) return;
+        var n = parseFloat(inp.value);
+        var back = isNaN(n) ? '' : fmtConv(n / factor);
+        if(!profiles[selected]) profiles[selected] = {};
+        profiles[selected][k] = back;
+        saveAcProfiles(profiles);
+        var srcEl = wrap.querySelector('.acr-fld[data-k="'+k+'"]');
+        if(srcEl) srcEl.value = back;
       });
     });
     // Switch aircraft
@@ -5834,38 +6427,41 @@ function clAircraftRefEl(){
     });
     // Add new profile
     qs('#acr-add', wrap).addEventListener('click', function(){
-      var name = prompt('New aircraft name / registration:');
-      if(!name || !name.trim()) return;
-      name = name.trim();
-      if(profiles[name]){ alert('Already exists'); return; }
-      profiles[name] = {}; // blank
-      saveAcProfiles(profiles);
-      selected = name;
-      localStorage.setItem(AC_SELECTED_KEY, selected);
-      build();
+      inlinePrompt('New aircraft name / registration:', '', function(name){
+        if(!name || !name.trim()) return;
+        name = name.trim();
+        if(profiles[name]){ toast('That name already exists'); return; }
+        profiles[name] = {}; // blank
+        saveAcProfiles(profiles);
+        selected = name;
+        localStorage.setItem(AC_SELECTED_KEY, selected);
+        build();
+      });
     });
     // Rename
     qs('#acr-rename', wrap).addEventListener('click', function(){
-      var name = prompt('Rename '+selected+' to:', selected);
-      if(!name || !name.trim() || name === selected) return;
-      name = name.trim();
-      if(profiles[name]){ alert('That name already exists'); return; }
-      profiles[name] = profiles[selected];
-      delete profiles[selected];
-      saveAcProfiles(profiles);
-      selected = name;
-      localStorage.setItem(AC_SELECTED_KEY, selected);
-      build();
+      inlinePrompt('Rename '+selected+' to:', selected, function(name){
+        if(!name || !name.trim() || name === selected) return;
+        name = name.trim();
+        if(profiles[name]){ toast('That name already exists'); return; }
+        profiles[name] = profiles[selected];
+        delete profiles[selected];
+        saveAcProfiles(profiles);
+        selected = name;
+        localStorage.setItem(AC_SELECTED_KEY, selected);
+        build();
+      });
     });
     // Delete
     qs('#acr-delete', wrap).addEventListener('click', function(){
-      if(Object.keys(profiles).length <= 1){ alert('Cannot delete the only aircraft'); return; }
-      if(!confirm('Delete profile: '+selected+' ?')) return;
-      delete profiles[selected];
-      saveAcProfiles(profiles);
-      selected = Object.keys(profiles)[0];
-      localStorage.setItem(AC_SELECTED_KEY, selected);
-      build();
+      if(Object.keys(profiles).length <= 1){ toast('Cannot delete the only aircraft'); return; }
+      inlineConfirm('Delete profile: '+selected+' ?', function(){
+        delete profiles[selected];
+        saveAcProfiles(profiles);
+        selected = Object.keys(profiles)[0];
+        localStorage.setItem(AC_SELECTED_KEY, selected);
+        build();
+      });
     });
   }
   build();
@@ -6004,10 +6600,10 @@ function renderClDetail(){
     dlFile(cl.title.replace(/\s+/g,'_')+'.txt',lines.join('\n')); toast('Exported');
   });
   qs('#cl-del',box).addEventListener('click',function(){
-    if(confirm('Delete this checklist?')){
+    inlineConfirm('Delete this checklist?', function(){
       checklists=checklists.filter(function(x){ return x.id!==cl.id; });
       clSave(); clActive=null; renderClList(); renderClDetail(); toast('Deleted');
-    }
+    });
   });
 }
 
@@ -6092,10 +6688,10 @@ function renderLsDetail(){
   el2.appendChild(box);
   qs('#ls-edit',box).addEventListener('click',function(){ openLsModal(ls); });
   qs('#ls-del',box).addEventListener('click',function(){
-    if(confirm('Delete?')){
+    inlineConfirm('Delete this lesson plan?', function(){
       lessons=lessons.filter(function(x){ return x.id!==ls.id; });
       lsSave(); lsActive=null; renderLsList(); renderLsDetail(); toast('Deleted');
-    }
+    });
   });
   qs('#ls-exp',box).addEventListener('click',function(){
     dlFile(ls.title.replace(/\s+/g,'_')+'_lesson.txt',
@@ -6195,10 +6791,10 @@ function renderRfDetail(){
   el2.appendChild(box);
   qs('#rf-edit',box).addEventListener('click',function(){ openRfModal(rf); });
   qs('#rf-del',box).addEventListener('click',function(){
-    if(confirm('Delete?')){
+    inlineConfirm('Delete this reference?', function(){
       refs=refs.filter(function(x){ return x.id!==rf.id; });
       rfSave(); rfActive=null; renderRfList(); renderRfDetail(); toast('Deleted');
-    }
+    });
   });
   qs('#rf-exp',box).addEventListener('click',function(){
     dlFile(rf.title.replace(/\s+/g,'_')+'_ref.txt',['REFERENCE: '+rf.title,'Category: '+rf.category,'',rf.content].join('\n'));
@@ -6521,11 +7117,12 @@ function openScribbleForFlight(f, fieldKey, onSaved){
     img.src = prev;
   });
   bar.querySelector('#sc-clear').addEventListener('click', function(){
-    if(!confirm('Clear the entire scribble page?')) return;
-    var r = canvasWrap.getBoundingClientRect();
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.clearRect(0, 0, r.width, r.height);
-    snapshot();
+    inlineConfirm('Clear the entire scribble page?', function(){
+      var r = canvasWrap.getBoundingClientRect();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.clearRect(0, 0, r.width, r.height);
+      snapshot();
+    });
   });
 
   bar.querySelector('#sc-close').addEventListener('click', function(){
