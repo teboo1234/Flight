@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%2C-apple-system%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
-<title>FlightDeck v197</title>
+<title>FlightDeck v216</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -93,7 +93,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 /* Colour-coded section cards used in the detail view and modal.
    Each section gets one accent colour applied to its left border,
    tinted background, and header label. */
-.scard{border-radius:11px;padding:18px;margin-bottom:36px;border-left-width:5px;border-left-style:solid;border-top:1px solid;border-right:1px solid;border-bottom:1px solid;box-shadow:0 2px 6px rgba(15,23,42,.06)}
+.scard{border-radius:11px;padding:18px;margin-bottom:36px;border-top:1px solid;border-bottom:1px solid;box-shadow:0 2px 6px rgba(15,23,42,.06)}
 .scard:last-child{margin-bottom:0}
 .scard-head{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid currentColor;display:flex;align-items:center;gap:8px}
 .scard-head .ico{font-size:18px}
@@ -190,6 +190,37 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 @media(max-width:640px){
   .panes{flex-direction:column}.sidebar{width:100%;max-height:200px}
   .logo-sub{display:none}.g2,.g3,.g4{grid-template-columns:1fr}
+  .hdr{padding:0 10px}
+  main{padding:12px 10px}
+  .mbody{padding:12px}
+  .scard{padding:12px}
+}
+
+/* Side (left/right) borders throughout the app were purely decorative accent
+   stripes and ate into usable width on narrow phone screens — state is still
+   conveyed via background tint and top/bottom borders, so drop them here. */
+[style*="border-left"]{ border-left: none !important; }
+[style*="border-right"]{ border-right: none !important; }
+
+/* ── Readiness Checklist tab ── */
+.rd-tabbar{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid var(--border)}
+.rd-tab{flex:1;padding:8px 4px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;color:var(--muted);margin-bottom:-1px}
+.rd-tab.on{background:var(--sky);color:#fff;border-color:var(--sky)}
+.rd-section{margin-bottom:12px}
+.rd-section-head{padding:7px 0 5px 0;cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px;list-style:none;font-family:'JetBrains Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--sky);border-bottom:1px solid rgba(3,105,161,.2);-webkit-tap-highlight-color:transparent}
+.rd-section-head .rd-title{flex:1;min-width:0;font-weight:700}
+.rd-section-head .rd-count{font-weight:700;flex:0 0 auto}
+.rd-section-body{padding:8px 2px 4px}
+@media print{
+  body *{visibility:hidden}
+  #tab-readiness, #tab-readiness *{visibility:visible}
+  header, .rd-toolbar, .rd-tabbar{display:none !important}
+  #tab-readiness{position:absolute;left:0;top:0;width:100%}
+  #rd-root{max-width:100%!important}
+  details.rd-section{display:block!important}
+  @page{size:210mm 297mm;margin:12mm}
+  .rd-print-page{page-break-before:always}
+  .rd-print-page:first-child{page-break-before:auto}
 }
 </style>
 </head>
@@ -200,10 +231,11 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v197</span>
+      <span class="logo-sub">v216</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
+      <button class="tb" data-tab="readiness">&#10003; Readiness</button>
     </nav>
     <button class="btn btn-g" id="settings-btn" style="font-size:13px;padding:4px 10px;flex-shrink:0">&#9881; Settings</button>
     <button class="pwa-btn" id="install-btn">&#8595; Install</button>
@@ -244,6 +276,9 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
   </div>
   <div class="panel" id="tab-references" style="display:none">
     <input id="rf-search"/><div id="rf-filter"></div><div id="rf-list"></div><button id="rf-new"></button><div id="rf-detail"></div>
+  </div>
+  <div class="panel" id="tab-readiness">
+    <div id="rd-root" style="flex:1;overflow-y:auto;max-width:900px;margin:0 auto;width:100%;padding-bottom:20px"></div>
   </div>
 </main>
 </div>
@@ -1201,6 +1236,27 @@ function decToHM(d){
   if(d===null||d===undefined||isNaN(d)) return '--';
   var h=Math.floor(d), m=Math.round((d-h)*60);
   return h+':'+(m<10?'0':'')+m;
+}
+
+// Altitude values that support an FL/ft display toggle (e.g. planned cruise
+// level) are always stored canonically in feet. These helpers convert for
+// display and for keypad entry in either direction.
+function altFtToFL(ft){
+  var n = parseFloat(ft);
+  if(isNaN(n)) return '';
+  return String(Math.round(n/100));
+}
+function altFLToFt(fl){
+  var n = parseFloat(fl);
+  if(isNaN(n)) return '';
+  return String(Math.round(n*100));
+}
+function altDisplay(ft, unit){
+  if(ft === '' || ft === undefined || ft === null) return '';
+  var n = parseFloat(ft);
+  if(isNaN(n)) return '';
+  if(unit === 'FL') return 'FL' + ('00'+Math.round(n/100)).slice(-3);
+  return Math.round(n) + ' ft';
 }
 
 // decimal -> 2dp string
@@ -2617,21 +2673,32 @@ function openFlModal(ex){
       '<button type="button" id="m-tab-times" class="m-tab" style="padding:8px 6px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:12px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#0e7490">Times</button>'+
       '<button type="button" id="m-tab-wx" class="m-tab" style="padding:8px 6px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:12px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#6d28d9">Weather</button>'+
       '<button type="button" id="m-tab-fuel" class="m-tab" style="padding:8px 6px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:12px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#b45309">Fuel</button>'+
+      '<button type="button" id="m-tab-skilltest" class="m-tab" style="padding:8px 6px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:12px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#166534">Skill Test</button>'+
     '</div>'+
     '<div id="m-section-info" class="scard s-info">'+
       '<div class="scard-head"><span class="ico">&#9992;</span> Flight Info</div>'+
 
-    '<div class="sdiv">Frequencies (117.975 &ndash; 137.000 MHz &middot; 8.33 kHz)</div>'+
+    '<div style="display:flex;gap:2px;margin-bottom:14px;border-bottom:2px solid rgba(30,58,138,.3)">'+
+      '<button type="button" id="m-info-tab-radio" class="m-info-tab m-info-tab-on" style="padding:9px 4px;background:none;border:none;border-bottom:3px solid #1e3a8a;color:#1e3a8a;font-weight:800;font-size:14px;font-family:Syne,sans-serif;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1">Radio</button>'+
+      '<button type="button" id="m-info-tab-atis" class="m-info-tab" style="padding:9px 4px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-weight:700;font-size:14px;font-family:Syne,sans-serif;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1">ATIS</button>'+
+      '<button type="button" id="m-info-tab-details" class="m-info-tab" style="padding:9px 4px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-weight:700;font-size:14px;font-family:Syne,sans-serif;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1">Details</button>'+
+    '</div>'+
+
+    '<div id="m-info-radio">'+
+    '<div class="sdiv" style="margin-top:0">Frequencies (117.975 &ndash; 137.000 MHz &middot; 8.33 kHz)</div>'+
     '<div id="m-freq-container" style="display:flex;flex-direction:column;gap:4px;margin-bottom:6px"></div>'+
     '<button type="button" class="btn btn-g" id="m-freq-add" style="padding:4px 12px;font-size:12px;margin-bottom:12px">+ Add Frequency</button>'+
+    '</div>'+
 
-    '<div class="sdiv">Scribble &amp; Notes</div>'+
-    '<div class="field"><label>ATIS</label>'+
+    '<div id="m-info-atis" style="display:none">'+
+    '<div class="field" style="margin-bottom:0"><label>ATIS</label>'+
       '<div id="m-atis-readback" style="display:none;margin-bottom:10px;padding:12px 14px;background:rgba(4,120,87,.08);border:1px solid rgba(4,120,87,.3);border-radius:9px;font-family:JetBrains Mono,monospace;font-size:14px;color:#047857;line-height:1.6;white-space:pre-wrap;font-weight:600"></div>'+
       '<div id="m-atis-container"></div>'+
     '</div>'+
+    '</div>'+
 
-    '<div class="sdiv">Flight Details</div>'+
+    '<div id="m-info-details" style="display:none">'+
+    '<div class="sdiv" style="margin-top:0">Flight Details</div>'+
     '<div class="field"><label>Date</label>'+
       '<div style="display:flex;gap:4px">'+
         '<input class="inp" id="m-date" type="date" value="'+(f.date||'')+'" style="flex:1"/>'+
@@ -2689,6 +2756,7 @@ function openFlModal(ex){
     '</div>'+
     '<div class="field"><label>Planned Takeoff</label>'+timeSpinnerHtml('m-pTakeoff', f.pTakeoff)+'</div>'+
     '<div class="field"><label>Planned Landing</label>'+timeSpinnerHtml('m-pLanding', f.pLanding)+'</div>'+
+    '</div>'+ // close #m-info-details
 
     '</div>'+ // close #m-section-info (will reopen Other after fuel section)
 
@@ -2798,7 +2866,25 @@ function openFlModal(ex){
     '<div id="m-section-wx" class="scard s-wx" style="display:none">'+
       '<div class="scard-head"><span class="ico">&#9925;</span> Weather</div>'+
     '<div class="sdiv">Planning</div>'+
-    '<div class="field"><label>TAS (kt)</label><input class="inp" id="m-wxTAS" type="number" step="1" placeholder="90" value="'+(f.wxTAS||'')+'"/></div>'+
+    '<div style="display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin-bottom:10px">'+
+      '<div class="field" style="margin-bottom:0;flex:0 0 74px"><label>TAS (kt)</label><input class="inp" id="m-wxTAS" type="number" step="1" placeholder="90" value="'+(f.wxTAS||'')+'"/></div>'+
+      '<div style="flex:1 1 200px;min-width:200px;background:rgba(3,105,161,.06);border:1px solid rgba(3,105,161,.25);border-radius:9px;padding:10px">'+
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
+          '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:#0369a1;text-transform:uppercase;letter-spacing:.08em">Pressure Setting &Delta; (auto)</div>'+
+          '<button type="button" id="m-wxQnhRefresh" style="padding:3px 10px;font-size:11px;font-weight:700;font-family:JetBrains Mono,monospace;background:transparent;color:#0369a1;border:1px solid #0369a1;border-radius:5px;cursor:pointer;-webkit-tap-highlight-color:transparent">&#8635; Refresh</button>'+
+        '</div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:JetBrains Mono,monospace">'+
+          '<div style="display:flex;flex-direction:column">'+
+            '<span style="font-size:11px;color:var(--muted);text-transform:uppercase">QNH (source)</span>'+
+            '<span id="m-wxQnhSrc" class="calc-num" style="color:#0369a1;font-size:15px;font-weight:700">--</span>'+
+          '</div>'+
+          '<div style="display:flex;flex-direction:column">'+
+            '<span style="font-size:11px;color:var(--muted);text-transform:uppercase">1013 setting reads</span>'+
+            '<span id="m-wxQnhDiff" class="calc-num" style="color:#0369a1;font-size:15px;font-weight:700">--</span>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
     '<div style="background:rgba(109,40,217,.06);border:1px solid rgba(109,40,217,.25);border-radius:9px;padding:12px;margin-bottom:10px">'+
       '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:#6d28d9;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Winds Aloft (auto)</div>'+
       '<div style="display:grid;grid-template-columns:74px 1fr 1fr 1fr;gap:6px 8px;align-items:baseline;font-family:JetBrains Mono,monospace;font-size:12px">'+
@@ -2813,23 +2899,6 @@ function openFlModal(ex){
             '<div class="calc-num" id="m-wxTempDisp'+k+'" style="color:#0369a1;font-size:14px;text-align:right;font-weight:700">--</div>'+
             '<div class="calc-num" id="m-wxIsa'+k+'" style="color:#b45309;font-size:14px;text-align:right;font-weight:700">--</div>';
         }).join('')+
-      '</div>'+
-    '</div>'+
-
-    '<div style="background:rgba(3,105,161,.06);border:1px solid rgba(3,105,161,.25);border-radius:9px;padding:12px;margin-bottom:10px">'+
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
-        '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:#0369a1;text-transform:uppercase;letter-spacing:.08em">Pressure Setting &Delta; (auto)</div>'+
-        '<button type="button" id="m-wxQnhRefresh" style="padding:3px 10px;font-size:11px;font-weight:700;font-family:JetBrains Mono,monospace;background:transparent;color:#0369a1;border:1px solid #0369a1;border-radius:5px;cursor:pointer;-webkit-tap-highlight-color:transparent">&#8635; Refresh</button>'+
-      '</div>'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:JetBrains Mono,monospace">'+
-        '<div style="display:flex;flex-direction:column">'+
-          '<span style="font-size:11px;color:var(--muted);text-transform:uppercase">QNH (source)</span>'+
-          '<span id="m-wxQnhSrc" class="calc-num" style="color:#0369a1;font-size:15px;font-weight:700">--</span>'+
-        '</div>'+
-        '<div style="display:flex;flex-direction:column">'+
-          '<span style="font-size:11px;color:var(--muted);text-transform:uppercase">1013 setting reads</span>'+
-          '<span id="m-wxQnhDiff" class="calc-num" style="color:#0369a1;font-size:15px;font-weight:700">--</span>'+
-        '</div>'+
       '</div>'+
     '</div>'+
 
@@ -2890,13 +2959,26 @@ function openFlModal(ex){
     '<div class="sdiv" style="margin-top:14px">Weather Calculations</div>'+
     '<div id="m-wxCalcGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px">'+
       [
-        ['flightplanning.planCruise.val','Planned cruise', 'ft'],
-        ['weather.fl.val',   'Freezing level', 'ft'],
-        ['weather.cbase.val','Cloud base',     'ft'],
-        ['weather.ctop.val', 'Cloud top',      'ft']
+        ['flightplanning.planCruise.val','Planned cruise', 'ft', true],
+        ['weather.fl.val',   'Freezing level', 'ft', false],
+        ['weather.cbase.val','Cloud base',     'ft', false],
+        ['weather.ctop.val', 'Cloud top',      'ft', false]
       ].map(function(row){
-        var k = row[0], lbl = row[1], u = row[2];
+        var k = row[0], lbl = row[1], u = row[2], hasToggle = row[3];
         var v = (f.checklistInputs && f.checklistInputs[k]) || '';
+        if(hasToggle){
+          var dispUnit = (f.checklistInputs && f.checklistInputs[k+'.unit']) || u;
+          var dispVal = v ? (dispUnit==='FL' ? altFtToFL(v) : String(Math.round(parseFloat(v)))) : '';
+          return '<div class="field" style="margin-bottom:0">'+
+            '<label style="font-size:10px;display:flex;justify-content:space-between;align-items:center">'+
+              '<span>'+lbl+'</span>'+
+              '<span class="wx-unit-toggle-grp" data-wxk="'+k+'" style="display:inline-flex;border-radius:5px;overflow:hidden">'+
+                '<button type="button" class="wx-unit-toggle" data-set-unit="ft" style="padding:1px 6px;font-size:9px;font-family:JetBrains Mono,monospace;font-weight:800;border:none;cursor:pointer;background:'+(dispUnit==='ft'?'#0369a1':'transparent')+';color:'+(dispUnit==='ft'?'#fff':'#0369a1')+'">FT</button>'+
+                '<button type="button" class="wx-unit-toggle" data-set-unit="FL" style="padding:1px 6px;font-size:9px;font-family:JetBrains Mono,monospace;font-weight:800;border:none;cursor:pointer;background:'+(dispUnit==='FL'?'#0369a1':'transparent')+';color:'+(dispUnit==='FL'?'#fff':'#0369a1')+'">FL</button>'+
+              '</span>'+
+            '</label>'+
+            '<input class="inp m-wxCalc" data-clk="'+k+'" data-toggle="1" type="number" step="1" placeholder="--" value="'+escapeHtml(dispVal)+'"/></div>';
+        }
         return '<div class="field" style="margin-bottom:0"><label style="font-size:10px">'+lbl+' ('+u+')</label>'+
           '<input class="inp m-wxCalc" data-clk="'+k+'" type="number" step="1" placeholder="--" value="'+escapeHtml(v)+'"/></div>';
       }).join('')+
@@ -3051,17 +3133,16 @@ function openFlModal(ex){
     '</div>'+
     '</div>'+ // close #m-section-fuel
 
+    '<div id="m-section-skilltest" class="scard" style="display:none;background:rgba(22,101,52,.05);border-color:rgba(22,101,52,.2);border-left-color:#166534">'+
+      '<div class="scard-head" style="color:#166534"><span class="ico">&#10003;</span> Skill Test <span style="font-weight:400;font-size:12px;color:var(--muted);margin-left:8px;letter-spacing:.05em">SRG2128 sections demonstrated this flight</span></div>'+
+      '<div id="m-skilltest-body"></div>'+
+    '</div>'+
+
     '<div id="m-section-info-extra">'+
 
     '<div class="scard s-defects">'+
       '<div class="scard-head"><span class="ico">&#9888;</span> Defects</div>'+
       '<textarea class="inp" id="m-defects" rows="3" placeholder="None / list any aircraft defects, snags or issues">'+(f.defects||'')+'</textarea>'+
-    '</div>'+
-
-    '<div class="scard s-notes">'+
-      '<div class="scard-head"><span class="ico">&#9998;</span> Notes</div>'+
-      '<div class="field"><label>Maneuvers / Exercises</label><textarea class="inp" id="m-maneuvers" rows="3">'+(f.maneuvers||'')+'</textarea></div>'+
-      '<div class="field"><label>Instructor Notes</label><textarea class="inp" id="m-notes" rows="3">'+(f.notes||'')+'</textarea></div>'+
     '</div>'+
 
     '</div>';
@@ -3074,7 +3155,8 @@ function openFlModal(ex){
       cl: [qs('#m-section-cl',div)],
       times: [qs('#m-section-times',div)],
       wx: [qs('#m-section-wx',div)],
-      fuel: [qs('#m-section-fuel',div)]
+      fuel: [qs('#m-section-fuel',div)],
+      syllabus: [qs('#m-section-skilltest',div)]
     };
     var btns={
       info: qs('#m-tab-info',div),
@@ -3082,7 +3164,8 @@ function openFlModal(ex){
       cl: qs('#m-tab-cl',div),
       times: qs('#m-tab-times',div),
       wx: qs('#m-tab-wx',div),
-      fuel: qs('#m-tab-fuel',div)
+      fuel: qs('#m-tab-fuel',div),
+      syllabus: qs('#m-tab-skilltest',div)
     };
     Object.keys(sections).forEach(function(k){
       sections[k].forEach(function(el){ if(el) el.style.display = (k===tab ? '' : 'none'); });
@@ -3102,13 +3185,33 @@ function openFlModal(ex){
     });
   }
   setTimeout(function(){
-    var bi=qs('#m-tab-info',div), bc=qs('#m-tab-clr',div), bcl=qs('#m-tab-cl',div), bt=qs('#m-tab-times',div), bw=qs('#m-tab-wx',div), bf=qs('#m-tab-fuel',div);
+    var bi=qs('#m-tab-info',div), bc=qs('#m-tab-clr',div), bcl=qs('#m-tab-cl',div), bt=qs('#m-tab-times',div), bw=qs('#m-tab-wx',div), bf=qs('#m-tab-fuel',div), bsy=qs('#m-tab-skilltest',div);
     if(bi) bi.addEventListener('click', function(){ switchTab('info'); });
     if(bc) bc.addEventListener('click', function(){ switchTab('clr'); });
     if(bcl) bcl.addEventListener('click', function(){ switchTab('cl'); });
     if(bt) bt.addEventListener('click', function(){ switchTab('times'); });
     if(bw) bw.addEventListener('click', function(){ switchTab('wx'); });
     if(bf) bf.addEventListener('click', function(){ switchTab('fuel'); });
+    if(bsy) bsy.addEventListener('click', function(){ switchTab('syllabus'); });
+
+    // Info tab child-tabs: Radio / ATIS / Details
+    function switchInfoTab(tab){
+      var panes={ radio:qs('#m-info-radio',div), atis:qs('#m-info-atis',div), details:qs('#m-info-details',div) };
+      var btns={ radio:qs('#m-info-tab-radio',div), atis:qs('#m-info-tab-atis',div), details:qs('#m-info-tab-details',div) };
+      Object.keys(panes).forEach(function(k){
+        if(panes[k]) panes[k].style.display = (k===tab ? '' : 'none');
+        var b=btns[k];
+        if(b){
+          if(k===tab){ b.style.color='#1e3a8a'; b.style.borderBottomColor='#1e3a8a'; b.style.fontWeight='800'; }
+          else { b.style.color='var(--muted)'; b.style.borderBottomColor='transparent'; b.style.fontWeight='700'; }
+        }
+      });
+    }
+    var bInfoRadio=qs('#m-info-tab-radio',div), bInfoAtis=qs('#m-info-tab-atis',div), bInfoDetails=qs('#m-info-tab-details',div);
+    if(bInfoRadio) bInfoRadio.addEventListener('click', function(){ switchInfoTab('radio'); });
+    if(bInfoAtis) bInfoAtis.addEventListener('click', function(){ switchInfoTab('atis'); });
+    if(bInfoDetails) bInfoDetails.addEventListener('click', function(){ switchInfoTab('details'); });
+
     // Wire all Now buttons inside the modal
     div.querySelectorAll('.m-now-btn').forEach(function(btn){
       btn.addEventListener('click', function(){
@@ -3980,7 +4083,7 @@ function openFlModal(ex){
           '</table>'+
         '</div>'+
 
-        '<div class="foot">FlightDeck v197 &middot; '+new Date().toLocaleString()+'</div>'+
+        '<div class="foot">FlightDeck v216 &middot; '+new Date().toLocaleString()+'</div>'+
         '</body></html>';
       win.document.open();
       win.document.write(html);
@@ -4371,17 +4474,59 @@ function openFlModal(ex){
   var qnhRefreshBtn = qs('#m-wxQnhRefresh', div);
   if(qnhRefreshBtn) qnhRefreshBtn.addEventListener('click', function(e){ e.preventDefault(); liveCalc(); });
   // Mirror Weather Calculations inputs into f.checklistInputs (same keys the Checklist Weather tab uses).
+  // Toggle-enabled fields (Planned cruise) store canonically in feet, but the input
+  // itself shows whichever unit (ft/FL) is currently selected.
   div.querySelectorAll('.m-wxCalc').forEach(function(inp){
     if(!f.checklistInputs) f.checklistInputs = {};
     var k = inp.getAttribute('data-clk');
+    var hasToggle = inp.getAttribute('data-toggle') === '1';
     inp.addEventListener('input', function(){
-      f.checklistInputs[k] = inp.value;
+      if(hasToggle){
+        var u = f.checklistInputs[k+'.unit'] || 'ft';
+        f.checklistInputs[k] = inp.value ? (u === 'FL' ? altFLToFt(inp.value) : inp.value) : '';
+      } else {
+        f.checklistInputs[k] = inp.value;
+      }
       var clBtn = document.querySelector('.cl-keypad-btn[data-inp-id="'+k+'"]');
       if(clBtn){
-        var u = clBtn.getAttribute('data-unit') || 'ft';
-        clBtn.textContent = inp.value ? (inp.value + ' ' + u) : ('Tap to enter '+u);
+        var btnUnit = clBtn.getAttribute('data-unit') || 'ft';
+        var ftVal = f.checklistInputs[k] || '';
+        clBtn.textContent = ftVal ? altDisplay(ftVal, btnUnit) : ('Tap to enter '+btnUnit);
       }
       recomputeCruiseFlDelta();
+    });
+  });
+  div.querySelectorAll('.wx-unit-toggle-grp').forEach(function(grp){
+    var k = grp.getAttribute('data-wxk');
+    grp.querySelectorAll('.wx-unit-toggle').forEach(function(tb){
+      tb.addEventListener('click', function(e){
+        e.stopPropagation();
+        var newUnit = tb.getAttribute('data-set-unit');
+        f.checklistInputs[k+'.unit'] = newUnit;
+        var inp = document.querySelector('.m-wxCalc[data-clk="'+k+'"]');
+        var ftVal = f.checklistInputs[k] || '';
+        if(inp) inp.value = ftVal ? (newUnit === 'FL' ? altFtToFL(ftVal) : String(Math.round(parseFloat(ftVal)))) : '';
+        grp.querySelectorAll('.wx-unit-toggle').forEach(function(sib){
+          var on = sib.getAttribute('data-set-unit') === newUnit;
+          sib.style.background = on ? '#0369a1' : 'transparent';
+          sib.style.color = on ? '#fff' : '#0369a1';
+        });
+        // Keep the Checklist tab's own toggle in sync too
+        var clGrp = document.querySelector('.cl-unit-toggle-grp[data-inp-id="'+k+'"]');
+        if(clGrp){
+          clGrp.querySelectorAll('.cl-unit-toggle').forEach(function(sib){
+            var on = sib.getAttribute('data-set-unit') === newUnit;
+            sib.style.background = on ? '#0369a1' : 'transparent';
+            sib.style.color = on ? '#fff' : '#0369a1';
+          });
+        }
+        // Keep the Checklist tab's own keypad button label in sync too
+        var clBtn = document.querySelector('.cl-keypad-btn[data-inp-id="'+k+'"]');
+        if(clBtn){
+          var btnUnit = clBtn.getAttribute('data-unit') || 'ft';
+          clBtn.textContent = ftVal ? altDisplay(ftVal, btnUnit) : ('Tap to enter '+btnUnit);
+        }
+      });
     });
   });
   function recomputeCruiseFlDelta(){
@@ -4443,6 +4588,10 @@ function openFlModal(ex){
   // Checklist tab — render on modal open
   var clBody = qs('#m-cl-body', div);
   if(clBody) renderChecklistTab(f, clBody);
+
+  // Skill Test tab — render on modal open
+  var syBody = qs('#m-skilltest-body', div);
+  if(syBody) renderSkillTestTab(f, syBody);
 
   if(ex) setTimeout(liveCalc,0);
 
@@ -4581,6 +4730,7 @@ function openFlModal(ex){
           saveDraft(false);
           toast('Saved as draft');
           if(autoSaveTimer){ clearInterval(autoSaveTimer); autoSaveTimer=null; }
+          _clStopAirborneFlash();
           closeModal();
         }
       },
@@ -4597,7 +4747,7 @@ function openFlModal(ex){
         }
       }
     ],
-    onClose: function(){ if(autoSaveTimer){ clearInterval(autoSaveTimer); autoSaveTimer=null; } },
+    onClose: function(){ if(autoSaveTimer){ clearInterval(autoSaveTimer); autoSaveTimer=null; } _clStopAirborneFlash(); },
     onSave: function(){
       collectFields();
       runPreCommitChecks(f, function(){
@@ -4614,6 +4764,7 @@ function openFlModal(ex){
         renderFlList(); renderFlDetail(); renderFlStats();
         toast((ex?'Flight updated':'Flight logged')+' -- opening Mail...');
         setTimeout(function(){ emailFlight(f); },600);
+        _clStopAirborneFlash();
         closeModal();
       });
       return false; // we close manually via the callback
@@ -4839,7 +4990,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v197');
+  lines.push('','-- Sent from FlightDeck v216');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -4888,7 +5039,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v197');
+  lines.push('','-- FlightDeck v216');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
@@ -4974,7 +5125,7 @@ var CHECKLIST_DATA = [
     { id:'1h', text:'Customs/immigration informed' },
     { id:'1i', text:'Operational flight plan prepared' },
     { id:'1j', text:'Booked out' },
-    { id:'1k', text:'Documents/currency confirmed', type:'group', hasLaw:true, children:['C of A/ARC or Permit to Fly','C of R','Radio Licence','Insurance','Weight &amp; Balance Schedule','Pilot\'s Licence &amp; Medical'] },
+    { id:'1k', text:'Documents to be carried (NCO.GEN.135)', type:'group', hasLaw:true, children:['AFM (or equivalent)','Certificate of Registration (original)','Certificate of Airworthiness (original) &amp; ARC','Noise certificate (if applicable)','List of specific approvals (if applicable)','Aircraft radio licence (if applicable)','Third-party liability insurance certificate(s)','Journey log (or equivalent)','Details of filed ATS flight plan (if applicable)','Current &amp; suitable aeronautical charts (route + diversions)','Interception procedures &amp; visual signals','MEL or CDL (if applicable)','Any other documentation pertinent / required by States'] },
     { id:'1l', text:'Charts, Electrics, AIP and AIRAC cycle current', hasLaw:true },
     { id:'1m', text:'Flight plan filed', hasLaw:true },
     { id:'1n', text:'Destination', type:'group', children:['Fees','Fuel availability','PPR','Slots','Opening hours','Phone/Email details'] },
@@ -4989,7 +5140,7 @@ var CHECKLIST_DATA = [
   // ---- Flight Planning & Weather ----
   { phase:'Planning', id:'flightplanning', title:'Flight Planning', items: [
     { id:'2j', text:'Route/altitude selected — MSA/MOCA/grid MORA checked, terrain &amp; obstacles considered' },
-    { id:'planCruise', text:'Planned cruising level', keypad:'alt', unit:'ft' },
+    { id:'planCruise', text:'Planned cruising level', keypad:'alt', unit:'ft', unitToggle:'FL' },
     { id:'2h', text:'Alternate(s)', hasLaw:true },
     { id:'2b', text:'NOTAMs checked', type:'group', hasLaw:true, children:['Departure','Destination','Alternate','En-route'] },
     { id:'2c', text:'Aircraft equipment suitable for planned approach(es)', type:'group', hasLaw:true, children:['GNSS/SBAS certification (RNP APCH LPV/LNAV)','ILS/LOC capability','RAIM/FDE prediction (AUGUR or equivalent)','GPS outage NOTAMs'] },
@@ -5046,8 +5197,8 @@ var CHECKLIST_DATA = [
     { id:'3d', text:'Audio panel &amp; conventional NavAids', type:'group', children:['ADF','VOR/ILS','DME','Stopwatch'] },
     { id:'audioPanel', text:'Audio Panel check' },
     { id:'annunciator', text:'Annunciator Check' },
-    { id:'3f', text:'COM/NAV/GPS setup', type:'group', children:['COM/NAV radios set: departure freq, clearance delivery/ground, standby freqs','GPS/FMS flight plan loaded and cross-checked against clearance (Autorouter/SkyDemon route reviewed)','OBS/CDI course set for initial departure routing'] },
-    { id:'3g', text:'QNH–Transition Level (FL) difference calculated', type:'both' }
+    { id:'3f', text:'COM/NAV/GPS setup', type:'group', children:['COM/NAV radios set: departure freq, clearance delivery/ground, standby freqs','Transponder code set','GPS/FMS flight plan loaded and cross-checked against clearance (Autorouter/SkyDemon route reviewed)','OBS/CDI course set for initial departure routing'] },
+    { id:'3g', text:'QNH-SPS difference', type:'both' }
   ]},
   // ---- Off Blocks (Now button — mirrors Times tab chocksOff) ----
   { phase:'Ground', id:'chocksOffNow', title:'Off Blocks', items:[
@@ -5102,6 +5253,73 @@ var CHECKLIST_DATA = [
     { id:'7d', text:'Logbook/tech log entries made if required', hasLaw:true }
   ]}
 ];
+
+// Lookup of every top-level checklist item by its itemId (section.id+'.'+item.id),
+// so the ToDo filter can tell which items carry a manual entry or a calculated
+// value (fuel remaining, DA/Vis minima, freezing level, tacho/hobbs readings,
+// chocks/takeoff/landing times) — those should never be hidden by the filter,
+// since they hold data the user wants visible regardless of tick state.
+var CL_ITEM_LOOKUP = {};
+CHECKLIST_DATA.forEach(function(section){
+  section.items.forEach(function(item){
+    CL_ITEM_LOOKUP[section.id+'.'+item.id] = item;
+  });
+});
+function clItemNeverHidden(id){
+  var item = CL_ITEM_LOOKUP[id];
+  if(!item) return false;
+  return item.type === 'both' || item.type === 'daVis' || item.type === 'hobbsTacho' ||
+         item.type === 'timeNow' || item.keypad === 'alt' || !!item.etobCtot;
+}
+
+// Ongoing "unresolved items" flasher for the Checklist tab. Once started,
+// it keeps pulsing the main Checklist tab plus whichever phase sub-tabs
+// (Planning/Weather/Ground) still have unticked items, re-checking on every
+// tick and on every state change, and stops itself the moment everything's
+// resolved. Re-queries the DOM fresh each tick since renderChecklistTab()
+// fully rebuilds the phase tab buttons on every phase switch.
+var _clAirborneFlash = { timer: null, f: null, on: false };
+
+function _clIncompletePhases(f){
+  var incomplete = [];
+  ['Planning','Weather','Ground'].forEach(function(p){
+    var st = phaseStatus(p, f.checklistState);
+    if(st.total - st.done > 0) incomplete.push(p);
+  });
+  return incomplete;
+}
+
+function _clSetFlashStyle(el, on){
+  if(!el) return;
+  el.style.background = on ? 'rgba(244,63,94,.45)' : 'transparent';
+  el.style.boxShadow = on ? '0 0 0 2px rgba(244,63,94,.6)' : '';
+}
+
+function _clStopAirborneFlash(){
+  if(_clAirborneFlash.timer){ clearInterval(_clAirborneFlash.timer); _clAirborneFlash.timer = null; }
+  _clSetFlashStyle(document.getElementById('m-tab-cl'), false);
+  ['Planning','Weather','Ground'].forEach(function(p){
+    _clSetFlashStyle(document.getElementById('m-cl-phase-'+p), false);
+  });
+  _clAirborneFlash.f = null;
+}
+
+function startAirborneFlash(f){
+  if(_clAirborneFlash.timer && _clAirborneFlash.f === f) return; // already running for this flight
+  _clStopAirborneFlash();
+  _clAirborneFlash.f = f;
+  _clAirborneFlash.on = false;
+  _clAirborneFlash.timer = setInterval(function(){
+    var incomplete = _clIncompletePhases(f);
+    if(!incomplete.length){ _clStopAirborneFlash(); return; }
+    _clAirborneFlash.on = !_clAirborneFlash.on;
+    _clSetFlashStyle(document.getElementById('m-tab-cl'), _clAirborneFlash.on);
+    ['Planning','Weather','Ground'].forEach(function(p){
+      var isIncomplete = incomplete.indexOf(p) !== -1;
+      _clSetFlashStyle(document.getElementById('m-cl-phase-'+p), isIncomplete && _clAirborneFlash.on);
+    });
+  }, 450);
+}
 
 // Compute a section's status: counts each child of a group individually.
 function checklistSectionStatus(section, state){
@@ -5215,6 +5433,7 @@ function renderChecklistTab(f, root){
     var isActive = (phase === activePhase);
     var btn = document.createElement('button');
     btn.type = 'button';
+    btn.id = 'm-cl-phase-'+phase;
     btn.style.cssText = 'flex:1;padding:8px 3px;background:'+(isActive?'#0e7490':'transparent')+';color:'+(isActive?'#fff':'#0e7490')+';border:1px solid '+(isActive?'#0e7490':'rgba(14,116,144,.25)')+';border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;font-family:Syne,sans-serif;font-weight:700;font-size:11px;letter-spacing:.02em;margin-bottom:-1px;-webkit-tap-highlight-color:transparent';
     if(phase === 'Aircraft'){
       // No per-phase progress badge for Aircraft (it's reference material)
@@ -5224,8 +5443,12 @@ function renderChecklistTab(f, root){
       btn.innerHTML = phase + ' <span style="font-family:JetBrains Mono,monospace;font-size:10px;font-weight:600;opacity:.85;margin-left:2px">'+st.done+'/'+st.total+'</span>';
     }
     btn.addEventListener('click', function(){
+      var enteringAirborne = (phase === 'Airborne' && root._activePhase !== 'Airborne');
       root._activePhase = phase;
       renderChecklistTab(f, root);
+      if(enteringAirborne && _clIncompletePhases(f).length){
+        startAirborneFlash(f);
+      }
     });
     tabBar.appendChild(btn);
   });
@@ -5233,17 +5456,55 @@ function renderChecklistTab(f, root){
 
   // Top strip: total progress + reset button (not shown on Aircraft tab — no ticks there)
   var topRow = document.createElement('div');
+  var clFilterMode = false;
   if(activePhase !== 'Aircraft'){
     topRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;justify-content:flex-end;flex-wrap:wrap';
     topRow.innerHTML =
       '<div id="m-cl-total" style="display:inline-flex;align-items:center;padding:3px 12px;border:1px solid #0369a1;border-radius:999px;background:#fff;font-family:JetBrains Mono,monospace;font-size:11px;font-weight:700;color:#0369a1;flex:0 0 auto">0 / 0</div>'+
+      '<button type="button" id="m-cl-todo-filter" style="padding:4px 10px;font-size:11px;font-weight:700;font-family:JetBrains Mono,monospace;border-radius:999px;cursor:pointer;-webkit-tap-highlight-color:transparent;background:transparent;color:#b45309;border:1px solid #b45309;flex:0 0 auto">Show ToDo Only</button>'+
       '<button type="button" class="btn btn-g" id="m-cl-reset" style="padding:4px 10px;font-size:11px;color:#0369a1;border-color:#0369a1;flex:0 0 auto">&#8635; Reset</button>';
     root.appendChild(topRow);
     topRow.querySelector('#m-cl-reset').addEventListener('click', function(){
       inlineConfirm('Clear all ✓ / N/A marks on this flight\'s checklist?', function(){
         f.checklistState = {};
+        _clStopAirborneFlash();
         renderChecklistTab(f, root);
       });
+    });
+    topRow.querySelector('#m-cl-todo-filter').addEventListener('click', function(){
+      clFilterMode = !clFilterMode;
+      var btn = topRow.querySelector('#m-cl-todo-filter');
+      btn.style.background = clFilterMode ? '#b45309' : 'transparent';
+      btn.style.color = clFilterMode ? '#fff' : '#b45309';
+      btn.textContent = clFilterMode ? '\u2713 Showing ToDo Only \u2014 tap to show all' : 'Show ToDo Only';
+      applyClFilter();
+    });
+  }
+
+  // Show/hide rows based on the ToDo filter. A row matches when it isn't
+  // yet resolved (not ticked ✓ or N/A) — items with no resolvable state
+  // (e.g. time captures without a value) also count as outstanding. Items
+  // that carry a manual entry or a calculated value are never hidden, since
+  // that data should stay visible/accessible regardless of tick state.
+  function applyClFilter(){
+    var rows = root.querySelectorAll('[data-item-id]');
+    rows.forEach(function(rowEl){
+      if(!clFilterMode){ rowEl.style.display = ''; return; }
+      var id = rowEl.getAttribute('data-item-id');
+      if(clItemNeverHidden(id)){ rowEl.style.display = ''; return; }
+      var state = f.checklistState[id];
+      var resolved = (state === 'yes' || state === 'na');
+      rowEl.style.display = resolved ? 'none' : '';
+    });
+    root.querySelectorAll('.cl-group').forEach(function(g){
+      var anyVisible = Array.from(g.querySelectorAll('[data-item-id]')).some(function(r){ return r.style.display !== 'none'; });
+      g.style.display = (clFilterMode && !anyVisible) ? 'none' : '';
+      if(clFilterMode && anyVisible) g.open = true;
+    });
+    root.querySelectorAll('.cl-sect').forEach(function(s){
+      var anyVisible = Array.from(s.querySelectorAll('[data-item-id]')).some(function(r){ return r.style.display !== 'none'; });
+      s.style.display = (clFilterMode && !anyVisible) ? 'none' : '';
+      if(clFilterMode && anyVisible && s.tagName === 'DETAILS') s.open = true;
     });
   }
 
@@ -5276,6 +5537,7 @@ function renderChecklistTab(f, root){
   }
 
   updateTotal();
+  applyClFilter();
   updateNextHighlight();
   updateEtobBlocks();
   updateTimeNowRows();
@@ -5283,6 +5545,7 @@ function renderChecklistTab(f, root){
   // so counts + next-highlight update within ~10ms instead of waiting for the 1s poll.
   root.addEventListener('cl-state-change', function(){
     updateTotal();
+    applyClFilter();
     updateNextHighlight();
     updateTimeNowRows();
   });
@@ -5348,8 +5611,12 @@ function renderChecklistTab(f, root){
     root.querySelectorAll('[data-cl-next="1"]').forEach(function(el){
       el.removeAttribute('data-cl-next');
       el.style.boxShadow = '';
-      // Remove yellow overlay if any
-      if(el._clOrigStyleText != null){
+      if(typeof el._clRepaint === 'function'){
+        // Recompute the row's true styling fresh, rather than restoring a
+        // stale snapshot that may predate a state change made while this
+        // row was highlighted.
+        el._clRepaint();
+      } else if(el._clOrigStyleText != null){
         el.style.cssText = el._clOrigStyleText;
         el._clOrigStyleText = null;
       }
@@ -5433,14 +5700,15 @@ function renderMnemonicCard(section, num){
   return d;
 }
 
-// Small blue rounded-square number badge for section headers (matches PDF style)
+// Section number badges and item tag badges (1a, 2b, etc.) were design-time
+// scaffolding for cross-referencing against source documents — the app no
+// longer shows them, but call sites are left as-is (empty strings are safe
+// to concatenate into surrounding markup).
 function sectionBadgeHtml(num){
-  return '<span style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:22px;height:22px;background:#1e3a8a;color:#fff;font-family:JetBrains Mono,monospace;font-weight:800;font-size:12px;border-radius:5px">'+num+'</span>';
+  return '';
 }
-// Small blue pill for item tag IDs (e.g. "1a", "2v", "3g")
 function itemTagBadgeHtml(tag){
-  if(!tag) return '';
-  return '<span style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;background:#1e3a8a;color:#fff;font-family:JetBrains Mono,monospace;font-weight:800;font-size:10px;padding:2px 6px;border-radius:4px;margin-right:6px;letter-spacing:.02em">'+tag+'</span>';
+  return '';
 }
 
 // Small "✓ all" / "N/A all" bulk button (used in section + group headers).
@@ -5505,6 +5773,7 @@ function renderStandaloneCheck(section, f, num){
     if(s === 'na'){ naBtn.style.background='#b45309'; naBtn.style.color='#fff'; naBtn.style.border='1px solid #b45309'; }
     else { naBtn.style.background='transparent'; naBtn.style.color='#b45309'; naBtn.style.border='1px solid #b45309'; }
   }
+  row._clRepaint = function(){ applyStyle(); paintBtns(); };
   applyStyle(); paintBtns();
   yesBtn.addEventListener('click', function(e){
     e.stopPropagation();
@@ -5524,6 +5793,7 @@ function renderStandaloneCheck(section, f, num){
 function renderChecklistSection(section, f, num){
   if(section.mnemonic) return renderMnemonicCard(section, num);
   if(section.standalone) return renderStandaloneCheck(section, f, num);
+  if(section.aclsHeader) return renderAclsHeaderSection(section, f, num);
   // Section with a single timeNow item renders as a compact Now-button row
   if(section.items.length === 1 && section.items[0].type === 'timeNow'){
     var tn = section.items[0];
@@ -5622,7 +5892,7 @@ function renderChecklistSection(section, f, num){
 // Sources: UK ANO, EASA Part-NCO, SERA. Kept brief; edit here to refine.
 var LAW_EXPLANATIONS = {
   '1g': 'UK Border Force GAR: submit &ge;2 hr before departure/arrival for cross-border private flights. GENDEC covers customs formalities.',
-  '1k': 'ANO Art 74: aircraft must carry C of A/ARC, C of R, Radio Licence, Insurance certificate, W&amp;B schedule, and pilot\'s licence &amp; medical.',
+  '1k': 'Part-NCO.GEN.135: 13 items must be carried on every flight (originals or copies unless specified). Under (b), for flights back to the same aerodrome or within the London/Scottish FIR, items (a)(2)&ndash;(a)(8) may be retained at the aerodrome.',
   '1l': 'SERA.2010(b): pre-flight action must include current aeronautical data. AIRAC cycle refreshes every 28 days.',
   '1m': 'SERA.4001: an IFR flight plan is mandatory before commencing an IFR flight in controlled airspace.',
   '1q': 'ANO Art 173: a person must not act as a required crew member if unfit through illness, injury, fatigue, medication, alcohol, or any other cause.',
@@ -5682,44 +5952,67 @@ function renderChecklistItem(f, section, item, itemId, onStateChange){
   var row = document.createElement('div');
   row.className = 'cl-item';
   row.dataset.itemId = itemId;
+  var isManualCalc = (item.type === 'both' || item.keypad === 'alt' || !!item.etobCtot);
   function applyStyle(){
     var s = f.checklistState[itemId];
     var bg, bcol;
-    if(s === 'yes'){ bg='rgba(4,120,87,.07)'; bcol='#047857'; }
+    if(isManualCalc){
+      // Manual entry / calculated items keep a constant muted look regardless
+      // of tick state, rather than the green/amber wash simple checkbox items
+      // get — so they read as "a data field", not "a checked-off item".
+      bg = 'rgba(100,116,139,.05)'; bcol = 'rgba(100,116,139,.25)';
+    } else if(s === 'yes'){ bg='rgba(4,120,87,.07)'; bcol='#047857'; }
     else if(s === 'na'){ bg='rgba(180,83,9,.07)'; bcol='#b45309'; }
     else { bg='transparent'; bcol='rgba(14,165,233,.35)'; }
-    row.style.cssText = 'display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:6px 4px 6px 8px;margin-bottom:3px;background:'+bg+';border-left:3px solid '+bcol+';border-radius:0 5px 5px 0;font-size:13px;line-height:1.35';
+    row.style.cssText = 'display:flex;flex-direction:column;gap:4px;padding:6px 6px 6px 8px;margin-bottom:3px;background:'+bg+';border-left:3px solid '+bcol+';border-radius:0 5px 5px 0;font-size:13px;line-height:1.35';
   }
   applyStyle();
 
   var lawBadge = item.hasLaw ? lawBadgeHtml() : '';
   var lawNote = (item.hasLaw && LAW_EXPLANATIONS[item.id]) ? lawNoteHtml(LAW_EXPLANATIONS[item.id]) : '';
   var itemNote = item.note ? noteHtml(item.note) : '';
+  var textStyle = isManualCalc ? 'color:var(--text);font-weight:600;font-style:italic' : 'color:var(--text);font-weight:600';
   var bothInput = '';
   if(item.type === 'both'){
-    bothInput = '<div style="margin-top:4px"><input class="cl-inp" data-inp-id="'+itemId+'.val" placeholder="value" style="width:100%;max-width:220px;padding:3px 8px;font-size:12px"/></div>';
+    bothInput = '<div><input class="cl-inp" data-inp-id="'+itemId+'.val" placeholder="value" style="width:100%;max-width:220px;padding:3px 8px;font-size:12px"/></div>';
   } else if(item.keypad === 'alt'){
     var cur = f.checklistInputs[itemId+'.val'] || '';
     var unit = item.unit || 'ft';
-    var label = cur ? (cur + ' ' + unit) : ('Tap to enter '+unit);
-    bothInput = '<div style="margin-top:4px"><button type="button" class="cl-keypad-btn" data-inp-id="'+itemId+'.val" data-unit="'+unit+'" style="background:rgba(3,105,161,.06);border:1px solid rgba(3,105,161,.35);color:#0369a1;padding:4px 12px;font-size:12px;font-family:JetBrains Mono,monospace;font-weight:700;border-radius:6px;cursor:pointer;min-width:140px;text-align:left">'+label+'</button></div>';
+    var dispUnit = item.unitToggle ? (f.checklistInputs[itemId+'.unit'] || unit) : unit;
+    var label = cur ? altDisplay(cur, dispUnit) : ('Tap to enter '+dispUnit);
+    var toggleHtml = '';
+    if(item.unitToggle){
+      toggleHtml =
+        '<div class="cl-unit-toggle-grp" data-inp-id="'+itemId+'.val" style="display:inline-flex;border-radius:6px;overflow:hidden;background:rgba(3,105,161,.08)">'+
+          '<button type="button" class="cl-unit-toggle" data-set-unit="ft" style="padding:4px 9px;font-size:11px;font-family:JetBrains Mono,monospace;font-weight:800;border:none;cursor:pointer;background:'+(dispUnit==='ft'?'#0369a1':'transparent')+';color:'+(dispUnit==='ft'?'#fff':'#0369a1')+'">FT</button>'+
+          '<button type="button" class="cl-unit-toggle" data-set-unit="FL" style="padding:4px 9px;font-size:11px;font-family:JetBrains Mono,monospace;font-weight:800;border:none;cursor:pointer;background:'+(dispUnit==='FL'?'#0369a1':'transparent')+';color:'+(dispUnit==='FL'?'#fff':'#0369a1')+'">FL</button>'+
+        '</div>';
+    }
+    bothInput = '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'+
+      '<button type="button" class="cl-keypad-btn" data-inp-id="'+itemId+'.val" data-unit="'+dispUnit+'" style="background:rgba(3,105,161,.06);border:1px solid rgba(3,105,161,.35);color:#0369a1;padding:4px 12px;font-size:12px;font-family:JetBrains Mono,monospace;font-weight:700;border-radius:6px;cursor:pointer;min-width:120px;text-align:left">'+label+'</button>'+
+      toggleHtml +
+    '</div>';
   } else if(item.etobCtot){
     // Live-linked EOBT/CTOT read-out with a countdown next to each planned time
-    bothInput = '<div class="cl-etob-block" style="margin-top:4px;display:flex;gap:14px;flex-wrap:wrap;font-family:JetBrains Mono,monospace;font-size:11px;padding:5px 8px;background:rgba(3,105,161,.05);border:1px solid rgba(3,105,161,.2);border-radius:6px">'+
+    bothInput = '<div class="cl-etob-block" style="display:flex;gap:14px;flex-wrap:wrap;font-family:JetBrains Mono,monospace;font-size:11px;padding:5px 8px;background:rgba(3,105,161,.05);border:1px solid rgba(3,105,161,.2);border-radius:6px">'+
       '<div><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.06em">EOBT </span><span class="cl-etob-eobt" style="color:#0369a1;font-weight:700">--</span> <span class="cl-etob-eobt-cd" style="font-weight:700;margin-left:4px">--</span></div>'+
       '<div><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.06em">CTOT </span><span class="cl-etob-ctot" style="color:#0369a1;font-weight:700">--</span> <span class="cl-etob-ctot-cd" style="font-weight:700;margin-left:4px">--</span></div>'+
     '</div>';
   }
 
+  // Header line: item text + LAW badge + tick buttons, all forced onto one
+  // line — the text truncates with an ellipsis rather than letting the LAW
+  // badge or the ✓/N/A buttons wrap onto a line of their own.
   row.innerHTML =
-    '<div style="min-width:0">'+
-      '<div style="display:flex;align-items:center;flex-wrap:wrap">'+itemTagBadgeHtml(item.id)+'<span style="color:var(--text);font-weight:600">'+item.text+'</span>'+lawBadge+'</div>'+
-      bothInput + itemNote + lawNote +
+    '<div style="display:flex;align-items:center;flex-wrap:nowrap;gap:6px">'+
+      '<span style="'+textStyle+';flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+item.text+'</span>'+
+      (lawBadge ? '<span style="flex-shrink:0">'+lawBadge+'</span>' : '') +
+      '<div style="display:flex;gap:3px;flex-shrink:0">'+
+        '<button type="button" class="cl-btn cl-btn-yes" style="padding:3px 8px;font-size:11px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:5px;cursor:pointer;-webkit-tap-highlight-color:transparent">&#10003;</button>'+
+        '<button type="button" class="cl-btn cl-btn-na" style="padding:3px 6px;font-size:10px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:5px;cursor:pointer;-webkit-tap-highlight-color:transparent">N/A</button>'+
+      '</div>'+
     '</div>'+
-    '<div style="display:flex;gap:3px;flex-shrink:0;align-self:center">'+
-      '<button type="button" class="cl-btn cl-btn-yes" style="padding:3px 8px;font-size:11px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:5px;cursor:pointer;-webkit-tap-highlight-color:transparent">&#10003;</button>'+
-      '<button type="button" class="cl-btn cl-btn-na" style="padding:3px 6px;font-size:10px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:5px;cursor:pointer;-webkit-tap-highlight-color:transparent">N/A</button>'+
-    '</div>';
+    bothInput + itemNote + lawNote;
   var yesBtn = row.querySelector('.cl-btn-yes');
   var naBtn  = row.querySelector('.cl-btn-na');
   function paintBtns(){
@@ -5729,6 +6022,7 @@ function renderChecklistItem(f, section, item, itemId, onStateChange){
     if(s === 'na'){ naBtn.style.background='#b45309'; naBtn.style.color='#fff'; naBtn.style.border='1px solid #b45309'; }
     else { naBtn.style.background='transparent'; naBtn.style.color='#b45309'; naBtn.style.border='1px solid #b45309'; }
   }
+  row._clRepaint = function(){ applyStyle(); paintBtns(); };
   paintBtns();
   yesBtn.addEventListener('click', function(e){
     e.stopPropagation();
@@ -5751,19 +6045,72 @@ function renderChecklistItem(f, section, item, itemId, onStateChange){
   row.querySelectorAll('.cl-keypad-btn').forEach(function(btn){
     var iid = btn.getAttribute('data-inp-id');
     var unit = btn.getAttribute('data-unit') || 'ft';
+    function currentUnit(){
+      return item.unitToggle ? (f.checklistInputs[iid+'.unit'] || item.unit || 'ft') : unit;
+    }
+    function syncMirrors(){
+      var u = currentUnit();
+      var ft = f.checklistInputs[iid] || '';
+      btn.setAttribute('data-unit', u);
+      btn.textContent = ft ? altDisplay(ft, u) : ('Tap to enter '+u);
+      var wxInp = document.querySelector('.m-wxCalc[data-clk="'+iid+'"]');
+      if(wxInp){
+        // If the mirrored Weather-tab input has its own ft/FL toggle, write
+        // the value in whichever unit IT is currently displaying, not raw feet.
+        var wxUnit = (wxInp.getAttribute('data-toggle') === '1') ? u : null;
+        var wxVal = wxUnit === 'FL' ? (ft ? altFtToFL(ft) : '') : ft;
+        if(wxInp.value !== wxVal){
+          wxInp.value = wxVal;
+          wxInp.dispatchEvent(new Event('input', {bubbles:true}));
+        }
+      }
+    }
     btn.addEventListener('click', function(e){
       e.stopPropagation();
-      openNumericKeypad(
-        { title:'Altitude ('+unit+')', digits:5, suffix:' '+unit, help:item.text },
-        f.checklistInputs[iid] || '',
-        function(v){
-          f.checklistInputs[iid] = v;
-          btn.textContent = v ? (v + ' ' + unit) : ('Tap to enter '+unit);
-          var wxInp = document.querySelector('.m-wxCalc[data-clk="'+iid+'"]');
-          if(wxInp) wxInp.value = v;
-          row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
+      var u = currentUnit();
+      var curFt = f.checklistInputs[iid] || '';
+      if(u === 'FL'){
+        openNumericKeypad(
+          { title:'Flight Level', digits:3, suffix:'', help:item.text+' (e.g. 035 = FL035 = 3,500 ft)' },
+          curFt ? altFtToFL(curFt) : '',
+          function(v){
+            f.checklistInputs[iid] = v ? altFLToFt(v) : '';
+            syncMirrors();
+            row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
+          }
+        );
+      } else {
+        openNumericKeypad(
+          { title:'Altitude (ft)', digits:5, suffix:' ft', help:item.text },
+          curFt,
+          function(v){
+            f.checklistInputs[iid] = v;
+            syncMirrors();
+            row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
+          }
+        );
+      }
+    });
+    row.querySelectorAll('.cl-unit-toggle-grp[data-inp-id="'+iid+'"] .cl-unit-toggle').forEach(function(tb){
+      tb.addEventListener('click', function(e){
+        e.stopPropagation();
+        f.checklistInputs[iid+'.unit'] = tb.getAttribute('data-set-unit');
+        syncMirrors();
+        row.querySelectorAll('.cl-unit-toggle-grp[data-inp-id="'+iid+'"] .cl-unit-toggle').forEach(function(sib){
+          var on = sib.getAttribute('data-set-unit') === f.checklistInputs[iid+'.unit'];
+          sib.style.background = on ? '#0369a1' : 'transparent';
+          sib.style.color = on ? '#fff' : '#0369a1';
+        });
+        // Keep the Weather tab's own toggle in sync too
+        var wxGrp = document.querySelector('.wx-unit-toggle-grp[data-wxk="'+iid+'"]');
+        if(wxGrp){
+          wxGrp.querySelectorAll('.wx-unit-toggle').forEach(function(sib){
+            var on = sib.getAttribute('data-set-unit') === f.checklistInputs[iid+'.unit'];
+            sib.style.background = on ? '#0369a1' : 'transparent';
+            sib.style.color = on ? '#fff' : '#0369a1';
+          });
         }
-      );
+      });
     });
   });
   return row;
@@ -5932,7 +6279,12 @@ function renderTimeNowRow(f, item, itemId, num){
     paint();
     row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
   });
-  // Expose paint so the 1s poll can refresh us if the Times tab spinner is edited there
+  // Expose paint so the 1s poll can refresh us if the Times tab spinner is edited there.
+  // Deliberately NOT wired as _clRepaint: paint() does a full innerHTML rebuild, which
+  // would steal focus/cursor from an in-progress edit if the "next item" highlight
+  // clear fired while this row had focus. The generic cssText-snapshot fallback in
+  // updateNextHighlight() only touches background/border, never innerHTML, so it's
+  // safe here even though it can occasionally look a beat stale.
   row._tnPaint = paint;
   paint();
   return row;
@@ -5948,17 +6300,15 @@ function renderDaVisRow(f, item, itemId){
   function paint(){
     var da  = readVal(kDa);
     var vis = readVal(kVis);
-    var bothSet = da && vis;
     var s = f.checklistState[itemId];
-    var bg, bcol;
-    if(s === 'yes'){ bg='rgba(4,120,87,.07)'; bcol='#047857'; }
-    else if(s === 'na'){ bg='rgba(180,83,9,.07)'; bcol='#b45309'; }
-    else { bg = bothSet ? 'rgba(4,120,87,.03)' : 'transparent'; bcol='rgba(14,165,233,.35)'; }
-    row.style.cssText = 'padding:6px 8px;margin-bottom:3px;background:'+bg+';border-left:3px solid '+bcol+';border-radius:0 5px 5px 0;font-size:13px';
+    // Manual-entry items keep a constant muted look regardless of tick state —
+    // deliberately not the green/amber wash used by simple checkbox items, so
+    // they read as "a data field" rather than "a checked-off item" at a glance.
+    row.style.cssText = 'padding:7px 8px;margin-bottom:3px;background:rgba(100,116,139,.05);border-radius:5px;font-size:13px';
     row.innerHTML =
-      '<div style="display:flex;align-items:center;flex-wrap:wrap;margin-bottom:5px">'+itemTagBadgeHtml(item.id)+
-        '<span style="color:var(--text);font-weight:600">Minima &mdash; DA &amp; Visibility</span>'+
-        '<div style="margin-left:auto;display:flex;gap:3px">'+
+      '<div style="display:flex;align-items:center;flex-wrap:nowrap;gap:6px;margin-bottom:5px">'+
+        '<span style="color:var(--text);font-weight:600;font-style:italic;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Minima &mdash; DA &amp; Visibility</span>'+
+        '<div style="display:flex;gap:3px;flex-shrink:0">'+
           '<button type="button" class="dv-yes cl-btn" style="padding:3px 8px;font-size:11px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:5px;cursor:pointer;background:'+(s==='yes'?'#047857':'transparent')+';color:'+(s==='yes'?'#fff':'#047857')+';border:1px solid #047857">&#10003;</button>'+
           '<button type="button" class="dv-na  cl-btn" style="padding:3px 6px;font-size:10px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:5px;cursor:pointer;background:'+(s==='na'?'#b45309':'transparent')+';color:'+(s==='na'?'#fff':'#b45309')+';border:1px solid #b45309">N/A</button>'+
         '</div>'+
@@ -5988,6 +6338,9 @@ function renderDaVisRow(f, item, itemId){
       row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
     });
   }
+  // Deliberately not wired as _clRepaint (see note in renderTimeNowRow) — paint()
+  // rebuilds innerHTML including the DA/Vis inputs, which would drop focus/cursor
+  // mid-edit if the "next item" highlight cleared while this row was focused.
   paint();
   return row;
 }
@@ -6030,7 +6383,10 @@ function renderHobbsTachoRow(f, item, itemId){
     tachoEl.addEventListener('input', function(){
       f[tachoField] = tachoEl.value;
       var master = document.getElementById('m-'+tachoField);
-      if(master) master.value = tachoEl.value;
+      if(master){
+        master.value = tachoEl.value;
+        master.dispatchEvent(new Event('input', {bubbles:true}));
+      }
       var bothNow = tachoEl.value && hobbsEl.value;
       row.style.borderLeftColor = bothNow ? '#047857' : '#0369a1';
       row.style.background = bothNow ? 'rgba(4,120,87,.07)' : 'rgba(3,105,161,.05)';
@@ -6038,12 +6394,19 @@ function renderHobbsTachoRow(f, item, itemId){
     hobbsEl.addEventListener('input', function(){
       f[hobbsField] = hobbsEl.value;
       var master = document.getElementById('m-'+hobbsField);
-      if(master) master.value = hobbsEl.value;
+      if(master){
+        master.value = hobbsEl.value;
+        master.dispatchEvent(new Event('input', {bubbles:true}));
+      }
       var bothNow = tachoEl.value && hobbsEl.value;
       row.style.borderLeftColor = bothNow ? '#047857' : '#0369a1';
       row.style.background = bothNow ? 'rgba(4,120,87,.07)' : 'rgba(3,105,161,.05)';
     });
   }
+  // Deliberately not wired as _clRepaint (see note in renderTimeNowRow) — paint()
+  // rebuilds innerHTML including the tacho/hobbs inputs, which is exactly what was
+  // stealing focus/cursor mid-typing whenever the 1s "next item" poll ran while
+  // this row was being edited.
   paint();
   return row;
 }
@@ -6078,6 +6441,7 @@ function renderStandaloneItem(f, item, itemId, onStateChange){
     if(s === 'na'){ naBtn.style.background='#b45309'; naBtn.style.color='#fff'; naBtn.style.border='1px solid #b45309'; }
     else { naBtn.style.background='transparent'; naBtn.style.color='#b45309'; naBtn.style.border='1px solid #b45309'; }
   }
+  row._clRepaint = function(){ applyStyle(); paintBtns(); };
   applyStyle(); paintBtns();
   yesBtn.addEventListener('click', function(e){
     e.stopPropagation();
@@ -6122,6 +6486,7 @@ function renderChildTick(f, childId, childText, onStateChange){
     if(s === 'na'){ naBtn.style.background='#b45309'; naBtn.style.color='#fff'; naBtn.style.border='1px solid #b45309'; }
     else { naBtn.style.background='transparent'; naBtn.style.color='#b45309'; naBtn.style.border='1px solid #b45309'; }
   }
+  row._clRepaint = function(){ applyStyle(); paintBtns(); };
   paintBtns();
   yesBtn.addEventListener('click', function(e){
     e.stopPropagation();
@@ -6825,7 +7190,7 @@ qs('#rf-search').addEventListener('input', renderRfList);
 // PWA
 // ============================================================
 var SW_CODE=[
-  "var C='fd-sw-v2';",
+  "var C='fd-sw-v19';",
   "self.addEventListener('install',function(e){",
   "  e.waitUntil(caches.open(C).then(function(c){ return c.addAll([self.location.pathname]); }).then(function(){ return self.skipWaiting(); }));",
   "});",
@@ -7135,10 +7500,633 @@ function openScribbleForFlight(f, fieldKey, onSaved){
   window.addEventListener('resize', sizeCanvas);
 }
 
+// ============================================================
+// READINESS CHECKLIST — pre-test readiness against SRG2128 (Skill Test)
+// and CAP 1298 AltMoC 1 (Ground + Air training syllabus).
+// ============================================================
+var RD_KEY = 'fd_readiness_v1';
+var rdState = load(RD_KEY, { checked:{}, notes:{}, meta:{} });
+function rdSave(){ save(RD_KEY, rdState); }
+
+var RD_DATA = {
+  skill: {
+    label: 'Skill Test',
+    badge: 'SRG2128 p.2',
+    intro: 'Form SRG2128 Issue 5, page 2 — the six skill test sections. Confirm every item has been demonstrated to test standard before recommending the student for test.',
+    sections: [
+      { title: 'Section 1 \u00b7 Pre-flight Operations &amp; Departure', items: [
+        'Pre-flight documentation, NOTAM and weather briefing',
+        'Mass, balance and performance calculation',
+        'Aeroplane inspection and servicing',
+        'Engine starting and after starting procedures',
+        'Taxiing and aerodrome procedures, pre-take-off checks',
+        'Take-off and after take-off checks',
+        'Aerodrome departure procedures',
+        'ATC liaison \u2013 compliance, R/T procedures'
+      ]},
+      { title: 'Section 2 \u00b7 General Airwork', items: [
+        'ATC liaison \u2013 compliance, R/T procedures',
+        'Straight and level flight, with speed changes',
+        'Climbing: best rate of climb, climbing turns, levelling off',
+        'Medium (30\u00b0 bank) turns, lookout procedure &amp; collision avoidance',
+        'Steep (45\u00b0 bank) turns, incl. recognition &amp; recovery from spiral dive',
+        'Flight at critically low airspeed, with and without flaps',
+        'Stalling: clean stall, approach to stall (descending turn &amp; landing config)',
+        'Descending: with/without power, descending turns, levelling off'
+      ]},
+      { title: 'Section 3 \u00b7 Enroute Procedures', items: [
+        'Flight plan, dead reckoning, map reading',
+        'Maintenance of altitude, heading and speed',
+        'Orientation, airspace structure, ETA revision, manual flight log',
+        'Diversion to alternate aerodrome (planning &amp; implementation)',
+        'Use of radio navigation aids for tracking and fixing',
+        'Basic instrument flying (180\u00b0 turn in simulated IMC)',
+        'Flight management \u2013 checks, fuel systems, carburettor icing',
+        'ATC compliance and R/T procedures'
+      ]},
+      { title: 'Section 4 \u00b7 Approach &amp; Landing Procedures', items: [
+        'Aerodrome arrival procedures',
+        '*Precision (short field) landing, crosswind if conditions allow',
+        '*Flapless landing',
+        '*Approach to landing with idle power (SE only)',
+        'Touch and go',
+        'Go-around from low height',
+        'ATC compliance and R/T procedures',
+        'Actions after flight'
+      ]},
+      { title: 'Section 5 \u00b7 Abnormal &amp; Emergency Procedures', items: [
+        'Simulated engine failure after take-off (safe altitude) + fire drill (SE only)',
+        '*Forced landing (simulated) (SE only)',
+        'Simulated precautionary landing (SE only)',
+        'Simulated emergencies',
+        'Oral questions'
+      ]},
+      { title: 'Section 6 \u00b7 Simulated Asymmetric Flight &amp; Type Items', items: [
+        'Simulated engine failure during take-off',
+        'Asymmetric approach and go-around',
+        'Asymmetric approach and full-stop landing',
+        'Engine shutdown and restart',
+        'ATC compliance, R/T procedures or airmanship',
+        'Relevant class/type items (autopilot, pressurisation, de-icing) if applicable',
+        'Oral questions'
+      ]}
+    ]
+  },
+  ground: {
+    label: 'Ground Syllabus',
+    badge: 'CAP1298 pp.6\u201314',
+    intro: 'CAP 1298 AltMoC 1 FCL.210/FCL.215 \u2014 Theoretical Knowledge Syllabus, grouped as in the CAA document.',
+    sections: [
+      { title: '1 \u00b7 Air Law', items: [
+        'International Aviation Law (ICAO, EASA, NAA)',
+        'European Rules of the Air',
+        'Aerodromes (signs, markings, marshalling &amp; light signals)',
+        'VMC minima and Visual Flight Rules (VFR)',
+        'Airspace Classifications (incl. RMZ / TMZ)',
+        'Altimeter Setting Procedures',
+        'Air Traffic Services (ATC / FIS / Alerting)',
+        'Aeronautical Information Service (AIS / AIP / NOTAMs)',
+        'Urgency and Distress Procedures',
+        'Pilot Licensing (medicals, PPL/LAPL privileges, ratings)',
+        'National rules and procedures'
+      ]},
+      { title: '2 \u00b7 Human Performance', items: [
+        'Basic Aviation Physiology (hypoxia, hyperventilation, vision, disorientation, fatigue)',
+        'Basic Aviation Psychology (perception, memory, stress, hazardous attitudes)',
+        'Principles of Threat and Error Management (TEM)'
+      ]},
+      { title: '3 \u00b7 Meteorology', items: [
+        'The Atmosphere', 'Temperature, Pressure and Density',
+        'The International Standard Atmosphere (ISA)', 'Altimetry', 'Wind',
+        'Clouds and Precipitation', 'Visibility', 'Air Masses',
+        'Low Pressure Systems', 'High Pressure Systems',
+        'Hazardous Weather: Icing', 'Hazardous Weather: Thunderstorms',
+        'Other Hazardous Weather (mountain waves, turbulence, wind shear, strong winds)',
+        'Meteorological Information (charts, satellite, radar, TAFs/METARs)',
+        'National procedures'
+      ]},
+      { title: '4 \u00b7 Communications', items: [
+        'VHF Radio Broadcast', 'Transmission Technique',
+        'VFR Communications Procedures', 'Weather Information (ATIS / VOLMET / FIS)',
+        'Communications Failure', 'Distress and Urgency Procedures',
+        'National rules and procedures'
+      ]},
+      { title: '5 \u00b7 Principles of Flight', items: [
+        'Basic Concepts (static/dynamic pressure, aerofoils)', 'The Four Forces',
+        'The Stall', 'Stability and Control',
+        'Principles of Flight (straight &amp; level, climb, descend, turn)',
+        'Operating Limitations'
+      ]},
+      { title: '6 \u00b7 Operational Procedures', items: [
+        'Application of Threat and Error Management',
+        'Operation of Aircraft (PIC responsibility, documents, fuel, equipment)',
+        'Avoidance of Hazards (incl. wake turbulence)',
+        'Search and Rescue Procedures', 'Accidents and Incidents',
+        'Care of Passengers', 'National rules and procedures'
+      ]},
+      { title: '7 \u00b7 Flight Performance and Planning', items: [
+        'Mass and Balance', 'Performance \u2013 Take-Off and Climb',
+        'Performance \u2013 Cruise', 'Performance \u2013 Descent and Landing',
+        'VFR Flight Planning', 'Fuel Planning', 'ICAO (ATS) Flight Plan',
+        'National rules and procedures'
+      ]},
+      { title: '8 \u00b7 Aircraft General Knowledge', items: [
+        'The Airframe', 'Flying Controls', 'Undercarriage', 'Piston Engines',
+        'Piston Engine Systems', 'The Propeller', 'Engine Handling',
+        'The Electrical System', 'Instruments and Systems', 'Avionics Systems',
+        'Cockpit Equipment and Systems', 'Emergency Equipment',
+        'Aircraft Airworthiness', 'Converting Onto Another Aircraft Type',
+        'National rules and procedures'
+      ]},
+      { title: '9 \u00b7 Navigation', items: [
+        'Form of the Earth (latitude / longitude)', 'Measurement of Direction',
+        'Measurement of Distance', 'Measurement of Airspeed', 'Triangle of Velocities',
+        'Dead Reckoning and Map Reading', 'Off-track Correction and Diversion',
+        'Vertical Navigation', 'Controlled and Notified Airspace procedures',
+        'Time (UTC, time zones, sunrise/sunset)',
+        'VFR Radio Navigation (VDF, ATC radar, ADF, VOR, DME, GNSS)'
+      ]}
+    ]
+  },
+  air: {
+    label: 'Air Syllabus',
+    badge: 'CAP1298 pp.16\u201321',
+    intro: 'CAP 1298 AltMoC 1 \u2014 Flight Training Syllabus, Exercises 1\u201319. One tick per exercise once the student is consistently competent.',
+    sections: [
+      { title: 'Ground &amp; Early Handling', items: [
+        'Ex 1a \u2013 Aeroplane/TMG Familiarisation',
+        'Ex 1e \u2013 Emergency and Abnormal Procedures (familiarisation)',
+        'Ex 2 \u2013 Preparations for flight and actions after flight',
+        'Ex 3 \u2013 The Air Experience Flight',
+        'Ex 4 \u2013 Effects of Controls',
+        'Ex 5a \u2013 Taxiing',
+        'Ex 5e \u2013 Taxiing Emergency and Abnormal Procedures'
+      ]},
+      { title: 'Basic Handling', items: [
+        'Ex 6 \u2013 Straight and Level Flight', 'Ex 7 \u2013 Climbing', 'Ex 8 \u2013 Descending',
+        'Ex 9 \u2013 Turning', 'Ex 10a \u2013 Slow Flight', 'Ex 10b \u2013 Stalling',
+        'Ex 11 \u2013 Spin Avoidance'
+      ]},
+      { title: 'Circuits &amp; Take-off/Landing', items: [
+        'Ex 12a \u2013 Take-off and Climb',
+        'Ex 12e \u2013 Emergency and Abnormal Procedures (take-off)',
+        'Ex 13a \u2013 Circuit, Approach and Landing',
+        'Ex 13e \u2013 Emergency and Abnormal Procedures (circuit)',
+        'Ex 14 \u2013 First Solo and Solo Consolidation'
+      ]},
+      { title: 'Advanced &amp; Emergency Handling', items: [
+        'Ex 15 \u2013 Advanced Turning', 'Ex 16 \u2013 Forced Landing without Power',
+        'Ex 17 \u2013 Precautionary Landing'
+      ]},
+      { title: 'Navigation &amp; Instrument Flight', items: [
+        'Ex 18a \u2013 VFR Navigation: Flight Planning',
+        'Ex 18a \u2013 VFR Navigation: Departure and En-route Procedures',
+        'Ex 18a \u2013 VFR Navigation: Arrival Procedures',
+        'Ex 18b \u2013 VFR Navigation at Lower Levels / DVE',
+        'Ex 18c \u2013 VFR Radio Navigation',
+        'Ex 18e \u2013 Emergency and Abnormal Procedures (navigation)',
+        'Ex 19 \u2013 Basic Instrument Flight'
+      ]}
+    ]
+  }
+};
+
+var rdActiveTab = 'skill';
+
+function rdItemId(tab, sIdx, iIdx){ return tab+'.'+sIdx+'.'+iIdx; }
+function rdNotesId(tab, sIdx){ return tab+'.notes.'+sIdx; }
+
+function rdTabProgress(key){
+  var total=0, done=0;
+  RD_DATA[key].sections.forEach(function(sec, sIdx){
+    sec.items.forEach(function(_, iIdx){
+      total++;
+      if(rdState.checked[rdItemId(key,sIdx,iIdx)]) done++;
+    });
+  });
+  return { done: done, total: total };
+}
+function rdOverallProgress(){
+  var total=0, done=0;
+  Object.keys(RD_DATA).forEach(function(key){
+    var p = rdTabProgress(key);
+    total += p.total; done += p.done;
+  });
+  return { done: done, total: total };
+}
+
+function rdBuildSummaryText(){
+  var op = rdOverallProgress();
+  var m = rdState.meta;
+  var lines = [];
+  lines.push('PPL(A) SKILL TEST READINESS CHECKLIST');
+  lines.push('Student: '+(m.student||'--')+'   Instructor: '+(m.instructor||'--'));
+  lines.push('Aircraft: '+(m.aircraft||'--')+'   Target test date: '+(m.date||'--'));
+  lines.push('Overall: '+op.done+' / '+op.total+' items complete');
+  lines.push('');
+  Object.keys(RD_DATA).forEach(function(key){
+    var tab = RD_DATA[key];
+    lines.push('== '+tab.label+' ('+tab.badge+') ==');
+    tab.sections.forEach(function(sec, sIdx){
+      lines.push('-- '+sec.title.replace(/&amp;/g,'&').replace(/\u00b7/g,'-'));
+      sec.items.forEach(function(item, iIdx){
+        var done = rdState.checked[rdItemId(key,sIdx,iIdx)];
+        lines.push('  ['+(done?'x':' ')+'] '+item.replace(/&amp;/g,'&'));
+      });
+      var notes = rdState.notes[rdNotesId(key,sIdx)];
+      if(notes) lines.push('  Notes: '+notes);
+      lines.push('');
+    });
+  });
+  lines.push('Cleared for skill test: '+(m.cleared||'--'));
+  lines.push('Signed: '+(m.signed||'--')+'   Date: '+(m.signdate||'--'));
+  if(m.overallnotes) lines.push('Overall notes: '+m.overallnotes);
+  return lines.join('\n');
+}
+function rdExportText(){
+  var text = rdBuildSummaryText();
+  var name = 'readiness_checklist_'+(rdState.meta.student||'student').replace(/[^a-z0-9]+/gi,'_')+'.txt';
+  dlFile(name, text);
+  toast('Readiness checklist exported');
+}
+function rdEmailSummary(){
+  var subj = encodeURIComponent('PPL(A) Readiness Checklist -- '+(rdState.meta.student||''));
+  var body = encodeURIComponent(rdBuildSummaryText());
+  window.location.href = 'mailto:?subject='+subj+'&body='+body;
+}
+function rdResetAll(){
+  inlineConfirm('Reset all ticks and notes on the Readiness checklist? This can\'t be undone.', function(){
+    rdState = { checked:{}, notes:{}, meta: rdState.meta };
+    rdSave();
+    renderReadiness();
+  });
+}
+
+function renderReadiness(){
+  var root = qs('#rd-root');
+  if(!root) return;
+  root.innerHTML = '';
+  var m = rdState.meta;
+
+  // Header
+  var head = document.createElement('div');
+  head.innerHTML =
+    '<div style="font-family:Syne,sans-serif;font-weight:800;font-size:22px;color:var(--sky);margin-bottom:2px">Skill Test Readiness Checklist</div>'+
+    '<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--muted);margin-bottom:14px">Cross-referenced to SRG2128 (Skill Test) and CAP 1298 AltMoC 1 (Theoretical Knowledge &amp; Flight Training Syllabus)</div>'+
+    '<div class="g4" style="margin-bottom:12px">'+
+      '<div class="field" style="margin-bottom:0"><label>Student</label><input class="inp" id="rd-student" placeholder="Name" value="'+escapeHtml(m.student||'')+'"/></div>'+
+      '<div class="field" style="margin-bottom:0"><label>Instructor</label><input class="inp" id="rd-instructor" placeholder="Name" value="'+escapeHtml(m.instructor||'')+'"/></div>'+
+      '<div class="field" style="margin-bottom:0"><label>Aircraft Type / Reg</label><input class="inp" id="rd-aircraft" placeholder="e.g. PA28 G-XXXX" value="'+escapeHtml(m.aircraft||'')+'"/></div>'+
+      '<div class="field" style="margin-bottom:0"><label>Target Test Date</label><input class="inp" id="rd-date" type="date" value="'+escapeHtml(m.date||'')+'"/></div>'+
+    '</div>'+
+    '<div style="background:rgba(3,105,161,.06);border:1px solid rgba(3,105,161,.2);border-radius:9px;padding:12px 14px;margin-bottom:12px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline">'+
+        '<span style="font-family:JetBrains Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Overall Readiness</span>'+
+        '<span id="rd-overall-count" style="font-family:JetBrains Mono,monospace;font-size:13px;color:#047857;font-weight:700"></span>'+
+      '</div>'+
+      '<div class="prog" style="height:6px"><div class="prog-fill" id="rd-overall-fill" style="width:0%"></div></div>'+
+    '</div>'+
+    '<div class="rd-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">'+
+      '<button class="btn btn-p" id="rd-print">Print / Save PDF</button>'+
+      '<button class="btn btn-g" id="rd-email">Email Summary</button>'+
+      '<button class="btn btn-g" id="rd-exporttxt">Export .txt</button>'+
+      '<button class="btn btn-d" id="rd-reset">Reset All</button>'+
+    '</div>';
+  root.appendChild(head);
+
+  ['student','instructor','aircraft','date'].forEach(function(k){
+    var el2 = qs('#rd-'+k, head);
+    el2.addEventListener('input', function(){ m[k]=el2.value; rdSave(); updateOverall(); });
+  });
+  qs('#rd-print', head).addEventListener('click', function(){ window.print(); });
+  qs('#rd-email', head).addEventListener('click', rdEmailSummary);
+  qs('#rd-exporttxt', head).addEventListener('click', rdExportText);
+  qs('#rd-reset', head).addEventListener('click', rdResetAll);
+
+  // Tab bar
+  var tabbar = document.createElement('div');
+  tabbar.className = 'rd-tabbar';
+  Object.keys(RD_DATA).forEach(function(key){
+    var p = rdTabProgress(key);
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'rd-tab' + (key===rdActiveTab ? ' on' : '');
+    b.innerHTML = RD_DATA[key].label + ' <span style="font-family:JetBrains Mono,monospace;font-weight:600;opacity:.85;font-size:10px">'+p.done+'/'+p.total+'</span>';
+    b.addEventListener('click', function(){ rdActiveTab = key; renderReadiness(); });
+    tabbar.appendChild(b);
+  });
+  root.appendChild(tabbar);
+
+  var tab = RD_DATA[rdActiveTab];
+  var intro = document.createElement('div');
+  intro.style.cssText = 'font-size:12px;color:var(--muted);margin-bottom:12px;font-family:JetBrains Mono,monospace';
+  intro.textContent = tab.intro;
+  root.appendChild(intro);
+
+  var pageWrap = document.createElement('div');
+  pageWrap.className = 'rd-print-page';
+  tab.sections.forEach(function(sec, sIdx){
+    pageWrap.appendChild(rdRenderSection(rdActiveTab, sec, sIdx));
+  });
+  root.appendChild(pageWrap);
+
+  // Sign-off
+  var signoff = document.createElement('div');
+  signoff.style.cssText = 'background:rgba(255,255,255,.7);border:1px solid var(--border);border-radius:11px;padding:16px;margin-top:16px';
+  signoff.innerHTML =
+    '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:14px;margin-bottom:10px">Instructor Sign-off</div>'+
+    '<div class="g3" style="margin-bottom:10px">'+
+      '<div class="field" style="margin-bottom:0"><label>Cleared for Skill Test</label>'+
+        '<select class="inp" id="rd-cleared"><option value="">\u2014 Select \u2014</option>'+
+          '<option'+(m.cleared==='Yes'?' selected':'')+'>Yes</option>'+
+          '<option'+(m.cleared==='Not yet \u2014 see notes'?' selected':'')+'>Not yet \u2014 see notes</option>'+
+        '</select></div>'+
+      '<div class="field" style="margin-bottom:0"><label>Signed</label><input class="inp" id="rd-signed" placeholder="Instructor initials" value="'+escapeHtml(m.signed||'')+'"/></div>'+
+      '<div class="field" style="margin-bottom:0"><label>Date</label><input class="inp" id="rd-signdate" type="date" value="'+escapeHtml(m.signdate||'')+'"/></div>'+
+    '</div>'+
+    '<div class="field" style="margin-bottom:0"><label>Overall Notes</label><textarea class="inp" id="rd-overallnotes" rows="3" placeholder="General comments before recommending the student for test...">'+escapeHtml(m.overallnotes||'')+'</textarea></div>';
+  root.appendChild(signoff);
+  ['cleared','signed','signdate','overallnotes'].forEach(function(k){
+    var el2 = qs('#rd-'+k, signoff);
+    el2.addEventListener(k==='cleared' ? 'change' : 'input', function(){ m[k]=el2.value; rdSave(); });
+  });
+
+  function updateOverall(){
+    var op = rdOverallProgress();
+    var countEl = qs('#rd-overall-count', head);
+    var fillEl = qs('#rd-overall-fill', head);
+    if(countEl) countEl.textContent = op.done+' / '+op.total;
+    if(fillEl) fillEl.style.width = (op.total ? op.done/op.total*100 : 0) + '%';
+  }
+  updateOverall();
+  root._rdUpdateOverall = updateOverall;
+}
+
+function rdRenderSection(tabKey, sec, sIdx){
+  var wrapper = document.createElement('details');
+  wrapper.className = 'rd-section';
+  wrapper.open = true;
+  var secTotal = sec.items.length;
+  var secDone = 0;
+  sec.items.forEach(function(_, iIdx){ if(rdState.checked[rdItemId(tabKey,sIdx,iIdx)]) secDone++; });
+
+  var summary = document.createElement('summary');
+  summary.className = 'rd-section-head';
+  summary.innerHTML =
+    '<span class="rd-title">'+sec.title+'</span>'+
+    '<span class="rd-count">'+secDone+' / '+secTotal+'</span>';
+  wrapper.appendChild(summary);
+
+  var body = document.createElement('div');
+  body.className = 'rd-section-body';
+  wrapper.appendChild(body);
+
+  function updateHead(){
+    var done=0;
+    sec.items.forEach(function(_, iIdx){ if(rdState.checked[rdItemId(tabKey,sIdx,iIdx)]) done++; });
+    var complete = done===secTotal;
+    summary.style.color = complete ? '#047857' : 'var(--sky)';
+    summary.style.borderBottomColor = complete ? 'rgba(4,120,87,.3)' : 'rgba(3,105,161,.2)';
+    summary.querySelector('.rd-count').textContent = done+' / '+secTotal;
+    summary.querySelector('.rd-count').style.color = complete ? '#047857' : 'var(--sky)';
+  }
+  updateHead();
+
+  sec.items.forEach(function(item, iIdx){
+    var id = rdItemId(tabKey,sIdx,iIdx);
+    var isDone = !!rdState.checked[id];
+    var row = el('div','cli '+(isDone?'done':'undone'));
+    row.style.marginBottom = '4px';
+    row.innerHTML =
+      '<div class="cli-chk '+(isDone?'on':'off')+'">'+
+        (isDone?'<svg width="10" height="8" viewBox="0 0 10 8"><polyline points="1,4 3.5,6.5 9,1" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>':'')+
+      '</div>'+
+      '<span class="cli-num">'+String.fromCharCode(97+iIdx)+')</span>'+
+      '<span class="cli-text '+(isDone?'done':'')+'">'+item+'</span>';
+    var toggle = function(){
+      rdState.checked[id] = !rdState.checked[id];
+      rdSave();
+      var nowDone = rdState.checked[id];
+      row.className = 'cli '+(nowDone?'done':'undone');
+      var chk = row.querySelector('.cli-chk');
+      chk.className = 'cli-chk '+(nowDone?'on':'off');
+      chk.innerHTML = nowDone ? '<svg width="10" height="8" viewBox="0 0 10 8"><polyline points="1,4 3.5,6.5 9,1" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>' : '';
+      var txt = row.querySelector('.cli-text');
+      txt.className = 'cli-text '+(nowDone?'done':'');
+      updateHead();
+      var root = qs('#rd-root');
+      if(root && root._rdUpdateOverall) root._rdUpdateOverall();
+      var tabbar = document.querySelector('.rd-tabbar');
+      if(tabbar) tabbar.querySelectorAll('.rd-tab').forEach(function(b,i){
+        var key = Object.keys(RD_DATA)[i];
+        var p = rdTabProgress(key);
+        b.innerHTML = RD_DATA[key].label + ' <span style="font-family:JetBrains Mono,monospace;font-weight:600;opacity:.85;font-size:10px">'+p.done+'/'+p.total+'</span>';
+      });
+    };
+    row.querySelector('.cli-chk').addEventListener('click', toggle);
+    row.querySelector('.cli-text').addEventListener('click', toggle);
+    body.appendChild(row);
+  });
+
+  var notesId = rdNotesId(tabKey, sIdx);
+  var notesWrap = document.createElement('div');
+  notesWrap.style.marginTop = '6px';
+  notesWrap.innerHTML =
+    '<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Notes</div>'+
+    '<textarea class="inp" rows="2" placeholder="Weak areas, re-training needed, dates covered..." style="font-size:12px">'+escapeHtml(rdState.notes[notesId]||'')+'</textarea>';
+  var ta = notesWrap.querySelector('textarea');
+  ta.addEventListener('input', function(){ rdState.notes[notesId] = ta.value; rdSave(); });
+  body.appendChild(notesWrap);
+
+  return wrapper;
+}
+
+// ============================================================
+// SKILL TEST TAB (per-flight) — inside the Log/Edit Flight modal.
+// Copies the same section list used on the Readiness tab's Skill Test
+// (RD_DATA.skill.sections), but tracks completion per-flight on f.skillTest.
+// ============================================================
+function renderSkillTestTab(f, root){
+  if(!f.skillTest) f.skillTest = {};
+  if(!f.skillTestTodo) f.skillTestTodo = {};
+  root.innerHTML = '';
+  var filterMode = false;
+  var sectionRefs = []; // { wrapper, rows:[{row,key}] }
+
+  var intro = document.createElement('div');
+  intro.style.cssText = 'font-size:12px;color:var(--muted);margin-bottom:10px;font-family:JetBrains Mono,monospace';
+  intro.textContent = RD_DATA.skill.intro;
+  root.appendChild(intro);
+
+  var progWrap = document.createElement('div');
+  progWrap.style.cssText = 'background:rgba(22,101,52,.06);border:1px solid rgba(22,101,52,.2);border-radius:9px;padding:10px 12px;margin-bottom:12px';
+  progWrap.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:baseline">'+
+      '<span style="font-family:JetBrains Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Items Demonstrated</span>'+
+      '<span id="m-st-count" style="font-family:JetBrains Mono,monospace;font-size:13px;color:#166534;font-weight:700"></span>'+
+    '</div>'+
+    '<div class="prog" style="height:6px;margin-bottom:8px"><div class="prog-fill" id="m-st-fill" style="width:0%;background:#166534"></div></div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:baseline">'+
+      '<span style="font-family:JetBrains Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">ToDo</span>'+
+      '<span id="m-st-todo-count" style="font-family:JetBrains Mono,monospace;font-size:13px;color:#b45309;font-weight:700"></span>'+
+    '</div>'+
+    '<div class="prog" style="height:6px;margin-bottom:10px"><div class="prog-fill" id="m-st-todo-fill" style="width:0%;background:#b45309"></div></div>'+
+    '<button type="button" id="m-st-filter-btn" style="width:100%;padding:6px 10px;font-size:11px;font-weight:700;font-family:JetBrains Mono,monospace;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;background:transparent;color:#b45309;border:1px solid #b45309">Show ToDo Only</button>';
+  root.appendChild(progWrap);
+
+  function totalCount(){
+    var total=0;
+    RD_DATA.skill.sections.forEach(function(sec){ total += sec.items.length; });
+    return total;
+  }
+  function doneCount(){
+    var done=0;
+    RD_DATA.skill.sections.forEach(function(sec, sIdx){
+      sec.items.forEach(function(_, iIdx){
+        if(f.skillTest[sIdx+'.'+iIdx]) done++;
+      });
+    });
+    return done;
+  }
+  function todoCount(){
+    var n=0;
+    RD_DATA.skill.sections.forEach(function(sec, sIdx){
+      sec.items.forEach(function(_, iIdx){
+        if(f.skillTestTodo[sIdx+'.'+iIdx]) n++;
+      });
+    });
+    return n;
+  }
+  function updateOverall(){
+    var t=totalCount(), d=doneCount(), td=todoCount();
+    var c=qs('#m-st-count',root), fl=qs('#m-st-fill',root);
+    var tc=qs('#m-st-todo-count',root), tfl=qs('#m-st-todo-fill',root);
+    if(c) c.textContent = d+' / '+t;
+    if(fl) fl.style.width = (t?d/t*100:0)+'%';
+    if(tc) tc.textContent = td+' / '+t;
+    if(tfl) tfl.style.width = (t?td/t*100:0)+'%';
+  }
+
+  function applyFilter(){
+    sectionRefs.forEach(function(secRef){
+      var anyVisible = false;
+      secRef.rows.forEach(function(r){
+        var isDone = !!f.skillTest[r.key];
+        var isTodo = !!f.skillTestTodo[r.key];
+        var match = !filterMode || (isTodo && !isDone);
+        r.row.style.display = match ? '' : 'none';
+        if(match) anyVisible = true;
+      });
+      secRef.wrapper.style.display = anyVisible ? '' : 'none';
+      if(filterMode && anyVisible) secRef.wrapper.open = true;
+    });
+  }
+
+  var filterBtn = qs('#m-st-filter-btn', progWrap);
+  filterBtn.addEventListener('click', function(){
+    filterMode = !filterMode;
+    filterBtn.style.background = filterMode ? '#b45309' : 'transparent';
+    filterBtn.style.color = filterMode ? '#fff' : '#b45309';
+    filterBtn.textContent = filterMode ? '\u2713 Showing ToDo Only \u2014 tap to show all' : 'Show ToDo Only';
+    applyFilter();
+  });
+
+  RD_DATA.skill.sections.forEach(function(sec, sIdx){
+    var wrapper = document.createElement('details');
+    wrapper.className = 'rd-section';
+    wrapper.open = true;
+    var secTotal = sec.items.length;
+    var secDone = 0;
+    sec.items.forEach(function(_, iIdx){ if(f.skillTest[sIdx+'.'+iIdx]) secDone++; });
+
+    var summary = document.createElement('summary');
+    summary.className = 'rd-section-head';
+    summary.innerHTML = '<span class="rd-title">'+sec.title+'</span><span class="rd-count">'+secDone+' / '+secTotal+'</span>';
+    wrapper.appendChild(summary);
+
+    var body = document.createElement('div');
+    body.className = 'rd-section-body';
+    wrapper.appendChild(body);
+
+    function updateHead(){
+      var done=0;
+      sec.items.forEach(function(_, iIdx){ if(f.skillTest[sIdx+'.'+iIdx]) done++; });
+      var complete = done===secTotal;
+      summary.style.color = complete ? '#047857' : '#166534';
+      summary.style.borderBottomColor = complete ? 'rgba(4,120,87,.3)' : 'rgba(22,101,52,.2)';
+      summary.querySelector('.rd-count').textContent = done+' / '+secTotal;
+      summary.querySelector('.rd-count').style.color = complete ? '#047857' : '#166534';
+    }
+    updateHead();
+
+    var secRef = { wrapper: wrapper, rows: [] };
+
+    sec.items.forEach(function(item, iIdx){
+      var key = sIdx+'.'+iIdx;
+      var row = el('div','cli');
+      row.style.marginBottom = '4px';
+      row.innerHTML =
+        '<div class="cli-chk"></div>'+
+        '<span class="cli-text"></span>'+
+        '<button type="button" class="rd-todo-btn" style="flex-shrink:0;padding:3px 9px;font-size:10px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:5px;cursor:pointer;-webkit-tap-highlight-color:transparent">ToDo</button>';
+      var chkEl = row.querySelector('.cli-chk');
+      var txtEl = row.querySelector('.cli-text');
+      var todoBtn = row.querySelector('.rd-todo-btn');
+      txtEl.innerHTML = item;
+
+      function paint(){
+        var isDone = !!f.skillTest[key];
+        var isTodo = !!f.skillTestTodo[key];
+        var bg, bcol;
+        if(isTodo){ bg='rgba(245,158,11,.16)'; bcol='#b45309'; }
+        else if(isDone){ bg='rgba(16,185,129,.07)'; bcol='rgba(16,185,129,.3)'; }
+        else { bg='rgba(255,255,255,.6)'; bcol='var(--border)'; }
+        row.style.background = bg;
+        row.style.borderColor = bcol;
+        chkEl.className = 'cli-chk '+(isDone?'on':'off');
+        chkEl.innerHTML = isDone ? '<svg width="10" height="8" viewBox="0 0 10 8"><polyline points="1,4 3.5,6.5 9,1" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>' : '';
+        txtEl.className = 'cli-text '+(isDone?'done':'');
+        todoBtn.style.background = isTodo ? '#b45309' : 'transparent';
+        todoBtn.style.color = isTodo ? '#fff' : '#b45309';
+        todoBtn.style.border = '1px solid #b45309';
+      }
+      paint();
+
+      var toggleDone = function(){
+        f.skillTest[key] = !f.skillTest[key];
+        paint();
+        updateHead();
+        updateOverall();
+        applyFilter();
+      };
+      var toggleTodo = function(e){
+        e.stopPropagation();
+        f.skillTestTodo[key] = !f.skillTestTodo[key];
+        paint();
+        updateOverall();
+        applyFilter();
+      };
+      chkEl.addEventListener('click', toggleDone);
+      txtEl.addEventListener('click', toggleDone);
+      todoBtn.addEventListener('click', toggleTodo);
+      body.appendChild(row);
+      secRef.rows.push({ row: row, key: key });
+    });
+
+    sectionRefs.push(secRef);
+    root.appendChild(wrapper);
+  });
+
+  applyFilter();
+
+  updateOverall();
+}
+
 renderFlFilters(); renderFlStats(); renderFlList();
 renderClFilter(); renderClList();
 renderLsFilter(); renderLsList();
 renderRfFilter(); renderRfList();
+renderReadiness();
 </script>
 </body>
 </html>
