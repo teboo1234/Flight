@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%2C-apple-system%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
-<title>FlightDeck v216</title>
+<title>FlightDeck v223</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -198,9 +198,30 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 
 /* Side (left/right) borders throughout the app were purely decorative accent
    stripes and ate into usable width on narrow phone screens — state is still
-   conveyed via background tint and top/bottom borders, so drop them here. */
-[style*="border-left"]{ border-left: none !important; }
-[style*="border-right"]{ border-right: none !important; }
+   conveyed via background tint and top/bottom borders, so drop them here.
+   This is intentionally a universal wildcard: any element's left/right
+   border width is forced to zero regardless of whether it came from a CSS
+   class or an inline style (shorthand `border:1px solid ...` included) —
+   narrower selectors kept missing symmetric full-borders on cards, inputs,
+   and buttons. Top/bottom borders are untouched. */
+*{ border-left-width:0 !important; border-right-width:0 !important; }
+
+/* Exception: tick/N-A boxes and checkboxes need a complete outline to read
+   as a discrete, tappable control — especially in their unchecked state,
+   where a background tint alone isn't enough to show there's a button
+   there at all. Restore their full border. */
+.cl-btn-yes, .cl-btn-na, .cli-chk, .dv-yes, .dv-na, .rd-todo-btn{
+  border-left-width:1px !important;
+  border-right-width:1px !important;
+}
+
+/* Pill-shaped badges (border-radius:999px) render the border-left/right-width
+   fix above as a no-op visually — when the radius is large enough to consume
+   the entire left/right edge into corner curvature, the browser still blends
+   the top/bottom border colour around that curve, so a full ring shows up
+   regardless. Drop the border on those entirely; the fill/text colour alone
+   carries the state. */
+[style*="border-radius:999px"]{ border: none !important; }
 
 /* ── Readiness Checklist tab ── */
 .rd-tabbar{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid var(--border)}
@@ -231,7 +252,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v216</span>
+      <span class="logo-sub">v223</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -403,6 +424,18 @@ function timeSpinnerHtml(baseId, stored){
     '<select class="inp" id="'+baseId+'-h" style="flex:1;padding:7px 4px">'+hOpts+'</select>'+
     '<span style="color:var(--muted);font-weight:700">:</span>'+
     '<select class="inp" id="'+baseId+'-m" style="flex:1;padding:7px 4px">'+mOpts+'</select>'+
+  '</div>';
+}
+// A labelled time-spinner field with a live countdown alongside it — used
+// for EOBT/CTOT/Takeoff/Landing, which all share the same layout. Paired
+// with updateCountdowns(), which looks for any '<baseId>-cd' element and
+// keeps it live on the 1s clock tick.
+function timeCountdownFieldHtml(label, baseId, stored){
+  return '<div class="field" style="margin-bottom:8px"><label>'+label+'</label>'+
+    '<div style="display:flex;gap:10px;align-items:center">'+
+      '<div style="flex:0 0 auto">'+timeSpinnerHtml(baseId, stored)+'</div>'+
+      '<div id="'+baseId+'-cd" style="flex:1;font-family:JetBrains Mono,monospace;font-size:12px;color:var(--muted);text-align:right">--</div>'+
+    '</div>'+
   '</div>';
 }
 function getTimeSpinner(baseId, ctx){
@@ -2337,7 +2370,6 @@ function renderFlDetail(){
       }).join('')+'</div>';
   }
   info.innerHTML=
-    '<div class="scard-head"><span class="ico">&#9992;</span> Flight Info</div>'+
     freqsHtml+
     '<div class="g2" style="margin-bottom:10px">'+
       '<div><div class="sec-lbl">Student / Co-pilot</div><div class="sec-box">'+(f.student||'--')+'</div></div>'+
@@ -2365,7 +2397,6 @@ function renderFlDetail(){
   // ============== TIMES (cyan) ==============
   var tc=el('div','scard s-times');
   tc.innerHTML=
-    '<div class="scard-head"><span class="ico">&#9201;</span> Times</div>'+
     '<div class="g4" style="margin-bottom:14px">'+
       '<div><div class="sec-lbl">Chocks Off</div><div class="sec-box">'+(f.chocksOff||'--')+'</div></div>'+
       '<div><div class="sec-lbl">Takeoff</div><div class="sec-box">'+(f.takeoff||'--')+'</div></div>'+
@@ -2392,7 +2423,7 @@ function renderFlDetail(){
   var burnLabel=fc.burn!==null ? fc.burn+' USG/hr' : 'not set';
   var fcard=el('div','scard s-fuel');
   fcard.innerHTML=
-    '<div class="scard-head"><span class="ico">&#9981;</span> Fuel <span style="font-weight:400;font-size:12px;color:var(--muted);margin-left:8px;letter-spacing:.05em">Burn '+burnLabel+'</span></div>'+
+    '<div style="font-size:12px;color:var(--muted);letter-spacing:.05em;margin-bottom:10px">Burn '+burnLabel+'</div>'+
     '<div class="g3" style="gap:10px;margin-bottom:10px">'+
       '<div><div class="sec-lbl">Initial Fuel</div>'+
         '<div class="sec-box">'+(fc.initial!==null?dec2(fc.initial)+' USG':'--')+'</div></div>'+
@@ -2421,7 +2452,7 @@ function renderFlDetail(){
                   f.wxTaf1 || f.wxTaf2 || f.wxTaf3 || f.wxTaf4;
   if(hasWxData){
     var wcard=el('div','scard s-wx');
-    var html = '<div class="scard-head"><span class="ico">&#9925;</span> Weather</div>';
+    var html = '';
     if(f.wxTAS){
       var tasN = parseFloat(f.wxTAS);
       function driftTxt(spdRaw){
@@ -2539,7 +2570,6 @@ function renderFlDetail(){
   if(f.defects){
     var dcard=el('div','scard s-defects');
     dcard.innerHTML =
-      '<div class="scard-head"><span class="ico">&#9888;</span> Defects</div>'+
       '<div class="sec-box" style="border-color:rgba(190,18,60,.3)">'+escapeHtml(f.defects)+'</div>';
     box.appendChild(dcard);
   }
@@ -2547,7 +2577,7 @@ function renderFlDetail(){
   // ============== MANEUVERS / NOTES (slate) ==============
   if(f.maneuvers||f.notes){
     var ncard=el('div','scard s-notes');
-    var nh = '<div class="scard-head"><span class="ico">&#9998;</span> Notes</div>';
+    var nh = '';
     if(f.maneuvers) nh += '<div class="sec" style="margin-bottom:10px"><div class="sec-lbl">Maneuvers / Exercises</div><div class="sec-box">'+escapeHtml(f.maneuvers)+'</div></div>';
     if(f.notes)     nh += '<div class="sec"><div class="sec-lbl">Instructor Notes</div><div class="sec-box">'+escapeHtml(f.notes)+'</div></div>';
     ncard.innerHTML = nh;
@@ -2600,7 +2630,7 @@ function renderFlDetail(){
   var hasAnyAtis = atisMetars.length > 0;
   if(hasAnyAtis){
     var scard=el('div','scard s-notes');
-    var sh = '<div class="scard-head"><span class="ico">&#9998;</span> Scribble &amp; Notes</div>';
+    var sh = '';
     sh += '<div class="sec-lbl">ATIS</div>'+
       '<div class="sec-box" style="font-family:JetBrains Mono,monospace;font-size:14px;color:#1e3a8a;font-weight:600;margin-bottom:10px;white-space:pre-wrap">'+atisMetars.map(escapeHtml).join('\n')+'</div>';
     scard.innerHTML = sh;
@@ -2610,7 +2640,7 @@ function renderFlDetail(){
   // Clearance card (rose) — scribbles + OCR text
   if(f.scribbleIfr || f.scribbleTaxi || f.scribbleIfrText || f.scribbleTaxiText){
     var clrCard = el('div', 'scard s-clr');
-    var ch = '<div class="scard-head"><span class="ico">&#128075;</span> Clearance</div>';
+    var ch = '';
     if(f.scribbleIfr || f.scribbleIfrText){
       ch += '<div class="sec-lbl">IFR</div>';
       if(f.scribbleIfr) ch += '<div style="background:#fff;border:1px solid var(--border);border-radius:9px;padding:6px;margin-bottom:8px"><img src="'+f.scribbleIfr+'" style="max-width:100%;display:block;border-radius:5px" alt="IFR scribble"/></div>';
@@ -2641,9 +2671,8 @@ function renderFlDetail(){
 
 function openFlModal(ex){
   var f=ex||{id:uid(),date:'',aircraft:'',departure:'',destination:'',student:'',
-    depMinDA:'',depMinVis:'',destMinDA:'',destMinVis:'',
-    alt1Icao:'',alt1MinDA:'',alt1MinVis:'',alt1Time:'',
-    alt2Icao:'',alt2MinDA:'',alt2MinVis:'',alt2Time:'',
+    alt1Icao:'',alt1Time:'',
+    alt2Icao:'',alt2Time:'',
     eobt:'',ctot:'',pTakeoff:'',pLanding:'',
     chocksOff:'',takeoff:'',landing:'',chocksOn:'',
     lessonStart:'',lessonEnd:'',circuitStart:'',circuitEnd:'',
@@ -2676,9 +2705,7 @@ function openFlModal(ex){
       '<button type="button" id="m-tab-skilltest" class="m-tab" style="padding:8px 6px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:12px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#166534">Skill Test</button>'+
     '</div>'+
     '<div id="m-section-info" class="scard s-info">'+
-      '<div class="scard-head"><span class="ico">&#9992;</span> Flight Info</div>'+
-
-    '<div style="display:flex;gap:2px;margin-bottom:14px;border-bottom:2px solid rgba(30,58,138,.3)">'+
+      '<div style="display:flex;gap:2px;margin-bottom:14px;border-bottom:2px solid rgba(30,58,138,.3)">'+
       '<button type="button" id="m-info-tab-radio" class="m-info-tab m-info-tab-on" style="padding:9px 4px;background:none;border:none;border-bottom:3px solid #1e3a8a;color:#1e3a8a;font-weight:800;font-size:14px;font-family:Syne,sans-serif;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1">Radio</button>'+
       '<button type="button" id="m-info-tab-atis" class="m-info-tab" style="padding:9px 4px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-weight:700;font-size:14px;font-family:Syne,sans-serif;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1">ATIS</button>'+
       '<button type="button" id="m-info-tab-details" class="m-info-tab" style="padding:9px 4px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-weight:700;font-size:14px;font-family:Syne,sans-serif;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1">Details</button>'+
@@ -2699,71 +2726,44 @@ function openFlModal(ex){
 
     '<div id="m-info-details" style="display:none">'+
     '<div class="sdiv" style="margin-top:0">Flight Details</div>'+
-    '<div class="field"><label>Date</label>'+
-      '<div style="display:flex;gap:4px">'+
-        '<input class="inp" id="m-date" type="date" value="'+(f.date||'')+'" style="flex:1"/>'+
-        '<button type="button" class="btn btn-g" id="m-date-today" style="padding:6px 10px;font-size:12px;flex-shrink:0">Today</button>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+      '<div class="field" style="margin-bottom:8px"><label>Date</label>'+
+        '<div style="display:flex;gap:4px">'+
+          '<input class="inp" id="m-date" type="date" value="'+(f.date||'')+'" style="flex:1;min-width:0"/>'+
+          '<button type="button" class="btn btn-g" id="m-date-today" style="padding:6px 8px;font-size:11px;flex-shrink:0">Today</button>'+
+        '</div>'+
       '</div>'+
+      '<div class="field" style="margin-bottom:8px"><label>Aircraft Reg</label><input class="inp" id="m-aircraft" placeholder="VH-XXX" value="'+(f.aircraft||'')+'"/></div>'+
     '</div>'+
-    '<div class="field"><label>Aircraft Reg</label><input class="inp" id="m-aircraft" placeholder="VH-XXX" value="'+(f.aircraft||'')+'"/></div>'+
-    '<div class="field"><label>Student / Co-pilot</label><input class="inp" id="m-student" value="'+(f.student||'')+'" placeholder="Student name"/></div>'+
-    '<div class="field"><label>Departure</label>'+
-      '<div style="display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center">'+
-        '<input class="inp" id="m-dep" placeholder="YSSY" value="'+(f.departure||'')+'"/>'+
-        '<input class="inp" id="m-depMinDA" placeholder="DA (ft)" value="'+(f.depMinDA||'')+'" style="width:88px;font-size:12px" title="Departure minimum DA (ft)"/>'+
-        '<input class="inp" id="m-depMinVis" placeholder="Vis (m)" value="'+(f.depMinVis||'')+'" style="width:88px;font-size:12px" title="Departure minimum visibility (m)"/>'+
-      '</div>'+
-    '</div>'+
-    '<div class="field"><label>Destination</label>'+
-      '<div style="display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center">'+
-        '<input class="inp" id="m-dest" placeholder="YMML" value="'+(f.destination||'')+'"/>'+
-        '<input class="inp" id="m-destMinDA" placeholder="DA (ft)" value="'+(f.destMinDA||'')+'" style="width:88px;font-size:12px" title="Destination DA (ft)"/>'+
-        '<input class="inp" id="m-destMinVis" placeholder="Vis (m)" value="'+(f.destMinVis||'')+'" style="width:88px;font-size:12px" title="Destination visibility (m)"/>'+
-      '</div>'+
+    '<div class="field" style="margin-bottom:8px"><label>Student / Co-pilot</label><input class="inp" id="m-student" value="'+(f.student||'')+'" placeholder="Student name"/></div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+      '<div class="field" style="margin-bottom:8px"><label>Departure</label><input class="inp" id="m-dep" placeholder="YSSY" value="'+(f.departure||'')+'"/></div>'+
+      '<div class="field" style="margin-bottom:8px"><label>Destination</label><input class="inp" id="m-dest" placeholder="YMML" value="'+(f.destination||'')+'"/></div>'+
     '</div>'+
 
-    '<div class="sdiv" style="margin-top:14px">Alternates</div>'+
+    '<div class="sdiv" style="margin-top:10px">Planned Times (UTC)</div>'+
+    timeCountdownFieldHtml('EOBT (Off-Block)', 'm-eobt', f.eobt) +
+    timeCountdownFieldHtml('CTOT (Slot)', 'm-ctot', f.ctot) +
+    timeCountdownFieldHtml('Takeoff', 'm-pTakeoff', f.pTakeoff) +
+    timeCountdownFieldHtml('Landing', 'm-pLanding', f.pLanding) +
+
+    '<div class="sdiv" style="margin-top:10px">Alternates</div>'+
     ['alt1','alt2'].map(function(k, i){
       var label = 'Alternate '+(i+1);
-      return '<div class="field"><label>'+label+'</label>'+
-        '<div style="display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;margin-bottom:6px">'+
-          '<input class="inp" id="m-'+k+'Icao" placeholder="Airport" value="'+(f[k+'Icao']||'')+'"/>'+
-          '<div style="display:flex;align-items:center;gap:6px;flex:0 0 auto">'+
-            '<span style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--muted)">Time</span>'+
-            durationHtml('m-'+k+'-time')+
-          '</div>'+
-        '</div>'+
-        '<div style="display:grid;grid-template-columns:auto auto 1fr;gap:6px;align-items:center">'+
-          '<input class="inp" id="m-'+k+'MinDA" placeholder="DA (ft)" value="'+(f[k+'MinDA']||'')+'" style="width:88px;font-size:12px" title="Alternate DA (ft)"/>'+
-          '<input class="inp" id="m-'+k+'MinVis" placeholder="Vis (m)" value="'+(f[k+'MinVis']||'')+'" style="width:88px;font-size:12px" title="Alternate visibility (m)"/>'+
-          '<div id="m-'+k+'-fuel-out" style="font-family:JetBrains Mono,monospace;font-size:12px;color:#b45309;text-align:right;font-weight:700;white-space:nowrap">--</div>'+
+      return '<div class="field" style="margin-bottom:8px"><label>'+label+'</label>'+
+        '<input class="inp" id="m-'+k+'Icao" placeholder="Airport" value="'+(f[k+'Icao']||'')+'" style="margin-bottom:4px"/>'+
+        '<div style="display:flex;align-items:center;gap:8px">'+
+          durationHtml('m-'+k+'-time')+
+          '<div id="m-'+k+'-fuel-out" style="font-family:JetBrains Mono,monospace;font-size:12px;color:#b45309;font-weight:700;white-space:nowrap;flex:1;text-align:right">--</div>'+
         '</div>'+
       '</div>';
     }).join('')+
-
-    '<div class="sdiv">Planned Times (UTC)</div>'+
-    '<div class="field"><label>EOBT (Off-Block)</label>'+
-      '<div style="display:flex;gap:10px;align-items:center">'+
-        '<div style="flex:0 0 auto">'+timeSpinnerHtml('m-eobt', f.eobt)+'</div>'+
-        '<div id="m-eobt-cd" style="flex:1;font-family:JetBrains Mono,monospace;font-size:12px;color:var(--muted);text-align:right">--</div>'+
-      '</div>'+
-    '</div>'+
-    '<div class="field"><label>CTOT (Slot)</label>'+
-      '<div style="display:flex;gap:10px;align-items:center">'+
-        '<div style="flex:0 0 auto">'+timeSpinnerHtml('m-ctot', f.ctot)+'</div>'+
-        '<div id="m-ctot-cd" style="flex:1;font-family:JetBrains Mono,monospace;font-size:12px;color:var(--muted);text-align:right">--</div>'+
-      '</div>'+
-    '</div>'+
-    '<div class="field"><label>Planned Takeoff</label>'+timeSpinnerHtml('m-pTakeoff', f.pTakeoff)+'</div>'+
-    '<div class="field"><label>Planned Landing</label>'+timeSpinnerHtml('m-pLanding', f.pLanding)+'</div>'+
     '</div>'+ // close #m-info-details
 
     '</div>'+ // close #m-section-info (will reopen Other after fuel section)
 
     '<div id="m-section-clr" class="scard s-clr" style="display:none">'+
-      '<div class="scard-head"><span class="ico">&#128075;</span> Clearance</div>'+
-
-      '<div class="sdiv">IFR Clearance</div>'+
+      '<div class="sdiv" style="margin-top:0">IFR Clearance</div>'+
       '<button type="button" class="btn btn-p" id="m-scribble-ifr" style="width:100%;padding:14px;font-size:15px;font-weight:700;margin-bottom:10px">&#9998; Open IFR Scribble</button>'+
       '<div class="clr-strip" style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-bottom:18px">'+
         '<div id="m-scribble-ifr-preview" style="flex:0 0 auto;max-width:100%">'+
@@ -2793,8 +2793,7 @@ function openFlModal(ex){
     '</div>'+
 
     '<div id="m-section-times" class="scard s-times" style="display:none">'+
-      '<div class="scard-head"><span class="ico">&#9201;</span> Times</div>'+
-    '<div class="sdiv">Block &amp; Air Times (UTC)</div>'+
+      '<div class="sdiv" style="margin-top:0">Block &amp; Air Times (UTC)</div>'+
     '<div class="field"><label>Chocks Off</label>'+
       '<div style="display:flex;gap:6px;align-items:center">'+timeSpinnerHtml('m-chocksOff', f.chocksOff)+
       '<button type="button" class="btn btn-g m-now-btn" data-target="m-chocksOff" style="padding:6px 12px;font-size:12px">Now</button></div>'+
@@ -2864,8 +2863,7 @@ function openFlModal(ex){
     '</div>'+ // close #m-section-times
 
     '<div id="m-section-wx" class="scard s-wx" style="display:none">'+
-      '<div class="scard-head"><span class="ico">&#9925;</span> Weather</div>'+
-    '<div class="sdiv">Planning</div>'+
+      '<div class="sdiv" style="margin-top:0">Planning</div>'+
     '<div style="display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin-bottom:10px">'+
       '<div class="field" style="margin-bottom:0;flex:0 0 74px"><label>TAS (kt)</label><input class="inp" id="m-wxTAS" type="number" step="1" placeholder="90" value="'+(f.wxTAS||'')+'"/></div>'+
       '<div style="flex:1 1 200px;min-width:200px;background:rgba(3,105,161,.06);border:1px solid rgba(3,105,161,.25);border-radius:9px;padding:10px">'+
@@ -3003,8 +3001,7 @@ function openFlModal(ex){
     '</div>'+ // close #m-section-wx
 
     '<div id="m-section-fuel" class="scard s-fuel" style="display:none">'+
-      '<div class="scard-head"><span class="ico">&#9981;</span> Fuel</div>'+
-    '<div class="sdiv">Fuel Planning</div>'+
+      '<div class="sdiv" style="margin-top:0">Fuel Planning</div>'+
     '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-family:JetBrains Mono,monospace">Enter USG or L &mdash; the other converts automatically (1 USG = 3.785 L)</div>'+
     '<div class="g3">'+
       '<div class="field"><label>Initial Fuel</label>'+fuelPairHtml('m-fob',f.fob,'40.0')+'</div>'+
@@ -3134,14 +3131,13 @@ function openFlModal(ex){
     '</div>'+ // close #m-section-fuel
 
     '<div id="m-section-skilltest" class="scard" style="display:none;background:rgba(22,101,52,.05);border-color:rgba(22,101,52,.2);border-left-color:#166534">'+
-      '<div class="scard-head" style="color:#166534"><span class="ico">&#10003;</span> Skill Test <span style="font-weight:400;font-size:12px;color:var(--muted);margin-left:8px;letter-spacing:.05em">SRG2128 sections demonstrated this flight</span></div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">SRG2128 sections demonstrated this flight</div>'+
       '<div id="m-skilltest-body"></div>'+
     '</div>'+
 
     '<div id="m-section-info-extra">'+
 
     '<div class="scard s-defects">'+
-      '<div class="scard-head"><span class="ico">&#9888;</span> Defects</div>'+
       '<textarea class="inp" id="m-defects" rows="3" placeholder="None / list any aircraft defects, snags or issues">'+(f.defects||'')+'</textarea>'+
     '</div>'+
 
@@ -3692,9 +3688,9 @@ function openFlModal(ex){
    'm-fuelContPct',
    'm-wxTAS',
    'm-rwy1','m-rwy2','m-rwy3','m-rwy4',
-   'm-dep','m-dest','m-depMinDA','m-depMinVis','m-destMinDA','m-destMinVis',
-   'm-alt1Icao','m-alt1MinDA','m-alt1MinVis',
-   'm-alt2Icao','m-alt2MinDA','m-alt2MinVis'].forEach(function(id){
+   'm-dep','m-dest',
+   'm-alt1Icao',
+   'm-alt2Icao'].forEach(function(id){
     var el=qs('#'+id,div); if(el) el.addEventListener('input', liveCalc);
   });
   // Alternate time spinners → liveCalc (fires alt fuel recompute)
@@ -4083,7 +4079,7 @@ function openFlModal(ex){
           '</table>'+
         '</div>'+
 
-        '<div class="foot">FlightDeck v216 &middot; '+new Date().toLocaleString()+'</div>'+
+        '<div class="foot">FlightDeck v223 &middot; '+new Date().toLocaleString()+'</div>'+
         '</body></html>';
       win.document.open();
       win.document.write(html);
@@ -4603,13 +4599,9 @@ function openFlModal(ex){
     };
     f.date=g('m-date'); f.aircraft=g('m-aircraft');
     f.departure=g('m-dep').toUpperCase(); f.destination=g('m-dest').toUpperCase();
-    f.depMinDA = g('m-depMinDA'); f.depMinVis = g('m-depMinVis');
-    f.destMinDA = g('m-destMinDA'); f.destMinVis = g('m-destMinVis');
     ['alt1','alt2'].forEach(function(k){
       var icao = g('m-'+k+'Icao');
       f[k+'Icao'] = icao ? icao.toUpperCase() : '';
-      f[k+'MinDA'] = g('m-'+k+'MinDA');
-      f[k+'MinVis'] = g('m-'+k+'MinVis');
       var hrs = getDuration('m-'+k+'-time', div);
       f[k+'Time'] = (hrs === null) ? '' : String(hrs);
     });
@@ -4990,7 +4982,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v216');
+  lines.push('','-- Sent from FlightDeck v223');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -5039,7 +5031,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v216');
+  lines.push('','-- FlightDeck v223');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
@@ -5913,14 +5905,24 @@ var LAW_EXPLANATIONS = {
 };
 
 // Helper: purple LAW badge shown next to hasLaw items
-function lawBadgeHtml(){
-  return '<span title="Legal / regulatory item" style="display:inline-flex;align-items:center;justify-content:center;background:#6d28d9;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:4px;margin-left:6px;font-family:JetBrains Mono,monospace;letter-spacing:.05em">LAW</span>';
+function lawBadgeHtml(itemId){
+  return '<button type="button" class="cl-law-btn" data-law-id="'+itemId+'" title="Legal / regulatory item — tap to view" style="display:inline-flex;align-items:center;justify-content:center;background:#6d28d9;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;margin-left:6px;font-family:JetBrains Mono,monospace;letter-spacing:.05em;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent">LAW</button>';
 }
-// Helper: purple-tinted law explanation note
-function lawNoteHtml(explanation){
-  return '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:10px;color:#6d28d9;font-family:JetBrains Mono,monospace;letter-spacing:.06em;text-transform:uppercase;font-weight:700;list-style:none;padding:2px 0">&#9654; Regulation</summary>'+
-    '<div style="margin-top:4px;padding:6px 10px;background:rgba(109,40,217,.06);border-left:2px solid #6d28d9;font-size:11px;color:#4c1d95;line-height:1.45;border-radius:0 4px 4px 0">'+explanation+'</div>'+
-  '</details>';
+// Helper: purple-tinted law explanation note — hidden by default, toggled by
+// tapping the LAW badge on the item's own line (see wireLawToggle).
+function lawNoteHtml(itemId, explanation){
+  return '<div class="cl-law-note" data-law-note-id="'+itemId+'" style="display:none;margin-top:4px;padding:6px 10px;background:rgba(109,40,217,.06);border-left:2px solid #6d28d9;font-size:11px;color:#4c1d95;line-height:1.45;border-radius:0 4px 4px 0">'+explanation+'</div>';
+}
+// Wires every .cl-law-btn found within scope to toggle its matching .cl-law-note.
+function wireLawToggle(scope){
+  scope.querySelectorAll('.cl-law-btn').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation(); e.preventDefault();
+      var id = btn.getAttribute('data-law-id');
+      var note = scope.querySelector('.cl-law-note[data-law-note-id="'+id+'"]');
+      if(note) note.style.display = (note.style.display === 'none') ? '' : 'none';
+    });
+  });
 }
 // Helper: general item note (amber)
 function noteHtml(note){
@@ -5968,8 +5970,8 @@ function renderChecklistItem(f, section, item, itemId, onStateChange){
   }
   applyStyle();
 
-  var lawBadge = item.hasLaw ? lawBadgeHtml() : '';
-  var lawNote = (item.hasLaw && LAW_EXPLANATIONS[item.id]) ? lawNoteHtml(LAW_EXPLANATIONS[item.id]) : '';
+  var lawBadge = item.hasLaw ? lawBadgeHtml(itemId) : '';
+  var lawNote = (item.hasLaw && LAW_EXPLANATIONS[item.id]) ? lawNoteHtml(itemId, LAW_EXPLANATIONS[item.id]) : '';
   var itemNote = item.note ? noteHtml(item.note) : '';
   var textStyle = isManualCalc ? 'color:var(--text);font-weight:600;font-style:italic' : 'color:var(--text);font-weight:600';
   var bothInput = '';
@@ -6036,6 +6038,7 @@ function renderChecklistItem(f, section, item, itemId, onStateChange){
     applyStyle(); paintBtns(); onStateChange();
     row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
   });
+  wireLawToggle(row);
   row.querySelectorAll('.cl-inp').forEach(function(inp){
     var iid = inp.getAttribute('data-inp-id');
     if(iid && f.checklistInputs[iid]) inp.value = f.checklistInputs[iid];
@@ -6130,7 +6133,7 @@ function renderGroupContainer(f, section, item, itemId, onStateChange){
   summary.innerHTML =
     '<span class="grp-arrow" style="font-size:10px;color:#1e3a8a;flex:0 0 auto;transition:transform .15s;transform:rotate(90deg)">&#9654;</span>'+
     '<span class="grp-title" style="flex:1;min-width:0">'+item.text+
-      (item.hasLaw ? lawBadgeHtml() : '')+
+      (item.hasLaw ? lawBadgeHtml(itemId) : '')+
     '</span>'+
     '<span class="grp-count" style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:600;flex:0 0 auto"></span>';
   wrapper.appendChild(summary);
@@ -6157,7 +6160,7 @@ function renderGroupContainer(f, section, item, itemId, onStateChange){
   function rebuildGroupBody(){
     body.innerHTML = '';
     // Optional law reference + note render above children
-    if(item.hasLaw && LAW_EXPLANATIONS[item.id]) body.insertAdjacentHTML('beforeend', lawNoteHtml(LAW_EXPLANATIONS[item.id]));
+    if(item.hasLaw && LAW_EXPLANATIONS[item.id]) body.insertAdjacentHTML('beforeend', lawNoteHtml(itemId, LAW_EXPLANATIONS[item.id]));
     if(item.note) body.insertAdjacentHTML('beforeend', noteHtml(item.note));
     item.children.forEach(function(childText, idx){
       var childId = itemId + '.' + idx;
@@ -6171,8 +6174,9 @@ function renderGroupContainer(f, section, item, itemId, onStateChange){
   }
 
   // Optional law reference + note render above children (only visible when open)
-  if(item.hasLaw && LAW_EXPLANATIONS[item.id]) body.insertAdjacentHTML('beforeend', lawNoteHtml(LAW_EXPLANATIONS[item.id]));
+  if(item.hasLaw && LAW_EXPLANATIONS[item.id]) body.insertAdjacentHTML('beforeend', lawNoteHtml(itemId, LAW_EXPLANATIONS[item.id]));
   if(item.note) body.insertAdjacentHTML('beforeend', noteHtml(item.note));
+  wireLawToggle(wrapper);
 
   function updateCount(){
     var total = item.children.length, done = 0;
@@ -6693,6 +6697,9 @@ function clAircraftRefEl(){
       return null;
     }
     function fmtConv(n){ return isNaN(n) ? '' : String(Math.round(n * 100) / 100); }
+    function fmtConvInt(n){ return isNaN(n) ? '' : String(Math.round(n)); }
+    var KT_MPH_FACTOR = 1.15078;
+    function fmtByFactor(n, factor){ return (factor === KT_MPH_FACTOR) ? fmtConvInt(n) : fmtConv(n); }
     Object.keys(byCat).forEach(function(cat){
       var sect = document.createElement('div');
       sect.style.cssText = 'margin-bottom:16px';
@@ -6712,7 +6719,7 @@ function clAircraftRefEl(){
           '<div style="color:var(--muted);font-size:11px;min-width:34px">'+unit+'</div>';
         if(cv){
           var num = parseFloat(val);
-          var convVal = isNaN(num) ? '' : fmtConv(num * cv.factor);
+          var convVal = isNaN(num) ? '' : fmtByFactor(num * cv.factor, cv.factor);
           mainHtml +=
             '<input class="inp acr-conv" data-k="'+key+'" data-conv-factor="'+cv.factor+'" value="'+escapeHtml(convVal)+'" style="width:52px;padding:5px 6px;font-size:13px;text-align:right;font-family:JetBrains Mono,monospace"/>'+
             '<div style="color:var(--muted);font-size:11px;min-width:40px">'+cv.unit+'</div>';
@@ -6747,7 +6754,7 @@ function clAircraftRefEl(){
       var spdK = base + 'Spd';
       var spdV = prof[spdK] || '';
       var spdNum = parseFloat(spdV);
-      var spdMph = isNaN(spdNum) ? '' : fmtConv(spdNum * 1.15078);
+      var spdMph = isNaN(spdNum) ? '' : fmtConvInt(spdNum * 1.15078);
       pwrGrid.innerHTML += '<input class="inp acr-conv" data-k="'+spdK+'" data-conv-factor="1.15078" value="'+escapeHtml(spdMph)+'" style="width:100%;padding:5px 6px;font-size:12px;text-align:right;font-family:JetBrains Mono,monospace"/>';
     });
     pwrSect.appendChild(pwrGrid);
@@ -6764,7 +6771,7 @@ function clAircraftRefEl(){
           var convEl = wrap.querySelector('.acr-conv[data-k="'+k+'"]');
           if(convEl){
             var n = parseFloat(inp.value);
-            convEl.value = isNaN(n) ? '' : fmtConv(n * factor);
+            convEl.value = isNaN(n) ? '' : fmtByFactor(n * factor, factor);
           }
         }
       });
@@ -6776,7 +6783,7 @@ function clAircraftRefEl(){
         var factor = parseFloat(inp.getAttribute('data-conv-factor'));
         if(!factor || isNaN(factor)) return;
         var n = parseFloat(inp.value);
-        var back = isNaN(n) ? '' : fmtConv(n / factor);
+        var back = isNaN(n) ? '' : fmtByFactor(n / factor, factor);
         if(!profiles[selected]) profiles[selected] = {};
         profiles[selected][k] = back;
         saveAcProfiles(profiles);
@@ -7190,7 +7197,7 @@ qs('#rf-search').addEventListener('input', renderRfList);
 // PWA
 // ============================================================
 var SW_CODE=[
-  "var C='fd-sw-v19';",
+  "var C='fd-sw-v26';",
   "self.addEventListener('install',function(e){",
   "  e.waitUntil(caches.open(C).then(function(c){ return c.addAll([self.location.pathname]); }).then(function(){ return self.skipWaiting(); }));",
   "});",
@@ -7281,7 +7288,7 @@ function updateClock(){
 // Called every clock tick. If the input hasn't rendered (modal closed) this
 // is a no-op.
 function updateCountdowns(now){
-  ['m-eobt','m-ctot'].forEach(function(id){
+  ['m-eobt','m-ctot','m-pTakeoff','m-pLanding'].forEach(function(id){
     var h = document.getElementById(id+'-h');
     var m = document.getElementById(id+'-m');
     var out = document.getElementById(id+'-cd');
