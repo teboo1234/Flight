@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%2C-apple-system%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
-<title>FlightDeck v223</title>
+<title>FlightDeck v224</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -95,33 +95,23 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
    tinted background, and header label. */
 .scard{border-radius:11px;padding:18px;margin-bottom:36px;border-top:1px solid;border-bottom:1px solid;box-shadow:0 2px 6px rgba(15,23,42,.06)}
 .scard:last-child{margin-bottom:0}
-.scard-head{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid currentColor;display:flex;align-items:center;gap:8px}
-.scard-head .ico{font-size:18px}
 .scard .field{margin-bottom:14px}
 /* sdiv = subsection heading inside a section card (e.g. "Surface Wind",
    "Runways", "Planning" within the Weather card). Give it real space
    above so the subsections feel distinct from one another. */
 .scard .sdiv{margin-top:28px;margin-bottom:14px;padding-top:14px;border-top:1px dashed rgba(0,0,0,.1)}
 .scard .sdiv:first-of-type,
-.scard .scard-head + .sdiv,
 .scard > .sdiv:first-child{margin-top:0;padding-top:0;border-top:none}
 .scard > *:last-child{margin-bottom:0}
 .scard .g2,.scard .g3,.scard .g4{margin-bottom:18px}
 .scard .g2:last-child,.scard .g3:last-child,.scard .g4:last-child{margin-bottom:0}
 .s-info   {background:rgba(30,58,138,.06);border-color:rgba(30,58,138,.18);border-left-color:#1e3a8a}
-.s-info .scard-head{color:#1e3a8a}
 .s-times  {background:rgba(14,116,144,.06);border-color:rgba(14,116,144,.18);border-left-color:#0e7490}
-.s-times .scard-head{color:#0e7490}
 .s-wx     {background:rgba(109,40,217,.06);border-color:rgba(109,40,217,.18);border-left-color:#6d28d9}
-.s-wx .scard-head{color:#6d28d9}
 .s-fuel   {background:rgba(180,83,9,.06);border-color:rgba(180,83,9,.18);border-left-color:#b45309;min-width:0;overflow-x:hidden}
 .s-clr    {background:rgba(190,18,60,.05);border-color:rgba(190,18,60,.2);border-left-color:#be123c}
-.s-clr .scard-head{color:#be123c}
-.s-fuel .scard-head{color:#b45309}
 .s-defects{background:rgba(190,18,60,.07);border-color:rgba(190,18,60,.22);border-left-color:#be123c}
-.s-defects .scard-head{color:#be123c}
 .s-notes  {background:rgba(71,85,105,.06);border-color:rgba(71,85,105,.18);border-left-color:#475569}
-.s-notes .scard-head{color:#475569}
 /* Calculated/derived value styling - mono and slightly larger */
 .calc-num{font-family:'JetBrains Mono',monospace;font-weight:700}
 /* Spectrum strip on flight list cards: small coloured bars showing what's filled in */
@@ -252,7 +242,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v223</span>
+      <span class="logo-sub">v224</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -476,12 +466,6 @@ function freqSpinnerHtml(baseId, savedVal){
     '<button type="button" class="freq-btn" id="'+baseId+'-btn" data-val="'+(savedVal||'')+'" style="padding:4px 8px;flex:0 0 auto;font-family:JetBrains Mono,monospace;font-size:14px;font-weight:600;line-height:1.3;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:6px;cursor:pointer;color:#1e3a8a">'+(display?('1'+display):'1&mdash;&mdash;.&mdash;&mdash;&mdash;')+'</button>'+
   '</div>';
 }
-function getFreqSpinner(baseId, ctx){
-  var btn = qs('#'+baseId+'-btn', ctx);
-  if(!btn) return '';
-  return btn.dataset.val || '';
-}
-
 // Combined wind entry: XXX/XX or XXX/XXGXX. Auto-inserts "/" after 3 digits
 // and lets user tap G to add a gust component.
 function openWindKeypad(currentValue, onDone){
@@ -3942,7 +3926,6 @@ function openFlModal(ex){
       // Make sure the current form state is captured first
       collectFields();
       var fc = fuelCalc(f);
-      var c = flCalc(f);
       var win = window.open('', '_blank');
       if(!win){ toast('Allow popups to export PDF'); return; }
       function row(label, value, calc){
@@ -4079,7 +4062,7 @@ function openFlModal(ex){
           '</table>'+
         '</div>'+
 
-        '<div class="foot">FlightDeck v223 &middot; '+new Date().toLocaleString()+'</div>'+
+        '<div class="foot">FlightDeck v224 &middot; '+new Date().toLocaleString()+'</div>'+
         '</body></html>';
       win.document.open();
       win.document.write(html);
@@ -4982,7 +4965,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v223');
+  lines.push('','-- Sent from FlightDeck v224');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -5031,7 +5014,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v223');
+  lines.push('','-- FlightDeck v224');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
@@ -5316,7 +5299,6 @@ function startAirborneFlash(f){
 // Compute a section's status: counts each child of a group individually.
 function checklistSectionStatus(section, state){
   var total = 0, done = 0;
-  var inputs = null; // lazy-loaded per-item from window when needed
   section.items.forEach(function(it){
     var itemId = section.id+'.'+it.id;
     if(it.type === 'group' && it.children && it.children.length){
@@ -5359,48 +5341,6 @@ function checklistSectionStatus(section, state){
     }
   });
   return { done: done, total: total, complete: total > 0 && done === total };
-}
-
-// Bidirectional unit converters shown at the top of the Aircraft Ref tab.
-// KT-to-MPH: 1 kt = 1.15078 mph.  USG-to-L: 1 USG = 3.78541 L.
-function buildConverterWidgets(){
-  var box = document.createElement('div');
-  box.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px';
-  box.innerHTML =
-    // Kt <-> Mph
-    '<div style="padding:10px 12px;background:rgba(3,105,161,.06);border:1px solid rgba(3,105,161,.25);border-radius:9px">'+
-      '<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#0369a1;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Speed &middot; kt &harr; mph</div>'+
-      '<div style="display:flex;gap:6px;align-items:center">'+
-        '<input class="cv-kt" type="number" step="0.1" placeholder="kt" style="flex:1;min-width:0;padding:5px 8px;font-size:14px;font-family:JetBrains Mono,monospace;text-align:right"/>'+
-        '<span style="color:var(--muted);font-size:11px">kt</span>'+
-        '<span style="color:var(--muted);font-size:14px;margin:0 2px">=</span>'+
-        '<input class="cv-mph" type="number" step="0.1" placeholder="mph" style="flex:1;min-width:0;padding:5px 8px;font-size:14px;font-family:JetBrains Mono,monospace;text-align:right"/>'+
-        '<span style="color:var(--muted);font-size:11px">mph</span>'+
-      '</div>'+
-    '</div>'+
-    // USG <-> L
-    '<div style="padding:10px 12px;background:rgba(180,83,9,.06);border:1px solid rgba(180,83,9,.25);border-radius:9px">'+
-      '<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#b45309;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Fuel &middot; USG &harr; L</div>'+
-      '<div style="display:flex;gap:6px;align-items:center">'+
-        '<input class="cv-usg" type="number" step="0.1" placeholder="USG" style="flex:1;min-width:0;padding:5px 8px;font-size:14px;font-family:JetBrains Mono,monospace;text-align:right"/>'+
-        '<span style="color:var(--muted);font-size:11px">USG</span>'+
-        '<span style="color:var(--muted);font-size:14px;margin:0 2px">=</span>'+
-        '<input class="cv-lit" type="number" step="0.1" placeholder="L" style="flex:1;min-width:0;padding:5px 8px;font-size:14px;font-family:JetBrains Mono,monospace;text-align:right"/>'+
-        '<span style="color:var(--muted);font-size:11px">L</span>'+
-      '</div>'+
-    '</div>';
-  var KT_TO_MPH = 1.15078;
-  var USG_TO_L  = 3.78541;
-  var kt  = box.querySelector('.cv-kt');
-  var mph = box.querySelector('.cv-mph');
-  var usg = box.querySelector('.cv-usg');
-  var lit = box.querySelector('.cv-lit');
-  function fmt(n){ return (Math.round(n * 100) / 100).toString(); }
-  kt.addEventListener('input',  function(){ mph.value = kt.value  ? fmt(parseFloat(kt.value)  * KT_TO_MPH)   : ''; });
-  mph.addEventListener('input', function(){ kt.value  = mph.value ? fmt(parseFloat(mph.value) / KT_TO_MPH)   : ''; });
-  usg.addEventListener('input', function(){ lit.value = usg.value ? fmt(parseFloat(usg.value) * USG_TO_L)    : ''; });
-  lit.addEventListener('input', function(){ usg.value = lit.value ? fmt(parseFloat(lit.value) / USG_TO_L)    : ''; });
-  return box;
 }
 
 function renderChecklistTab(f, root){
@@ -5950,7 +5890,6 @@ function renderChecklistItem(f, section, item, itemId, onStateChange){
   if(item.standalone){
     return renderStandaloneItem(f, item, itemId, onStateChange);
   }
-  var state = f.checklistState[itemId];
   var row = document.createElement('div');
   row.className = 'cl-item';
   row.dataset.itemId = itemId;
@@ -7197,7 +7136,7 @@ qs('#rf-search').addEventListener('input', renderRfList);
 // PWA
 // ============================================================
 var SW_CODE=[
-  "var C='fd-sw-v26';",
+  "var C='fd-sw-v27';",
   "self.addEventListener('install',function(e){",
   "  e.waitUntil(caches.open(C).then(function(c){ return c.addAll([self.location.pathname]); }).then(function(){ return self.skipWaiting(); }));",
   "});",
