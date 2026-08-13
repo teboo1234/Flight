@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%2C-apple-system%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
-<title>FlightDeck v224</title>
+<title>FlightDeck v229</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -242,7 +242,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v224</span>
+      <span class="logo-sub">v229</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -1268,12 +1268,12 @@ function altFLToFt(fl){
   if(isNaN(n)) return '';
   return String(Math.round(n*100));
 }
-function altDisplay(ft, unit){
-  if(ft === '' || ft === undefined || ft === null) return '';
-  var n = parseFloat(ft);
+function altDisplay(val, unit){
+  if(val === '' || val === undefined || val === null) return '';
+  var n = parseFloat(val);
   if(isNaN(n)) return '';
   if(unit === 'FL') return 'FL' + ('00'+Math.round(n/100)).slice(-3);
-  return Math.round(n) + ' ft';
+  return Math.round(n) + ' ' + (unit || 'ft');
 }
 
 // decimal -> 2dp string
@@ -2731,6 +2731,34 @@ function openFlModal(ex){
     timeCountdownFieldHtml('Takeoff', 'm-pTakeoff', f.pTakeoff) +
     timeCountdownFieldHtml('Landing', 'm-pLanding', f.pLanding) +
 
+    '<div class="sdiv" style="margin-top:10px">Lesson Time (UTC)</div>'+
+    '<div class="field" style="margin-bottom:8px"><label>Lesson Start</label>'+
+      '<div style="display:flex;gap:6px;align-items:center">'+timeSpinnerHtml('m-lessonStart', f.lessonStart)+
+      '<button type="button" class="btn btn-g m-now-btn" data-target="m-lessonStart" style="padding:6px 10px;font-size:11px;flex-shrink:0">Now</button></div>'+
+    '</div>'+
+    '<div class="field" style="margin-bottom:8px"><label>Lesson End</label>'+
+      '<div style="display:flex;gap:6px;align-items:center">'+timeSpinnerHtml('m-lessonEnd', f.lessonEnd)+
+      '<button type="button" class="btn btn-g m-now-btn" data-target="m-lessonEnd" style="padding:6px 10px;font-size:11px;flex-shrink:0">Now</button></div>'+
+    '</div>'+
+    '<div style="background:rgba(3,105,161,.06);border-top:1px solid rgba(3,105,161,.2);border-bottom:1px solid rgba(3,105,161,.2);border-radius:9px;padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline">'+
+      '<div class="sec-lbl" style="margin:0">Lesson Duration</div>'+
+      '<span class="calc-val" id="m-lesson-v" style="font-size:14px">--</span>'+
+    '</div>'+
+
+    '<div class="sdiv" style="margin-top:10px">Circuit Time (UTC)</div>'+
+    '<div class="field" style="margin-bottom:8px"><label>Circuit Start</label>'+
+      '<div style="display:flex;gap:6px;align-items:center">'+timeSpinnerHtml('m-circuitStart', f.circuitStart)+
+      '<button type="button" class="btn btn-g m-now-btn" data-target="m-circuitStart" style="padding:6px 10px;font-size:11px;flex-shrink:0">Now</button></div>'+
+    '</div>'+
+    '<div class="field" style="margin-bottom:8px"><label>Circuit End</label>'+
+      '<div style="display:flex;gap:6px;align-items:center">'+timeSpinnerHtml('m-circuitEnd', f.circuitEnd)+
+      '<button type="button" class="btn btn-g m-now-btn" data-target="m-circuitEnd" style="padding:6px 10px;font-size:11px;flex-shrink:0">Now</button></div>'+
+    '</div>'+
+    '<div style="background:rgba(180,83,9,.06);border-top:1px solid rgba(180,83,9,.2);border-bottom:1px solid rgba(180,83,9,.2);border-radius:9px;padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline">'+
+      '<div class="sec-lbl" style="margin:0">Circuit Duration</div>'+
+      '<span class="calc-val" id="m-circuit-v" style="font-size:14px">--</span>'+
+    '</div>'+
+
     '<div class="sdiv" style="margin-top:10px">Alternates</div>'+
     ['alt1','alt2'].map(function(k, i){
       var label = 'Alternate '+(i+1);
@@ -2816,34 +2844,6 @@ function openFlModal(ex){
     '<div class="sdiv">Tacho &amp; Hobbs End (Decimal)</div>'+
     '<div class="field"><label>Tacho End</label><input class="inp" id="m-tachoEnd" type="number" step="0.1" placeholder="1235.2" value="'+(f.tachoEnd||'')+'"/></div>'+
     '<div class="field"><label>Hobbs End</label><input class="inp" id="m-hobbsEnd" type="number" step="0.1" placeholder="2346.4" value="'+(f.hobbsEnd||'')+'"/></div>'+
-
-    '<div class="sdiv">Lesson Times (HH:MM UTC)</div>'+
-    '<div class="field"><label>Lesson Start</label>'+
-      '<div style="display:flex;gap:6px;align-items:center">'+timeSpinnerHtml('m-lessonStart', f.lessonStart)+
-      '<button type="button" class="btn btn-g m-now-btn" data-target="m-lessonStart" style="padding:6px 12px;font-size:12px">Now</button></div>'+
-    '</div>'+
-    '<div class="field"><label>Lesson End</label>'+
-      '<div style="display:flex;gap:6px;align-items:center">'+timeSpinnerHtml('m-lessonEnd', f.lessonEnd)+
-      '<button type="button" class="btn btn-g m-now-btn" data-target="m-lessonEnd" style="padding:6px 12px;font-size:12px">Now</button></div>'+
-    '</div>'+
-    '<div style="background:rgba(3,105,161,.06);border:1px solid rgba(3,105,161,.2);border-radius:9px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline">'+
-      '<div class="sec-lbl" style="margin:0">Lesson Duration (auto)</div>'+
-      '<span class="calc-val" id="m-lesson-v" style="font-size:16px">--</span>'+
-    '</div>'+
-
-    '<div class="sdiv">Circuit Times (HH:MM UTC)</div>'+
-    '<div class="field"><label>Circuit Start</label>'+
-      '<div style="display:flex;gap:6px;align-items:center">'+timeSpinnerHtml('m-circuitStart', f.circuitStart)+
-      '<button type="button" class="btn btn-g m-now-btn" data-target="m-circuitStart" style="padding:6px 12px;font-size:12px">Now</button></div>'+
-    '</div>'+
-    '<div class="field"><label>Circuit End</label>'+
-      '<div style="display:flex;gap:6px;align-items:center">'+timeSpinnerHtml('m-circuitEnd', f.circuitEnd)+
-      '<button type="button" class="btn btn-g m-now-btn" data-target="m-circuitEnd" style="padding:6px 12px;font-size:12px">Now</button></div>'+
-    '</div>'+
-    '<div style="background:rgba(180,83,9,.06);border:1px solid rgba(180,83,9,.2);border-radius:9px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline">'+
-      '<div class="sec-lbl" style="margin:0">Circuit Duration (auto)</div>'+
-      '<span class="calc-val" id="m-circuit-v" style="font-size:16px">--</span>'+
-    '</div>'+
     '</div>'+ // close #m-section-times
 
     '<div id="m-section-wx" class="scard s-wx" style="display:none">'+
@@ -3191,6 +3191,9 @@ function openFlModal(ex){
     if(bInfoRadio) bInfoRadio.addEventListener('click', function(){ switchInfoTab('radio'); });
     if(bInfoAtis) bInfoAtis.addEventListener('click', function(){ switchInfoTab('atis'); });
     if(bInfoDetails) bInfoDetails.addEventListener('click', function(){ switchInfoTab('details'); });
+    // Always start on Details, whether logging a new flight or opening an
+    // existing one — it's the tab with the info you actually need first.
+    switchInfoTab('details');
 
     // Wire all Now buttons inside the modal
     div.querySelectorAll('.m-now-btn').forEach(function(btn){
@@ -4062,7 +4065,7 @@ function openFlModal(ex){
           '</table>'+
         '</div>'+
 
-        '<div class="foot">FlightDeck v224 &middot; '+new Date().toLocaleString()+'</div>'+
+        '<div class="foot">FlightDeck v229 &middot; '+new Date().toLocaleString()+'</div>'+
         '</body></html>';
       win.document.open();
       win.document.write(html);
@@ -4965,7 +4968,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v224');
+  lines.push('','-- Sent from FlightDeck v229');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -5014,7 +5017,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v224');
+  lines.push('','-- FlightDeck v229');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
@@ -5099,14 +5102,16 @@ var CHECKLIST_DATA = [
     { id:'1g', text:'GAR / GENDEC submitted', hasLaw:true },
     { id:'1h', text:'Customs/immigration informed' },
     { id:'1i', text:'Operational flight plan prepared' },
+    { id:'1admin', text:'Admin: Charts, Flight Plan &amp; Tech Log', type:'group', children:[
+      {text:'Charts, Electrics, AIP and AIRAC cycle current', hasLaw:true, lawKey:'1l'},
+      {text:'Flight plan filed', hasLaw:true, lawKey:'1m'},
+      'Tech Log',
+      {text:'Hours Remaining', keypad:'alt', unit:'hrs'},
+      'Defects'
+    ] },
     { id:'1j', text:'Booked out' },
     { id:'1k', text:'Documents to be carried (NCO.GEN.135)', type:'group', hasLaw:true, children:['AFM (or equivalent)','Certificate of Registration (original)','Certificate of Airworthiness (original) &amp; ARC','Noise certificate (if applicable)','List of specific approvals (if applicable)','Aircraft radio licence (if applicable)','Third-party liability insurance certificate(s)','Journey log (or equivalent)','Details of filed ATS flight plan (if applicable)','Current &amp; suitable aeronautical charts (route + diversions)','Interception procedures &amp; visual signals','MEL or CDL (if applicable)','Any other documentation pertinent / required by States'] },
-    { id:'1l', text:'Charts, Electrics, AIP and AIRAC cycle current', hasLaw:true },
-    { id:'1m', text:'Flight plan filed', hasLaw:true },
     { id:'1n', text:'Destination', type:'group', children:['Fees','Fuel availability','PPR','Slots','Opening hours','Phone/Email details'] },
-    { id:'1o',     text:'Tech Log' },
-    { id:'1o-hrs', text:'Hours Remaining', keypad:'alt', unit:'hrs' },
-    { id:'1o-def', text:'Defects' },
     { id:'1p', text:'No-go review', type:'group', children:['Weather','Recency','Aircraft equipment','Day/night','Complexity','Endurance','Personal limits','External pressure'], note:'Traffic-light check — e.g. cloud base <600ft is a no-fly threshold; consider whether a check flight/safety pilot is needed; don\'t mix IFR/VFR without a plan; review Single-Pilot IFR rules (800m visibility ORS exception where applicable).' },
     { id:'1q', text:'I\'M SAFE self-assessment', type:'group', hasLaw:true, children:['Illness','Medication','Stress','Alcohol','Fatigue','Eating/Emotion'] },
     { id:'1r', text:'Personal equipment checked', type:'group', children:['Batteries','Cables','Devices/updates','Night flight equipment/torches','Life jacket'] },
@@ -5235,16 +5240,46 @@ var CHECKLIST_DATA = [
 // chocks/takeoff/landing times) — those should never be hidden by the filter,
 // since they hold data the user wants visible regardless of tick state.
 var CL_ITEM_LOOKUP = {};
+// Same idea, one level down: group children can be a plain string (simple
+// checkbox) or an object ({text, keypad, unit, hasLaw, lawKey}) for a child
+// that needs its own manual entry — e.g. "Hours Remaining" inside an Admin
+// dropdown. Keyed by the child's full id (parentItemId+'.'+childIndex).
+var CL_CHILD_LOOKUP = {};
 CHECKLIST_DATA.forEach(function(section){
   section.items.forEach(function(item){
-    CL_ITEM_LOOKUP[section.id+'.'+item.id] = item;
+    var itemId = section.id+'.'+item.id;
+    CL_ITEM_LOOKUP[itemId] = item;
+    if(item.type === 'group' && item.children && item.children.length){
+      item.children.forEach(function(childDef, idx){
+        CL_CHILD_LOOKUP[itemId+'.'+idx] = childDef;
+      });
+    }
   });
 });
 function clItemNeverHidden(id){
   var item = CL_ITEM_LOOKUP[id];
-  if(!item) return false;
-  return item.type === 'both' || item.type === 'daVis' || item.type === 'hobbsTacho' ||
-         item.type === 'timeNow' || item.keypad === 'alt' || !!item.etobCtot;
+  if(item){
+    return item.type === 'both' || item.type === 'daVis' || item.type === 'hobbsTacho' ||
+           item.type === 'timeNow' || item.keypad === 'alt' || !!item.etobCtot;
+  }
+  var childDef = CL_CHILD_LOOKUP[id];
+  return !!(childDef && typeof childDef === 'object' && childDef.keypad === 'alt');
+}
+// Is a group child "done"? Ticked yes/na, or — for a keypad-entry child —
+// has an entered value. Centralised so status counts, the "next item"
+// highlight, and the group's own header count all agree with each other.
+function clChildResolved(checklistState, checklistInputs, childId){
+  var s = checklistState[childId];
+  if(s === 'yes' || s === 'na') return true;
+  var childDef = CL_CHILD_LOOKUP[childId];
+  if(childDef && typeof childDef === 'object' && childDef.keypad === 'alt'){
+    var v = (checklistInputs && checklistInputs[childId+'.val']) || '';
+    return !!v;
+  }
+  return false;
+}
+function clChildText(childDef){
+  return (typeof childDef === 'string') ? childDef : (childDef.text || '');
 }
 
 // Ongoing "unresolved items" flasher for the Checklist tab. Once started,
@@ -5304,8 +5339,9 @@ function checklistSectionStatus(section, state){
     if(it.type === 'group' && it.children && it.children.length){
       it.children.forEach(function(_, idx){
         total++;
-        var s = state[itemId + '.' + idx];
-        if(s === 'yes' || s === 'na') done++;
+        var f0 = window._clFlight;
+        var inputs = f0 ? f0.checklistInputs : null;
+        if(clChildResolved(state, inputs, itemId + '.' + idx)) done++;
       });
     } else if(it.type === 'timeNow'){
       total++;
@@ -5510,7 +5546,7 @@ function renderChecklistTab(f, root){
           it.children.forEach(function(_, idx){
             if(found) return;
             var cid = iid+'.'+idx;
-            if(!f.checklistState[cid]) found = cid;
+            if(!clChildResolved(f.checklistState, f.checklistInputs, cid)) found = cid;
           });
         } else if(it.type === 'timeNow'){
           var hEl = document.getElementById('m-'+it.field+'-h');
@@ -5823,7 +5859,7 @@ function renderChecklistSection(section, f, num){
 // Concise legal / regulatory references for hasLaw items, keyed by item tag.
 // Sources: UK ANO, EASA Part-NCO, SERA. Kept brief; edit here to refine.
 var LAW_EXPLANATIONS = {
-  '1g': 'UK Border Force GAR: submit &ge;2 hr before departure/arrival for cross-border private flights. GENDEC covers customs formalities.',
+  '1g': 'UK Border Force GAR: submit &ge;2 hr before departure/arrival for cross-border private flights. GENDEC covers customs formalities. Submit online: <a href="https://www.submit-general-aviation-report.service.gov.uk/home" target="_blank" rel="noopener" style="color:#6d28d9;text-decoration:underline">submit-general-aviation-report.service.gov.uk</a>',
   '1k': 'Part-NCO.GEN.135: 13 items must be carried on every flight (originals or copies unless specified). Under (b), for flights back to the same aerodrome or within the London/Scottish FIR, items (a)(2)&ndash;(a)(8) may be retained at the aerodrome.',
   '1l': 'SERA.2010(b): pre-flight action must include current aeronautical data. AIRAC cycle refreshes every 28 days.',
   '1m': 'SERA.4001: an IFR flight plan is mandatory before commencing an IFR flight in controlled airspace.',
@@ -6101,12 +6137,13 @@ function renderGroupContainer(f, section, item, itemId, onStateChange){
     // Optional law reference + note render above children
     if(item.hasLaw && LAW_EXPLANATIONS[item.id]) body.insertAdjacentHTML('beforeend', lawNoteHtml(itemId, LAW_EXPLANATIONS[item.id]));
     if(item.note) body.insertAdjacentHTML('beforeend', noteHtml(item.note));
-    item.children.forEach(function(childText, idx){
+    item.children.forEach(function(childDef, idx){
       var childId = itemId + '.' + idx;
-      body.appendChild(renderChildTick(f, childId, childText, function(){
-        updateCount();
-        onStateChange();
-      }));
+      var onChildChange = function(){ updateCount(); onStateChange(); };
+      var childRow = (typeof childDef === 'string')
+        ? renderChildTick(f, childId, childDef, onChildChange)
+        : renderChildRich(f, childId, childDef, onChildChange);
+      body.appendChild(childRow);
     });
     updateCount();
     onStateChange();
@@ -6120,8 +6157,7 @@ function renderGroupContainer(f, section, item, itemId, onStateChange){
   function updateCount(){
     var total = item.children.length, done = 0;
     item.children.forEach(function(_, idx){
-      var s = f.checklistState[itemId + '.' + idx];
-      if(s === 'yes' || s === 'na') done++;
+      if(clChildResolved(f.checklistState, f.checklistInputs, itemId + '.' + idx)) done++;
     });
     var el = summary.querySelector('.grp-count');
     if(!el) return;
@@ -6145,8 +6181,7 @@ function renderGroupContainer(f, section, item, itemId, onStateChange){
   var wasGroupComplete = (function(){
     var done = 0;
     item.children.forEach(function(_, idx){
-      var s = f.checklistState[itemId + '.' + idx];
-      if(s === 'yes' || s === 'na') done++;
+      if(clChildResolved(f.checklistState, f.checklistInputs, itemId + '.' + idx)) done++;
     });
     return done === item.children.length;
   })();
@@ -6159,12 +6194,13 @@ function renderGroupContainer(f, section, item, itemId, onStateChange){
   });
 
   // Render children
-  item.children.forEach(function(childText, idx){
+  item.children.forEach(function(childDef, idx){
     var childId = itemId + '.' + idx;
-    body.appendChild(renderChildTick(f, childId, childText, function(){
-      updateCount();
-      onStateChange();
-    }));
+    var onChildChange = function(){ updateCount(); onStateChange(); };
+    var childRow = (typeof childDef === 'string')
+      ? renderChildTick(f, childId, childDef, onChildChange)
+      : renderChildRich(f, childId, childDef, onChildChange);
+    body.appendChild(childRow);
   });
   updateCount();
   return wrapper;
@@ -6443,6 +6479,90 @@ function renderChildTick(f, childId, childText, onStateChange){
     applyStyle(); paintBtns(); onStateChange();
     row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
   });
+  return row;
+}
+
+// Rich group child: same yes/na tick row as renderChildTick, but supports a
+// child that's an object rather than a plain string — currently used for
+// keypad-entry children (e.g. "Hours Remaining" inside an Admin dropdown)
+// and/or a child carrying its own LAW badge + citation.
+function renderChildRich(f, childId, childDef, onStateChange){
+  var text = clChildText(childDef);
+  var isKeypad = childDef.keypad === 'alt';
+  var unit = childDef.unit || 'ft';
+  var hasLaw = !!childDef.hasLaw;
+  var lawKey = childDef.lawKey || null;
+  var row = document.createElement('div');
+  row.dataset.itemId = childId;
+  function applyStyle(){
+    var s = f.checklistState[childId];
+    var bg, bcol;
+    if(isKeypad){ bg='rgba(100,116,139,.05)'; bcol='rgba(100,116,139,.25)'; }
+    else if(s === 'yes'){ bg='rgba(4,120,87,.08)'; bcol='#047857'; }
+    else if(s === 'na'){ bg='rgba(180,83,9,.08)'; bcol='#b45309'; }
+    else { bg='rgba(3,105,161,.06)'; bcol='#0369a1'; }
+    row.style.cssText = 'padding:5px 8px;margin-top:3px;background:'+bg+';border-left:2px solid '+bcol+';border-radius:0 4px 4px 0;font-size:12px;line-height:1.3';
+  }
+  applyStyle();
+  var lawBadge = hasLaw ? lawBadgeHtml(childId) : '';
+  var lawNote = (hasLaw && lawKey && LAW_EXPLANATIONS[lawKey]) ? lawNoteHtml(childId, LAW_EXPLANATIONS[lawKey]) : '';
+  var cur = f.checklistInputs[childId+'.val'] || '';
+  var keypadLabel = cur ? altDisplay(cur, unit) : ('Tap to enter '+unit);
+  var keypadHtml = isKeypad ?
+    '<div style="margin-top:4px"><button type="button" class="cl-keypad-btn" data-inp-id="'+childId+'.val" data-unit="'+unit+'" style="background:rgba(3,105,161,.06);border:1px solid rgba(3,105,161,.35);color:#0369a1;padding:3px 10px;font-size:11px;font-family:JetBrains Mono,monospace;font-weight:700;border-radius:6px;cursor:pointer;min-width:110px;text-align:left">'+keypadLabel+'</button></div>' : '';
+  row.innerHTML =
+    '<div style="display:flex;align-items:center;flex-wrap:nowrap;gap:6px">'+
+      '<span style="'+(isKeypad?'font-style:italic;':'')+'flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+text+'</span>'+
+      (lawBadge ? '<span style="flex-shrink:0">'+lawBadge+'</span>' : '')+
+      '<div style="display:flex;gap:3px;flex-shrink:0">'+
+        '<button type="button" class="cl-btn-yes" style="padding:2px 8px;font-size:11px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:4px;cursor:pointer;-webkit-tap-highlight-color:transparent">&#10003;</button>'+
+        '<button type="button" class="cl-btn-na" style="padding:2px 7px;font-size:10px;font-weight:800;font-family:JetBrains Mono,monospace;border-radius:4px;cursor:pointer;-webkit-tap-highlight-color:transparent">N/A</button>'+
+      '</div>'+
+    '</div>'+
+    keypadHtml + lawNote;
+  var yesBtn = row.querySelector('.cl-btn-yes');
+  var naBtn  = row.querySelector('.cl-btn-na');
+  function paintBtns(){
+    var s = f.checklistState[childId];
+    if(s === 'yes'){ yesBtn.style.background='#047857'; yesBtn.style.color='#fff'; yesBtn.style.border='1px solid #047857'; }
+    else { yesBtn.style.background='transparent'; yesBtn.style.color='#047857'; yesBtn.style.border='1px solid #047857'; }
+    if(s === 'na'){ naBtn.style.background='#b45309'; naBtn.style.color='#fff'; naBtn.style.border='1px solid #b45309'; }
+    else { naBtn.style.background='transparent'; naBtn.style.color='#b45309'; naBtn.style.border='1px solid #b45309'; }
+  }
+  row._clRepaint = function(){ applyStyle(); paintBtns(); };
+  paintBtns();
+  yesBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    f.checklistState[childId] = (f.checklistState[childId] === 'yes') ? '' : 'yes';
+    applyStyle(); paintBtns(); onStateChange();
+    row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
+  });
+  naBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    f.checklistState[childId] = (f.checklistState[childId] === 'na') ? '' : 'na';
+    applyStyle(); paintBtns(); onStateChange();
+    row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
+  });
+  wireLawToggle(row);
+  if(isKeypad){
+    row.querySelectorAll('.cl-keypad-btn').forEach(function(btn){
+      var iid = btn.getAttribute('data-inp-id');
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        openNumericKeypad(
+          { title:'Enter value ('+unit+')', digits:4, suffix:' '+unit, help:text },
+          f.checklistInputs[iid] || '',
+          function(v){
+            f.checklistInputs[iid] = v;
+            btn.textContent = v ? altDisplay(v, unit) : ('Tap to enter '+unit);
+            applyStyle();
+            onStateChange();
+            row.dispatchEvent(new CustomEvent('cl-state-change',{bubbles:true}));
+          }
+        );
+      });
+    });
+  }
   return row;
 }
 
@@ -7136,7 +7256,7 @@ qs('#rf-search').addEventListener('input', renderRfList);
 // PWA
 // ============================================================
 var SW_CODE=[
-  "var C='fd-sw-v27';",
+  "var C='fd-sw-v32';",
   "self.addEventListener('install',function(e){",
   "  e.waitUntil(caches.open(C).then(function(c){ return c.addAll([self.location.pathname]); }).then(function(){ return self.skipWaiting(); }));",
   "});",
