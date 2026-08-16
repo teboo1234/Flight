@@ -1440,7 +1440,9 @@ function budgetItems() { return activePlan().budgetItems; }
 /* ============ DAY TAB ============ */
 
 function sortedTasks() {
-  return [...tasks()].sort((a, b) => a.start - b.start || a.duration - b.duration);
+  return [...tasks()].sort((a, b) =>
+    a.start - b.start || a.duration - b.duration || (a.id < b.id ? -1 : 1)
+  );
 }
 
 /* Shift every non-primary task EXCEPT `exceptId` by `delta` minutes.
@@ -1483,13 +1485,21 @@ function resolveOverlaps() {
 
   for (let i = 0; i < ts.length; i++) {
     for (let j = i + 1; j < ts.length; j++) {
-      if (tasksOverlap(ts[i], ts[j])) {
-        ts[i].hasConflict = true;
-        ts[j].hasConflict = true;
-      }
+      const a = ts[i], b = ts[j];
+      if (!tasksOverlap(a, b)) continue;
+      // Primaries are anchors and cannot themselves be at fault.
+      // If a non-primary overlaps a primary, only the non-primary is flagged.
+      // Two primaries overlapping → both flagged (needs manual fix).
+      // Two non-primaries overlapping → both flagged.
+      if (a.primary && !b.primary) { b.hasConflict = true; }
+      else if (!a.primary && b.primary) { a.hasConflict = true; }
+      else { a.hasConflict = true; b.hasConflict = true; }
     }
   }
-  ts.forEach(t => { if (t.duration > 0 && t.start + t.duration > 1440) t.hasConflict = true; });
+  // Overshoot end-of-day: only flag non-primaries (primaries stay put).
+  ts.forEach(t => {
+    if (t.duration > 0 && t.start + t.duration > 1440 && !t.primary) t.hasConflict = true;
+  });
 }
 
 /* Helper: compute the order-preserving bounds for `task`. The task's
@@ -2012,7 +2022,9 @@ window.addEventListener('resize', () => closeAllRowMenus());
  * Durations are always preserved. */
 function moveTaskInList(taskId, dir) {
   const ts = tasks();
-  const sorted = [...ts].sort((a, b) => a.start - b.start || a.duration - b.duration);
+  const sorted = [...ts].sort((a, b) =>
+    a.start - b.start || a.duration - b.duration || (a.id < b.id ? -1 : 1)
+  );
   const idx = sorted.findIndex(t => t.id === taskId);
   if (idx === -1) return;
   const task = sorted[idx];
