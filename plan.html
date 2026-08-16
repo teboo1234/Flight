@@ -2057,117 +2057,46 @@ function moveTaskInList(taskId, dir) {
     }
   }
 
-  cascadeFromDrop(task);
+  cascadeAfterMove();
   resolveOverlaps();
   persistAll();
   renderTasks();
 }
 
-
-/* When a non-primary is moved (via the reorder buttons), OTHER non-primary
- * tasks that overlap may need to slide out of the way. Their durations stay
- * locked; only start times shift. Primaries are anchors that can't move
- * and block the cascade. This is the ONLY place automatic non-primary
- * repositioning happens. */
-function cascadeFromDrop(dropped) {
-  if (dropped.primary) return;
-  // Determine whether to push others FORWARD (later) or BACKWARD (earlier)
-  // based on which side has more overlap. By default we try forward first;
-  // if forward is blocked by a primary, we cascade backward instead.
-  for (let iter = 0; iter < 20; iter++) {
+/* Order-preserving cascade: after a manual move, walk tasks in current
+ * sorted order (by start). For any task that overlaps its predecessor,
+ * push it forward just enough to touch. Primaries never move; if a
+ * non-primary can't be pushed without exceeding day end, it stays and
+ * the conflict gets flagged. This preserves the visible order EXACTLY
+ * as it is after the move — no task ever swaps position with another. */
+function cascadeAfterMove() {
+  for (let pass = 0; pass < 20; pass++) {
     const ts = tasks();
-    // Find any non-primary that overlaps `dropped` (or has been pushed and
-    // now overlaps something else)
-    let didSomething = false;
-    // Snapshot of all positive-duration tasks sorted by start
     const sorted = [...ts]
       .filter(t => t.duration > 0)
       .sort((a, b) => a.start - b.start);
-    // Walk forward: if any task overlaps the previous, push it later
-    let cursor = -Infinity;
-    let lastEnd = -Infinity;
-    for (let i = 0; i < sorted.length; i++) {
-      const t = sorted[i];
-      const tEnd = t.start + t.duration;
-      // Find what `t` overlaps with: look at all previous tasks
-      let overlapAmount = 0;
-      let blockingPrimary = false;
-      for (let j = 0; j < i; j++) {
-        const prev = sorted[j];
-        const prevEnd = prev.start + prev.duration;
-        if (prevEnd > t.start) {
-          // Overlap; how much would we need to push t to clear prev?
-          const needed = prevEnd - t.start;
-          if (needed > overlapAmount) overlapAmount = needed;
-          if (prev.primary) blockingPrimary = true;
-        }
+    let changed = false;
+    let cursor = 0;
+    for (const t of sorted) {
+      if (t.primary) {
+        // Primaries anchor cursor to their end but never move themselves
+        cursor = Math.max(cursor, t.start + t.duration);
+        continue;
       }
-      if (overlapAmount > 0 && !t.primary && t.id !== dropped.id) {
-        // Push t later by overlapAmount, but cap at 1440 - duration
-        const newStart = Math.min(t.start + overlapAmount, 1440 - t.duration);
-        if (newStart !== t.start) {
+      if (t.start < cursor) {
+        const newStart = Math.min(cursor, 1440 - t.duration);
+        if (newStart !== t.start && newStart >= 0) {
           t.start = newStart;
-          didSomething = true;
+          changed = true;
         }
       }
+      cursor = Math.max(cursor, t.start + t.duration);
     }
-    if (!didSomething) break;
-  }
-  // Now walk backward: any non-primary that overlaps a FOLLOWING primary
-  // (which can't move) should be pulled earlier.
-  for (let iter = 0; iter < 20; iter++) {
-    const ts = tasks();
-    let didSomething = false;
-    const sorted = [...ts]
-      .filter(t => t.duration > 0)
-      .sort((a, b) => a.start - b.start);
-    for (let i = sorted.length - 1; i >= 0; i--) {
-      const t = sorted[i];
-      if (t.primary || t.id === dropped.id) continue;
-      const tEnd = t.start + t.duration;
-      // Does t overlap with any later task?
-      for (let j = i + 1; j < sorted.length; j++) {
-        const nxt = sorted[j];
-        if (nxt.start < tEnd) {
-          // Overlap; pull t earlier
-          const needed = tEnd - nxt.start;
-          const newStart = Math.max(0, t.start - needed);
-          if (newStart !== t.start) {
-            t.start = newStart;
-            didSomething = true;
-          }
-          break; // recheck on next iteration
-        } else {
-          break; // sorted, so no further later tasks overlap
-        }
-      }
-    }
-    if (!didSomething) break;
-  }
-  // Final fallback: any non-primary still overlapping something (other than
-  // the dropped task) tries to relocate to the NEAREST free slot in the day.
-  // This lets tasks jump into distant free time when linear pushing can't
-  // resolve the conflict.
-  for (let iter = 0; iter < 20; iter++) {
-    const ts = tasks();
-    let didSomething = false;
-    for (const t of ts) {
-      if (t.primary || t.id === dropped.id || t.duration === 0) continue;
-      // Does t currently overlap anything?
-      const overlaps = ts.some(o =>
-        o.id !== t.id && o.duration > 0 &&
-        o.start < t.start + t.duration && o.start + o.duration > t.start
-      );
-      if (!overlaps) continue;
-      const newStart = findNearestFreeSlot(t);
-      if (newStart != null && newStart !== t.start) {
-        t.start = newStart;
-        didSomething = true;
-      }
-    }
-    if (!didSomething) break;
+    if (!changed) break;
   }
 }
+
+
 
 function renderConflictBanner() {
   const banner = document.getElementById('conflictBanner');

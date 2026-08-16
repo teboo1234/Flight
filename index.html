@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%2C-apple-system%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
-<title>FlightDeck v229</title>
+<title>FlightDeck v235</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -242,7 +242,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v229</span>
+      <span class="logo-sub">v235</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -1246,6 +1246,32 @@ function timeDiff(s,e){
   if(d<0) d+=24;
   // Round to nearest 0.1 hr (6 min)
   return Math.round(d*10)/10;
+}
+
+// Fuel tank log: given a chronological list of {tank:'L'|'R', time:'HH:MM'}
+// switch events plus an end-of-window time (landing time if logged, else
+// "now" for a live in-progress estimate), returns hours spent on each tank.
+// Each entry's duration runs from its own timestamp to the next entry's
+// timestamp (or to endTimeStr for the last one).
+function tankTimeSegments(log, endTimeStr){
+  var totals = { L: 0, R: 0 };
+  if(!log || !log.length) return totals;
+  var sorted = log.slice().sort(function(a,b){
+    var pa = parseUTC(a.time), pb = parseUTC(b.time);
+    if(pa===null) return 1; if(pb===null) return -1;
+    return pa - pb;
+  });
+  for(var i=0;i<sorted.length;i++){
+    var startT = parseUTC(sorted[i].time);
+    var endStr = (i+1<sorted.length) ? sorted[i+1].time : endTimeStr;
+    var endT = endStr ? parseUTC(endStr) : null;
+    if(startT===null || endT===null) continue;
+    var d = timeDiff(startT, endT);
+    if(d===null) continue;
+    var tank = (sorted[i].tank === 'R') ? 'R' : 'L';
+    totals[tank] += d;
+  }
+  return totals;
 }
 
 // decimal -> "H:MM"
@@ -2675,10 +2701,20 @@ function openFlModal(ex){
     scribbleIfr:'',scribbleIfrText:'',scribbleTaxi:'',scribbleTaxiText:'',
     checklistState:{},checklistInputs:{},
     atisEntries:[],
-    frequencies:[]};
+    frequencies:[],
+    tankLog:[], tankSelected:'L', tankLeftStart:'', tankRightStart:''};
 
   var div=document.createElement('div');
   div.innerHTML=
+    '<div id="m-tank-bar" style="position:sticky;top:0;z-index:15;background:var(--surface);margin:-4px -4px 14px -4px;padding:8px;border:1px solid rgba(180,83,9,.3);border-radius:9px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;box-shadow:0 2px 6px rgba(15,23,42,.08)">'+
+      '<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#b45309;text-transform:uppercase;letter-spacing:.06em;font-weight:700">&#9981; Tank</span>'+
+      '<div style="display:inline-flex;border-radius:8px;overflow:hidden;border:1px solid rgba(180,83,9,.4)">'+
+        '<button type="button" id="m-tank-L" data-tank="L" style="padding:7px 18px;font-weight:800;font-family:JetBrains Mono,monospace;font-size:13px;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent">L</button>'+
+        '<button type="button" id="m-tank-R" data-tank="R" style="padding:7px 18px;font-weight:800;font-family:JetBrains Mono,monospace;font-size:13px;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent">R</button>'+
+      '</div>'+
+      '<button type="button" id="m-tank-log-btn" class="btn btn-p" style="padding:7px 16px;font-size:12px;background:#b45309">Log</button>'+
+      '<span id="m-tank-current" style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--muted);margin-left:auto;text-align:right">--</span>'+
+    '</div>'+
     '<div style="display:flex;gap:2px;margin-bottom:14px;border-bottom:2px solid var(--border)">'+
       '<button type="button" id="m-tab-info" class="m-tab m-tab-on" style="padding:8px 6px;background:none;border:none;border-bottom:3px solid #1e3a8a;color:#1e3a8a;font-weight:700;font-size:12px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#1e3a8a">Info</button>'+
       '<button type="button" id="m-tab-clr" class="m-tab" style="padding:8px 6px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:12px;cursor:pointer;margin-bottom:-2px;white-space:nowrap;flex:1" data-color="#be123c">Clearance</button>'+
@@ -2985,7 +3021,24 @@ function openFlModal(ex){
     '</div>'+ // close #m-section-wx
 
     '<div id="m-section-fuel" class="scard s-fuel" style="display:none">'+
-      '<div class="sdiv" style="margin-top:0">Fuel Planning</div>'+
+      '<div class="sdiv" style="margin-top:0">Tank Log</div>'+
+    '<div id="m-tankLog-summary" style="background:rgba(180,83,9,.06);border:1px solid rgba(180,83,9,.25);border-radius:9px;padding:10px 12px;margin-bottom:10px">'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:JetBrains Mono,monospace;margin-bottom:8px">'+
+        '<div><span style="font-size:10px;color:var(--muted);text-transform:uppercase">Time on Left</span><br/><span id="m-tankTimeL" class="calc-num" style="color:#b45309;font-size:16px">--</span></div>'+
+        '<div><span style="font-size:10px;color:var(--muted);text-transform:uppercase">Time on Right</span><br/><span id="m-tankTimeR" class="calc-num" style="color:#b45309;font-size:16px">--</span></div>'+
+      '</div>'+
+      '<div class="g2" style="gap:8px;margin-bottom:8px">'+
+        '<div class="field" style="margin-bottom:0"><label style="font-size:10px">Left Tank Start</label>'+fuelPairHtml('m-tankLeftStart',f.tankLeftStart,'--')+'</div>'+
+        '<div class="field" style="margin-bottom:0"><label style="font-size:10px">Right Tank Start</label>'+fuelPairHtml('m-tankRightStart',f.tankRightStart,'--')+'</div>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:JetBrains Mono,monospace;padding-top:8px;border-top:1px dashed rgba(180,83,9,.3)">'+
+        '<div><span style="font-size:10px;color:var(--muted);text-transform:uppercase">Left Remaining (est.)</span><br/><span id="m-tankRemL" class="calc-num" style="color:#047857;font-size:16px">--</span></div>'+
+        '<div><span style="font-size:10px;color:var(--muted);text-transform:uppercase">Right Remaining (est.)</span><br/><span id="m-tankRemR" class="calc-num" style="color:#047857;font-size:16px">--</span></div>'+
+      '</div>'+
+    '</div>'+
+    '<div id="m-tankLog-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px"></div>'+
+
+      '<div class="sdiv">Fuel Planning</div>'+
     '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-family:JetBrains Mono,monospace">Enter USG or L &mdash; the other converts automatically (1 USG = 3.785 L)</div>'+
     '<div class="g3">'+
       '<div class="field"><label>Initial Fuel</label>'+fuelPairHtml('m-fob',f.fob,'40.0')+'</div>'+
@@ -3173,6 +3226,111 @@ function openFlModal(ex){
     if(bw) bw.addEventListener('click', function(){ switchTab('wx'); });
     if(bf) bf.addEventListener('click', function(){ switchTab('fuel'); });
     if(bsy) bsy.addEventListener('click', function(){ switchTab('syllabus'); });
+
+    // ---- Fuel Tank Log: L/R selector, timestamped log, per-tank time & remaining-fuel estimate ----
+    if(!f.tankLog) f.tankLog = [];
+    if(!f.tankSelected) f.tankSelected = 'L';
+    function paintTankSelect(){
+      ['L','R'].forEach(function(t){
+        var btn = qs('#m-tank-'+t, div);
+        if(!btn) return;
+        var on = f.tankSelected === t;
+        btn.style.background = on ? '#b45309' : 'transparent';
+        btn.style.color = on ? '#fff' : '#b45309';
+      });
+    }
+    ['L','R'].forEach(function(t){
+      var btn = qs('#m-tank-'+t, div);
+      if(btn) btn.addEventListener('click', function(){
+        f.tankSelected = t;
+        paintTankSelect();
+      });
+    });
+    paintTankSelect();
+
+    function renderTankLog(){
+      var listEl = qs('#m-tankLog-list', div);
+      if(!listEl) return;
+      listEl.innerHTML = '';
+      var sorted = f.tankLog.slice().sort(function(a,b){
+        var pa=parseUTC(a.time), pb=parseUTC(b.time);
+        if(pa===null) return 1; if(pb===null) return -1;
+        return pa-pb;
+      });
+      if(!sorted.length){
+        listEl.innerHTML = '<div style="font-size:12px;color:var(--muted);font-family:JetBrains Mono,monospace;text-align:center;padding:6px">No tank changes logged yet</div>';
+      }
+      sorted.forEach(function(entry){
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(180,83,9,.05);border:1px solid rgba(180,83,9,.2);border-radius:7px';
+        row.innerHTML =
+          '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#b45309;color:#fff;font-family:JetBrains Mono,monospace;font-weight:800;font-size:12px;border-radius:5px;flex-shrink:0">'+entry.tank+'</span>'+
+          '<span style="font-family:JetBrains Mono,monospace;font-size:13px;color:var(--text);flex:1">'+entry.time+' UTC</span>'+
+          '<button type="button" class="m-tank-del" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:2px 6px;flex-shrink:0">&times;</button>';
+        row.querySelector('.m-tank-del').addEventListener('click', function(){
+          var idx = f.tankLog.indexOf(entry);
+          if(idx>=0) f.tankLog.splice(idx,1);
+          renderTankLog();
+        });
+        listEl.appendChild(row);
+      });
+      updateTankSummary();
+    }
+
+    function updateTankSummary(){
+      var landingT = getTimeSpinner('m-landing', div) || f.landing || '';
+      var endTime = landingT || (function(){
+        var d=new Date();
+        return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2);
+      })();
+      var totals = tankTimeSegments(f.tankLog, endTime);
+      var elL = qs('#m-tankTimeL', div), elR = qs('#m-tankTimeR', div);
+      if(elL) elL.textContent = f.tankLog.length ? decToHM(totals.L)+' ('+dec2(totals.L)+' hr)' : '--';
+      if(elR) elR.textContent = f.tankLog.length ? decToHM(totals.R)+' ('+dec2(totals.R)+' hr)' : '--';
+
+      var burn = parseFloat(fuelUSG('m-burnRate',div)) || parseFloat(settings.defaultBurnRate) || 8;
+      var leftStart = parseFloat(fuelUSG('m-tankLeftStart',div));
+      var rightStart = parseFloat(fuelUSG('m-tankRightStart',div));
+      // Default: split total fuel on board evenly between tanks if no per-tank start was entered.
+      if(isNaN(leftStart) || isNaN(rightStart)){
+        var initial = parseFloat(fuelUSG('m-fob',div));
+        var uplifted = parseFloat(fuelUSG('m-fuelUplifted',div)) || 0;
+        var totalFob = isNaN(initial) ? NaN : initial + uplifted;
+        if(!isNaN(totalFob)){
+          if(isNaN(leftStart)) leftStart = totalFob/2;
+          if(isNaN(rightStart)) rightStart = totalFob/2;
+        }
+      }
+      var remL = qs('#m-tankRemL', div), remR = qs('#m-tankRemR', div);
+      if(remL) remL.textContent = isNaN(leftStart) ? '--' : Math.round(leftStart - totals.L*burn)+' USG';
+      if(remR) remR.textContent = isNaN(rightStart) ? '--' : Math.round(rightStart - totals.R*burn)+' USG';
+
+      var curEl = qs('#m-tank-current', div);
+      if(curEl){
+        var lastEntry = f.tankLog.length ? f.tankLog.slice().sort(function(a,b){
+          var pa=parseUTC(a.time), pb=parseUTC(b.time); return (pa===null?1:pa)-(pb===null?-1:pb);
+        })[f.tankLog.length-1] : null;
+        curEl.textContent = lastEntry ? ('On '+lastEntry.tank+' since '+lastEntry.time) : 'No changes logged';
+      }
+    }
+
+    var tankLogBtn = qs('#m-tank-log-btn', div);
+    if(tankLogBtn) tankLogBtn.addEventListener('click', function(){
+      var d = new Date();
+      var t = ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2);
+      f.tankLog.push({ tank: f.tankSelected, time: t });
+      renderTankLog();
+      toast('Logged '+f.tankSelected+' tank at '+t+' UTC');
+    });
+    ['m-tankLeftStart','m-tankRightStart'].forEach(function(id){
+      wireFuelPair(id, div, updateTankSummary);
+    });
+    var landingWatch = qs('#m-landing-h', div);
+    if(landingWatch) landingWatch.addEventListener('change', updateTankSummary);
+    renderTankLog();
+    // Keep the "time on tank so far" live while the modal is open (in case
+    // the flight is still in progress and no landing time is set yet).
+    tankLiveTimer = setInterval(updateTankSummary, 10000);
 
     // Info tab child-tabs: Radio / ATIS / Details
     function switchInfoTab(tab){
@@ -4065,7 +4223,7 @@ function openFlModal(ex){
           '</table>'+
         '</div>'+
 
-        '<div class="foot">FlightDeck v229 &middot; '+new Date().toLocaleString()+'</div>'+
+        '<div class="foot">FlightDeck v235 &middot; '+new Date().toLocaleString()+'</div>'+
         '</body></html>';
       win.document.open();
       win.document.write(html);
@@ -4641,6 +4799,8 @@ function openFlModal(ex){
     f.fuelFinal=fuelUSG('m-fuelFinal',div); f.fuelExtra=fuelUSG('m-fuelExtra',div);
     f.fuelUplifted=fuelUSG('m-fuelUplifted',div);
     f.fuelLanding=fuelUSG('m-fuelLanding',div);
+    f.tankLeftStart=fuelUSG('m-tankLeftStart',div);
+    f.tankRightStart=fuelUSG('m-tankRightStart',div);
     f.wxTAS=g('m-wxTAS');
     // Read combined wind + temp from ATIS-style buttons for all 5 levels
     ['Surf','W1k','W2k','W5k','W10k'].forEach(function(k){
@@ -4685,6 +4845,7 @@ function openFlModal(ex){
   }
 
   // Auto-save every 5 seconds while modal is open
+  var tankLiveTimer = null; // assigned inside the tab-wiring setTimeout below; declared here so onClose/onSave (outer scope) can clear it
   var autoSaveTimer = setInterval(function(){
     saveDraft(true);
     var ind = qs('#m-autosave-ind',div);
@@ -4708,6 +4869,7 @@ function openFlModal(ex){
           saveDraft(false);
           toast('Saved as draft');
           if(autoSaveTimer){ clearInterval(autoSaveTimer); autoSaveTimer=null; }
+          if(tankLiveTimer){ clearInterval(tankLiveTimer); tankLiveTimer=null; }
           _clStopAirborneFlash();
           closeModal();
         }
@@ -4725,11 +4887,12 @@ function openFlModal(ex){
         }
       }
     ],
-    onClose: function(){ if(autoSaveTimer){ clearInterval(autoSaveTimer); autoSaveTimer=null; } _clStopAirborneFlash(); },
+    onClose: function(){ if(autoSaveTimer){ clearInterval(autoSaveTimer); autoSaveTimer=null; } if(tankLiveTimer){ clearInterval(tankLiveTimer); tankLiveTimer=null; } _clStopAirborneFlash(); },
     onSave: function(){
       collectFields();
       runPreCommitChecks(f, function(){
         if(autoSaveTimer){ clearInterval(autoSaveTimer); autoSaveTimer=null; }
+        if(tankLiveTimer){ clearInterval(tankLiveTimer); tankLiveTimer=null; }
         if(!ex){
           var existing = flights.findIndex(function(x){ return x.id===f.id; });
           if(existing<0) flights.push(f);
@@ -4968,7 +5131,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v229');
+  lines.push('','-- Sent from FlightDeck v235');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -5017,7 +5180,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v229');
+  lines.push('','-- FlightDeck v235');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
@@ -5177,7 +5340,7 @@ var CHECKLIST_DATA = [
     { id:'3d', text:'Audio panel &amp; conventional NavAids', type:'group', children:['ADF','VOR/ILS','DME','Stopwatch'] },
     { id:'audioPanel', text:'Audio Panel check' },
     { id:'annunciator', text:'Annunciator Check' },
-    { id:'3f', text:'COM/NAV/GPS setup', type:'group', children:['COM/NAV radios set: departure freq, clearance delivery/ground, standby freqs','Transponder code set','GPS/FMS flight plan loaded and cross-checked against clearance (Autorouter/SkyDemon route reviewed)','OBS/CDI course set for initial departure routing'] },
+    { id:'3f', text:'COM/NAV/GPS setup', type:'group', children:['COM/NAV radios set: departure freq, clearance delivery/ground, standby freqs','Transponder code set','GPS/FMS flight plan loaded and cross-checked against clearance (Autorouter/SkyDemon route reviewed)','OBS/CDI course set for initial departure routing','Hdg bug set','Alt bug set'] },
     { id:'3g', text:'QNH-SPS difference', type:'both' }
   ]},
   // ---- Off Blocks (Now button — mirrors Times tab chocksOff) ----
@@ -5859,16 +6022,16 @@ function renderChecklistSection(section, f, num){
 // Concise legal / regulatory references for hasLaw items, keyed by item tag.
 // Sources: UK ANO, EASA Part-NCO, SERA. Kept brief; edit here to refine.
 var LAW_EXPLANATIONS = {
-  '1g': 'UK Border Force GAR: submit &ge;2 hr before departure/arrival for cross-border private flights. GENDEC covers customs formalities. Submit online: <a href="https://www.submit-general-aviation-report.service.gov.uk/home" target="_blank" rel="noopener" style="color:#6d28d9;text-decoration:underline">submit-general-aviation-report.service.gov.uk</a>',
+  '1g': 'UK GAR (General Aviation (Persons on Board, Flight Information and Civil Penalties) Regulations 2024): submit online no earlier than <strong>48 hr</strong> and no later than <strong>2 hr</strong> before the aircraft\'s expected departure time — applies to both departures from and arrivals into the UK/Common Travel Area. Any amendment (pax, crew, aerodrome) must also be made &ge;2 hr before departure, or the flight must be delayed by 2 hr from the amendment. Non-compliance is fineable up to &pound;10,000 (operator and captain). GENDEC covers customs formalities. Submit online: <a href="https://www.submit-general-aviation-report.service.gov.uk/home" target="_blank" rel="noopener" style="color:#6d28d9;text-decoration:underline">submit-general-aviation-report.service.gov.uk</a>',
   '1k': 'Part-NCO.GEN.135: 13 items must be carried on every flight (originals or copies unless specified). Under (b), for flights back to the same aerodrome or within the London/Scottish FIR, items (a)(2)&ndash;(a)(8) may be retained at the aerodrome.',
-  '1l': 'SERA.2010(b): pre-flight action must include current aeronautical data. AIRAC cycle refreshes every 28 days.',
-  '1m': 'SERA.4001: an IFR flight plan is mandatory before commencing an IFR flight in controlled airspace.',
+  '1l': 'SERA.2010(b): pre-flight action must include current aeronautical data. AIRAC cycle refreshes every 28 days. Current UK AIRAC dates: <a href="https://nats-uk.ead-it.com/cms-nats/opencms/en/Publications/publication-schedule/" target="_blank" rel="noopener" style="color:#6d28d9;text-decoration:underline">nats-uk.ead-it.com &ndash; Publication Schedule</a>',
+  '1m': 'SERA.4001: an IFR flight plan is mandatory before commencing an IFR flight in controlled airspace. File &ge;60 min before EOBT (&ge;3 hr for North Atlantic/ATFM-affected flights); exceptionally, never less than 30 min. If departure slips more than 30 min past EOBT for a controlled flight (60 min for uncontrolled), the plan must be updated with a delay (DLA) message or cancelled and refiled (ICAO Doc 4444 &sect;4.4.2.1.3).',
   '1q': 'ANO Art 173: a person must not act as a required crew member if unfit through illness, injury, fatigue, medication, alcohol, or any other cause.',
   '2a': 'SERA.2010(b): commander must be familiar with all available meteorological information (METAR, TAF, SIGMET, upper winds) before flight.',
   '2b': 'SERA.2010(b): pre-flight action must include NOTAMs for departure, destination, alternate, and en-route.',
   '2c': 'Part-NCO.IDE / AMC1 NCO.OP.116: aircraft must have equipment approved for the intended approach (RNP APCH LNAV/LPV, ILS/LOC, etc.).',
   '2g': 'Part-NCO.OP.190: supplemental O&#8322; required above 10,000 ft cabin altitude after 30 min, and continuously above 13,000 ft.',
-  '2h': 'Part-NCO.OP.140: an IFR flight must specify a destination alternate unless the destination is above minima with acceptable weather.',
+  '2h': 'NCO.OP.140: for IFR flights, the PIC must nominate &ge;1 destination alternate unless the destination forecast (ETA &plusmn;1 hr) shows ceiling &ge;1,000 ft above the approach\'s MDH/DH and visibility &ge;5,000 m &mdash; effectively good enough for a visual-conditions arrival with no instrument approach needed. If an alternate IS required, NCO.OP.143 sets its own (higher) planning minima for the chosen alternate based on the approach flown there, and NCO.OP.142 requires it to offer a non-GNSS/terrestrial approach unless SBAS criteria are met.',
   '2k': 'Part-NCO.OP.110: commander must not commence take-off unless reported met conditions equal or exceed the applicable departure minima.',
   '2s': 'ANO Art 84 &amp; POH: aircraft must be operated within mass and centre-of-gravity limits at all times.',
   '2t': 'Underload = MTOW &minus; TOW; must be positive. Part of the mass &amp; balance compliance requirement (ANO Art 84).',
@@ -7256,7 +7419,7 @@ qs('#rf-search').addEventListener('input', renderRfList);
 // PWA
 // ============================================================
 var SW_CODE=[
-  "var C='fd-sw-v32';",
+  "var C='fd-sw-v38';",
   "self.addEventListener('install',function(e){",
   "  e.waitUntil(caches.open(C).then(function(c){ return c.addAll([self.location.pathname]); }).then(function(){ return self.skipWaiting(); }));",
   "});",
