@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%2C-apple-system%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
-<title>FlightDeck v235</title>
+<title>FlightDeck v237</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
@@ -242,7 +242,7 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v235</span>
+      <span class="logo-sub">v237</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
@@ -2806,6 +2806,12 @@ function openFlModal(ex){
         '</div>'+
       '</div>';
     }).join('')+
+
+    '<div class="sdiv" style="margin-top:10px">Instructor Notes</div>'+
+    '<div class="field" style="margin-bottom:8px"><textarea class="inp" id="m-notes" rows="4" placeholder="General comments, debrief points, follow-up items...">'+(f.notes||'')+'</textarea></div>'+
+    '<div style="margin-top:6px">'+
+      '<button type="button" class="btn btn-g" id="m-fullReportPdfBtn" style="width:100%;padding:10px;font-size:13px">&#128196; Export Full Flight Report (PDF)</button>'+
+    '</div>'+
     '</div>'+ // close #m-info-details
 
     '</div>'+ // close #m-section-info (will reopen Other after fuel section)
@@ -2883,6 +2889,10 @@ function openFlModal(ex){
     '</div>'+ // close #m-section-times
 
     '<div id="m-section-wx" class="scard s-wx" style="display:none">'+
+      '<div style="display:flex;gap:8px;margin-bottom:10px">'+
+        '<button type="button" id="m-wxCopyBtn" class="btn btn-g" style="padding:7px 14px;font-size:12px;flex:1">&#128203; Copy Weather</button>'+
+        '<button type="button" id="m-wxPasteBtn" class="btn btn-g" style="padding:7px 14px;font-size:12px;flex:1">&#128229; Paste Weather</button>'+
+      '</div>'+
       '<div class="sdiv" style="margin-top:0">Planning</div>'+
     '<div style="display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin-bottom:10px">'+
       '<div class="field" style="margin-bottom:0;flex:0 0 74px"><label>TAS (kt)</label><input class="inp" id="m-wxTAS" type="number" step="1" placeholder="90" value="'+(f.wxTAS||'')+'"/></div>'+
@@ -4223,13 +4233,303 @@ function openFlModal(ex){
           '</table>'+
         '</div>'+
 
-        '<div class="foot">FlightDeck v235 &middot; '+new Date().toLocaleString()+'</div>'+
+        '<div class="foot">FlightDeck v237 &middot; '+new Date().toLocaleString()+'</div>'+
         '</body></html>';
       win.document.open();
       win.document.write(html);
       win.document.close();
     });
   }
+
+  // ---- Full Flight Report PDF: everything manually entered or auto-generated ----
+  var fullReportBtn = qs('#m-fullReportPdfBtn', div);
+  if(fullReportBtn){
+    fullReportBtn.addEventListener('click', function(){
+      collectFields();
+      var c = flCalc(f);
+      var fc = fuelCalc(f);
+      var win = window.open('', '_blank');
+      if(!win){ toast('Allow popups to export PDF'); return; }
+      function row(label, value, calc){
+        return '<tr><th>'+label+'</th><td'+(calc?' class="calc"':'')+'>'+(value||'--')+'</td></tr>';
+      }
+      function usgL(v){
+        if(v===null||v===undefined||isNaN(v)) return '--';
+        var u = parseFloat(v);
+        return u.toFixed(2)+' USG / '+(u*USG_TO_L).toFixed(2)+' L';
+      }
+      function esc(s){ return escapeHtml(s||''); }
+
+      // Frequencies
+      var freqRows = (f.frequencies||[]).filter(function(x){ return x && (x.value||x.label); })
+        .map(function(fr,i){ return row(fr.label||('Freq '+(i+1)), esc(fr.value)); }).join('');
+
+      // ATIS entries -> METAR-style line
+      function atisToMetar(e){
+        var parts=[];
+        if(e.icao) parts.push(e.icao);
+        if(e.time) parts.push(e.time.replace(':','')+'Z');
+        if(e.info) parts.push('INFO '+e.info);
+        if(e.rwy) parts.push('RWY '+e.rwy);
+        if(e.wind){
+          var wp = String(e.wind).split(/\s+/);
+          parts.push(wp[0].replace('/','')+'KT');
+          if(wp[1]) parts.push(wp[1]);
+        }
+        if(e.cavok) parts.push('CAVOK');
+        else {
+          if(e.vis){ var v=parseInt(e.vis); if(!isNaN(v)) parts.push(v>=10?'9999':('0000'+(v*1000)).slice(-4)); }
+          if(e.cloud1) parts.push(e.cloud1);
+          if(e.cloud2) parts.push(e.cloud2);
+          if(e.cloud3) parts.push(e.cloud3);
+        }
+        if(e.tempDew) parts.push(e.tempDew);
+        if(e.qnh) parts.push('Q'+e.qnh);
+        var out = parts.join(' ');
+        if(e.notes && e.notes.trim()) out += ' RMK '+e.notes.trim();
+        return out;
+      }
+      var atisRows = (f.atisEntries||[]).map(function(e){ return atisToMetar(e); })
+        .filter(function(s){ return s; })
+        .map(function(s){ return '<div style="font-family:\'JetBrains Mono\',monospace;font-size:12px;padding:6px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;margin-bottom:6px">'+esc(s)+'</div>'; }).join('');
+
+      // Winds aloft
+      var windLevels = [['Surf','Surface'],['W1k',"1000'"],['W2k',"2000'"],['W5k',"5000'"],['W10k',"10,000'"]];
+      var windRows = windLevels.map(function(pair){
+        var k=pair[0], label=pair[1];
+        var w = f['wx'+k+'Wind'] || '--';
+        var t = f['wx'+k+'Temp'];
+        var tDisp = t ? ((parseFloat(t)>0?'+':'')+t+'&deg;C') : '--';
+        return row(label, w+'  /  '+tDisp);
+      }).join('');
+
+      // Runway wind components
+      var rwyRows = '';
+      if(f.wxSurfWind){
+        var wparsed = parseWind(f.wxSurfWind);
+        [f.rwy1,f.rwy2,f.rwy3,f.rwy4].forEach(function(rwyN){
+          if(!rwyN || !wparsed) return;
+          var rc = rwyWind(rwyN, wparsed.dir, wparsed.spd);
+          if(!rc) return;
+          rwyRows += row('RWY '+('0'+rwyN).slice(-2), rc.hwLabel+' '+rc.hwAbs+'kt, XW '+rc.xwAbs+'kt '+rc.xwLabel);
+        });
+      }
+
+      // METAR/TAF per station
+      var wxWin = flightWxWindow(f);
+      var stationBlocks = '';
+      [1,2,3,4].forEach(function(n){
+        var icao=f['wxIcao'+n], metar=f['wxMetar'+n], taf=f['wxTaf'+n];
+        if(!icao && !metar && !taf) return;
+        var filtered = filterMetars(metar, wxWin.start, wxWin.end);
+        stationBlocks += '<div style="margin-bottom:10px"><div style="font-weight:700;color:#6d28d9;font-size:13px;margin-bottom:4px">'+esc(icao||('Station '+n))+'</div>';
+        if(filtered) stationBlocks += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:12px;white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:8px;margin-bottom:4px">'+esc(filtered)+'</div>';
+        if(taf) stationBlocks += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:12px;white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:8px">'+esc(taf)+'</div>';
+        stationBlocks += '</div>';
+      });
+
+      // Tank log
+      var tankLog = f.tankLog || [];
+      var tankEndTime = f.landing || (function(){ var d=new Date(); return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2); })();
+      var tankTotals = tankTimeSegments(tankLog, tankEndTime);
+      var burnForTank = fc.burn || 8;
+      var tankLeftStart = parseFloat(f.tankLeftStart), tankRightStart = parseFloat(f.tankRightStart);
+      if(isNaN(tankLeftStart) || isNaN(tankRightStart)){
+        if(fc.fob!==null){
+          if(isNaN(tankLeftStart)) tankLeftStart = fc.fob/2;
+          if(isNaN(tankRightStart)) tankRightStart = fc.fob/2;
+        }
+      }
+      var tankLogRows = tankLog.slice().sort(function(a,b){
+        var pa=parseUTC(a.time), pb=parseUTC(b.time); return (pa===null?1:pa)-(pb===null?-1:pb);
+      }).map(function(e){ return row('Tank &rarr; '+e.tank, e.time+' UTC'); }).join('');
+
+      // Skill Test summary
+      var skTotal=0, skDone=0;
+      RD_DATA.skill.sections.forEach(function(sec, sIdx){
+        sec.items.forEach(function(_, iIdx){
+          skTotal++;
+          if(f.skillTest && f.skillTest[sIdx+'.'+iIdx]) skDone++;
+        });
+      });
+
+      // Checklist phase summary
+      var phaseRows = ['Planning','Weather','Ground','Airborne'].map(function(p){
+        var st = phaseStatus(p, f.checklistState || {});
+        return row(p, st.done+' / '+st.total+' complete');
+      }).join('');
+
+      var html =
+        '<!DOCTYPE html><html><head><meta charset="utf-8">'+
+        '<title>Flight Report -- '+(f.date||'--')+' '+(f.aircraft||'')+'</title>'+
+        '<style>'+
+        '@page{size:A4;margin:14mm}'+
+        'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0f172a;line-height:1.5;margin:0;padding:0}'+
+        'h1{font-size:22px;margin:0 0 4px;color:#1e3a8a}'+
+        'h2{font-size:14px;text-transform:uppercase;letter-spacing:.1em;color:#1e3a8a;border-bottom:2px solid #1e3a8a;padding-bottom:4px;margin:22px 0 10px;page-break-after:avoid}'+
+        '.hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;border-bottom:1px solid #cbd5e1;padding-bottom:10px}'+
+        '.meta{font-size:13px;color:#475569}'+
+        'table{width:100%;border-collapse:collapse;margin-bottom:14px}'+
+        'th,td{text-align:left;padding:6px 10px;font-size:13px;border-bottom:1px solid #e2e8f0}'+
+        'th{font-weight:600;color:#475569;text-transform:uppercase;font-size:11px;letter-spacing:.06em;width:40%}'+
+        'td{font-family:"SF Mono","JetBrains Mono",monospace}'+
+        'td.calc{font-weight:700;color:#1e3a8a}'+
+        '.notebox{font-family:-apple-system,sans-serif;font-size:13px;white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px;margin-bottom:14px}'+
+        '.scribimg{max-width:100%;border:1px solid #cbd5e1;border-radius:6px;margin-bottom:8px}'+
+        '.foot{margin-top:24px;font-size:11px;color:#64748b;text-align:center;border-top:1px solid #cbd5e1;padding-top:10px}'+
+        '.section{page-break-inside:avoid}'+
+        '@media print{button{display:none}}'+
+        '.printbtn{display:block;margin:14px auto;padding:10px 24px;background:#1e3a8a;color:white;border:none;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer}'+
+        '</style></head><body>'+
+        '<button class="printbtn" onclick="window.print()">Print / Save as PDF</button>'+
+        '<h1>Flight Report</h1>'+
+        '<div class="hdr">'+
+          '<div>'+
+            '<div style="font-size:18px;font-weight:600">'+esc(f.aircraft||'Aircraft ?')+' &middot; '+esc(f.departure||'?')+' &rarr; '+esc(f.destination||'?')+'</div>'+
+            '<div class="meta">'+esc(f.date||'--')+(f.student?' &middot; Student '+esc(f.student):'')+'</div>'+
+          '</div>'+
+          '<div class="meta">Generated '+new Date().toLocaleString()+'</div>'+
+        '</div>'+
+
+        '<div class="section"><h2>Flight Info</h2><table>'+
+          row('Date', esc(f.date))+
+          row('Aircraft', esc(f.aircraft))+
+          row('Student / Co-pilot', esc(f.student))+
+          row('Departure', esc(f.departure))+
+          row('Destination', esc(f.destination))+
+          row('Alternate 1', esc(f.alt1Icao))+
+          row('Alternate 2', esc(f.alt2Icao))+
+        '</table>'+
+        (freqRows ? '<table>'+freqRows+'</table>' : '')+
+        '</div>'+
+
+        (atisRows ? '<div class="section"><h2>ATIS</h2>'+atisRows+'</div>' : '')+
+
+        ((f.scribbleIfr||f.scribbleIfrText||f.scribbleTaxi||f.scribbleTaxiText) ?
+          '<div class="section"><h2>Clearance</h2>'+
+          (f.scribbleIfr ? '<div style="font-size:11px;color:#64748b;text-transform:uppercase;margin-bottom:4px">IFR</div><img class="scribimg" src="'+f.scribbleIfr+'"/>' : '')+
+          (f.scribbleIfrText ? '<div class="notebox">'+esc(f.scribbleIfrText)+'</div>' : '')+
+          (f.scribbleTaxi ? '<div style="font-size:11px;color:#64748b;text-transform:uppercase;margin-bottom:4px">Taxi</div><img class="scribimg" src="'+f.scribbleTaxi+'"/>' : '')+
+          (f.scribbleTaxiText ? '<div class="notebox">'+esc(f.scribbleTaxiText)+'</div>' : '')+
+          '</div>' : '')+
+
+        '<div class="section"><h2>Times (UTC)</h2><table>'+
+          row('Chocks Off', esc(f.chocksOff))+
+          row('Takeoff', esc(f.takeoff))+
+          row('Landing', esc(f.landing))+
+          row('Chocks On', esc(f.chocksOn))+
+          row('Block Time', decToHM(c.block)+' ('+dec2(c.block)+' hrs)', true)+
+          row('Air Time', decToHM(c.air)+' ('+dec2(c.air)+' hrs)', true)+
+          row('Tacho', dec2(c.tacho)+' hrs ['+esc(f.tachoStart)+' &rarr; '+esc(f.tachoEnd)+']', true)+
+          row('Hobbs', dec2(c.hobbs)+' hrs ['+esc(f.hobbsStart)+' &rarr; '+esc(f.hobbsEnd)+']', true)+
+          row('Lesson Time', c.lesson!==null?decToHM(c.lesson)+' ('+dec2(c.lesson)+' hrs)':'--', true)+
+          row('Circuit Time', c.circuit!==null?decToHM(c.circuit)+' ('+dec2(c.circuit)+' hrs)':'--', true)+
+        '</table></div>'+
+
+        '<div class="section"><h2>Weather</h2>'+
+        (f.wxTAS ? '<table>'+row('TAS', esc(f.wxTAS)+' kt')+windRows+'</table>' : '')+
+        (rwyRows ? '<table>'+rwyRows+'</table>' : '')+
+        stationBlocks+
+        '</div>'+
+
+        '<div class="section"><h2>Fuel</h2><table>'+
+          row('Initial Fuel', usgL(fc.initial))+
+          row('Fuel Uplifted', usgL(fc.uplifted))+
+          row('Total Fuel on Board', usgL(fc.fob), true)+
+          row('Burn Rate', fc.burn+' USG/hr')+
+          row('Taxi', usgL(fc.taxi))+
+          row('Trip', usgL(fc.trip))+
+          row('Contingency ('+dec2(fc.contPct)+'%)', usgL(fc.cont), true)+
+          row('Alternate', usgL(fc.alt))+
+          row('Final Reserve', usgL(fc.final_))+
+          row('Extra', usgL(fc.extra))+
+          row('Total Required', usgL(fc.total), true)+
+          row('Surplus / Deficit', fc.surplus!==null?(fc.surplus>=0?'+':'')+usgL(Math.abs(fc.surplus)):'--', true)+
+          row('Endurance', fc.endurance!==null?decToHM(fc.endurance):'--', true)+
+          row('Actual Fuel on Landing', f.fuelLanding?usgL(parseFloat(f.fuelLanding)):'--')+
+          row('Oil Level', esc(f.oilLevel))+
+          row('Oil Added', esc(f.oilAdded))+
+        '</table>'+
+        (tankLog.length ? '<table>'+
+          row('Time on Left Tank', decToHM(tankTotals.L)+' ('+dec2(tankTotals.L)+' hrs)', true)+
+          row('Time on Right Tank', decToHM(tankTotals.R)+' ('+dec2(tankTotals.R)+' hrs)', true)+
+          row('Left Remaining (est.)', isNaN(tankLeftStart)?'--':Math.round(tankLeftStart-tankTotals.L*burnForTank)+' USG', true)+
+          row('Right Remaining (est.)', isNaN(tankRightStart)?'--':Math.round(tankRightStart-tankTotals.R*burnForTank)+' USG', true)+
+          tankLogRows+
+        '</table>' : '')+
+        '</div>'+
+
+        '<div class="section"><h2>Checklist Progress</h2><table>'+phaseRows+'</table></div>'+
+        '<div class="section"><h2>Skill Test Progress</h2><table>'+row('SRG2128 Items Demonstrated', skDone+' / '+skTotal, true)+'</table></div>'+
+
+        (f.defects ? '<div class="section"><h2>Defects</h2><div class="notebox">'+esc(f.defects)+'</div></div>' : '')+
+        (f.maneuvers ? '<div class="section"><h2>Maneuvers / Exercises</h2><div class="notebox">'+esc(f.maneuvers)+'</div></div>' : '')+
+        (f.notes ? '<div class="section"><h2>Instructor Notes</h2><div class="notebox">'+esc(f.notes)+'</div></div>' : '')+
+
+        '<div class="foot">FlightDeck v237 &middot; '+new Date().toLocaleString()+'</div>'+
+        '</body></html>';
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+    });
+  }
+
+  // ---- Copy/Paste Weather between flights on the same day ----
+  var WX_CLIPBOARD_KEY = 'fd_weather_clipboard';
+  var WX_FIELD_KEYS = ['wxTAS',
+    'wxSurfWind','wxW1kWind','wxW2kWind','wxW5kWind','wxW10kWind',
+    'wxSurfTemp','wxW1kTemp','wxW2kTemp','wxW5kTemp','wxW10kTemp',
+    'rwy1','rwy2','rwy3','rwy4',
+    'wxIcao1','wxIcao2','wxIcao3','wxIcao4',
+    'wxMetar1','wxMetar2','wxMetar3','wxMetar4',
+    'wxTaf1','wxTaf2','wxTaf3','wxTaf4'];
+  function pasteWeatherIntoForm(clip){
+    var tasEl = qs('#m-wxTAS', div);
+    if(tasEl) tasEl.value = clip.wxTAS || '';
+    ['Surf','W1k','W2k','W5k','W10k'].forEach(function(k){
+      var windBtn = div.querySelector('button.atis-fld[data-wxfld="'+k+'"]');
+      if(windBtn){
+        var v = clip['wx'+k+'Wind'] || '';
+        windBtn.dataset.val = v;
+        var vEl = windBtn.querySelector('.atis-v');
+        if(vEl) vEl.textContent = v || '--';
+      }
+      var tempBtn = div.querySelector('button.atis-fld[data-wxtemp="'+k+'"]');
+      if(tempBtn){
+        var tv = clip['wx'+k+'Temp'] || '';
+        tempBtn.dataset.val = tv;
+        var tvEl = tempBtn.querySelector('.atis-v');
+        if(tvEl){
+          if(tv===''){ tvEl.textContent = '--'; }
+          else { var n=parseFloat(tv); tvEl.textContent=(isNaN(n)?tv:(n>0?'+':'')+n)+'\u00b0C'; }
+        }
+      }
+    });
+    [1,2,3,4].forEach(function(n){
+      var rwyEl = qs('#m-rwy'+n, div); if(rwyEl) rwyEl.value = clip['rwy'+n] || '';
+      var icaoEl = qs('#m-wxIcao'+n, div); if(icaoEl) icaoEl.value = clip['wxIcao'+n] || '';
+      var metarEl = qs('#m-wxMetar'+n, div); if(metarEl) metarEl.value = clip['wxMetar'+n] || '';
+      var tafEl = qs('#m-wxTaf'+n, div); if(tafEl) tafEl.value = clip['wxTaf'+n] || '';
+    });
+    syncWxBlocks();
+    liveCalc();
+  }
+  var wxCopyBtn = qs('#m-wxCopyBtn', div);
+  if(wxCopyBtn) wxCopyBtn.addEventListener('click', function(){
+    collectFields();
+    var clip = {};
+    WX_FIELD_KEYS.forEach(function(k){ clip[k] = f[k] || ''; });
+    clip._copiedAt = new Date().toISOString();
+    save(WX_CLIPBOARD_KEY, clip);
+    toast('Weather copied \u2014 paste it into another flight');
+  });
+  var wxPasteBtn = qs('#m-wxPasteBtn', div);
+  if(wxPasteBtn) wxPasteBtn.addEventListener('click', function(){
+    var clip = load(WX_CLIPBOARD_KEY, null);
+    if(!clip){ toast('No weather copied yet'); return; }
+    pasteWeatherIntoForm(clip);
+    toast('Weather pasted');
+  });
 
   // If editing a flight that already has METAR/TAF saved, show green LED
   var hasSaved = [1,2,3,4].some(function(n){
@@ -5131,7 +5431,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v235');
+  lines.push('','-- Sent from FlightDeck v237');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -5180,7 +5480,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v235');
+  lines.push('','-- FlightDeck v237');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
@@ -7419,7 +7719,7 @@ qs('#rf-search').addEventListener('input', renderRfList);
 // PWA
 // ============================================================
 var SW_CODE=[
-  "var C='fd-sw-v38';",
+  "var C='fd-sw-v40';",
   "self.addEventListener('install',function(e){",
   "  e.waitUntil(caches.open(C).then(function(c){ return c.addAll([self.location.pathname]); }).then(function(){ return self.skipWaiting(); }));",
   "});",
