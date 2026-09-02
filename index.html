@@ -9,23 +9,23 @@
 <meta name="apple-mobile-web-app-title" content="FlightDeck"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%2C-apple-system%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%231e3a8a%22%20rx%3D%2240%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2276%22%20font-weight%3D%22800%22%20font-family%3D%22system-ui%22%3EFD%3C%2Ftext%3E%3C%2Fsvg%3E"/>
-<title>FlightDeck v237</title>
+<title>FlightDeck v241</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 :root{
   --bg:#f5f7fa;--surface:#ffffff;--card:#eef2f6;--border:#cbd5e1;
-  --text:#0f172a;--muted:#475569;--sky:#0369a1;--em:#047857;
+  --text:#0f172a;--muted:#3f4c5e;--sky:#0369a1;--em:#047857;
   --amber:#b45309;--rose:#be123c;--violet:#6d28d9;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:17px;font-weight:500;-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 button{cursor:pointer;font-family:inherit}
 input,textarea,select{font-family:inherit}
 #app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 header{flex-shrink:0;background:rgba(245,247,250,.97);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);z-index:50}
-.hdr{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:8px;height:54px}
+.hdr{max-width:1280px;margin:0 auto;padding:8px 20px;display:flex;align-items:center;gap:8px;min-height:54px;flex-wrap:wrap}
 .logo{display:flex;align-items:center;gap:9px;margin-right:auto}
 .logo-icon{width:28px;height:28px;background:linear-gradient(135deg,var(--sky),var(--violet));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
 .logo-name{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--text)}
@@ -50,7 +50,7 @@ main{flex:1;overflow:hidden;max-width:1280px;width:100%;margin:0 auto;padding:16
 .card.sel-sky{border-color:var(--sky)!important;background:rgba(14,165,233,.08)!important}
 .card.sel-em{border-color:var(--em)!important;background:rgba(16,185,129,.08)!important}
 .card.sel-am{border-color:var(--amber)!important;background:rgba(245,158,11,.08)!important}
-.ctitle{font-weight:600;font-size:13px;color:var(--text);margin-bottom:5px;line-height:1.3}
+.ctitle{font-weight:700;font-size:14px;color:var(--text);margin-bottom:5px;line-height:1.3}
 .cmeta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .dh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:10px}
 .dtitle{font-family:'Syne',sans-serif;font-weight:700;font-size:19px;color:var(--text);line-height:1.2}
@@ -69,7 +69,7 @@ main{flex:1;overflow:hidden;max-width:1280px;width:100%;margin:0 auto;padding:16
 .btn-s{background:var(--em);color:#fff}.btn-s:hover{background:#059669;color:#000}
 .btn-full{width:100%;text-align:center;padding:8px}
 .field{margin-bottom:14px}
-.field label{display:block;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.field label{display:block;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
 .inp{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-size:15px;transition:border-color .15s;outline:none}
 .inp:focus{border-color:var(--sky)}
 textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
@@ -81,14 +81,14 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
 .stat-v{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:#0284c7}
 .stat-l{font-size:12px;color:var(--muted);margin-top:1px}
 .sec{margin-bottom:12px}
-.sec-lbl{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}
+.sec-lbl{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}
 .sec-box{background:rgba(255,255,255,.7);border:1px solid rgba(203,213,225,.7);border-radius:9px;padding:11px;font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap}
 .calc-card{background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.2);border-radius:11px;padding:14px;margin-bottom:14px}
 .fuel-card{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);border-radius:11px;padding:14px;margin-bottom:14px}
 .calc-title{font-family:'JetBrains Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
 .calc-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:#0284c7}
 .calc-sub{font-size:12px;color:var(--muted);margin-top:2px}
-.sdiv{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--sky);text-transform:uppercase;letter-spacing:.1em;padding:8px 0 4px;border-bottom:1px solid rgba(14,165,233,.2);margin-bottom:10px;margin-top:6px}
+.sdiv{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--sky);text-transform:uppercase;letter-spacing:.1em;padding:8px 0 4px;border-bottom:1px solid rgba(14,165,233,.2);margin-bottom:10px;margin-top:6px}
 
 /* Colour-coded section cards used in the detail view and modal.
    Each section gets one accent colour applied to its left border,
@@ -213,6 +213,59 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
    carries the state. */
 [style*="border-radius:999px"]{ border: none !important; }
 
+/* ── Bold, big, readable is now the baseline everywhere — not an opt-in.
+   Bigger tap targets and text throughout, since the app gets used one-handed
+   outdoors regardless of which screen it is. Uses !important throughout
+   since most controls in this app set their own padding/font-size inline. */
+.inp{ padding:13px 14px !important; font-size:16px !important; font-weight:600 !important; min-height:44px; box-sizing:border-box; }
+textarea.inp{ min-height:80px; }
+select.inp{ min-height:44px; }
+.btn{ padding:12px 18px !important; font-size:15px !important; font-weight:700 !important; min-height:44px; }
+.tb{ padding:10px 16px !important; font-size:15px !important; font-weight:700 !important; }
+.m-tab,.m-info-tab{ padding:13px 6px !important; font-size:15px !important; }
+/* Tick / N-A — the single most-tapped control in the whole app */
+.cl-btn-yes,.cl-btn-na,
+.dv-yes,.dv-na{
+  padding:12px 18px !important; font-size:15px !important; font-weight:800 !important; min-width:44px; min-height:44px;
+}
+.cli-chk{ width:28px !important; height:28px !important; }
+.cli-text{ font-size:16px !important; font-weight:600 !important; }
+/* Tank bar + Now buttons — the controls you reach for mid-task */
+#m-tank-bar{ padding:14px !important; }
+#m-tank-L,#m-tank-R{ padding:14px 26px !important; font-size:18px !important; font-weight:800 !important; }
+#m-tank-log-btn{ padding:14px 22px !important; font-size:15px !important; }
+.m-now-btn{ padding:12px 18px !important; font-size:14px !important; font-weight:700 !important; }
+/* Time spinners */
+select[id$="-h"],select[id$="-m"]{ padding:12px 6px !important; font-size:16px !important; font-weight:700 !important; min-height:44px; }
+/* Checklist keypad / unit-toggle buttons */
+.cl-keypad-btn{ padding:10px 16px !important; font-size:14px !important; font-weight:700 !important; min-height:40px; }
+.cl-unit-toggle{ padding:8px 14px !important; font-size:13px !important; }
+/* Item text — the thing you're actually scanning for */
+.cl-item span,[data-item-id] > div > span{ font-weight:600 !important; }
+
+/* ── XL Mode — an extra size step on top of the baseline above, for the
+   very worst conditions (turbulence, gloves, bright glare). Toggled via
+   the header button; persisted in localStorage. */
+body.xl-mode{ font-size:19px; }
+body.xl-mode .inp{ padding:16px 16px !important; font-size:18px !important; min-height:50px; }
+body.xl-mode textarea.inp{ min-height:96px; }
+body.xl-mode .btn{ padding:15px 22px !important; font-size:17px !important; min-height:50px; }
+body.xl-mode .tb{ padding:13px 18px !important; font-size:17px !important; }
+body.xl-mode .m-tab,body.xl-mode .m-info-tab{ padding:16px 6px !important; font-size:17px !important; }
+body.xl-mode label,body.xl-mode .field label{ font-size:14px !important; }
+body.xl-mode .cl-btn-yes,body.xl-mode .cl-btn-na,
+body.xl-mode .dv-yes,body.xl-mode .dv-na{
+  padding:15px 22px !important; font-size:17px !important; min-width:50px; min-height:50px;
+}
+body.xl-mode .cli-chk{ width:32px !important; height:32px !important; }
+body.xl-mode .cli-text{ font-size:18px !important; }
+body.xl-mode #m-tank-bar{ padding:16px !important; }
+body.xl-mode #m-tank-L,body.xl-mode #m-tank-R{ padding:16px 30px !important; font-size:20px !important; }
+body.xl-mode #m-tank-log-btn{ padding:16px 26px !important; font-size:17px !important; }
+body.xl-mode .m-now-btn{ padding:15px 22px !important; font-size:16px !important; }
+body.xl-mode select[id$="-h"],body.xl-mode select[id$="-m"]{ padding:14px 8px !important; font-size:18px !important; min-height:50px; }
+body.xl-mode .cl-keypad-btn{ padding:13px 20px !important; font-size:16px !important; min-height:46px; }
+
 /* ── Readiness Checklist tab ── */
 .rd-tabbar{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid var(--border)}
 .rd-tab{flex:1;padding:8px 4px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;color:var(--muted);margin-bottom:-1px}
@@ -242,12 +295,13 @@ textarea.inp{resize:vertical;min-height:65px;line-height:1.5}
     <div class="logo">
       <div class="logo-icon">&#9992;</div>
       <span class="logo-name">FlightDeck</span>
-      <span class="logo-sub">v237</span>
+      <span class="logo-sub">v241</span>
     </div>
     <nav id="nav">
       <button class="tb on" data-tab="flights">&#9992; Flight Log</button>
       <button class="tb" data-tab="readiness">&#10003; Readiness</button>
     </nav>
+    <button class="btn btn-g" id="large-mode-btn" style="font-size:13px;padding:4px 10px;flex-shrink:0;font-weight:700" title="An extra size step up for turbulence, gloves, or bright glare">&#128269; XL</button>
     <button class="btn btn-g" id="settings-btn" style="font-size:13px;padding:4px 10px;flex-shrink:0">&#9881; Settings</button>
     <button class="pwa-btn" id="install-btn">&#8595; Install</button>
   </div>
@@ -1998,6 +2052,31 @@ function openModal(cfg){
 function closeModal(){ qs('#modal-root').innerHTML=''; }
 
 // ============================================================
+// XL MODE — an extra size step on top of the (now bold-by-default) baseline,
+// for turbulence, gloves, or bright glare
+// ============================================================
+var LARGE_MODE_KEY = 'fd_large_mode';
+function applyLargeMode(on){
+  document.body.classList.toggle('xl-mode', on);
+  var btn = qs('#large-mode-btn');
+  if(btn){
+    btn.style.background = on ? 'var(--em)' : '';
+    btn.style.color = on ? '#fff' : '';
+    btn.style.borderColor = on ? 'var(--em)' : '';
+  }
+}
+(function(){
+  var stored = localStorage.getItem(LARGE_MODE_KEY);
+  applyLargeMode(stored === '1');
+})();
+qs('#large-mode-btn').addEventListener('click', function(){
+  var on = !document.body.classList.contains('xl-mode');
+  applyLargeMode(on);
+  try{ localStorage.setItem(LARGE_MODE_KEY, on ? '1' : '0'); }catch(e){}
+  toast(on ? 'XL mode on' : 'XL mode off');
+});
+
+// ============================================================
 // SETTINGS MODAL
 // ============================================================
 qs('#settings-btn').addEventListener('click', function(){
@@ -2753,7 +2832,7 @@ function openFlModal(ex){
           '<button type="button" class="btn btn-g" id="m-date-today" style="padding:6px 8px;font-size:11px;flex-shrink:0">Today</button>'+
         '</div>'+
       '</div>'+
-      '<div class="field" style="margin-bottom:8px"><label>Aircraft Reg</label><input class="inp" id="m-aircraft" placeholder="VH-XXX" value="'+(f.aircraft||'')+'"/></div>'+
+      '<div class="field" style="margin-bottom:8px"><label>Reg</label><input class="inp" id="m-aircraft" placeholder="VH-XXX" value="'+(f.aircraft||'')+'"/></div>'+
     '</div>'+
     '<div class="field" style="margin-bottom:8px"><label>Student / Co-pilot</label><input class="inp" id="m-student" value="'+(f.student||'')+'" placeholder="Student name"/></div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
@@ -3288,8 +3367,12 @@ function openFlModal(ex){
     }
 
     function updateTankSummary(){
+      // Fuel keeps burning through the landing roll and taxi-in, so the last
+      // tank segment should run until Chocks On (on-blocks/shutdown), not
+      // Landing — falling back to Landing, then live "now", if not set yet.
+      var chocksOnT = getTimeSpinner('m-chocksOn', div) || f.chocksOn || '';
       var landingT = getTimeSpinner('m-landing', div) || f.landing || '';
-      var endTime = landingT || (function(){
+      var endTime = chocksOnT || landingT || (function(){
         var d=new Date();
         return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2);
       })();
@@ -3337,6 +3420,8 @@ function openFlModal(ex){
     });
     var landingWatch = qs('#m-landing-h', div);
     if(landingWatch) landingWatch.addEventListener('change', updateTankSummary);
+    var chocksOnWatch = qs('#m-chocksOn-h', div);
+    if(chocksOnWatch) chocksOnWatch.addEventListener('change', updateTankSummary);
     renderTankLog();
     // Keep the "time on tank so far" live while the modal is open (in case
     // the flight is still in progress and no landing time is set yet).
@@ -4233,7 +4318,7 @@ function openFlModal(ex){
           '</table>'+
         '</div>'+
 
-        '<div class="foot">FlightDeck v237 &middot; '+new Date().toLocaleString()+'</div>'+
+        '<div class="foot">FlightDeck v241 &middot; '+new Date().toLocaleString()+'</div>'+
         '</body></html>';
       win.document.open();
       win.document.write(html);
@@ -4330,7 +4415,7 @@ function openFlModal(ex){
 
       // Tank log
       var tankLog = f.tankLog || [];
-      var tankEndTime = f.landing || (function(){ var d=new Date(); return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2); })();
+      var tankEndTime = f.chocksOn || f.landing || (function(){ var d=new Date(); return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2); })();
       var tankTotals = tankTimeSegments(tankLog, tankEndTime);
       var burnForTank = fc.burn || 8;
       var tankLeftStart = parseFloat(f.tankLeftStart), tankRightStart = parseFloat(f.tankRightStart);
@@ -4466,7 +4551,7 @@ function openFlModal(ex){
         (f.maneuvers ? '<div class="section"><h2>Maneuvers / Exercises</h2><div class="notebox">'+esc(f.maneuvers)+'</div></div>' : '')+
         (f.notes ? '<div class="section"><h2>Instructor Notes</h2><div class="notebox">'+esc(f.notes)+'</div></div>' : '')+
 
-        '<div class="foot">FlightDeck v237 &middot; '+new Date().toLocaleString()+'</div>'+
+        '<div class="foot">FlightDeck v241 &middot; '+new Date().toLocaleString()+'</div>'+
         '</body></html>';
       win.document.open();
       win.document.write(html);
@@ -5431,7 +5516,7 @@ function emailFlight(f){
   // Append weather block (METARs/TAFs included)
   var wxLines = weatherTextLines(f);
   if(wxLines.length) lines = lines.concat(wxLines);
-  lines.push('','-- Sent from FlightDeck v237');
+  lines.push('','-- Sent from FlightDeck v241');
   window.location.href='mailto:Tom@teboo.ltd?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
 }
 
@@ -5480,7 +5565,7 @@ function exportFlight(f){
   ], logBanner('INSTRUCTOR NOTES'), [
     f.notes||'--',
   ]).concat(weatherTextLines(f));
-  lines.push('','-- FlightDeck v237');
+  lines.push('','-- FlightDeck v241');
   dlFile('flight_'+(f.date||'unknown')+'_'+(f.aircraft||'unknown')+'.txt', lines.join('\n'));
   toast('Flight exported');
 }
@@ -5960,10 +6045,24 @@ function renderChecklistTab(f, root){
     // Mirror of the sidebar Aircraft Reference. Per-item conversions are inline in the AC ref itself.
     root.appendChild(clAircraftRefEl());
   } else {
+    // Collapse every section by default (a fully-open phase can be 50+ items
+    // on screen at once) and auto-open only the first one that still has
+    // something outstanding, so the checklist still guides you to what's
+    // next without dumping everything in view. Skip section types that
+    // never collapse in the first place (flat/standalone/mnemonic rows) —
+    // only consider ones that actually render as a <details> dropdown.
+    var autoOpenId = null;
+    CHECKLIST_DATA.forEach(function(section){
+      if(autoOpenId !== null || section.phase !== activePhase) return;
+      var collapsible = !section.mnemonic && !section.standalone && !section.aclsHeader && !section.flat &&
+        !(section.items.length === 1 && section.items[0].type === 'timeNow');
+      if(!collapsible) return;
+      if(!checklistSectionStatus(section, f.checklistState).complete) autoOpenId = section.id;
+    });
     CHECKLIST_DATA.forEach(function(section){
       if(section.phase !== activePhase) return;
       sectionNum++;
-      root.appendChild(renderChecklistSection(section, f, sectionNum));
+      root.appendChild(renderChecklistSection(section, f, sectionNum, section.id === autoOpenId));
     });
   }
 
@@ -6221,7 +6320,7 @@ function renderStandaloneCheck(section, f, num){
   return row;
 }
 
-function renderChecklistSection(section, f, num){
+function renderChecklistSection(section, f, num, defaultOpen){
   if(section.mnemonic) return renderMnemonicCard(section, num);
   if(section.standalone) return renderStandaloneCheck(section, f, num);
   if(section.aclsHeader) return renderAclsHeaderSection(section, f, num);
@@ -6249,7 +6348,7 @@ function renderChecklistSection(section, f, num){
     wrapper = document.createElement('details');
     wrapper.className = 'cl-sect';
     wrapper.style.cssText = 'margin-bottom:12px';
-    wrapper.open = true;
+    wrapper.open = !!defaultOpen;
     summary = document.createElement('summary');
     summary.className = 'cl-sect-head';
     summary.style.cssText = 'padding:6px 0 4px 0;cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px;list-style:none;font-family:JetBrains Mono,monospace;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--sky);border-bottom:1px solid rgba(14,165,233,.2);margin-bottom:8px;flex-wrap:wrap;-webkit-tap-highlight-color:transparent';
@@ -6257,7 +6356,7 @@ function renderChecklistSection(section, f, num){
       (num != null ? sectionBadgeHtml(num) : '')+
       '<span class="cl-sect-title" style="flex:1;min-width:0"></span>'+
       '<span class="cl-sect-status" style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:700;flex:0 0 auto"></span>'+
-      '<span class="cl-sect-arrow" style="font-size:10px;flex:0 0 auto;transition:transform .15s;transform:rotate(180deg)">&#9660;</span>';
+      '<span class="cl-sect-arrow" style="font-size:10px;flex:0 0 auto;transition:transform .15s;transform:'+(defaultOpen?'rotate(180deg)':'rotate(0)')+'">&#9660;</span>';
     wrapper.addEventListener('toggle', function(){
       var arrow = summary.querySelector('.cl-sect-arrow');
       if(arrow) arrow.style.transform = wrapper.open ? 'rotate(180deg)' : 'rotate(0)';
@@ -6564,12 +6663,12 @@ function renderGroupContainer(f, section, item, itemId, onStateChange){
   var wrapper = document.createElement('details');
   wrapper.className = 'cl-group';
   wrapper.style.cssText = 'margin-bottom:8px;background:rgba(30,58,138,.04);border:1px solid rgba(30,58,138,.18);border-radius:7px;overflow:hidden';
-  wrapper.open = true;
+  wrapper.open = false;
 
   var summary = document.createElement('summary');
   summary.style.cssText = 'padding:8px 10px;cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-family:Syne,sans-serif;font-weight:700;font-size:13px;color:var(--text)';
   summary.innerHTML =
-    '<span class="grp-arrow" style="font-size:10px;color:#1e3a8a;flex:0 0 auto;transition:transform .15s;transform:rotate(90deg)">&#9654;</span>'+
+    '<span class="grp-arrow" style="font-size:10px;color:#1e3a8a;flex:0 0 auto;transition:transform .15s;transform:rotate(0)">&#9654;</span>'+
     '<span class="grp-title" style="flex:1;min-width:0">'+item.text+
       (item.hasLaw ? lawBadgeHtml(itemId) : '')+
     '</span>'+
@@ -7719,7 +7818,7 @@ qs('#rf-search').addEventListener('input', renderRfList);
 // PWA
 // ============================================================
 var SW_CODE=[
-  "var C='fd-sw-v40';",
+  "var C='fd-sw-v44';",
   "self.addEventListener('install',function(e){",
   "  e.waitUntil(caches.open(C).then(function(c){ return c.addAll([self.location.pathname]); }).then(function(){ return self.skipWaiting(); }));",
   "});",
@@ -8354,8 +8453,15 @@ function renderReadiness(){
 
   var pageWrap = document.createElement('div');
   pageWrap.className = 'rd-print-page';
+  var rdFirstIncompleteIdx = -1;
   tab.sections.forEach(function(sec, sIdx){
-    pageWrap.appendChild(rdRenderSection(rdActiveTab, sec, sIdx));
+    if(rdFirstIncompleteIdx !== -1) return;
+    var done = 0;
+    sec.items.forEach(function(_, iIdx){ if(rdState.checked[rdItemId(rdActiveTab,sIdx,iIdx)]) done++; });
+    if(done < sec.items.length) rdFirstIncompleteIdx = sIdx;
+  });
+  tab.sections.forEach(function(sec, sIdx){
+    pageWrap.appendChild(rdRenderSection(rdActiveTab, sec, sIdx, sIdx === rdFirstIncompleteIdx));
   });
   root.appendChild(pageWrap);
 
@@ -8391,10 +8497,10 @@ function renderReadiness(){
   root._rdUpdateOverall = updateOverall;
 }
 
-function rdRenderSection(tabKey, sec, sIdx){
+function rdRenderSection(tabKey, sec, sIdx, defaultOpen){
   var wrapper = document.createElement('details');
   wrapper.className = 'rd-section';
-  wrapper.open = true;
+  wrapper.open = !!defaultOpen;
   var secTotal = sec.items.length;
   var secDone = 0;
   sec.items.forEach(function(_, iIdx){ if(rdState.checked[rdItemId(tabKey,sIdx,iIdx)]) secDone++; });
@@ -8560,10 +8666,17 @@ function renderSkillTestTab(f, root){
     applyFilter();
   });
 
+  var stFirstIncompleteIdx = -1;
+  RD_DATA.skill.sections.forEach(function(sec, sIdx){
+    if(stFirstIncompleteIdx !== -1) return;
+    var done = 0;
+    sec.items.forEach(function(_, iIdx){ if(f.skillTest[sIdx+'.'+iIdx]) done++; });
+    if(done < sec.items.length) stFirstIncompleteIdx = sIdx;
+  });
   RD_DATA.skill.sections.forEach(function(sec, sIdx){
     var wrapper = document.createElement('details');
     wrapper.className = 'rd-section';
-    wrapper.open = true;
+    wrapper.open = (sIdx === stFirstIncompleteIdx);
     var secTotal = sec.items.length;
     var secDone = 0;
     sec.items.forEach(function(_, iIdx){ if(f.skillTest[sIdx+'.'+iIdx]) secDone++; });
