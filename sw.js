@@ -13,7 +13,7 @@
 // already keeps the cache fresh on its own whenever you're online.
 const CACHE_NAME = 'checkdeck-cache-v1';
 const APP_SHELL = [
-  './CheckDeck.html',
+  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
@@ -60,7 +60,7 @@ self.addEventListener('fetch', function(event){
       return networkResponse;
     }).catch(function(){
       return caches.match(event.request).then(function(cached){
-        return cached || caches.match('./CheckDeck.html');
+        return cached || caches.match('./index.html');
       });
     })
   );

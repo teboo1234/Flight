@@ -2,7 +2,7 @@
   "name": "CheckDeck",
   "short_name": "CheckDeck",
   "description": "Pre-flight card checklist for flight instruction",
-  "start_url": "./CheckDeck.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

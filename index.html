@@ -3,7 +3,17 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck v40 — Pre-Flight Card Checklist</title>
+<title>CheckDeck v41 — Pre-Flight Card Checklist</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#0369a1"/>
+<!-- iOS specifically needs its own tags — Safari's support for the plain
+     web manifest above has historically been incomplete, so this is the
+     reliable way to get a full-screen (no Safari chrome), correctly
+     icon'd, offline-capable "app" when added to the Home Screen. -->
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="CheckDeck"/>
+<link rel="apple-touch-icon" href="icon-180.png"/>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
 
@@ -372,7 +382,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v40</div>
+  <div id="versionBadge">v41</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="tankBar" id="tankBarHeader" style="display:none"></div>
@@ -2989,6 +2999,16 @@ function setMode(mode){
 
 setMode('calc');
 updateCountdown();
+
+// Registers the service worker (sw.js, in the same folder as this file)
+// so the app has a genuine offline copy available, not just whatever
+// Safari's own opportunistic cache happens to keep. Safe to call even
+// where service workers aren't supported — it just quietly does nothing.
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){ /* offline-first still works via the browser's own cache even if this fails */ });
+  });
+}
 </script>
 </body>
 </html>
