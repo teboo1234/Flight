@@ -3,7 +3,17 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck v40 — Pre-Flight Card Checklist</title>
+<title>CheckDeck v44 — Pre-Flight Card Checklist</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#0369a1"/>
+<!-- iOS specifically needs its own tags — Safari's support for the plain
+     web manifest above has historically been incomplete, so this is the
+     reliable way to get a full-screen (no Safari chrome), correctly
+     icon'd, offline-capable "app" when added to the Home Screen. -->
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="CheckDeck"/>
+<link rel="apple-touch-icon" href="icon-180.png"/>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
 
@@ -27,7 +37,7 @@ body{
 input,select{ font-family:'JetBrains Mono',monospace; }
 
 /* ===== Top strip: mode + phase ===== */
-.topStrip{ position:fixed; top:0; left:0; right:0; z-index:50; background:rgba(245,247,250,.97); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+.topStrip{ position:fixed; top:0; left:0; right:0; z-index:50; background:rgba(245,247,250,.97); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); padding-top:env(safe-area-inset-top); }
 #versionBadge{ position:absolute; bottom:2px; right:5px; font-family:'JetBrains Mono',monospace; font-size:8px; font-weight:700; color:var(--muted); opacity:.5; letter-spacing:.05em; z-index:60; pointer-events:none; }
 .countdownRow{ display:flex; gap:14px; justify-content:center; align-items:center; height:24px; background:var(--card); font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; color:var(--sky); border-bottom:1px solid var(--border); }
 .countdownRow .cdT{ color:var(--em); margin-left:3px; }
@@ -257,6 +267,22 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .manageCodeText small{ display:block; font-weight:500; color:#3f4c5e; font-size:11px; margin-top:1px; }
 .manageCodeDelBtn{ flex-shrink:0; border:1px solid #be123c; background:#fff; color:#be123c; border-radius:7px; padding:6px 10px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11px; cursor:pointer; }
 .manageCodesEmpty{ text-align:center; color:#3f4c5e; font-size:13px; padding:16px 0; }
+.codePresetsBlock{ border-top:1px solid #e2e8f0; margin-top:14px; padding-top:14px; }
+.codePresetsLbl{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#3f4c5e; margin-bottom:8px; }
+.codePresetsList{ display:flex; flex-direction:column; gap:6px; }
+.codePresetsEmpty{ font-size:12px; color:#3f4c5e; font-style:italic; }
+.codePresetItem{ display:flex; align-items:center; gap:8px; background:#f5f7fa; border:1px solid #e2e8f0; border-radius:8px; padding:7px 10px; }
+.codePresetName{ flex:1; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#0f172a; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.codePresetLoadBtn{ flex-shrink:0; border:1px solid #0369a1; background:#fff; color:#0369a1; border-radius:6px; padding:5px 9px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11px; cursor:pointer; }
+.codePresetDelBtn{ flex-shrink:0; border:1px solid #be123c; background:#fff; color:#be123c; border-radius:6px; padding:5px 9px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11px; cursor:pointer; }
+.savedFlightItem{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px; text-align:left; }
+.savedFlightName{ font-family:'JetBrains Mono',monospace; font-weight:800; font-size:14px; color:var(--text); }
+.savedFlightSub{ font-size:12px; color:var(--muted); margin-top:2px; margin-bottom:10px; }
+.savedFlightBtns{ display:flex; gap:6px; }
+.savedFlightBtns button{ flex:1; border-radius:7px; padding:7px 0; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; cursor:pointer; }
+.savedFlightLoadBtn{ border:1px solid var(--sky); background:var(--surface); color:var(--sky); }
+.savedFlightSyncBtn{ border:1px solid var(--em); background:var(--surface); color:var(--em); }
+.savedFlightDelBtn{ border:1px solid var(--rose); background:var(--surface); color:var(--rose); }
 .addItemRow{ display:flex; gap:8px; margin-top:4px; }
 .addItemRow input{ flex:1; background:var(--surface); border:1px dashed var(--border); border-radius:10px; padding:10px 12px; font-family:'JetBrains Mono',monospace; font-size:16px; color:var(--text); }
 .addItemRow button{ flex-shrink:0; border:1px solid var(--em); background:rgba(16,185,129,.08); color:var(--em); border-radius:10px; padding:10px 16px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; cursor:pointer; }
@@ -344,6 +370,11 @@ input,select{ font-family:'JetBrains Mono',monospace; }
    how this app is meant to be used, so destructive actions get their own
    in-app confirmation instead of depending on the native dialog. */
 .confirmModal{ position:fixed; inset:0; z-index:100; background:rgba(15,23,42,.55); display:flex; align-items:center; justify-content:center; padding:20px; }
+/* These two can open on top of an already-open modal (e.g. naming a code
+   preset from inside Manage Codes) — a higher z-index guarantees they
+   stack above regardless of DOM order, which otherwise decides it and
+   could leave the prompt visually underneath and unclickable. */
+#promptModal, #codePromptModal{ z-index:200; }
 .confirmBox{ background:#fff; border-radius:16px; padding:24px 22px; max-width:340px; width:100%; box-shadow:0 20px 50px rgba(0,0,0,.3); }
 .confirmMsg{ font-family:'DM Sans',sans-serif; font-size:15px; color:#0f172a; line-height:1.5; margin-bottom:20px; text-align:center; }
 .confirmBtns{ display:flex; gap:10px; }
@@ -372,7 +403,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v40</div>
+  <div id="versionBadge">v44</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="tankBar" id="tankBarHeader" style="display:none"></div>
@@ -473,6 +504,11 @@ input,select{ font-family:'JetBrains Mono',monospace; }
   <div class="confirmBox">
     <div class="confirmMsg">Manage Codes</div>
     <div id="manageCodesList" class="manageCodesList"></div>
+    <div class="codePresetsBlock">
+      <div class="codePresetsLbl">Saved Sets</div>
+      <div id="codePresetsList" class="codePresetsList"></div>
+      <button type="button" id="codePresetSaveBtn" class="grCodeAddBtn" style="width:100%;margin-top:8px">+ Save Current Set&hellip;</button>
+    </div>
     <div class="confirmBtns">
       <button type="button" id="manageCodesCloseBtn" class="confirmCancel" style="flex:1">Close</button>
     </div>
@@ -700,6 +736,9 @@ var CHECKLIST_DATA = [
       {text:'SPLIITTT', note:'Mnemonic — expansion pending.'}
     ] }
   ]},
+  { phase:'Reference', id:'savedflights', title:'Saved Flights', items: [
+    { id:'savedflightsgrp', text:'Saved Flights', type:'savedflights' }
+  ]},
   { phase:'Reference', id:'apisettings', title:'Settings', items: [
     { id:'apisettingsgrp', text:'Settings', type:'apisettings' }
   ]}
@@ -774,6 +813,7 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
         if(item.type === 'timeNow'){ card.type = 'timenow'; }
         if(item.type === 'fuelplan'){ card.type = 'fuelplan'; }
         if(item.type === 'apisettings'){ card.type = 'apisettings'; }
+        if(item.type === 'savedflights'){ card.type = 'savedflights'; }
         sec.cards.push(card);
         ALLCARDS[card.id] = card;
       }
@@ -787,13 +827,16 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
    ============================================================ */
 var STORE_KEY = 'checkdeck_state_v1';
 var USG_TO_L = 3.785;
-var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
+var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
   fuel:{ unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
   tankLog:[], tankSelected:'L',
   flightDetails:{ date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' } };
 // checked[cardId] = 'go'|'na'; values[cardId] = string/obj; global = shared
 // fields synced across every place they appear (ETOB/CTOT); codes = the
-// user-editable transponder code list; customItems[groupCardId] = array of
+// user-editable transponder code list currently in use; codePresets =
+// named, saved snapshots of that list (e.g. "EGTK ops" vs "Away") that can
+// be saved, loaded, or deleted independently of what's active right now;
+// customItems[groupCardId] = array of
 // user-added extra items for that group (e.g. TEM); hideCompleted = whether
 // group lists hide their resolved rows; fuel = the Fuel Plan page — every
 // amount stored canonically in USG regardless of the display unit; tankLog/
@@ -808,6 +851,8 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     if(!STATE.global) STATE.global = { etob:'', ctot:'', transponderCode:'' };
     if(STATE.global.transponderCode === undefined) STATE.global.transponderCode = '';
     if(!STATE.codes) STATE.codes = [{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}];
+    if(!STATE.codePresets) STATE.codePresets = {};
+    if(!STATE.savedFlights) STATE.savedFlights = {};
     if(!STATE.flightDetails) STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' };
     if(STATE.flightDetails.landAway === undefined || STATE.flightDetails.landAway === false) STATE.flightDetails.landAway = '';
     if(STATE.flightDetails.landAway === true) STATE.flightDetails.landAway = 'Yes';
@@ -1287,10 +1332,12 @@ function renderCard(card){
     html += renderFuelPlanHtml(card.id);
   } else if(card.type === 'apisettings'){
     html += renderApiSettingsHtml();
+  } else if(card.type === 'savedflights'){
+    html += renderSavedFlightsHtml();
   }
 
   elCard.innerHTML = html;
-  elCard.classList.toggle('list-mode', card.type === 'grouplist' || card.type === 'fuelplan' || card.type === 'apisettings');
+  elCard.classList.toggle('list-mode', card.type === 'grouplist' || card.type === 'fuelplan' || card.type === 'apisettings' || card.type === 'savedflights');
   requestAnimationFrame(updateScrollHint);
 
   var lawBadge = document.getElementById('lawBadge');
@@ -1736,6 +1783,8 @@ function renderCard(card){
     }
   } else if(card.type === 'apisettings'){
     wireApiSettings();
+  } else if(card.type === 'savedflights'){
+    wireSavedFlights(card);
   }
 
   if(card.type === 'keypad'){
@@ -2052,6 +2101,106 @@ function wireApiSettings(){
     liveUpdatesPaused = !liveUpdatesPaused;
     pauseBtn.textContent = liveUpdatesPaused ? '\u25B6 Resume' : '\u23F8 Pause';
     pauseBtn.style.background = liveUpdatesPaused ? 'var(--rose)' : '';
+  });
+}
+// Saved Flights — named snapshots of everything that's specific to one
+// flight (ticks, values, fuel, tank log, flight details) and resets on
+// Reset All. Deliberately excludes app-level config (transponder codes/
+// presets, Hide Completed) since those aren't per-flight.
+function captureFlightSnapshot(){
+  return {
+    checked: JSON.parse(JSON.stringify(STATE.checked)),
+    values: JSON.parse(JSON.stringify(STATE.values)),
+    global: JSON.parse(JSON.stringify(STATE.global)),
+    fuel: JSON.parse(JSON.stringify(STATE.fuel)),
+    tankLog: JSON.parse(JSON.stringify(STATE.tankLog)),
+    tankSelected: STATE.tankSelected,
+    flightDetails: JSON.parse(JSON.stringify(STATE.flightDetails)),
+    customItems: JSON.parse(JSON.stringify(STATE.customItems))
+  };
+}
+function applyFlightSnapshot(snap){
+  STATE.checked = snap.checked ? JSON.parse(JSON.stringify(snap.checked)) : {};
+  STATE.values = snap.values ? JSON.parse(JSON.stringify(snap.values)) : {};
+  STATE.global = snap.global ? JSON.parse(JSON.stringify(snap.global)) : { etob:'', ctot:'', transponderCode:'' };
+  STATE.fuel = snap.fuel ? JSON.parse(JSON.stringify(snap.fuel)) : { unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
+  STATE.tankLog = snap.tankLog ? JSON.parse(JSON.stringify(snap.tankLog)) : [];
+  STATE.tankSelected = snap.tankSelected || 'L';
+  STATE.flightDetails = snap.flightDetails ? JSON.parse(JSON.stringify(snap.flightDetails)) : { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' };
+  STATE.customItems = snap.customItems ? JSON.parse(JSON.stringify(snap.customItems)) : {};
+}
+function flightSummaryLabel(snap){
+  var fd = (snap && snap.flightDetails) || {};
+  var parts = [];
+  if(fd.date) parts.push(fd.date);
+  if(fd.registration) parts.push(fd.registration);
+  if(fd.student) parts.push(fd.student);
+  return parts.length ? parts.join(' \u00b7 ') : 'No flight details set';
+}
+function renderSavedFlightsHtml(){
+  var names = Object.keys(STATE.savedFlights);
+  var html = '<button type="button" id="saveFlightBtn" class="grCodeAddBtn" style="width:100%">+ Save Current Flight&hellip;</button>';
+  html += '<div id="savedFlightsList" style="width:100%;margin-top:14px">';
+  if(!names.length){
+    html += '<div class="manageCodesEmpty">No flights saved yet.</div>';
+  } else {
+    html += names.map(function(name){
+      var snap = STATE.savedFlights[name];
+      return '<div class="savedFlightItem">'+
+        '<div class="savedFlightName">'+escapeHtml(name)+'</div>'+
+        '<div class="savedFlightSub">'+escapeHtml(flightSummaryLabel(snap))+'</div>'+
+        '<div class="savedFlightBtns">'+
+          '<button type="button" class="savedFlightLoadBtn" data-name="'+escapeHtml(name)+'">Load</button>'+
+          '<button type="button" class="savedFlightSyncBtn" data-name="'+escapeHtml(name)+'">Sync</button>'+
+          '<button type="button" class="savedFlightDelBtn" data-name="'+escapeHtml(name)+'">Delete</button>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+  html += '</div>';
+  return html;
+}
+function wireSavedFlights(card){
+  var saveBtn = document.getElementById('saveFlightBtn');
+  if(saveBtn) saveBtn.addEventListener('click', function(){
+    var fd = STATE.flightDetails;
+    var suggested = [fd.date, fd.registration].filter(Boolean).join(' ');
+    showPrompt('Name this flight:', suggested, function(name){
+      name = (name||'').trim();
+      if(!name) return;
+      STATE.savedFlights[name] = captureFlightSnapshot();
+      saveState();
+      renderCard(card);
+    });
+  });
+  document.querySelectorAll('.savedFlightLoadBtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      var name = b.getAttribute('data-name');
+      showConfirm('Load "'+name+'"? This replaces all current flight data (fuel, times, ticks) with the saved version. This cannot be undone.', 'Load Flight', function(){
+        applyFlightSnapshot(STATE.savedFlights[name]);
+        saveState();
+        renderCard(card);
+        renderResults(); renderCalculations(); renderPhaseRow(); renderTankHeaderBar();
+      });
+    });
+  });
+  document.querySelectorAll('.savedFlightSyncBtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      var name = b.getAttribute('data-name');
+      STATE.savedFlights[name] = captureFlightSnapshot();
+      saveState();
+      renderCard(card);
+    });
+  });
+  document.querySelectorAll('.savedFlightDelBtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      var name = b.getAttribute('data-name');
+      showConfirm('Delete saved flight "'+name+'"? This cannot be undone.', 'Delete', function(){
+        delete STATE.savedFlights[name];
+        saveState();
+        renderCard(card);
+      });
+    });
   });
 }
 function renderFuelPlanHtml(cardId){
@@ -2447,15 +2596,64 @@ function showManageCodesModal(onClosed){
       });
     });
   }
+  // Saved Sets — named snapshots of the current code list (e.g. "EGTK
+  // ops" vs "Away"), independent of whatever's active right now. Loading
+  // one replaces the active list entirely; the preset itself is untouched
+  // so it can be loaded again later.
+  function renderPresets(){
+    var el = document.getElementById('codePresetsList');
+    var names = Object.keys(STATE.codePresets);
+    if(!names.length){
+      el.innerHTML = '<div class="codePresetsEmpty">No saved sets yet.</div>';
+      return;
+    }
+    el.innerHTML = names.map(function(name){
+      return '<div class="codePresetItem">'+
+        '<span class="codePresetName">'+escapeHtml(name)+'</span>'+
+        '<button type="button" class="codePresetLoadBtn" data-name="'+escapeHtml(name)+'">Load</button>'+
+        '<button type="button" class="codePresetDelBtn" data-name="'+escapeHtml(name)+'">Delete</button>'+
+      '</div>';
+    }).join('');
+    el.querySelectorAll('.codePresetLoadBtn').forEach(function(b){
+      b.addEventListener('click', function(){
+        var name = b.getAttribute('data-name');
+        var preset = STATE.codePresets[name];
+        if(!preset) return;
+        STATE.codes = preset.map(function(c){ return { code:c.code, name:c.name }; });
+        saveState();
+        renderList();
+      });
+    });
+    el.querySelectorAll('.codePresetDelBtn').forEach(function(b){
+      b.addEventListener('click', function(){
+        delete STATE.codePresets[b.getAttribute('data-name')];
+        saveState();
+        renderPresets();
+      });
+    });
+  }
   renderList();
+  renderPresets();
   modal.style.display = 'flex';
   var closeBtn = document.getElementById('manageCodesCloseBtn');
+  var saveBtn = document.getElementById('codePresetSaveBtn');
+  function onSavePreset(){
+    showPrompt('Name this set (e.g. "EGTK ops"):', '', function(name){
+      name = (name||'').trim();
+      if(!name) return;
+      STATE.codePresets[name] = STATE.codes.map(function(c){ return { code:c.code, name:c.name }; });
+      saveState();
+      renderPresets();
+    });
+  }
   function onClose(){
     modal.style.display = 'none';
     closeBtn.removeEventListener('click', onClose);
+    saveBtn.removeEventListener('click', onSavePreset);
     if(onClosed) onClosed();
   }
   closeBtn.addEventListener('click', onClose);
+  saveBtn.addEventListener('click', onSavePreset);
 }
 
 document.addEventListener('keydown', function(e){
@@ -2890,11 +3088,26 @@ function renderCalculations(){
 
   var fc = fuelCalc();
   if(fc.fob !== null || fc.total > 0){
+    var ftc = fuelTimesCalc(fc);
+    var actualLanding = parseFloat(STATE.fuel.actualLanding);
+    var landingVariance = (!isNaN(actualLanding) && ftc.val!==null) ? actualLanding - ftc.val : null;
     html += '<div class="calcCard"><div class="ck">Fuel Plan</div>'+
       '<div class="legs"><span>Total FOB <b>'+fmtFuel(fc.fob)+'</b></span><span>Required <b>'+fmtFuel(fc.total)+'</b></span></div>'+
       '<div class="cv" style="color:'+(fc.surplus===null?'#94a3b8':(fc.surplus<0?'#be123c':'#047857'))+'">'+
         (fc.surplus===null?'\u2014':(fc.surplus<0?'\u2212':'+')+fmtFuel(Math.abs(fc.surplus)))+
         ' <small>surplus/deficit</small></div>'+
+      '<div class="legs" style="margin-top:10px"><span>Endurance (Total FOB) <b>'+decToHM(fc.endurance)+' hrs</b></span><span>Endurance Required <b>'+decToHM(fc.enduranceReq)+' hrs</b></span></div>'+
+      '<div class="cv" style="font-size:16px;color:'+(fc.surplusEnd===null?'#94a3b8':(fc.surplusEnd<0?'#be123c':'#047857'))+'">'+
+        (fc.surplusEnd===null?'\u2014':(fc.surplusEnd<0?'\u2212':'+')+decToHM(Math.abs(fc.surplusEnd))+' hrs')+
+        ' <small>surplus endurance</small></div>'+
+      '<div class="resHead" style="margin:10px 0 4px"><h2 style="font-size:12px">Breakdown</h2></div>'+
+      '<div class="legs"><span>Taxi <b>'+fmtFuel(fc.taxi)+'</b></span><span>Trip <b>'+fmtFuel(fc.trip)+'</b></span></div>'+
+      '<div class="legs" style="margin-top:6px"><span>Contingency ('+fc.contPct+'%) <b>'+fmtFuel(fc.cont)+'</b></span><span>Alternate <b>'+fmtFuel(fc.alt)+'</b></span></div>'+
+      '<div class="legs" style="margin-top:6px"><span>Final Reserve <b>'+fmtFuel(fc.final_)+'</b></span><span>Extra <b>'+fmtFuel(fc.extra)+'</b></span></div>'+
+      '<div class="resHead" style="margin:10px 0 4px"><h2 style="font-size:12px">Landing Fuel</h2></div>'+
+      '<div class="legs"><span>Expected (planned trip) <b>'+fmtFuel(fc.expLanding)+'</b></span><span>Expected (actual air time) <b>'+fmtFuel(ftc.val)+'</b></span></div>'+
+      (!isNaN(actualLanding) ? '<div class="legs" style="margin-top:6px"><span>Actual (entered) <b>'+fmtFuel(actualLanding)+'</b></span><span>Variance <b style="color:'+(landingVariance===null?'inherit':(landingVariance<0?'#be123c':'#047857'))+'">'+fmtFuelSigned(landingVariance)+'</b></span></div>' : '')+
+      ((STATE.fuel.oilLevel || STATE.fuel.oilAdded) ? '<div class="resHead" style="margin:10px 0 4px"><h2 style="font-size:12px">Oil</h2></div><div class="legs"><span>Level <b>'+(STATE.fuel.oilLevel||'\u2014')+' qts</b></span><span>Added <b>'+(STATE.fuel.oilAdded||'\u2014')+' qts</b></span></div>' : '')+
     '</div>';
   }
 
@@ -2989,6 +3202,16 @@ function setMode(mode){
 
 setMode('calc');
 updateCountdown();
+
+// Registers the service worker (sw.js, in the same folder as this file)
+// so the app has a genuine offline copy available, not just whatever
+// Safari's own opportunistic cache happens to keep. Safe to call even
+// where service workers aren't supported — it just quietly does nothing.
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){ /* offline-first still works via the browser's own cache even if this fails */ });
+  });
+}
 </script>
 </body>
 </html>
