@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck v41 — Pre-Flight Card Checklist</title>
+<title>CheckDeck v42 — Pre-Flight Card Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -37,7 +37,7 @@ body{
 input,select{ font-family:'JetBrains Mono',monospace; }
 
 /* ===== Top strip: mode + phase ===== */
-.topStrip{ position:fixed; top:0; left:0; right:0; z-index:50; background:rgba(245,247,250,.97); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+.topStrip{ position:fixed; top:0; left:0; right:0; z-index:50; background:rgba(245,247,250,.97); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); padding-top:env(safe-area-inset-top); }
 #versionBadge{ position:absolute; bottom:2px; right:5px; font-family:'JetBrains Mono',monospace; font-size:8px; font-weight:700; color:var(--muted); opacity:.5; letter-spacing:.05em; z-index:60; pointer-events:none; }
 .countdownRow{ display:flex; gap:14px; justify-content:center; align-items:center; height:24px; background:var(--card); font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; color:var(--sky); border-bottom:1px solid var(--border); }
 .countdownRow .cdT{ color:var(--em); margin-left:3px; }
@@ -382,7 +382,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v41</div>
+  <div id="versionBadge">v42</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="tankBar" id="tankBarHeader" style="display:none"></div>
