@@ -1,0 +1,3014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<title>CheckDeck v40 — Pre-Flight Card Checklist</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#0369a1"/>
+<!-- iOS specifically needs its own tags — Safari's support for the plain
+     web manifest above has historically been incomplete, so this is the
+     reliable way to get a full-screen (no Safari chrome), correctly
+     icon'd, offline-capable "app" when added to the Home Screen. -->
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="CheckDeck"/>
+<link rel="apple-touch-icon" href="icon-180.png"/>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+
+:root{
+  --bg:#f5f7fa; --surface:#ffffff; --card:#eef2f6; --border:#cbd5e1;
+  --text:#0f172a; --muted:#3f4c5e; --sky:#0369a1; --em:#047857;
+  --amber:#b45309; --rose:#be123c; --violet:#6d28d9;
+  /* legacy aliases so the rest of the file (written against the old dark
+     palette's variable names) resolves to the matching FlightDeck colour
+     without renaming every rule below */
+  --panel:var(--surface); --panel2:var(--card); --bezel:var(--surface);
+  --ink:var(--text); --mute:var(--muted);
+  --go:var(--em); --caution:var(--amber); --pending:#cbd5e1; --danger:var(--rose); --info:var(--sky);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--bg);
+  color:var(--text); font-family:'DM Sans',sans-serif; font-weight:500; touch-action:pan-y;
+}
+input,select{ font-family:'JetBrains Mono',monospace; }
+
+/* ===== Top strip: mode + phase ===== */
+.topStrip{ position:fixed; top:0; left:0; right:0; z-index:50; background:rgba(245,247,250,.97); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+#versionBadge{ position:absolute; bottom:2px; right:5px; font-family:'JetBrains Mono',monospace; font-size:8px; font-weight:700; color:var(--muted); opacity:.5; letter-spacing:.05em; z-index:60; pointer-events:none; }
+.countdownRow{ display:flex; gap:14px; justify-content:center; align-items:center; height:24px; background:var(--card); font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; color:var(--sky); border-bottom:1px solid var(--border); }
+.countdownRow .cdT{ color:var(--em); margin-left:3px; }
+.countdownRow .cdT.overdue{ color:var(--rose); }
+.headingRow{ display:flex; height:42px; border-bottom:1px solid var(--border); }
+.headingBtn{ flex:1; border:none; border-right:1px solid var(--border); background:var(--surface); color:var(--text); font-family:'Syne',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; }
+.headingBtn:last-child{ border-right:none; }
+.headingBtn.on{ background:var(--sky); color:#fff; }
+.phaseRow{ display:flex; gap:6px; height:38px; overflow-x:auto; padding:0 10px; align-items:center; border-bottom:1px solid var(--border); }
+.phaseBtn{ flex:0 0 auto; padding:5px 12px; border:1.5px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; letter-spacing:.04em; white-space:nowrap; cursor:pointer; }
+.phaseBtn.on{ background:var(--sky); border-color:var(--sky); color:#fff; }
+.phaseBtn.incomplete{ border-color:var(--rose); color:var(--rose); }
+.phaseBtn.incomplete .n{ color:var(--rose); }
+.phaseBtn.incomplete.on{ background:var(--rose); border-color:var(--rose); color:#fff; }
+.phaseBtn.incomplete.on .n{ color:#ffd7de; }
+.phaseBtn .n{ color:var(--em); margin-left:4px; font-weight:800; }
+.phaseBtn.on .n{ color:#d1fae5; }
+
+/* Section-jump row — every section within the current phase, always
+   visible, so a second/third section never feels "missing" just because
+   Card Mode only shows one section's cards at a time. */
+.sectionRow{ display:flex; gap:7px; overflow-x:auto; padding:10px 16px 8px; flex-shrink:0; border-bottom:1px solid var(--border); }
+.sectionBtn{ flex:0 0 auto; padding:6px 13px; border-radius:999px; border:1.5px solid var(--border); background:var(--surface); color:var(--text); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; white-space:nowrap; cursor:pointer; }
+.sectionBtn.on{ border-color:var(--sky); background:var(--sky); color:#fff; }
+.sectionBtn.done{ border-color:var(--em); background:var(--em); color:#fff; }
+.sectionBtn .n{ opacity:.85; margin-left:4px; }
+
+/* ===== CARD MODE ===== */
+#cardMode{ position:fixed; inset:60px 0 0 0; display:flex; flex-direction:column; }
+.eyebrow{ padding:12px 16px 6px; flex-shrink:0; }
+.eyebrow .grp{ font-size:10px; font-weight:700; letter-spacing:.1em; color:var(--sky); text-transform:uppercase; margin-bottom:2px; min-height:12px; }
+.eyebrow .sec{ display:flex; justify-content:space-between; align-items:baseline; }
+.eyebrow .sec span:first-child{ font-family:'Syne',sans-serif; font-size:14px; font-weight:700; letter-spacing:.02em; color:var(--text); text-transform:uppercase; }
+.eyebrow .cnt{ font-size:12px; font-weight:700; color:var(--muted); }
+.eyebrow .cnt b{ color:var(--em); }
+
+.annun{ display:flex; flex-wrap:wrap; gap:3px; padding:0 16px 10px; flex-shrink:0; max-height:34px; overflow:hidden; }
+.dot{ width:8px; height:8px; border-radius:2px; background:var(--border); transition:background .15s, box-shadow .15s; cursor:pointer; flex-shrink:0; }
+.dot.go{ background:var(--em); }
+.dot.na{ background:var(--amber); }
+.dot.cur{ box-shadow:0 0 0 2px var(--sky); }
+
+.stage{ flex:1; position:relative; overflow:hidden; min-height:0; }
+.card{
+  position:absolute; top:8px; bottom:8px; left:50%; transform:translateX(-50%);
+  width:min(680px, calc(100% - 28px));
+  border-radius:16px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  box-shadow:0 2px 6px rgba(15,23,42,.06);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:3vh 20px; text-align:center; overflow-y:auto;
+}
+.card .tag{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; margin-bottom:14px; }
+.card h1{
+  font-family:'Syne',sans-serif; font-weight:700;
+  font-size:clamp(20px, 5.6vw, 32px); line-height:1.2; letter-spacing:.005em; max-width:640px; color:var(--text);
+}
+.card .note{ margin-top:14px; font-size:12px; color:var(--muted); font-weight:500; max-width:420px; line-height:1.5; text-transform:none; letter-spacing:0; }
+.card .law{ display:inline-block; margin-top:14px; padding:4px 10px; border-radius:5px; background:var(--violet); color:#fff; font-size:10px; font-weight:800; letter-spacing:.08em; cursor:pointer; }
+.card .lawtext{ display:none; margin-top:12px; text-align:left; font-size:11.5px; line-height:1.6; color:#3b1f6b; background:rgba(109,40,217,.06); border-left:2px solid var(--violet); border-radius:0 8px 8px 0; padding:12px 14px; max-width:480px; }
+.card .lawtext a{ color:var(--violet); }
+.card .lawtext.open{ display:block; }
+.card.flash-go{ animation:flashGo .38s ease-out; }
+.card.flash-na{ animation:flashNa .38s ease-out; }
+@keyframes flashGo{ 0%{ background:rgba(16,185,129,.15);} 100%{ background:var(--surface); } }
+@keyframes flashNa{ 0%{ background:rgba(245,158,11,.15);} 100%{ background:var(--surface); } }
+
+.navSide{ position:absolute; top:0; bottom:0; width:50px; display:flex; align-items:center; justify-content:center; background:none; border:none; color:rgba(15,23,42,.2); font-size:20px; cursor:pointer; z-index:5; }
+.navSide.left{ left:0; } .navSide.right{ right:0; }
+.navSide:active{ color:rgba(15,23,42,.45); }
+
+/* Big entry widgets inside a card */
+.entryRow{ display:flex; gap:12px; margin-top:20px; justify-content:center; flex-wrap:wrap; }
+.entryField{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+.entryField label{ font-size:10px; font-weight:800; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; }
+/* Entry fields — same clean bordered look as FlightDeck's .inp, used
+   consistently across every place a value gets typed in: the big single/
+   dual entry fields, the inline group-list numeric and text inputs, and
+   the keypad-card input. */
+.entryField input, .grKeypad, .grDaVisRow input, #kpInput{
+  background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:8px;
+  font-family:'JetBrains Mono',monospace; font-weight:700;
+  text-align:right;
+}
+.entryField input::placeholder, .grKeypad::placeholder, .grDaVisRow input::placeholder, #kpInput::placeholder{
+  color:#94a3b8;
+}
+.entryField input{ width:140px; font-size:22px; padding:10px 8px; }
+.entryField input:focus, .grKeypad:focus, .grDaVisRow input:focus, #kpInput:focus, .grKeypadUnit:focus{
+  outline:none; border-color:var(--sky); box-shadow:0 0 0 2px rgba(3,105,161,.15);
+}
+.entryField.wide input{ width:230px; font-size:17px; }
+.unitToggle{ display:inline-flex; margin-top:12px; border-radius:8px; overflow:hidden; border:1px solid var(--border); }
+.unitToggle button{ padding:7px 16px; border:none; background:var(--surface); color:var(--muted); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; cursor:pointer; }
+.unitToggle button.on{ background:var(--sky); color:#fff; }
+.bigValue{ font-family:'Syne',sans-serif; font-weight:700; font-size:clamp(26px,7.5vw,42px); color:var(--sky); margin-top:10px; }
+.nowBtn{
+  margin-top:18px; padding:16px 30px; border-radius:10px; border:none; cursor:pointer;
+  background:var(--sky); color:#fff; font-family:'Syne',sans-serif; font-weight:700; font-size:18px;
+}
+.nowBtn:hover{ background:#0284c7; }
+.nowBtn:active{ transform:translateY(1px); }
+
+/* Group list — a whole group (e.g. "Docs to be carried") on one scrollable
+   page, each line individually tickable, instead of one card per item. */
+.card.list-mode{ align-items:stretch; justify-content:flex-start; text-align:left; padding-top:4vh; }
+.card.list-mode h1{ font-size:clamp(18px,5vw,26px); text-align:left; align-self:flex-start; }
+.groupProgress{ font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:var(--em); letter-spacing:.06em; text-transform:uppercase; margin:8px 0 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.hideCompletedBtn{ flex-shrink:0; border:1.5px solid var(--border); background:var(--surface); color:var(--muted); border-radius:7px; padding:5px 10px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:10px; letter-spacing:.03em; cursor:pointer; text-transform:none; }
+.hideCompletedBtn.on{ border-color:var(--sky); background:var(--sky); color:#fff; }
+.allHiddenNote{ margin-top:10px; padding:12px 14px; background:#f0faf5; border:1px solid rgba(4,120,87,.25); border-radius:10px; color:var(--em); font-size:12.5px; font-weight:600; text-align:center; }
+
+/* Tank Log + Endurance Remaining — sticky at the top of the Airborne page */
+/* Tank Log — compact, single-line, lives in the persistent header right
+   below the AIRBOURNE heading rather than inside one specific card. The
+   tank actually being counted (the most recently logged one) shows green;
+   a tapped-but-not-yet-logged tank shows amber as a "pending" cue. */
+.tankBar{ display:flex; flex-direction:column; gap:3px; padding:6px 10px; background:var(--surface); border-bottom:1px solid var(--border); overflow:hidden; }
+.tankLiveTop{ text-align:center; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:15px; letter-spacing:.03em; color:var(--em); background:rgba(4,120,87,.08); border-radius:6px; padding:3px 0; margin-bottom:2px; }
+.tankBarRow{ display:flex; align-items:center; gap:6px; }
+.tankBarLbl{ font-size:13px; flex-shrink:0; }
+.tankBtn{ flex:0 0 60px; height:44px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px; background:var(--surface); color:var(--muted); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:15px; cursor:pointer; white-space:nowrap; text-align:center; }
+.tankLogBtn{ flex:0 0 auto; height:44px; padding:0 18px; border:none; border-radius:8px; background:var(--amber); color:#fff; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:14px; cursor:pointer; white-space:nowrap; }
+.tankUnitBtn{ flex:0 0 auto; margin-left:auto; height:44px; padding:0 14px; border:1.5px solid var(--sky); border-radius:8px; background:var(--surface); color:var(--sky); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:13px; cursor:pointer; white-space:nowrap; }
+.tankBtn.sel{ border-color:var(--amber); color:var(--amber); }
+.tankBtn.active{ background:var(--em); border-color:var(--em); color:#fff; }
+.tankStats{ display:flex; flex-direction:column; gap:1px; }
+.tankStatRow{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tankStatLetter{ display:inline-block; width:12px; font-weight:800; color:var(--text); }
+.tankStatDim{ font-style:italic; opacity:.8; }
+.enduranceBar{ width:100%; background:rgba(3,105,161,.05); border:1px solid rgba(3,105,161,.25); border-radius:10px; padding:12px 14px; margin-bottom:14px; }
+.enduranceLbl{ font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--sky); }
+.enduranceVal{ font-family:'Syne',sans-serif; font-weight:700; font-size:26px; color:var(--sky); margin-top:2px; }
+.enduranceSub{ font-size:11px; color:var(--muted); margin-top:2px; }
+
+/* ===== Fuel Plan (brought over from FlightDeck) ===== */
+.fuelUnitToggle{ display:inline-flex; flex-shrink:0; margin-bottom:14px; border-radius:8px; overflow:hidden; border:1px solid var(--border); }
+.fuelUnitToggle button{ padding:7px 16px; border:none; background:var(--surface); color:var(--muted); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; cursor:pointer; }
+.fuelUnitToggle button.on{ background:var(--sky); color:#fff; }
+.fpTotalFob{ width:100%; background:rgba(14,165,233,.06); border:1px solid rgba(14,165,233,.25); border-radius:10px; padding:12px 14px; margin-bottom:14px; }
+.fpTotalFobLbl{ font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--sky); }
+.fpTotalFobVal{ font-family:'Syne',sans-serif; font-weight:700; font-size:26px; color:var(--sky); margin-top:2px; }
+.fpTotalFobSub{ font-size:11px; color:var(--muted); font-style:italic; margin-top:2px; }
+.fpFieldsRow{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; width:100%; margin-bottom:16px; }
+.fpField label{ display:block; font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:5px; }
+.fpField input{ width:100%; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:9px 8px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px; text-align:right; color:var(--text); }
+.fpTtcafe{ display:flex; flex-direction:column; gap:8px; width:100%; margin-bottom:14px; }
+.fpRow{ display:flex; align-items:center; gap:8px; background:rgba(180,83,9,.04); border:1px solid rgba(180,83,9,.2); border-radius:9px; padding:8px 10px; }
+.fpLetter{ flex:0 0 24px; height:24px; display:flex; align-items:center; justify-content:center; background:var(--amber); color:#fff; border-radius:6px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; }
+.fpName{ flex:1; font-family:'JetBrains Mono',monospace; font-size:11.5px; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:.02em; text-align:left; min-width:0; }
+.fpMins{ flex:0 0 52px; width:52px; padding:6px 4px; font-size:16px; text-align:center; background:var(--surface); border:1px solid var(--border); border-radius:6px; font-family:'JetBrains Mono',monospace; }
+.fpMinsGap{ flex:0 0 52px; }
+.fpAmt{ flex:0 0 58px; width:58px; padding:6px 4px; font-size:16px; text-align:right; background:var(--surface); border:1px solid var(--border); border-radius:6px; font-family:'JetBrains Mono',monospace; font-weight:700; }
+.fpU{ flex:0 0 auto; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); font-weight:700; }
+.fpContPct{ flex:0 0 52px; width:52px; padding:6px 4px; font-size:16px; text-align:right; background:var(--surface); border:1px solid var(--border); border-radius:6px; font-family:'JetBrains Mono',monospace; font-weight:700; }
+.fpContOut{ flex:1; text-align:right; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--amber); font-weight:700; }
+.fpSummary{ width:100%; background:rgba(180,83,9,.05); border:1px solid rgba(180,83,9,.2); border-radius:10px; padding:12px 14px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+.fpSumLbl{ font-family:'JetBrains Mono',monospace; font-size:9.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+.fpSumVal{ font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:800; color:var(--amber); margin-top:3px; }
+.fpSumVal.pos{ color:var(--em); }
+.fpSumVal.neg{ color:var(--rose); }
+.fpTableWrap{ width:100%; margin-top:12px; }
+.fpTableTitle{ font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.fpTable{ max-height:180px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; }
+.fpTableRow{ display:flex; align-items:center; gap:8px; padding:5px 10px; font-family:'JetBrains Mono',monospace; font-size:11.5px; white-space:nowrap; border-bottom:1px solid var(--border); }
+.fpTableRow:last-child{ border-bottom:none; }
+.fpTableRow.out{ background:rgba(190,18,60,.06); }
+.fpTT{ flex:0 0 56px; font-weight:800; color:var(--text); }
+.fpTF{ flex:0 0 64px; font-weight:700; color:var(--amber); text-align:right; }
+.fpTE{ flex:1; color:var(--muted); text-align:right; }
+.fpTableRow.out .fpTF{ color:var(--rose); }
+.fpTableEmpty{ padding:12px 10px; font-size:11.5px; color:var(--muted); font-style:italic; text-align:center; }
+.fpSumSub{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); margin-top:2px; }
+.fpBlock{ width:100%; border-radius:10px; padding:12px 14px; margin-top:12px; }
+.fpBlock.amber{ background:rgba(180,83,9,.05); border:1px solid rgba(180,83,9,.25); }
+.fpBlock.violet{ background:rgba(109,40,217,.05); border:1px solid rgba(109,40,217,.25); }
+.fpBlockTitle{ font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--amber); margin-bottom:6px; }
+.fpBlock.violet .fpBlockTitle{ color:var(--violet); }
+.fpBlockVal{ font-family:'Syne',sans-serif; font-weight:700; font-size:22px; color:var(--amber); }
+.fpBlockVal.small{ font-size:14px; font-family:'JetBrains Mono',monospace; }
+.fpBlockVal.pos{ color:var(--em); }
+.fpBlockVal.warn{ color:var(--amber); }
+.fpBlockVal.neg{ color:var(--rose); }
+.fpBlockNote{ font-size:11px; color:var(--muted); font-style:italic; margin-top:4px; line-height:1.4; }
+.fpBlockNote a{ color:var(--violet); }
+.fpVarianceRow{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-top:4px; }
+#fpActualLanding{ width:100%; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:9px 10px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px; text-align:right; color:var(--text); }
+.groupList{ display:flex; flex-direction:column; gap:8px; width:100%; }
+.groupRow{ background:rgba(255,255,255,.7); border:1px solid var(--border); border-radius:10px; padding:11px 12px; }
+/* "Paper checklist" prompts — the same idea as the bold black reminder rows
+   in the original aircraft checklist ("go run the physical Taxi/Power/
+   Pre-Take-Off checklist"), not a digital item to just tick off casually.
+   Bold, brighter, with a left accent so it reads as a distinct category
+   at a glance among the regular tick items. */
+.groupRow.promptRow{ background:rgba(180,83,9,.06); border-color:rgba(180,83,9,.3); border-left:3px solid var(--amber); }
+.grTop{ display:flex; align-items:center; gap:10px; }
+.grLabel{ flex:1; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; color:var(--text); line-height:1.4; }
+.grLabel.prompt{ font-weight:800; font-size:14px; text-transform:uppercase; letter-spacing:.02em; color:var(--amber); }
+.grNote{ margin-top:5px; font-size:11px; color:var(--muted); font-weight:500; line-height:1.4; }
+.grLaw{ display:inline-block; margin-left:6px; padding:2px 7px; border-radius:5px; background:var(--violet); color:#fff; font-size:9px; font-weight:800; letter-spacing:.08em; cursor:pointer; }
+.grBtns{ display:flex; gap:5px; flex-shrink:0; }
+.grBtn{ border:1px solid var(--border); background:transparent; border-radius:7px; padding:7px 11px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; cursor:pointer; color:var(--muted); }
+.grBtn.go{ color:var(--em); border-color:var(--em); }
+.grBtn.go.on{ background:var(--em); color:#fff; }
+.grBtn.na{ color:var(--amber); border-color:var(--amber); }
+.grBtn.na.on{ background:var(--amber); color:#fff; }
+.grNowBtn{ flex-shrink:0; border:1px solid rgba(3,105,161,.35); background:rgba(14,165,233,.1); color:var(--sky); border-radius:7px; padding:7px 12px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; cursor:pointer; white-space:nowrap; }
+.grTimeBtns{ display:flex; gap:5px; align-items:center; flex-shrink:0; }
+.grEditTimeBtn{ flex-shrink:0; border:1px solid var(--border); background:var(--surface); color:var(--muted); border-radius:7px; width:30px; height:30px; font-size:13px; cursor:pointer; }
+.grKeypad{ width:100%; margin-top:8px; padding:9px 10px; font-size:16px; border-radius:8px; }
+.grKeypadUnit{ width:100%; padding:9px 10px; font-size:16px; border-radius:8px; font-family:'JetBrains Mono',monospace; font-weight:700; text-align:right; background:var(--card); border:1px solid var(--border); color:var(--text); }
+#kpInput{ font-size:16px; }
+.grDaVisRow{ display:flex; gap:8px; margin-top:8px; }
+.grCodeRow{ display:flex; gap:6px; margin-top:8px; align-items:center; }
+.grCodeSelect{ flex:1; min-width:0; background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:9px 8px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px; }
+.grCodeAddBtn{ flex-shrink:0; border:1px solid var(--border); background:var(--surface); color:var(--muted); border-radius:8px; padding:9px 10px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:11px; cursor:pointer; white-space:nowrap; }
+.grFuelQtyRow{ display:flex; gap:8px; margin-top:8px; }
+.grFuelQty{ flex:1; min-width:0; padding:9px 10px; font-size:14px; border-radius:8px; background:var(--card); color:var(--text); border:1px solid var(--border); font-family:'JetBrains Mono',monospace; font-weight:700; text-align:right; }
+.grFuelUnitBtn{ flex-shrink:0; width:56px; border:1px solid var(--sky); background:var(--surface); color:var(--sky); border-radius:8px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; cursor:pointer; }
+.grWeightQty{ flex:1; min-width:0; padding:9px 10px; font-size:14px; border-radius:8px; background:var(--card); color:var(--text); border:1px solid var(--border); font-family:'JetBrains Mono',monospace; font-weight:700; text-align:right; }
+.grWeightUnitBtn{ flex-shrink:0; width:56px; border:1px solid var(--violet); background:var(--surface); color:var(--violet); border-radius:8px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; cursor:pointer; }
+.grCodeManageBtn{ flex-shrink:0; width:34px; height:38px; border:1px solid var(--border); background:var(--surface); color:var(--muted); border-radius:8px; font-size:15px; cursor:pointer; }
+.manageCodesList{ max-height:280px; overflow-y:auto; margin-bottom:16px; display:flex; flex-direction:column; gap:8px; }
+.manageCodeItem{ display:flex; align-items:center; gap:10px; background:#f5f7fa; border:1px solid #e2e8f0; border-radius:9px; padding:9px 12px; }
+.manageCodeText{ flex:1; min-width:0; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#0f172a; overflow:hidden; text-overflow:ellipsis; }
+.manageCodeText small{ display:block; font-weight:500; color:#3f4c5e; font-size:11px; margin-top:1px; }
+.manageCodeDelBtn{ flex-shrink:0; border:1px solid #be123c; background:#fff; color:#be123c; border-radius:7px; padding:6px 10px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11px; cursor:pointer; }
+.manageCodesEmpty{ text-align:center; color:#3f4c5e; font-size:13px; padding:16px 0; }
+.addItemRow{ display:flex; gap:8px; margin-top:4px; }
+.addItemRow input{ flex:1; background:var(--surface); border:1px dashed var(--border); border-radius:10px; padding:10px 12px; font-family:'JetBrains Mono',monospace; font-size:16px; color:var(--text); }
+.addItemRow button{ flex-shrink:0; border:1px solid var(--em); background:rgba(16,185,129,.08); color:var(--em); border-radius:10px; padding:10px 16px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; cursor:pointer; }
+.grDaVisRow input{ flex:1; padding:9px 10px; font-size:16px; border-radius:8px; }
+
+/* Scroll indicator — a bold, unmissable cue that a card's content (usually
+   a long group list) continues below the fold, since relying on a native
+   scrollbar alone is exactly the kind of thing that gets missed outdoors. */
+.scrollHint{
+  position:absolute; bottom:16px; left:50%; transform:translateX(-50%);
+  background:var(--rose); color:#fff; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11px;
+  letter-spacing:.08em; padding:8px 16px; border-radius:999px; box-shadow:0 4px 16px rgba(190,18,60,.35);
+  animation:pulseHint 1.15s ease-in-out infinite; z-index:8; pointer-events:none; display:none; white-space:nowrap;
+}
+@keyframes pulseHint{ 0%,100%{ transform:translateX(-50%) translateY(0); opacity:1; } 50%{ transform:translateX(-50%) translateY(5px); opacity:.7; } }
+
+/* Section / phase interstitials */
+.interstitial{
+  position:absolute; top:8px; bottom:8px; left:50%; transform:translateX(-50%);
+  width:min(680px, calc(100% - 28px));
+  border-radius:16px;
+  display:flex; flex-direction:column; align-items:center; text-align:center; gap:12px; padding:20px 24px;
+  overflow-y:auto; border:1px solid var(--border);
+}
+.interstitial.sect{ background:#f0faf5; box-shadow:0 2px 6px rgba(15,23,42,.06); justify-content:center; }
+.interstitial .sectEntries{ width:100%; margin-top:14px; text-align:left; background:rgba(255,255,255,.6); border-radius:10px; padding:6px 10px; }
+.interstitial .sectEntries .resRow{ border-bottom-color:var(--border); }
+.interstitial .sectEntries .rt, .interstitial .sectEntries .rv{ color:var(--text); }
+.interstitial.phase{ background:#eff6fc; box-shadow:0 2px 6px rgba(15,23,42,.06); justify-content:center; }
+.interstitial .big{ font-family:'Syne',sans-serif; font-weight:700; font-size:clamp(22px,6vw,36px); }
+.interstitial.sect .big{ color:var(--em); }
+.interstitial.phase .big{ color:var(--sky); }
+.interstitial .sub{ color:var(--muted); font-size:12.5px; max-width:320px; }
+.interstitial button{ margin-top:8px; padding:12px 24px; border-radius:10px; border:none; cursor:pointer; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12.5px; letter-spacing:.06em; }
+.interstitial.sect button{ background:var(--em); color:#fff; }
+.interstitial.phase button{ background:var(--sky); color:#fff; }
+.interstitial.phase #phaseNext{ background:var(--em); }
+.interstitial .ghost{ background:transparent; border:1px solid var(--muted); color:var(--muted); margin-top:6px; }
+
+/* Switch bank */
+.switchBank{ flex-shrink:0; display:flex; gap:8px; padding:8px 12px calc(10px + env(safe-area-inset-bottom)); }
+.rocker{ flex:1; border:none; cursor:pointer; border-radius:12px; padding:0; height:min(9vh, 64px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-family:'JetBrains Mono',monospace; }
+.rocker .ic{ font-size:17px; line-height:1; }
+.rocker .lb{ font-size:10px; font-weight:800; letter-spacing:.08em; }
+.rocker.go{ background:var(--em); color:#fff; }
+.rocker.go:hover{ background:#059669; }
+.rocker.na{ background:var(--amber); color:#fff; }
+.rocker.na:hover{ background:#92400e; }
+.rocker.skip{ background:var(--surface); border:1px solid var(--border); color:var(--muted); flex:0 0 64px; }
+.rocker:active{ transform:translateY(1px); }
+
+/* ===== RESULTS / PRINT MODE ===== */
+#resultsMode{ position:fixed; inset:60px 0 0 0; overflow-y:auto; background:#f5f7fa; color:#0f172a; display:none; }
+#resultsMode.on{ display:block; }
+#calcMode{ position:fixed; inset:60px 0 0 0; overflow-y:auto; background:#f5f7fa; color:#0f172a; display:none; }
+#calcMode.on{ display:block; }
+.calcCard{ background:#fff; border:1px solid #cbd5e1; border-radius:12px; padding:16px; margin-bottom:12px; }
+.fdGrid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-top:8px; }
+.fdField{ display:flex; flex-direction:column; gap:5px; }
+.fdField.full{ margin-top:12px; }
+.fdField label{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#3f4c5e; }
+.fdField input, .fdField textarea{ padding:9px 10px; border:1px solid #cbd5e1; border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:14px; color:#0f172a; background:#f8fafc; width:100%; }
+.fdCheckRow{ display:flex; align-items:center; gap:8px; padding:9px 10px; border:1px solid #cbd5e1; border-radius:8px; background:#f8fafc; cursor:pointer; }
+.fdCheckRow input{ width:auto; }
+.fdCheckRow span{ font-family:'JetBrains Mono',monospace; font-size:14px; color:#0f172a; }
+.fdField textarea{ resize:vertical; font-family:'DM Sans',sans-serif; font-size:13px; }
+.fdDateRow{ display:flex; gap:6px; }
+.fdDateRow input{ flex:1; min-width:0; }
+.fdTodayBtn{ flex-shrink:0; padding:9px 12px; border:1px solid #0369a1; border-radius:8px; background:#fff; color:#0369a1; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; cursor:pointer; }
+.calcCard .ck{ font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#0369a1; margin-bottom:10px; }
+.calcCard .legs{ display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:#475569; margin-bottom:10px; }
+.calcCard .legs b{ color:#0f172a; }
+.calcCard .cv{ font-family:'JetBrains Mono',monospace; font-size:30px; font-weight:800; color:#047857; }
+.calcCard .cv.pending{ color:#94a3b8; font-size:20px; font-weight:600; }
+.calcCard .cv small{ font-size:14px; color:#64748b; font-weight:600; margin-left:6px; }
+.resWrap{ max-width:720px; margin:0 auto; padding:18px 16px 60px; }
+.resHead{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.resHead h2{ font-family:'JetBrains Mono',monospace; font-size:16px; }
+.printBtn{ padding:10px 18px; border-radius:9px; border:none; background:#0369a1; color:#fff; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; cursor:pointer; }
+.resetBtn{ padding:10px 18px; border-radius:9px; border:1.5px solid #be123c; background:#fff; color:#be123c; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; cursor:pointer; }
+.calcActions{ display:flex; gap:8px; flex-wrap:wrap; }
+.calcActions button{ flex:1 1 auto; white-space:nowrap; }
+/* Custom confirm — window.confirm() is unreliable (often silently blocked)
+   inside installed PWAs and some mobile in-app browsers, which is exactly
+   how this app is meant to be used, so destructive actions get their own
+   in-app confirmation instead of depending on the native dialog. */
+.confirmModal{ position:fixed; inset:0; z-index:100; background:rgba(15,23,42,.55); display:flex; align-items:center; justify-content:center; padding:20px; }
+.confirmBox{ background:#fff; border-radius:16px; padding:24px 22px; max-width:340px; width:100%; box-shadow:0 20px 50px rgba(0,0,0,.3); }
+.confirmMsg{ font-family:'DM Sans',sans-serif; font-size:15px; color:#0f172a; line-height:1.5; margin-bottom:20px; text-align:center; }
+.confirmBtns{ display:flex; gap:10px; }
+.confirmBtns button{ flex:1; padding:12px 0; border-radius:10px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:13px; cursor:pointer; }
+.confirmCancel{ border:1.5px solid #cbd5e1; background:#fff; color:#3f4c5e; }
+.confirmOk{ border:none; background:#be123c; color:#fff; }
+.promptInput{ width:100%; padding:11px 12px; border:1.5px solid #cbd5e1; border-radius:9px; font-family:'JetBrains Mono',monospace; font-size:16px; margin-bottom:16px; text-align:center; }
+.codePromptLbl{ display:block; font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#3f4c5e; margin-bottom:5px; }
+.resPhase{ font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#0369a1; margin:22px 0 8px; padding-bottom:4px; border-bottom:2px solid #0369a1; }
+.resSect{ font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:.06em; margin:14px 0 6px; }
+.resRow{ display:flex; justify-content:space-between; gap:10px; padding:7px 10px; border-bottom:1px solid #e2e8f0; font-size:12.5px; }
+.resRow .rt{ flex:1; }
+.resRow .rv{ font-weight:700; white-space:nowrap; }
+.rv.go{ color:#047857; } .rv.na{ color:#b45309; } .rv.pending{ color:#94a3b8; font-weight:500; }
+.resSummary{ display:flex; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+.sumCard{ flex:1; min-width:130px; background:#fff; border:1px solid #cbd5e1; border-radius:10px; padding:10px 14px; }
+.sumCard .k{ font-size:10px; color:#64748b; text-transform:uppercase; letter-spacing:.08em; }
+.sumCard .v{ font-size:20px; font-weight:800; color:#0369a1; }
+@media print{
+  .topStrip,.printBtn,.resetBtn,.shareBtn{ display:none !important; }
+  #resultsMode,#calcMode{ position:static; inset:auto; background:#fff; }
+  body{ overflow:visible; }
+}
+</style>
+</head>
+<body>
+
+<div class="topStrip">
+  <div id="versionBadge">v40</div>
+  <div class="countdownRow" id="countdownRow" style="display:none"></div>
+  <div class="headingRow" id="headingRow"></div>
+  <div class="tankBar" id="tankBarHeader" style="display:none"></div>
+  <div class="phaseRow" id="phaseRow"></div>
+</div>
+
+<div id="cardMode">
+  <div class="sectionRow" id="sectionRow"></div>
+  <div class="eyebrow">
+    <div class="grp" id="grpName"></div>
+    <div class="sec"><span id="secName">—</span><span class="cnt"><b id="doneCount">0</b> / <span id="totalCount">0</span></span></div>
+    <button id="skipSectionBtn" style="margin-top:6px;background:none;border:1px solid var(--border);color:var(--muted);font-family:'JetBrains Mono',monospace;font-weight:700;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:7px;cursor:pointer">Skip Whole Section &#187;</button>
+  </div>
+  <div class="annun" id="annun"></div>
+  <div class="stage" id="stage">
+    <button class="navSide left" id="navPrev">&#10094;</button>
+    <div class="card" id="card"></div>
+    <div class="scrollHint" id="scrollHint">&#9660; MORE BELOW &#9660;</div>
+    <div class="interstitial sect" id="sectDone" style="display:none">
+      <div class="big">Section<br/>Complete</div>
+      <div class="sub" id="sectDoneSub"></div>
+      <button id="sectContinue">Continue</button>
+      <button class="ghost" id="sectReview">Review This Section</button>
+      <div class="sectEntries" id="sectEntries"></div>
+    </div>
+    <div class="interstitial phase" id="phaseDone" style="display:none">
+      <div class="big">Phase<br/>Complete</div>
+      <div class="sub" id="phaseDoneSub"></div>
+      <button id="phaseNext" style="display:none">Next Phase &#187;</button>
+      <button id="phaseGoResults">View Results</button>
+      <button class="ghost" id="phaseReview">Review This Phase</button>
+    </div>
+    <button class="navSide right" id="navNext">&#10095;</button>
+  </div>
+  <div class="switchBank" id="switchBank"></div>
+</div>
+
+<div id="calcMode">
+  <div class="resWrap">
+    <div class="resHead" style="flex-direction:column; align-items:stretch; gap:10px">
+      <h2>Calculated Times</h2>
+      <div class="calcActions">
+        <button class="printBtn" onclick="printOnePage()">Print / PDF</button>
+        <button class="printBtn shareBtn" id="shareCalcBtn" style="background:#047857">Share / Email</button>
+        <button class="resetBtn" id="resetAllBtn">Reset All</button>
+      </div>
+    </div>
+    <div id="calcBody"></div>
+  </div>
+</div>
+
+<div id="resultsMode">
+  <div class="resWrap">
+    <div class="resHead">
+      <h2>CheckDeck Results</h2>
+    </div>
+    <div class="resSummary" id="resSummary"></div>
+    <div id="resBody"></div>
+  </div>
+</div>
+
+<div id="confirmModal" class="confirmModal" style="display:none">
+  <div class="confirmBox">
+    <div class="confirmMsg" id="confirmMsg"></div>
+    <div class="confirmBtns">
+      <button type="button" id="confirmCancelBtn" class="confirmCancel">Cancel</button>
+      <button type="button" id="confirmOkBtn" class="confirmOk">Reset All</button>
+    </div>
+  </div>
+</div>
+
+<div id="codePromptModal" class="confirmModal" style="display:none">
+  <div class="confirmBox">
+    <div class="confirmMsg">Add a new transponder code</div>
+    <label class="codePromptLbl">Code (e.g. squawk)</label>
+    <input type="text" id="codePromptCode" class="promptInput" style="margin-bottom:12px"/>
+    <label class="codePromptLbl">Name (e.g. VFR, Conspicuity)</label>
+    <input type="text" id="codePromptName" class="promptInput"/>
+    <div class="confirmBtns">
+      <button type="button" id="codePromptCancelBtn" class="confirmCancel">Cancel</button>
+      <button type="button" id="codePromptOkBtn" class="confirmOk" style="background:#0369a1">Add</button>
+    </div>
+  </div>
+</div>
+
+<div id="promptModal" class="confirmModal" style="display:none">
+  <div class="confirmBox">
+    <div class="confirmMsg" id="promptMsg"></div>
+    <input type="text" id="promptInput" class="promptInput"/>
+    <div class="confirmBtns">
+      <button type="button" id="promptCancelBtn" class="confirmCancel">Cancel</button>
+      <button type="button" id="promptOkBtn" class="confirmOk" style="background:#0369a1">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="manageCodesModal" class="confirmModal" style="display:none">
+  <div class="confirmBox">
+    <div class="confirmMsg">Manage Codes</div>
+    <div id="manageCodesList" class="manageCodesList"></div>
+    <div class="confirmBtns">
+      <button type="button" id="manageCodesCloseBtn" class="confirmCancel" style="flex:1">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   DATA — the real Planning/Weather/Ground/Airborne checklist
+   content, unchanged from the source app.
+   ============================================================ */
+var LAW = {
+  '1g': 'UK GAR (General Aviation (Persons on Board, Flight Information and Civil Penalties) Regulations 2024): submit online no earlier than <strong>48 hr</strong> and no later than <strong>2 hr</strong> before the aircraft\'s expected departure time — applies to both departures from and arrivals into the UK/Common Travel Area. Any amendment (pax, crew, aerodrome) must also be made &ge;2 hr before departure, or the flight must be delayed by 2 hr from the amendment. Non-compliance is fineable up to &pound;10,000 (operator and captain). GENDEC covers customs formalities. Submit online: <a href="https://www.submit-general-aviation-report.service.gov.uk/home" target="_blank" rel="noopener">submit-general-aviation-report.service.gov.uk</a>',
+  '1k': 'Part-NCO.GEN.135: 13 items must be carried on every flight (originals or copies unless specified). Under (b), for flights back to the same aerodrome or within the London/Scottish FIR, items (a)(2)&ndash;(a)(8) may be retained at the aerodrome.',
+  '1l': 'SERA.2010(b): pre-flight action must include current aeronautical data. AIRAC cycle refreshes every 28 days. Current UK AIRAC dates: <a href="https://nats-uk.ead-it.com/cms-nats/opencms/en/Publications/publication-schedule/" target="_blank" rel="noopener">nats-uk.ead-it.com &ndash; Publication Schedule</a>',
+  '1m': 'SERA.4001: an IFR flight plan is mandatory before commencing an IFR flight in controlled airspace. File &ge;60 min before EOBT (&ge;3 hr for North Atlantic/ATFM-affected flights); exceptionally, never less than 30 min. If departure slips more than 30 min past EOBT for a controlled flight (60 min for uncontrolled), the plan must be updated with a delay (DLA) message or cancelled and refiled (ICAO Doc 4444 &sect;4.4.2.1.3).',
+  '1q': 'ANO Art 173: a person must not act as a required crew member if unfit through illness, injury, fatigue, medication, alcohol, or any other cause.',
+  '2a': 'SERA.2010(b): commander must be familiar with all available meteorological information (METAR, TAF, SIGMET, upper winds) before flight.',
+  '2b': 'SERA.2010(b): pre-flight action must include NOTAMs for departure, destination, alternate, and en-route.',
+  '2c': 'Part-NCO.IDE / AMC1 NCO.OP.116: aircraft must have equipment approved for the intended approach (RNP APCH LNAV/LPV, ILS/LOC, etc.).',
+  '2g': 'Part-NCO.OP.190: supplemental O&#8322; required above 10,000 ft cabin altitude after 30 min, and continuously above 13,000 ft.',
+  '2h': 'NCO.OP.140: for IFR flights, the PIC must nominate &ge;1 destination alternate unless the destination forecast (ETA &plusmn;1 hr) shows ceiling &ge;1,000 ft above the approach\'s MDH/DH and visibility &ge;5,000 m &mdash; effectively good enough for a visual-conditions arrival with no instrument approach needed. If an alternate IS required, NCO.OP.143 sets its own (higher) planning minima for the chosen alternate based on the approach flown there, and NCO.OP.142 requires it to offer a non-GNSS/terrestrial approach unless SBAS criteria are met.',
+  '2k': 'Part-NCO.OP.110: commander must not commence take-off unless reported met conditions equal or exceed the applicable departure minima.',
+  '2s': 'ANO Art 84 &amp; POH: aircraft must be operated within mass and centre-of-gravity limits at all times.',
+  '2t': 'Underload = MTOW &minus; TOW; must be positive. Part of the mass &amp; balance compliance requirement (ANO Art 84).',
+  '3c': 'Part-NCO.IDE.A.155: altimeter accuracy check &mdash; indicated elevation at a known reference must be within &plusmn;60 ft.',
+  '4a': 'SERA.8015: obtain the current ATIS before contacting ATC and before entering a controlled zone.',
+  '4b': 'SERA.8015(e): pilots must read back safety-related clearances &mdash; route, altitude/level, headings, speed, runway, squawk, altimeter, frequencies.',
+  '4f': 'SERA.8015(a): a departure clearance must be followed. SIDs are ATC clearances and must be complied with unless otherwise cleared.',
+  '7a': 'SERA.4020: an arrival report is required if the flight plan is not automatically terminated on landing.',
+  '7d': 'ANO Art 132: a personal flying logbook must be maintained; journey log / tech log entries as required by the operator.'
+};
+
+var CHECKLIST_DATA = [
+  { phase:'Navigation', id:'prenav', title:'Navigation Checklist', items: [
+    { id:'navgrp', text:'Navigation Checklist', type:'group', children:[
+      'Chart — correct chart, VFR amendments current',
+      'Route: Anchor points / satellite imagery reviewed',
+      'Route: Controlled airspace + VFR holding points — clearance required?',
+      'Route: Danger / Prohibited / Restricted / HIRTA / Gliding / AIAA / Wildlife / Parachute areas checked',
+      'Route: Obstacles / Terrain / IAP OCAS / MATZ checked',
+      'Route: NOTAMs marked on chart',
+      'Route: Airspace rules reviewed',
+      'MSA: MEF + 1000\u2019',
+      'MSA: Spot height +1300\u2019 or obstacle +1000\u2019 within 5nm of track',
+      'VFR Safety Altitude: Terrain +500\u2019 (LFR) within sensible distance',
+      'VFR Safety Altitude: Spot height +500\u2019 (LFR) / +300\u2019 (uncharted) within sensible distance',
+      'RT: Radio frequencies noted (checked from official source)',
+      'ATSU: Radar service available?',
+      'ATSU: Service level — Basic / Traffic / Procedural / LARS',
+      'ATSU: FMC or transponder codes noted',
+      'ATSU: Distance of coverage checked',
+      'ATSU: Hours of operation checked (NOTAM)',
+      'Destination: Local procedures / approach plates (all runways)',
+      'Destination: Daylight hours checked',
+      'Destination: Weather checked',
+      'Destination: Opening hours checked',
+      'Destination: PPR obtained',
+      'Destination: Arrival brief noted',
+      'Destination: Services availability — fuel, oil etc.',
+      'Alternate(s): as above',
+      'Performance calculations — departure, destination, alternate',
+      'Fuel & oil requirements noted (endurance and reserves)',
+      'Equipment — diversion ruler, full batteries, phone charger etc.',
+      'Useful phone numbers noted',
+      'Weather checked',
+      'NOTAMs checked',
+      'Departure brief — set heading point, initial heading and altitude',
+      'Booked out and PPR confirmed',
+      'PLOG completed',
+      'Airborne: Fly accurate speed & heading',
+      'Airborne: Gross error checking',
+      'Airborne: FREDA & HAT checks',
+      'Airborne: Wind and forced landing sites noted along route',
+      'Airborne: Map to ground — large to small features, don\u2019t fixate on the chart',
+      'Airborne: At waypoint — Turn, Time, Twist, Talk, Task, ETA',
+      'Airborne: Arrival briefed',
+      'Regaining track: Standard closing angle — 60 / GS or TAS, turn toward track',
+      'Regaining track: Drift lines — mark 10\u00b0 either side of track',
+      'Regaining track: ETA revision method applied',
+      'Lost / unsure of position: Get help early — vectors / position fix / moving map',
+      'Lost / unsure of position: Know your endurance',
+      'Lost / unsure of position: Check DI, headings, times, big features',
+      'Time management: Lunch taken',
+      'Time management: Weather en route checked',
+      'Time management: Not hanging around',
+      'Time management: Time limitations assessed — fuel, taxi, holding, diversions, daylight, booking, admin'
+    ] }
+  ]},
+  { phase:'Planning', id:'administration', title:'Administration', items: [
+    { id:'1pc', text:'Personal Currency', type:'group', children:['Pilot licence and IR rating current','Logbook up to date','Medical certificate valid','Glasses/sunglasses'] },
+    { id:'1td', text:'Travel Documents', type:'group', children:['Photo ID carried','Correct Passport(s)', {text:'GAR / GENDEC submitted', hasLaw:true, lawKey:'1g'}, 'Customs/immigration informed'] },
+    { id:'1admin', text:'Admin: Charts, Flight Plan & Tech Log', shortTitle:'Admin', type:'group', children:[
+      {text:'Charts, Electrics, AIP and AIRAC cycle current', hasLaw:true, lawKey:'1l'},
+      {text:'Flight plan filed', hasLaw:true, lawKey:'1m'},
+      'Operational flight plan prepared',
+      'Tech Log',
+      {text:'Hours Remaining', keypad:'alt', unit:'hrs'},
+      'Defects'
+    ] },
+    { id:'1k', text:'Documents to be carried (NCO.GEN.135)', shortTitle:'Docs to be carried', type:'group', hasLaw:true, children:['AFM (or equivalent)','Certificate of Registration (original)','Certificate of Airworthiness (original) & ARC','Noise certificate (if applicable)','List of specific approvals (if applicable)','Aircraft radio licence (if applicable)','Third-party liability insurance certificate(s)','Journey log (or equivalent)','Details of filed ATS flight plan (if applicable)','Current & suitable aeronautical charts (route + diversions)','Interception procedures & visual signals','MEL or CDL (if applicable)','Any other documentation pertinent / required by States'] },
+    { id:'1n', text:'Destination', type:'group', children:['Fees','Fuel availability','PPR','Slots','Opening hours','Phone/Email details'] },
+    { id:'1p', text:'No-go review', type:'group', children:['Weather','Recency','Aircraft equipment','Day/night','Complexity','Endurance','Personal limits','External pressure'], note:'Traffic-light check — e.g. cloud base <600ft is a no-fly threshold; consider whether a check flight/safety pilot is needed.' },
+    { id:'1q', text:'I\'M SAFE self-assessment', type:'group', hasLaw:true, children:['Illness','Medication','Stress','Alcohol','Fatigue','Eating/Emotion'] },
+    { id:'1r', text:'Personal equipment checked', type:'group', children:['Batteries','Cables','Devices/updates','Night flight equipment/torches','Life jacket'] },
+    { id:'1s', text:'Threat & Error Management', type:'group', allowAddItems:true, children:['Terrain','CFIT','MSA','Emergency options'] }
+  ]},
+  { phase:'Planning', id:'notams', title:'NOTAMs', items: [
+    { id:'2b', text:'NOTAMs checked', type:'group', hasLaw:true, children:['Departure','Destination','Alternate','En-route'] }
+  ]},
+  { phase:'Planning', id:'flight', title:'Flight', items: [
+    { id:'flightgrp', text:'Flight', type:'group', children:[
+      'Route/altitude selected — MSA/MOCA/grid MORA checked, terrain & obstacles considered',
+      {text:'Planned cruising level', keypad:'alt', unit:'ft', unitToggle:true},
+      {text:'Alternate(s)', hasLaw:true, lawKey:'2h'},
+      {text:'GNSS/SBAS certification (RNP APCH LNAV/LPV)', hasLaw:true, lawKey:'2c'},
+      'ILS/LOC capability',
+      'RAIM/FDE prediction (AUGUR or equivalent)',
+      'GPS outage NOTAMs',
+      'Fuel Plan Complete',
+      {text:'Transition level(s)', type:'text'},
+      'Escape Plan',
+      'Operational flight plan complete',
+      'Destination/Alternate charts briefed',
+      {text:'Charts (1:500,000 / Airways / Min Altitude)'},
+      {text:'Mass and balance calculated and within limits', hasLaw:true, lawKey:'2s'},
+      {text:'Underload', type:'weight', hasLaw:true, lawKey:'2t'},
+      'Performance check: takeoff/landing distance vs. runway available (Hot/High/Heavy/Humid considered)',
+      {text:'ETOB / CTOT (UTC)', type:'etobctot'}
+    ] }
+  ]},
+  { phase:'Fuel', id:'fuelplan', title:'Fuel Plan', items: [
+    { id:'fuelplangrp', text:'Fuel Plan', type:'fuelplan' }
+  ]},
+  { phase:'PaxBrief', id:'paxbrief', title:'Pax Brief', items: [
+    { id:'paxbriefgrp', text:'Pax Brief', type:'group', children:[
+      'Content to be added.'
+    ] }
+  ]},
+  { phase:'Weather', id:'sources', title:'Sources', items: [
+    { id:'srcgrp', text:'Sources', type:'group', children:['Surface Pressure','Airmass Type','F214 — Spot Wind & Temperature','F215 — Significant Weather Chart','GAMET','Radar','Temperature','Skew T'] }
+  ]},
+  { phase:'Weather', id:'weather', title:'Weather', items: [
+    { id:'2a', text:'Weather calculations', type:'group', hasLaw:true, children:[
+      'Crosswind & upper winds','Max drift','Convective activity','SIGMET','Visibility','Forecast single hold drift',
+      {text:'Freezing level', keypad:'alt', unit:'ft'},
+      {text:'Cloud base', keypad:'alt', unit:'ft'},
+      {text:'Cloud top', keypad:'alt', unit:'ft'},
+      {text:'MSA to freezing level buffer checked', keypad:'alt', unit:'ft'},
+      {text:'Departure minima', hasLaw:true, lawKey:'2k'},
+      {text:'Density Altitude (DA)', keypad:'alt', unit:'ft'},
+      {text:'Pressure Altitude (PA)', keypad:'alt', unit:'ft'}
+    ] }
+  ]},
+  { phase:'Ground', id:'crewpax', title:'Crew/Pax Brief', items: [
+    { id:'2x', text:'Crew/Pax Brief', type:'group', children:['Exits','Belts','Oxygen','Life jackets','Dinghy','Emergency actions'] }
+  ]},
+  { phase:'Ground', id:'start', title:'Start', items: [
+    { id:'startgrp', text:'Start', type:'group', children:[
+      'Booked out',
+      {text:'Tacho & Hobbs — Start', type:'hobbsTacho'},
+      {text:'Aircraft A / Transit Check', prompt:true, note:'Complete the full walk-around check.'},
+      {text:'Before start check', prompt:true, note:'Run the paper before-start checklist.'},
+      'Lookout',
+      'Starter warning light out',
+      'Oil pressure rising',
+      'Autopilot/Trim check','Compass fluid/smell checked',
+      {text:'SPS, Xponder, Baro ±60\'', hasLaw:true, lawKey:'3c'},
+      {text:'QNH-SPS difference', keypad:'alt', unit:'ft'},
+      {text:'Transponder code set', type:'code'}
+    ] }
+  ]},
+  { phase:'Ground', id:'therest', title:'IFR', items: [
+    { id:'restgrp', text:'IFR', type:'group', children:[
+      'ADF','VOR/ILS','DME','Stopwatch','Audio Panel check','Annunciator Check',
+      'COM/NAV radios set',
+      {text:'GPS/FMS flight plan loaded and cross-checked against clearance'},
+      'OBS/CDI course set for initial departure routing',
+      'Hdg bug set','Alt bug set',
+      {text:'ATIS re-checked', hasLaw:true, lawKey:'4a'},
+      {text:'Obtain Clearance', hasLaw:true, lawKey:'4b', prompt:true},
+      {text:'Transponder code set', type:'code'},
+      'OCAS to CAS transition',
+      {text:'ETOB / CTOT (UTC)', type:'etobctot'},
+      'Route entered/verified in GPS or nav equipment; matches clearance',
+      {text:'Departure procedure (SID or Instrument Departure Procedure) briefed if applicable', hasLaw:true, lawKey:'4f'},
+      'RNAV/GNSS Loss of Integrity (LOI) contingency reviewed'
+    ] }
+  ]},
+  { phase:'Ground', id:'offblockspretakeoff', title:'Off Blocks \u2192 Pre-Take Off Checks', items:[
+    { id:'otpgrp', text:'Off Blocks to Pre-Take Off Checks', type:'group',
+      note:'Reminder — run the paper Taxi / Power / Pre-Take-Off checklists in sequence.',
+      children:[
+        {text:'Off Blocks', type:'timeNow'},
+        {text:'Taxi Checks', prompt:true, note:'Complete the paper taxi checklist.'},
+        {text:'Power Checks', prompt:true, note:'Complete the paper power checklist.'},
+        {text:'Pre-Take Off Checks', prompt:true, note:'Complete the paper pre-take-off checklist.'},
+        {text:'Note Tank', note:'Note which fuel tank is currently selected before departure.'},
+        'Runway XX Left/Right Circuit','Standard departure?','Wind is.. Weather is..',
+        'Problem on the ground or after departure',
+        'Initial Altitude/Height restriction and Heading',
+        'Wind | CAS | Noise Abatement | Wake | Threats',
+        {text:'IFR Departure Brief', note:'Review clearance, initial routing/altitude, and lost-comms procedure before taxi.'},
+        {text:'Line up check', note:'Mnemonic — expansion pending.'},
+        {text:'SPLIITTT', note:'Mnemonic — expansion pending.'},
+        {text:'Take Off', type:'timeNow'}
+      ] }
+  ]},
+  { phase:'Airborne', id:'airborne', title:'Airborne', items: [
+    { id:'airbornegrp', text:'Airborne', type:'group', children:[
+      {text:'Landing', type:'timeNow'},
+      {text:'On Blocks', type:'timeNow'},
+      {text:'Flight plan closed if not automatically closed by tower', hasLaw:true, lawKey:'7a'},
+      {text:'Logbook/tech log entries made if required', hasLaw:true, lawKey:'7d'},
+      {text:'Tacho & Hobbs — End', type:'hobbsTacho'},
+      {text:'Fuel remaining at shutdown', type:'fuelQty'}
+    ] }
+  ]},
+  { phase:'Reference', id:'mnemonics', title:'Mnemonics', items: [
+    { id:'mnemonicsgrp', text:'Mnemonics', type:'group', children:[
+      {text:'BUFFPEARL', note:'Mnemonic — expansion pending.'},
+      {text:'FREDAMIT', note:'Mnemonic — expansion pending.'},
+      {text:'WASP', note:'Mnemonic — expansion pending.'},
+      {text:'LUC', note:'Mnemonic — expansion pending.'},
+      {text:'SPLIITTT', note:'Mnemonic — expansion pending.'}
+    ] }
+  ]},
+  { phase:'Reference', id:'apisettings', title:'Settings', items: [
+    { id:'apisettingsgrp', text:'Settings', type:'apisettings' }
+  ]}
+];
+
+/* ============================================================
+   FLATTEN into one card per checkable thing
+   ============================================================ */
+var PHASES = ['Weather','Navigation','Planning','Fuel','PaxBrief','Ground','Airborne','Reference'];
+// Four top-level headings group the phases (and, for Post Flight, the
+// Calculations/Results views) so the header stays at a handful of big
+// choices instead of a flat row of phase buttons.
+var HEADINGS = [
+  { key:'Briefing', label:'BRIEFING', phases:['Weather','Navigation','Planning','Fuel','PaxBrief'] },
+  { key:'Airbourne', label:'AIRBOURNE', phases:['Ground','Airborne'] },
+  { key:'PostFlight', label:'POST FLIGHT', phases:[] },
+  { key:'ReferenceH', label:'REFERENCE', phases:['Reference'] }
+];
+var curHeading = 'PostFlight';
+var curMode = 'calc';
+function headingFor(phase){
+  var h = HEADINGS.find(function(h){ return h.phases.indexOf(phase) !== -1; });
+  return h ? h.key : 'Briefing';
+}
+var SECTIONS = {}; // phase -> [ {id,title, cards:[...]} ]
+var ALLCARDS = {}; // cardId -> card spec (for lookups)
+
+(function buildDeck(){
+  PHASES.forEach(function(p){ SECTIONS[p] = []; });
+  CHECKLIST_DATA.forEach(function(section){
+    if(PHASES.indexOf(section.phase) === -1) return;
+    var sec = { id:section.id, title:section.title.replace(/&amp;/g,'&'), cards:[] };
+    section.items.forEach(function(item){
+      var baseId = section.id+'.'+item.id;
+      if(item.type === 'group' && item.children){
+        // Every group is ONE card — its whole list lives on one page,
+        // scrollable internally, with each line individually tickable.
+        var children = item.children.map(function(childDef){
+          var isObj = typeof childDef === 'object';
+          var child = { text:(isObj?childDef.text:childDef).replace(/&amp;/g,'&') };
+          if(isObj && childDef.hasLaw){ child.hasLaw = true; child.lawKey = childDef.lawKey || item.id; }
+          if(isObj && childDef.keypad === 'alt'){ child.keypad = true; child.unit = childDef.unit || 'ft'; child.unitToggle = !!childDef.unitToggle; }
+          if(isObj && childDef.note){ child.note = childDef.note; }
+          if(isObj && childDef.type === 'text'){ child.textEntry = true; }
+          if(isObj && childDef.type === 'daVis'){ child.davis = true; }
+          if(isObj && childDef.type === 'timeNow'){ child.timenow = true; }
+          if(isObj && childDef.type === 'hobbsTacho'){ child.hobbstacho = true; }
+          if(isObj && childDef.type === 'etobctot'){ child.etobctot = true; }
+          if(isObj && childDef.type === 'code'){ child.codeEntry = true; }
+          if(isObj && childDef.type === 'fuelQty'){ child.fuelQty = true; }
+          if(isObj && childDef.type === 'weight'){ child.weightToggle = true; }
+          if(isObj && childDef.prompt){ child.prompt = true; }
+          return child;
+        });
+        var card = {
+          id: baseId, type:'grouplist',
+          text: item.shortTitle || item.text.replace(/&amp;/g,'&'),
+          note: item.note || null,
+          allowAddItems: !!item.allowAddItems,
+          children: children
+        };
+        if(item.hasLaw){ card.hasLaw = true; card.lawKey = item.id; }
+        sec.cards.push(card);
+        ALLCARDS[card.id] = card;
+      } else {
+        var card = { id: baseId, type:'plain', text:(item.text||'').replace(/&amp;/g,'&'), note:item.note||null };
+        if(item.hasLaw){ card.hasLaw = true; card.lawKey = item.id; }
+        if(item.keypad === 'alt'){ card.type = 'keypad'; card.unit = item.unit || 'ft'; card.unitToggle = !!item.unitToggle; }
+        if(item.type === 'both'){ card.type = 'text'; }
+        if(item.type === 'daVis'){ card.type = 'davis'; }
+        if(item.type === 'hobbsTacho'){ card.type = 'hobbstacho'; }
+        if(item.type === 'timeNow'){ card.type = 'timenow'; }
+        if(item.type === 'fuelplan'){ card.type = 'fuelplan'; }
+        if(item.type === 'apisettings'){ card.type = 'apisettings'; }
+        sec.cards.push(card);
+        ALLCARDS[card.id] = card;
+      }
+    });
+    if(sec.cards.length) SECTIONS[section.phase].push(sec);
+  });
+})();
+
+/* ============================================================
+   STATE
+   ============================================================ */
+var STORE_KEY = 'checkdeck_state_v1';
+var USG_TO_L = 3.785;
+var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
+  fuel:{ unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
+  tankLog:[], tankSelected:'L',
+  flightDetails:{ date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' } };
+// checked[cardId] = 'go'|'na'; values[cardId] = string/obj; global = shared
+// fields synced across every place they appear (ETOB/CTOT); codes = the
+// user-editable transponder code list; customItems[groupCardId] = array of
+// user-added extra items for that group (e.g. TEM); hideCompleted = whether
+// group lists hide their resolved rows; fuel = the Fuel Plan page — every
+// amount stored canonically in USG regardless of the display unit; tankLog/
+// tankSelected = the L/R fuel tank switch log, from Airborne; flightDetails
+// = the Post Flight header fields (date, slot times, reg, names, defects).
+(function loadState(){
+  try{
+    var raw = localStorage.getItem(STORE_KEY);
+    if(raw) STATE = JSON.parse(raw);
+    if(!STATE.checked) STATE.checked = {};
+    if(!STATE.values) STATE.values = {};
+    if(!STATE.global) STATE.global = { etob:'', ctot:'', transponderCode:'' };
+    if(STATE.global.transponderCode === undefined) STATE.global.transponderCode = '';
+    if(!STATE.codes) STATE.codes = [{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}];
+    if(!STATE.flightDetails) STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' };
+    if(STATE.flightDetails.landAway === undefined || STATE.flightDetails.landAway === false) STATE.flightDetails.landAway = '';
+    if(STATE.flightDetails.landAway === true) STATE.flightDetails.landAway = 'Yes';
+    // Migrate anyone with the old plain-string codes list (from before names
+    // were added) into the {code,name} shape, keeping their saved codes.
+    // (Independent of the landAway migration above — these two used to be
+    // accidentally chained via else-if, which meant a landAway:true value
+    // could skip the codes migration entirely.)
+    if(STATE.codes.length && typeof STATE.codes[0] === 'string'){
+      STATE.codes = STATE.codes.map(function(c){ return { code:c, name:'' }; });
+    }
+    if(!STATE.customItems) STATE.customItems = {};
+    if(STATE.hideCompleted === undefined) STATE.hideCompleted = true;
+    // One-time migration: anyone with data saved before Hide Completed
+    // defaulted to on would otherwise be stuck on the old false default
+    // forever, since a saved (even if only implicitly) preference always
+    // wins over a new code default. Force it on exactly once; any
+    // deliberate toggle after that is respected as normal.
+    // Uses a distinct flag name (v2) rather than reusing the original
+    // hideCompletedMigrated — some environments had already run that
+    // earlier migration before the fix here was fully correct, which
+    // left them permanently stuck regardless of any later code change,
+    // since a one-time migration by definition never runs a second time
+    // under the same flag. A fresh flag name forces this to run once more
+    // for everyone, superseding whatever the old flag already recorded.
+    if(!STATE.hideCompletedMigratedV2){
+      STATE.hideCompleted = true;
+      STATE.hideCompletedMigratedV2 = true;
+    }
+    if(!STATE.fuel) STATE.fuel = { unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
+    // One-time migration, same idea as Hide Completed above: anyone with
+    // fuel data saved before these defaults existed has a STATE.fuel
+    // object already (just with blank values), so the fallback right
+    // above never fires for them. Fill in only the fields they haven't
+    // touched (still blank) — never overwrite a real value they entered —
+    // and only ever do this once.
+    if(!STATE.fuelDefaultsMigrated){
+      if(STATE.fuel.burnRate === '' || STATE.fuel.burnRate === undefined) STATE.fuel.burnRate = 8;
+      if(STATE.fuel.fob === '' || STATE.fuel.fob === undefined) STATE.fuel.fob = 34;
+      if(STATE.fuel.taxi === '' || STATE.fuel.taxi === undefined) STATE.fuel.taxi = 2;
+      if(STATE.fuel.taxiMins === '' || STATE.fuel.taxiMins === undefined) STATE.fuel.taxiMins = '15';
+      if(STATE.fuel.final === '' || STATE.fuel.final === undefined) STATE.fuel.final = 8;
+      STATE.fuelDefaultsMigrated = true;
+    }
+    if(!STATE.tankLog) STATE.tankLog = [];
+    if(!STATE.tankSelected) STATE.tankSelected = 'L';
+  }catch(e){}
+})();
+function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); }catch(e){} }
+
+// Is a single child of a grouplist card resolved? Most types need an
+// explicit tick (matching the plain-item convention), but timenow/hobbstacho
+// children — like their top-level counterparts — have no tick at all and
+// resolve purely from having a captured value.
+function groupChildResolved(card, i){
+  var key = card.id+'.'+i;
+  var child = card.children[i];
+  if(child.timenow) return !!STATE.values[key];
+  if(child.hobbstacho){ var v = STATE.values[key] || {}; return !!(v.tacho && v.hobbs); }
+  if(child.etobctot) return !!(STATE.global.etob || STATE.global.ctot) || !!STATE.checked[key];
+  return !!STATE.checked[key];
+}
+function customItemResolved(card, idx){
+  return !!STATE.checked[card.id+'.custom.'+idx];
+}
+function groupTotalCount(card){
+  return card.children.length + (STATE.customItems[card.id]||[]).length;
+}
+function cardResolved(card){
+  var s = STATE.checked[card.id];
+  if(s === 'go' || s === 'na') return true;
+  if(card.type === 'hobbstacho'){
+    var v = STATE.values[card.id] || {};
+    return !!(v.tacho && v.hobbs);
+  }
+  if(card.type === 'timenow'){ return !!STATE.values[card.id]; }
+  if(card.type === 'grouplist'){
+    var staticOk = card.children.every(function(_, i){ return groupChildResolved(card, i); });
+    if(!staticOk) return false;
+    var custom = STATE.customItems[card.id] || [];
+    return custom.every(function(_, i){ return customItemResolved(card, i); });
+  }
+  return false;
+}
+function groupChildDone(card){
+  var n = card.children.filter(function(_, i){ return groupChildResolved(card, i); }).length;
+  var custom = STATE.customItems[card.id] || [];
+  n += custom.filter(function(_, i){ return customItemResolved(card, i); }).length;
+  return n;
+}
+
+/* ============================================================
+   NAVIGATION STATE
+   ============================================================ */
+var curPhase = PHASES[0];
+var curSectionIdx = 0;
+var curCardIdx = 0;
+var showingSectDone = false;
+var showingPhaseDone = false;
+
+function curSections(){ return SECTIONS[curPhase]; }
+function curSection(){ return curSections()[curSectionIdx]; }
+function curCard(){ return curSection().cards[curCardIdx]; }
+
+function phaseTotals(phase){
+  var total=0, done=0;
+  SECTIONS[phase].forEach(function(s){ s.cards.forEach(function(c){ total++; if(cardResolved(c)) done++; }); });
+  return { total:total, done:done };
+}
+// Next phase in the overall flow (crosses heading boundaries, e.g. the
+// last Briefing phase's "Next" leads into the first Airbourne phase) —
+// null once there's nowhere further to go.
+function nextPhaseKey(phase){
+  var idx = PHASES.indexOf(phase);
+  if(idx === -1 || idx === PHASES.length-1) return null;
+  return PHASES[idx+1];
+}
+function sectionTotals(sec){
+  var total=sec.cards.length, done=0;
+  sec.cards.forEach(function(c){ if(cardResolved(c)) done++; });
+  return { total:total, done:done };
+}
+
+/* ============================================================
+   RENDER — phase row
+   ============================================================ */
+var elPhaseRow = document.getElementById('phaseRow');
+function renderHeadingRow(){
+  var elHeadingRow = document.getElementById('headingRow');
+  elHeadingRow.innerHTML = '';
+  HEADINGS.forEach(function(h){
+    var btn = document.createElement('button');
+    btn.className = 'headingBtn' + (h.key===curHeading?' on':'');
+    btn.textContent = h.label;
+    btn.addEventListener('click', function(){
+      curHeading = h.key;
+      if(h.phases.length){
+        if(h.phases.indexOf(curPhase) === -1){
+          curPhase = h.phases[0]; curSectionIdx = 0; curCardIdx = 0;
+          showingSectDone = false; showingPhaseDone = false;
+        }
+        setMode('card');
+      } else if(curMode !== 'calc' && curMode !== 'results'){
+        setMode('calc');
+      } else {
+        renderHeadingRow(); renderPhaseRow();
+      }
+    });
+    elHeadingRow.appendChild(btn);
+  });
+  renderTankHeaderBar();
+}
+// Only needed where the internal phase key isn't already good display
+// text (e.g. camelCase used as a plain identifier) — anything absent here
+// just falls back to showing its own key.
+var PHASE_LABELS = { PaxBrief: 'Pax Brief' };
+function renderPhaseRow(){
+  elPhaseRow.innerHTML = '';
+  var heading = HEADINGS.filter(function(h){ return h.key === curHeading; })[0];
+  if(!heading.phases.length){
+    // Post Flight — its "sub-row" is the Calculations/Results choice
+    // rather than a set of checklist phases.
+    [['calc','Calculations'],['results','Results']].forEach(function(pair){
+      var btn = document.createElement('button');
+      btn.className = 'phaseBtn' + (curMode===pair[0] ? ' on' : '');
+      btn.textContent = pair[1];
+      btn.addEventListener('click', function(){ setMode(pair[0]); });
+      elPhaseRow.appendChild(btn);
+    });
+    return;
+  }
+  heading.phases.forEach(function(p){
+    var t = phaseTotals(p);
+    var incomplete = t.total > 0 && t.done < t.total;
+    var btn = document.createElement('button');
+    btn.className = 'phaseBtn' + (p===curPhase && curMode==='card' ? ' on':'') + (incomplete ? ' incomplete' : '');
+    btn.innerHTML = (PHASE_LABELS[p]||p) + ' <span class="n">'+t.done+'/'+t.total+'</span>';
+    btn.addEventListener('click', function(){
+      curPhase = p; curSectionIdx = 0; curCardIdx = 0;
+      showingSectDone = false; showingPhaseDone = false;
+      setMode('card');
+    });
+    elPhaseRow.appendChild(btn);
+  });
+}
+
+var elSectionRow = document.getElementById('sectionRow');
+function renderSectionRow(){
+  elSectionRow.innerHTML = '';
+  var sections = curSections();
+  if(sections.length < 2){ elSectionRow.style.display = 'none'; return; }
+  elSectionRow.style.display = 'flex';
+  sections.forEach(function(sec, i){
+    var t = sectionTotals(sec);
+    var complete = t.done === t.total;
+    var btn = document.createElement('button');
+    btn.className = 'sectionBtn' + (i===curSectionIdx && !showingPhaseDone ? ' on' : '') + (complete ? ' done' : '');
+    btn.innerHTML = (complete?'&#10003; ':'')+escapeHtml(sec.title)+' <span class="n">'+t.done+'/'+t.total+'</span>';
+    btn.addEventListener('click', function(){
+      curSectionIdx = i; curCardIdx = 0;
+      showingSectDone = false; showingPhaseDone = false;
+      render();
+    });
+    elSectionRow.appendChild(btn);
+  });
+}
+
+/* ============================================================
+   RENDER — card mode
+   ============================================================ */
+var elGrpName = document.getElementById('grpName');
+var elSecName = document.getElementById('secName');
+var elDoneCount = document.getElementById('doneCount');
+var elTotalCount = document.getElementById('totalCount');
+var elAnnun = document.getElementById('annun');
+var elCard = document.getElementById('card');
+var elStage = document.getElementById('stage');
+var elSectDone = document.getElementById('sectDone');
+var elSectDoneSub = document.getElementById('sectDoneSub');
+var elPhaseDone = document.getElementById('phaseDone');
+var elPhaseDoneSub = document.getElementById('phaseDoneSub');
+var elSwitchBank = document.getElementById('switchBank');
+
+function render(){
+  renderHeadingRow();
+  renderPhaseRow();
+  renderSectionRow();
+  var sections = curSections();
+  var sec = sections[curSectionIdx];
+  var elSkipSection = document.getElementById('skipSectionBtn');
+
+  if(showingPhaseDone){
+    elCard.style.display='none'; elSectDone.style.display='none'; elPhaseDone.style.display='flex';
+    elSwitchBank.style.display='none'; elSkipSection.style.display='none';
+    var pt = phaseTotals(curPhase);
+    var goN=0, naN=0;
+    sections.forEach(function(s){ s.cards.forEach(function(c){ var v=STATE.checked[c.id]; if(v==='go')goN++; if(v==='na')naN++; }); });
+    elPhaseDoneSub.textContent = curPhase+' complete — '+goN+' done, '+naN+' N/A.';
+    elSecName.textContent = curPhase; elGrpName.textContent='';
+    elDoneCount.textContent = pt.done; elTotalCount.textContent = pt.total;
+    elAnnun.innerHTML = '';
+    var nextP = nextPhaseKey(curPhase);
+    var nextBtn = document.getElementById('phaseNext');
+    if(nextP){
+      nextBtn.style.display = 'block';
+      nextBtn.textContent = 'Next: '+(PHASE_LABELS[nextP]||nextP)+' \u00bb';
+      nextBtn.onclick = function(){
+        curHeading = headingFor(nextP);
+        curPhase = nextP; curSectionIdx = 0; curCardIdx = 0;
+        showingPhaseDone = false; showingSectDone = false;
+        setMode('card');
+      };
+    } else {
+      nextBtn.style.display = 'none';
+    }
+    return;
+  }
+  if(showingSectDone){
+    elCard.style.display='none'; elPhaseDone.style.display='none'; elSectDone.style.display='flex';
+    elSwitchBank.style.display='none'; elSkipSection.style.display='none';
+    var st = sectionTotals(sec);
+    var goN2=0, naN2=0;
+    sec.cards.forEach(function(c){ var v=STATE.checked[c.id]; if(v==='go')goN2++; if(v==='na')naN2++; });
+    elSectDoneSub.textContent = sec.title+' — '+goN2+' done, '+naN2+' N/A.';
+    elSecName.textContent = sec.title; elGrpName.textContent='';
+    elDoneCount.textContent = st.done; elTotalCount.textContent = st.total;
+    buildAnnunFor(sec);
+    var sectEntries = collectDataEntries(sec.cards);
+    var sectEntriesEl = document.getElementById('sectEntries');
+    sectEntriesEl.innerHTML = sectEntries.length ? dataEntriesHtml(sectEntries) : '';
+    sectEntriesEl.style.display = sectEntries.length ? 'block' : 'none';
+    return;
+  }
+  elSectDone.style.display='none'; elPhaseDone.style.display='none'; elCard.style.display='flex';
+  elSwitchBank.style.display='flex'; elSkipSection.style.display='inline-block';
+
+  var card = sec.cards[curCardIdx];
+  var st2 = sectionTotals(sec);
+  elSecName.textContent = sec.title;
+  elGrpName.textContent = card.groupTitle || '';
+  elDoneCount.textContent = st2.done; elTotalCount.textContent = st2.total;
+  buildAnnunFor(sec);
+  renderCard(card);
+  renderSwitchBank(card);
+  renderResults();
+  renderCalculations();
+}
+
+// Skip the WHOLE current section — leaves every card in it unresolved
+// (dark on the annunciator, "—" in Results) and moves straight to the next
+// section, or to the phase-complete screen if it was the last one. This is
+// deliberately not the same as clearing/marking anything; it's for "not
+// relevant to this flight, move on".
+function skipSection(){
+  var sections = curSections();
+  showingSectDone = false;
+  if(curSectionIdx < sections.length-1){
+    curSectionIdx++; curCardIdx = 0; render();
+  } else {
+    showingPhaseDone = true; render();
+  }
+}
+document.getElementById('skipSectionBtn').addEventListener('click', skipSection);
+
+function buildAnnunFor(sec){
+  elAnnun.innerHTML = '';
+  sec.cards.forEach(function(c, i){
+    var d = document.createElement('div');
+    var s = STATE.checked[c.id];
+    var extraResolved = cardResolved(c) && !s;
+    d.className = 'dot' + (s==='go'||extraResolved?' go':'') + (s==='na'?' na':'') + (!showingSectDone && i===curCardIdx ? ' cur':'');
+    d.addEventListener('click', function(){
+      showingSectDone = false; showingPhaseDone = false; curCardIdx = i; render();
+    });
+    elAnnun.appendChild(d);
+  });
+}
+
+function renderCard(card){
+  var html = '<div class="tag">'+escapeHtml(curSection().title)+'</div>';
+  html += '<h1>'+escapeHtml(card.text)+'</h1>';
+  if(card.note) html += '<div class="note">'+escapeHtml(card.note)+'</div>';
+  if(card.hasLaw){
+    html += '<div class="law" id="lawBadge">LAW &middot; TAP TO VIEW</div>';
+    html += '<div class="lawtext" id="lawText">'+(LAW[card.lawKey]||'Reference not found.')+'</div>';
+  }
+
+  if(card.type === 'keypad'){
+    var v = STATE.values[card.id] || {};
+    var unit = v.unit || card.unit;
+    var ft = (v.valFt !== undefined && v.valFt !== '') ? parseFloat(v.valFt) : null;
+    var dispVal = ft===null ? '' : (unit==='FL' ? Math.round(ft/100) : Math.round(ft));
+    html += '<div class="entryRow">';
+    if(card.unitToggle){
+      html += '<div style="width:100%"><div class="bigValue" id="kpVal">'+(ft!==null ? fmtVal(ft, unit) : '—')+'</div>';
+      html += '<div class="unitToggle"><button data-u="ft" class="'+(unit==='ft'?'on':'')+'">FT</button><button data-u="FL" class="'+(unit==='FL'?'on':'')+'">FL</button></div>';
+      html += '<div style="margin-top:14px"><input type="text" inputmode="numeric" id="kpInput" placeholder="'+(unit==='FL'?'e.g. 035':'e.g. 3500')+'" value="'+(dispVal===''?'':dispVal)+'"/></div></div>';
+    } else {
+      html += '<div style="width:100%"><div class="bigValue" id="kpVal">'+(ft!==null ? (Math.round(ft)+' '+unit) : '—')+'</div>';
+      html += '<div style="margin-top:14px"><input type="text" inputmode="numeric" id="kpInput" placeholder="value" value="'+(dispVal===''?'':dispVal)+'"/></div></div>';
+    }
+    html += '</div>';
+  } else if(card.type === 'text'){
+    var tv = STATE.values[card.id] || '';
+    html += '<div class="entryRow"><div class="entryField wide"><label>Value</label><input type="text" id="txtInput" value="'+escapeHtml(tv)+'"/></div></div>';
+  } else if(card.type === 'davis'){
+    var dv = STATE.values[card.id] || {};
+    html += '<div class="entryRow">'+
+      '<div class="entryField"><label>DA (ft)</label><input type="text" inputmode="numeric" id="daInput" value="'+(dv.da||'')+'"/></div>'+
+      '<div class="entryField"><label>Vis (m)</label><input type="text" inputmode="numeric" id="visInput" value="'+(dv.vis||'')+'"/></div>'+
+      '</div>';
+  } else if(card.type === 'hobbstacho'){
+    var hv = STATE.values[card.id] || {};
+    html += '<div class="entryRow">'+
+      '<div class="entryField"><label>Tacho</label><input type="text" inputmode="decimal" step="0.1" id="tachoInput" value="'+(hv.tacho||'')+'"/></div>'+
+      '<div class="entryField"><label>Hobbs</label><input type="text" inputmode="decimal" step="0.1" id="hobbsInput" value="'+(hv.hobbs||'')+'"/></div>'+
+      '</div>';
+  } else if(card.type === 'timenow'){
+    var tn = STATE.values[card.id];
+    if(tn){
+      html += '<div class="bigValue">'+tn+' <span style="font-size:16px;color:var(--mute)">UTC</span></div>';
+      html += '<button class="nowBtn" id="nowBtn" style="margin-top:20px;font-size:14px;padding:12px 22px">RE-CAPTURE NOW</button>';
+    } else {
+      html += '<button class="nowBtn" id="nowBtn">&#9201; TAP FOR NOW</button>';
+    }
+  } else if(card.type === 'grouplist'){
+    if(card.id === 'airborne.airbornegrp'){
+      html += renderEnduranceBarHtml();
+    }
+    var doneN = groupChildDone(card);
+    var totalN = groupTotalCount(card);
+    html += '<div class="groupProgress">'+doneN+' / '+totalN+' done'+
+      '<button type="button" id="hideCompletedBtn" class="hideCompletedBtn'+(STATE.hideCompleted?' on':'')+'">'+(STATE.hideCompleted?'\u2713 ':'')+'Hide Completed</button>'+
+      '</div>';
+    html += '<div class="groupList">';
+    var shownCount = 0;
+    card.children.forEach(function(child, i){
+      if(STATE.hideCompleted && groupChildResolved(card, i)) return;
+      shownCount++;
+      var s = STATE.checked[card.id+'.'+i];
+      var lawId = 'grLaw'+i;
+      var noTick = child.timenow || child.hobbstacho;
+      var rightControl;
+      if(child.timenow){
+        var tv = STATE.values[card.id+'.'+i];
+        rightControl = tv
+          ? '<div class="grTimeBtns"><button class="grNowBtn" data-i="'+i+'">'+tv+' UTC &#8635;</button><button class="grEditTimeBtn" data-i="'+i+'" title="Edit time">&#9998;</button></div>'
+          : '<button class="grNowBtn" data-i="'+i+'">&#9201; NOW</button>';
+      } else if(!noTick){
+        rightControl = '<div class="grBtns">'+
+            '<button class="grBtn go'+(s==='go'?' on':'')+'" data-i="'+i+'" data-m="go">&#10003;</button>'+
+            '<button class="grBtn na'+(s==='na'?' on':'')+'" data-i="'+i+'" data-m="na">N/A</button>'+
+          '</div>';
+      } else {
+        rightControl = '';
+      }
+      html += '<div class="groupRow'+(child.prompt?' promptRow':'')+'">'+
+        '<div class="grTop">'+
+          '<span class="grLabel'+(child.prompt?' prompt':'')+'">'+(child.prompt?'&#128203; ':'')+escapeHtml(child.text)+(child.hasLaw ? ' <span class="grLaw" data-i="'+i+'">LAW</span>' : '')+'</span>'+
+          rightControl+
+        '</div>'+
+        (child.note ? '<div class="grNote">'+escapeHtml(child.note)+'</div>' : '')+
+        (child.hasLaw ? '<div class="lawtext" id="'+lawId+'" style="margin:8px 0 0;font-size:11px">'+(LAW[child.lawKey]||'')+'</div>' : '')+
+        (child.keypad && child.unitToggle ? (function(){
+          var v = STATE.values[card.id+'.'+i] || {};
+          var unit = v.unit || child.unit;
+          var ft = (v.valFt !== undefined && v.valFt !== '') ? parseFloat(v.valFt) : null;
+          var dispVal = ft===null ? '' : (unit==='FL' ? Math.round(ft/100) : Math.round(ft));
+          return '<div class="bigValue" style="font-size:22px;margin-top:8px" id="grBigVal'+i+'">'+(ft!==null ? fmtVal(ft, unit) : '&mdash;')+'</div>'+
+            '<div class="unitToggle" data-i="'+i+'"><button data-u="ft" class="'+(unit==='ft'?'on':'')+'">FT</button><button data-u="FL" class="'+(unit==='FL'?'on':'')+'">FL</button></div>'+
+            '<input type="text" inputmode="numeric" class="grKeypadUnit" data-i="'+i+'" placeholder="'+(unit==='FL'?'e.g. 035':'e.g. 3500')+'" value="'+(dispVal===''?'':dispVal)+'" style="margin-top:8px"/>';
+        })() : '')+
+        (child.keypad && !child.unitToggle ? '<input type="text" inputmode="numeric" class="grKeypad" data-i="'+i+'" placeholder="value ('+child.unit+')" value="'+((STATE.values[card.id+'.'+i]||{}).val||'')+'"/>' : '')+
+        (child.textEntry ? '<input type="text" class="grKeypad" data-i="'+i+'" placeholder="value" value="'+escapeHtml((STATE.values[card.id+'.'+i]||{}).val||'')+'"/>' : '')+
+        (child.davis ? '<div class="grDaVisRow">'+
+          '<input type="text" inputmode="numeric" class="grDa" data-i="'+i+'" placeholder="DA (ft)" value="'+((STATE.values[card.id+'.'+i]||{}).da||'')+'"/>'+
+          '<input type="text" inputmode="numeric" class="grVis" data-i="'+i+'" placeholder="Vis (m)" value="'+((STATE.values[card.id+'.'+i]||{}).vis||'')+'"/>'+
+        '</div>' : '')+
+        (child.hobbstacho ? '<div class="grDaVisRow">'+
+          '<input type="text" inputmode="decimal" step="0.1" class="grTacho" data-i="'+i+'" placeholder="Tacho" value="'+((STATE.values[card.id+'.'+i]||{}).tacho||'')+'"/>'+
+          '<input type="text" inputmode="decimal" step="0.1" class="grHobbs" data-i="'+i+'" placeholder="Hobbs" value="'+((STATE.values[card.id+'.'+i]||{}).hobbs||'')+'"/>'+
+        '</div>' : '')+
+        (child.etobctot ? '<div class="grDaVisRow">'+
+          '<input type="text" inputmode="numeric" class="grEtob" placeholder="ETOB HHMM" maxlength="5" value="'+escapeHtml(STATE.global.etob||'')+'"/>'+
+          '<input type="text" inputmode="numeric" class="grCtot" placeholder="CTOT HHMM" maxlength="5" value="'+escapeHtml(STATE.global.ctot||'')+'"/>'+
+        '</div>' : '')+
+        (child.codeEntry ? '<div class="grCodeRow">'+
+          '<select class="grCodeSelect" data-i="'+i+'">'+
+            '<option value="">Select code&hellip;</option>'+
+            STATE.codes.map(function(c){ var cv=STATE.global.transponderCode; return '<option value="'+escapeHtml(c.code)+'"'+(cv===c.code?' selected':'')+'>'+escapeHtml(c.code)+(c.name?' \u2014 '+escapeHtml(c.name):'')+'</option>'; }).join('')+
+          '</select>'+
+          '<button type="button" class="grCodeAddBtn" data-i="'+i+'">+ New</button>'+
+          '<button type="button" class="grCodeManageBtn" data-i="'+i+'" title="Manage codes">&#9881;</button>'+
+        '</div>' : '')+
+        (child.fuelQty ? '<div class="grFuelQtyRow">'+
+          '<input type="text" inputmode="decimal" class="grFuelQty" data-i="'+i+'" placeholder="0" value="'+(function(){ var v=(STATE.values[card.id+'.'+i]||{}).valUSG; return (v===undefined||v==='')?'':fuelInputVal(v); })()+'"/>'+
+          '<button type="button" class="grFuelUnitBtn" data-i="'+i+'">'+STATE.fuel.unit+'</button>'+
+        '</div>' : '')+
+        (child.weightToggle ? (function(){
+          var v = STATE.values[card.id+'.'+i] || {};
+          var wUnit = v.unit || 'kg';
+          var kg = (v.valKG !== undefined && v.valKG !== '') ? parseFloat(v.valKG) : null;
+          var dispVal = kg===null ? '' : Math.round(wUnit==='lb' ? kg*2.20462 : kg);
+          return '<div class="grFuelQtyRow">'+
+            '<input type="text" inputmode="decimal" class="grWeightQty" data-i="'+i+'" placeholder="0" value="'+dispVal+'"/>'+
+            '<button type="button" class="grWeightUnitBtn" data-i="'+i+'">'+wUnit.toUpperCase()+'</button>'+
+          '</div>';
+        })() : '')+
+      '</div>';
+    });
+    if(card.allowAddItems){
+      var customList = STATE.customItems[card.id] || [];
+      customList.forEach(function(ctext, ci){
+        if(STATE.hideCompleted && customItemResolved(card, ci)) return;
+        shownCount++;
+        var cs = STATE.checked[card.id+'.custom.'+ci];
+        html += '<div class="groupRow">'+
+          '<div class="grTop">'+
+            '<span class="grLabel">'+escapeHtml(ctext)+'</span>'+
+            '<div class="grBtns">'+
+              '<button class="grBtn go'+(cs==='go'?' on':'')+'" data-ci="'+ci+'" data-m="go">&#10003;</button>'+
+              '<button class="grBtn na'+(cs==='na'?' on':'')+'" data-ci="'+ci+'" data-m="na">N/A</button>'+
+            '</div>'+
+          '</div>'+
+        '</div>';
+      });
+      html += '<div class="addItemRow">'+
+        '<input type="text" id="addItemInput" placeholder="Add item to this list&hellip;"/>'+
+        '<button type="button" id="addItemBtn">+ Add</button>'+
+      '</div>';
+    }
+    if(shownCount === 0 && STATE.hideCompleted && totalN > 0){
+      html += '<div class="allHiddenNote">&#10003; Everything here is done. Toggle Hide Completed off to review.</div>';
+    }
+    html += '</div>';
+  } else if(card.type === 'fuelplan'){
+    html += renderFuelPlanHtml(card.id);
+  } else if(card.type === 'apisettings'){
+    html += renderApiSettingsHtml();
+  }
+
+  elCard.innerHTML = html;
+  elCard.classList.toggle('list-mode', card.type === 'grouplist' || card.type === 'fuelplan' || card.type === 'apisettings');
+  requestAnimationFrame(updateScrollHint);
+
+  var lawBadge = document.getElementById('lawBadge');
+  if(lawBadge) lawBadge.addEventListener('click', function(){
+    document.getElementById('lawText').classList.toggle('open');
+  });
+
+  if(card.type === 'grouplist'){
+    elCard.querySelectorAll('.grBtn').forEach(function(b){
+      b.addEventListener('click', function(){
+        var i = b.getAttribute('data-i'), m = b.getAttribute('data-m');
+        var key = card.id+'.'+i;
+        STATE.checked[key] = (STATE.checked[key] === m) ? '' : m;
+        if(!STATE.checked[key]) delete STATE.checked[key];
+        saveState();
+        renderCard(card);
+        buildAnnunFor(curSection());
+        var st = sectionTotals(curSection());
+        elDoneCount.textContent = st.done;
+        renderResults(); renderCalculations();
+        if(cardResolved(card)){
+          setTimeout(function(){ advanceAfterAction(); }, 260);
+        }
+      });
+    });
+    elCard.querySelectorAll('.grLaw').forEach(function(b){
+      b.addEventListener('click', function(){
+        document.getElementById('grLaw'+b.getAttribute('data-i')).classList.toggle('open');
+      });
+    });
+    var hideBtn = document.getElementById('hideCompletedBtn');
+    if(hideBtn) hideBtn.addEventListener('click', function(){
+      STATE.hideCompleted = !STATE.hideCompleted;
+      saveState();
+      renderCard(card);
+    });
+    // Refresh just the progress counter text, not the whole card — a full
+    // re-render while a field has focus would kill the cursor mid-typing
+    // (same lesson learned the hard way with FlightDeck's tacho/hobbs field).
+    function updateGroupProgress(){
+      var el = elCard.querySelector('.groupProgress');
+      if(el) el.textContent = groupChildDone(card)+' / '+groupTotalCount(card)+' done';
+    }
+    // Entering a value auto-ticks Done, without a full re-render (keeps
+    // focus/cursor position intact for the field just typed into).
+    function autoTickRow(i){
+      var key = card.id+'.'+i;
+      if(STATE.checked[key] === 'go') return;
+      STATE.checked[key] = 'go';
+      saveState();
+      var row = elCard.querySelectorAll('.groupRow')[i];
+      if(row){
+        var goBtn = row.querySelector('.grBtn.go'), naBtn = row.querySelector('.grBtn.na');
+        if(goBtn) goBtn.classList.add('on');
+        if(naBtn) naBtn.classList.remove('on');
+      }
+      buildAnnunFor(curSection()); updateGroupProgress();
+      var st = sectionTotals(curSection()); elDoneCount.textContent = st.done;
+      if(cardResolved(card)){ setTimeout(function(){ advanceAfterAction(); }, 500); }
+    }
+    elCard.querySelectorAll('.grKeypad').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var i = inp.getAttribute('data-i');
+        var key = card.id+'.'+i;
+        STATE.values[key] = { val: inp.value };
+        saveState(); renderResults(); renderCalculations();
+        if(inp.value) autoTickRow(parseInt(i,10));
+      });
+    });
+    elCard.querySelectorAll('.grKeypadUnit').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var i = inp.getAttribute('data-i');
+        var key = card.id+'.'+i;
+        var v = STATE.values[key] || {}; v.unit = v.unit || card.children[i].unit;
+        var n = parseFloat(inp.value);
+        v.valFt = isNaN(n) ? '' : (v.unit==='FL' ? n*100 : n);
+        STATE.values[key] = v;
+        saveState(); renderResults(); renderCalculations();
+        var bigVal = document.getElementById('grBigVal'+i);
+        if(bigVal) bigVal.textContent = v.valFt==='' ? '\u2014' : fmtVal(parseFloat(v.valFt), v.unit);
+        if(inp.value) autoTickRow(parseInt(i,10));
+      });
+    });
+    elCard.querySelectorAll('.unitToggle[data-i] button').forEach(function(b){
+      b.addEventListener('click', function(){
+        var i = b.parentElement.getAttribute('data-i');
+        var key = card.id+'.'+i;
+        var v = STATE.values[key] || {};
+        v.unit = b.getAttribute('data-u');
+        STATE.values[key] = v;
+        saveState();
+        renderCard(card);
+        renderResults(); renderCalculations();
+      });
+    });
+    elCard.querySelectorAll('.grDa').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var i = inp.getAttribute('data-i');
+        var key = card.id+'.'+i;
+        var v = STATE.values[key] || {}; v.da = inp.value; STATE.values[key] = v;
+        saveState(); renderResults(); renderCalculations();
+        if(inp.value) autoTickRow(parseInt(i,10));
+      });
+    });
+    elCard.querySelectorAll('.grVis').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var i = inp.getAttribute('data-i');
+        var key = card.id+'.'+i;
+        var v = STATE.values[key] || {}; v.vis = inp.value; STATE.values[key] = v;
+        saveState(); renderResults(); renderCalculations();
+        if(inp.value) autoTickRow(parseInt(i,10));
+      });
+    });
+    elCard.querySelectorAll('.grTacho').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var i = inp.getAttribute('data-i');
+        var key = card.id+'.'+i;
+        var v = STATE.values[key] || {}; v.tacho = inp.value; STATE.values[key] = v;
+        saveState(); buildAnnunFor(curSection()); updateGroupProgress();
+        var st = sectionTotals(curSection()); elDoneCount.textContent = st.done;
+        renderResults(); renderCalculations();
+      });
+    });
+    elCard.querySelectorAll('.grHobbs').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var i = inp.getAttribute('data-i');
+        var key = card.id+'.'+i;
+        var v = STATE.values[key] || {}; v.hobbs = inp.value; STATE.values[key] = v;
+        saveState(); buildAnnunFor(curSection()); updateGroupProgress();
+        var st = sectionTotals(curSection()); elDoneCount.textContent = st.done;
+        renderResults(); renderCalculations();
+      });
+    });
+    elCard.querySelectorAll('.grEtob').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var formatted = autoFormatTime(inp.value);
+        inp.value = formatted;
+        STATE.global.etob = formatted;
+        saveState(); buildAnnunFor(curSection()); updateGroupProgress(); updateCountdown();
+        var st = sectionTotals(curSection()); elDoneCount.textContent = st.done;
+        renderResults(); renderCalculations();
+        // Other cards showing ETOB/CTOT (Flight + IFR) need to reflect this
+        // too — refresh their inputs directly if they happen to also be
+        // mounted (only one card is mounted at a time in Card Mode, but the
+        // Results/Calculations tabs always read STATE.global fresh anyway).
+      });
+    });
+    elCard.querySelectorAll('.grCtot').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var formatted = autoFormatTime(inp.value);
+        inp.value = formatted;
+        STATE.global.ctot = formatted;
+        saveState(); buildAnnunFor(curSection()); updateGroupProgress(); updateCountdown();
+        var st = sectionTotals(curSection()); elDoneCount.textContent = st.done;
+        renderResults(); renderCalculations();
+      });
+    });
+    elCard.querySelectorAll('.grCodeSelect').forEach(function(sel){
+      sel.addEventListener('change', function(){
+        var i = sel.getAttribute('data-i');
+        STATE.global.transponderCode = sel.value;
+        saveState(); renderResults(); renderCalculations();
+        if(sel.value) autoTickRow(parseInt(i,10));
+      });
+    });
+    elCard.querySelectorAll('.grCodeAddBtn').forEach(function(b){
+      b.addEventListener('click', function(){
+        var i = b.getAttribute('data-i');
+        showCodePrompt(function(code, name){
+          if(!code) return;
+          code = code.trim(); name = (name||'').trim();
+          if(!code) return;
+          var existing = STATE.codes.filter(function(c){ return c.code === code; })[0];
+          if(existing){ existing.name = name; } else { STATE.codes.push({ code:code, name:name }); }
+          STATE.global.transponderCode = code;
+          saveState();
+          renderCard(card);
+          buildAnnunFor(curSection()); renderResults(); renderCalculations();
+          autoTickRow(parseInt(i,10));
+        });
+      });
+    });
+    elCard.querySelectorAll('.grCodeManageBtn').forEach(function(b){
+      b.addEventListener('click', function(){ showManageCodesModal(function(){ renderCard(card); }); });
+    });
+    elCard.querySelectorAll('.grFuelQty').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var i = inp.getAttribute('data-i');
+        var key = card.id+'.'+i;
+        var n = parseFloat(inp.value);
+        var usg = isNaN(n) ? '' : (STATE.fuel.unit==='L' ? n/USG_TO_L : n);
+        STATE.values[key] = { valUSG: usg };
+        saveState();
+        buildAnnunFor(curSection()); renderResults(); renderCalculations();
+        if(inp.value) autoTickRow(parseInt(i,10));
+      });
+    });
+    elCard.querySelectorAll('.grFuelUnitBtn').forEach(function(b){
+      b.addEventListener('click', function(){
+        // Shared with the Fuel Plan page and Tank Bar — one unit setting
+        // for every fuel figure in the app, not a separate copy per field.
+        STATE.fuel.unit = STATE.fuel.unit === 'USG' ? 'L' : 'USG';
+        saveState();
+        renderCard(card);
+        renderResults(); renderCalculations();
+      });
+    });
+    elCard.querySelectorAll('.grWeightQty').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var i = inp.getAttribute('data-i');
+        var key = card.id+'.'+i;
+        var v = STATE.values[key] || {};
+        var unit = v.unit || 'kg';
+        var n = parseFloat(inp.value);
+        var kg = isNaN(n) ? '' : (unit==='lb' ? n/2.20462 : n);
+        STATE.values[key] = { valKG: kg, unit: unit };
+        saveState();
+        buildAnnunFor(curSection()); renderResults(); renderCalculations();
+        if(inp.value) autoTickRow(parseInt(i,10));
+      });
+    });
+    elCard.querySelectorAll('.grWeightUnitBtn').forEach(function(b){
+      b.addEventListener('click', function(){
+        // A per-field toggle (unlike fuel's shared setting) — Underload is
+        // currently the only weight figure in the app, so there's nothing
+        // else for it to need to stay in sync with.
+        var i = b.getAttribute('data-i');
+        var key = card.id+'.'+i;
+        var v = STATE.values[key] || {};
+        v.unit = (v.unit === 'lb') ? 'kg' : 'lb';
+        STATE.values[key] = v;
+        saveState();
+        renderCard(card);
+        renderResults(); renderCalculations();
+      });
+    });
+    elCard.querySelectorAll('.grNowBtn').forEach(function(b){
+      b.addEventListener('click', function(){
+        var i = b.getAttribute('data-i');
+        var key = card.id+'.'+i;
+        var childText = card.children[i] && card.children[i].text;
+        STATE.values[key] = nowUTCStr();
+        saveState();
+        renderCard(card);
+        buildAnnunFor(curSection());
+        var st = sectionTotals(curSection());
+        elDoneCount.textContent = st.done;
+        renderResults(); renderCalculations();
+        // Landing specifically should freeze the Tank Bar's live stopwatch
+        // immediately, not just next time something else happens to
+        // refresh the header — that header is a separate element from
+        // this card, so it needs its own explicit refresh here.
+        renderTankHeaderBar();
+        if(childText === 'Take Off'){
+          // Take off is the natural handoff point from Ground to Airborne
+          // — jump straight to that tab instead of just advancing to the
+          // next unresolved item within Ground.
+          setTimeout(function(){
+            curHeading = 'Airbourne'; curPhase = 'Airborne';
+            curSectionIdx = 0; curCardIdx = 0;
+            showingSectDone = false; showingPhaseDone = false;
+            setMode('card');
+          }, 400);
+        } else if(cardResolved(card)){
+          setTimeout(function(){ advanceAfterAction(); }, 400);
+        }
+      });
+    });
+    elCard.querySelectorAll('.grEditTimeBtn').forEach(function(b){
+      b.addEventListener('click', function(){
+        var i = b.getAttribute('data-i');
+        var key = card.id+'.'+i;
+        var current = STATE.values[key] || '';
+        showPrompt('Manually set the time (HH:MM UTC):', current, function(v){
+          var formatted = autoFormatTime(v);
+          if(!formatted) return;
+          STATE.values[key] = formatted;
+          saveState();
+          renderCard(card);
+          buildAnnunFor(curSection());
+          var st = sectionTotals(curSection());
+          elDoneCount.textContent = st.done;
+          renderResults(); renderCalculations();
+          renderTankHeaderBar();
+        });
+      });
+    });
+    if(card.allowAddItems){
+      elCard.querySelectorAll('.grBtn[data-ci]').forEach(function(b){
+        b.addEventListener('click', function(){
+          var ci = b.getAttribute('data-ci'), m = b.getAttribute('data-m');
+          var key = card.id+'.custom.'+ci;
+          STATE.checked[key] = (STATE.checked[key] === m) ? '' : m;
+          if(!STATE.checked[key]) delete STATE.checked[key];
+          saveState();
+          renderCard(card);
+          buildAnnunFor(curSection());
+          var st = sectionTotals(curSection());
+          elDoneCount.textContent = st.done;
+          renderResults(); renderCalculations();
+          if(cardResolved(card)){
+            setTimeout(function(){ advanceAfterAction(); }, 260);
+          }
+        });
+      });
+      var addBtn = document.getElementById('addItemBtn');
+      var addInp = document.getElementById('addItemInput');
+      function submitAddItem(){
+        var v = addInp.value.trim();
+        if(!v) return;
+        if(!STATE.customItems[card.id]) STATE.customItems[card.id] = [];
+        STATE.customItems[card.id].push(v);
+        saveState();
+        renderCard(card);
+        buildAnnunFor(curSection());
+        var st = sectionTotals(curSection());
+        elDoneCount.textContent = st.done;
+        renderResults(); renderCalculations();
+      }
+      if(addBtn) addBtn.addEventListener('click', submitAddItem);
+      if(addInp) addInp.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); submitAddItem(); } });
+    }
+  } else if(card.type === 'fuelplan'){
+    function refreshFuelPlan(){
+      saveState();
+      // Re-render is cheapest here — the whole page is cross-linked
+      // (unit toggle changes every displayed number at once), so a partial
+      // patch would need to touch nearly every field anyway.
+      renderCard(card);
+      renderResults(); renderCalculations();
+    }
+    var fpCompleteBox = document.getElementById('fpCompleteBox');
+    if(fpCompleteBox) fpCompleteBox.addEventListener('change', function(){
+      STATE.checked[card.id] = fpCompleteBox.checked ? 'go' : '';
+      if(!STATE.checked[card.id]) delete STATE.checked[card.id];
+      saveState();
+      buildAnnunFor(curSection());
+      var st = sectionTotals(curSection());
+      elDoneCount.textContent = st.done;
+      renderResults(); renderCalculations(); renderPhaseRow();
+      if(fpCompleteBox.checked && cardResolved(card)){
+        setTimeout(function(){ advanceAfterAction(); }, 400);
+      }
+    });
+    elCard.querySelectorAll('.fuelUnitToggle button').forEach(function(b){
+      b.addEventListener('click', function(){
+        STATE.fuel.unit = b.getAttribute('data-u');
+        refreshFuelPlan();
+      });
+    });
+    var fBurn = document.getElementById('fpBurnRate');
+    fBurn.addEventListener('input', function(){
+      var n = parseFloat(fBurn.value);
+      STATE.fuel.burnRate = isNaN(n) ? '' : (STATE.fuel.unit==='L' ? n/USG_TO_L : n);
+      saveState(); updateFuelSummaryOnly();
+    });
+    var fFob = document.getElementById('fpFob');
+    fFob.addEventListener('input', function(){
+      var n = parseFloat(fFob.value);
+      STATE.fuel.fob = isNaN(n) ? '' : (STATE.fuel.unit==='L' ? n/USG_TO_L : n);
+      saveState(); updateFuelSummaryOnly();
+      if(fFob.value) autoTickCard();
+    });
+    var fUplifted = document.getElementById('fpUplifted');
+    fUplifted.addEventListener('input', function(){
+      var n = parseFloat(fUplifted.value);
+      STATE.fuel.uplifted = isNaN(n) ? '' : (STATE.fuel.unit==='L' ? n/USG_TO_L : n);
+      saveState(); updateFuelSummaryOnly();
+    });
+    elCard.querySelectorAll('.fpAmt').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var key = inp.getAttribute('data-key');
+        var n = parseFloat(inp.value);
+        STATE.fuel[key] = isNaN(n) ? '' : (STATE.fuel.unit==='L' ? n/USG_TO_L : n);
+        saveState(); updateFuelSummaryOnly();
+      });
+    });
+    elCard.querySelectorAll('.fpMins').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var minsKey = inp.getAttribute('data-key');
+        var amtKey = minsKey.replace('Mins','');
+        STATE.fuel[minsKey] = inp.value;
+        var mins = parseFloat(inp.value);
+        var burn = parseFloat(STATE.fuel.burnRate);
+        if(!isNaN(mins) && !isNaN(burn) && burn > 0){
+          STATE.fuel[amtKey] = (mins/60) * burn;
+          var amtInp = elCard.querySelector('.fpAmt[data-key="'+amtKey+'"]');
+          if(amtInp) amtInp.value = fuelInputVal(STATE.fuel[amtKey]);
+        }
+        saveState(); updateFuelSummaryOnly();
+      });
+    });
+    var fContPct = elCard.querySelector('.fpContPct');
+    fContPct.addEventListener('input', function(){
+      STATE.fuel.contPct = fContPct.value;
+      saveState(); updateFuelSummaryOnly();
+    });
+    var fActualLanding = document.getElementById('fpActualLanding');
+    fActualLanding.addEventListener('input', function(){
+      var n = parseFloat(fActualLanding.value);
+      STATE.fuel.actualLanding = isNaN(n) ? '' : (STATE.fuel.unit==='L' ? n/USG_TO_L : n);
+      saveState(); updateFuelSummaryOnly();
+    });
+    var fOilLevel = document.getElementById('fpOilLevel');
+    if(fOilLevel) fOilLevel.addEventListener('input', function(){ STATE.fuel.oilLevel = fOilLevel.value; saveState(); });
+    var fOilAdded = document.getElementById('fpOilAdded');
+    if(fOilAdded) fOilAdded.addEventListener('input', function(){ STATE.fuel.oilAdded = fOilAdded.value; saveState(); });
+    function autoTickCard(){
+      if(STATE.checked[card.id] !== 'go'){ STATE.checked[card.id] = 'go'; saveState(); buildAnnunFor(curSection()); var st=sectionTotals(curSection()); elDoneCount.textContent = st.done; }
+    }
+    // Recompute just the derived numbers (Total FOB, Contingency amount,
+    // and every summary/expected-fuel block) without a full re-render, so
+    // typing in one field doesn't steal focus from itself.
+    function updateFuelSummaryOnly(){
+      var c = fuelCalc();
+      var tc = fuelTimesCalc(c);
+      var tf = document.getElementById('fpTotalFob'); if(tf) tf.textContent = fmtFuel(c.fob);
+      var co = elCard.querySelector('.fpContOut'); if(co) co.textContent = fmtFuel(c.cont);
+      var tbl = document.getElementById('fpTable'); if(tbl) tbl.innerHTML = fuelTableInnerHtml(c);
+      var sumVals = elCard.querySelectorAll('.fpSumVal');
+      var sumSubs = elCard.querySelectorAll('.fpSumSub');
+      if(sumVals[0]) sumVals[0].textContent = fmtFuel(c.total);
+      if(sumSubs[0]) sumSubs[0].textContent = c.enduranceReq===null?'\u2014':decToHM(c.enduranceReq)+' hrs';
+      if(sumVals[1]){
+        sumVals[1].textContent = fmtFuelSigned(c.surplus);
+        sumVals[1].className = 'fpSumVal' + (c.surplus===null?'':(c.surplus<0?' neg':' pos'));
+      }
+      if(sumSubs[1]) sumSubs[1].textContent = c.surplusEnd===null?'\u2014':(c.surplusEnd<0?'\u2212':'+')+decToHM(Math.abs(c.surplusEnd))+' hrs';
+      if(sumVals[2]) sumVals[2].textContent = c.endurance===null?'\u2014':decToHM(c.endurance)+' hrs';
+      var expLandEl = document.getElementById('fpExpLand');
+      if(expLandEl){ expLandEl.textContent = fmtFuel(c.expLanding); expLandEl.className = 'fpBlockVal ' + fuelLevelClass(c.expLanding, c.final_); }
+      var timeFuelEl = document.getElementById('fpTimeFuel');
+      if(timeFuelEl){ timeFuelEl.textContent = fmtFuel(tc.val); timeFuelEl.className = 'fpBlockVal ' + fuelLevelClass(tc.val, c.final_); }
+      var timeFuelNote = document.getElementById('fpTimeFuelNote');
+      if(timeFuelNote) timeFuelNote.textContent = tc.airHr===null ? 'Set Off Blocks/Take Off and Landing times to see this.' : 'Air '+decToHM(tc.airHr)+' ('+tc.airHr.toFixed(2)+' hrs) \u00d7 '+c.burn+' = '+tc.tripActual.toFixed(2)+' '+STATE.fuel.unit;
+      var actual = parseFloat(STATE.fuel.actualLanding);
+      var variance = (!isNaN(actual) && c.expLanding!==null) ? actual - c.expLanding : null;
+      var varEl = document.getElementById('fpVariance');
+      if(varEl){ varEl.textContent = fmtFuelSigned(variance); varEl.className = 'fpBlockVal small ' + (variance===null?'':(variance<0?'neg':'pos')); }
+      var varPctEl = document.getElementById('fpVariancePct');
+      if(varPctEl) varPctEl.textContent = (variance!==null && c.expLanding) ? '('+(variance<0?'-':'+')+(Math.abs(variance/c.expLanding*100)).toFixed(1)+'%)' : '';
+      renderResults(); renderCalculations();
+    }
+  } else if(card.type === 'apisettings'){
+    wireApiSettings();
+  }
+
+  if(card.type === 'keypad'){
+    var kpInput = document.getElementById('kpInput');
+    kpInput.addEventListener('input', function(){
+      var v = STATE.values[card.id] || {}; v.unit = v.unit || card.unit;
+      var n = parseFloat(kpInput.value);
+      v.valFt = isNaN(n) ? '' : (v.unit==='FL' ? n*100 : n);
+      STATE.values[card.id] = v; saveState();
+      var ftNow = v.valFt===''? null : parseFloat(v.valFt);
+      document.getElementById('kpVal').textContent = ftNow===null ? '—' : (card.unitToggle ? fmtVal(ftNow, v.unit) : (Math.round(ftNow)+' '+v.unit));
+      renderResults();
+    });
+    if(card.unitToggle){
+      elCard.querySelectorAll('.unitToggle button').forEach(function(b){
+        b.addEventListener('click', function(){
+          var v = STATE.values[card.id] || {}; v.unit = b.getAttribute('data-u');
+          STATE.values[card.id] = v; saveState(); renderCard(card);
+        });
+      });
+    }
+  } else if(card.type === 'text'){
+    document.getElementById('txtInput').addEventListener('input', function(e){
+      STATE.values[card.id] = e.target.value; saveState(); renderResults();
+    });
+  } else if(card.type === 'davis'){
+    document.getElementById('daInput').addEventListener('input', function(e){
+      var v = STATE.values[card.id] || {}; v.da = e.target.value; STATE.values[card.id]=v; saveState(); renderResults();
+    });
+    document.getElementById('visInput').addEventListener('input', function(e){
+      var v = STATE.values[card.id] || {}; v.vis = e.target.value; STATE.values[card.id]=v; saveState(); renderResults();
+    });
+  } else if(card.type === 'hobbstacho'){
+    document.getElementById('tachoInput').addEventListener('input', function(e){
+      var v = STATE.values[card.id] || {}; v.tacho = e.target.value; STATE.values[card.id]=v; saveState(); buildAnnunFor(curSection()); renderResults();
+    });
+    document.getElementById('hobbsInput').addEventListener('input', function(e){
+      var v = STATE.values[card.id] || {}; v.hobbs = e.target.value; STATE.values[card.id]=v; saveState(); buildAnnunFor(curSection()); renderResults();
+    });
+  } else if(card.type === 'timenow'){
+    document.getElementById('nowBtn').addEventListener('click', function(){
+      STATE.values[card.id] = nowUTCStr();
+      saveState();
+      renderCard(card); buildAnnunFor(curSection()); renderResults(); renderCalculations();
+      // advanceAfterAction (not nextCard) — it correctly falls through to
+      // section-complete for a single-card section instead of wrapping
+      // curCardIdx back onto the same card and looping forever.
+      setTimeout(advanceAfterAction, 500);
+    });
+  }
+}
+
+// v is always canonical feet here; converts + formats for display.
+// Strong visual cue when a card's content overflows and isn't fully
+// scrolled into view yet — checked after every render and on scroll.
+function updateScrollHint(){
+  var hint = document.getElementById('scrollHint');
+  if(!hint) return;
+  if(!elCard || elCard.style.display === 'none'){ hint.style.display = 'none'; return; }
+  var overflowing = elCard.scrollHeight > elCard.clientHeight + 4;
+  var atBottom = elCard.scrollTop + elCard.clientHeight >= elCard.scrollHeight - 4;
+  hint.style.display = (overflowing && !atBottom) ? 'block' : 'none';
+}
+elCard.addEventListener('scroll', updateScrollHint);
+window.addEventListener('resize', updateScrollHint);
+
+// Lets someone type "1030" and have it read as 10:30 without needing to
+// type the colon — strips anything non-digit, caps at 4 digits, and
+// inserts the colon automatically once there's enough to need one.
+function autoFormatTime(raw){
+  var digits = (raw||'').replace(/[^0-9]/g, '').slice(0,4);
+  if(digits.length <= 2) return digits;
+  return digits.slice(0,2)+':'+digits.slice(2);
+}
+// ============================================================
+// FUEL PLAN — brought over from FlightDeck: Taxi/Trip/Contingency/
+// Alternate/Final-Reserve/Extra (TTCAFE), each enterable directly or via
+// a duration in minutes at the set burn rate. Everything is stored
+// canonically in USG; STATE.fuel.unit only controls how it's displayed
+// and typed, same pattern as the FT/FL toggle elsewhere in this app.
+// ============================================================
+function fuelCalc(){
+  var f = STATE.fuel;
+  var burn = parseFloat(f.burnRate) || 0;
+  var initial = parseFloat(f.fob);
+  var uplifted = parseFloat(f.uplifted) || 0;
+  var fob = isNaN(initial) ? null : initial + uplifted;
+  var taxi = parseFloat(f.taxi) || 0;
+  var trip = parseFloat(f.trip) || 0;
+  var contPct = parseFloat(f.contPct); if(isNaN(contPct)) contPct = 5;
+  var cont = trip * contPct / 100;
+  var alt = parseFloat(f.alt) || 0;
+  var fin = parseFloat(f.final) || 0;
+  var extra = parseFloat(f.extra) || 0;
+  var total = taxi+trip+cont+alt+fin+extra;
+  var surplus = fob===null ? null : fob-total;
+  // Expected fuel on landing (planned) — taxi, trip and extra are actually
+  // burned in the course of the flight; contingency/alternate/final reserve
+  // are reserves you'd only dip into, so they're excluded here.
+  var expLanding = fob===null ? null : fob - taxi - trip - extra;
+  return {
+    burn:burn, fob:fob, taxi:taxi, trip:trip, cont:cont, contPct:contPct,
+    alt:alt, final_:fin, extra:extra, total:total,
+    surplus: surplus,
+    endurance: (fob===null||burn<=0) ? null : fob/burn,
+    enduranceReq: burn>0 ? total/burn : null,
+    surplusEnd: (surplus===null||burn<=0) ? null : surplus/burn,
+    expLanding: expLanding
+  };
+}
+// Expected fuel from actual flight times — reuses the real Takeoff/Landing
+// captures from the Off Blocks and Airborne pages (the same ones the
+// Calculations tab's Air Time card already reads), so this reflects the
+// flight as actually flown rather than the planned Trip figure.
+function fuelTimesCalc(c){
+  var takeoff = STATE.values['offblockspretakeoff.otpgrp.14'];
+  var landing = STATE.values['airborne.airbornegrp.0'];
+  var airHr = timeDiffCalc(takeoff, landing);
+  if(c.fob===null || airHr===null || c.burn<=0) return { val:null, airHr:airHr, tripActual:null };
+  var tripActual = airHr * c.burn;
+  return { val: c.fob - c.taxi - tripActual, airHr:airHr, tripActual:tripActual };
+}
+function fmtFuel(usg){
+  if(usg===null || usg===undefined || isNaN(usg)) return '\u2014';
+  var unit = STATE.fuel.unit;
+  var v = unit==='L' ? usg*USG_TO_L : usg;
+  return Math.round(v)+' '+unit;
+}
+// Underload's own KG_TO_LB formatter — the unit here is stored per-field
+// (in the value object itself), not a shared app-wide setting like fuel.
+function fmtWeight(kg, unit){
+  if(kg===null || kg===undefined || isNaN(kg)) return '\u2014';
+  var v = unit==='lb' ? kg*2.20462 : kg;
+  return Math.round(v)+' '+(unit||'kg').toUpperCase();
+}
+function fmtFuelSigned(usg){
+  if(usg===null || usg===undefined || isNaN(usg)) return '\u2014';
+  return (usg<0?'\u2212':'+')+fmtFuel(Math.abs(usg));
+}
+function fuelInputVal(usg){
+  if(usg===null || usg===undefined || usg==='' || isNaN(usg)) return '';
+  var v = parseFloat(usg);
+  return String(Math.round(STATE.fuel.unit==='L' ? v*USG_TO_L : v));
+}
+// Green once you're still above final reserve, amber if you've eaten into
+// it but are still positive, red if the plan runs the tanks dry.
+function fuelLevelClass(val, finalReserve){
+  if(val===null) return '';
+  if(val >= finalReserve) return 'pos';
+  if(val >= 0) return 'warn';
+  return 'neg';
+}
+function renderEnduranceBarHtml(){
+  var er = enduranceRemainingCalc();
+  return '<div class="enduranceBar">'+
+    '<div class="enduranceLbl">Endurance Remaining</div>'+
+    '<div class="enduranceVal" id="enduranceVal">'+(er.val===null ? '\u2014' : (er.val<0?'\u2212':'')+secsToHMS(Math.abs(er.val)*3600))+'</div>'+
+    '<div class="enduranceSub" id="enduranceSub">'+(er.val===null ? 'Set Take Off time and the Fuel Plan (burn rate + FOB) to see this.' : 'Elapsed <span id="enduranceElapsed">'+secsToHMS(er.elapsedSecs)+'</span> since Take Off \u00b7 Fuel remaining '+fmtFuel(er.fuelRemaining))+'</div>'+
+  '</div>';
+}
+// Compact, single-line Tank Log bar — lives in the persistent header, right
+// below the AIRBOURNE heading, so it's visible on Ground and Airborne alike
+// rather than buried inside one specific card. The tank you most recently
+// logged (i.e. the one time is actually counting against right now) shows
+// green; tapping L/R only "arms" a selection (amber) until Log confirms it.
+function renderTankHeaderBar(){
+  var el = document.getElementById('tankBarHeader');
+  if(!el) return;
+  if(curHeading !== 'Airbourne'){ el.style.display = 'none'; syncHeaderOffset(); return; }
+  el.style.display = 'flex';
+  var status = tankFuelStatus();
+  var sel = STATE.tankSelected;
+  var log = STATE.tankLog;
+  var activeTank = log.length ? log[log.length-1].tank : null;
+  var landing = STATE.values['airborne.airbornegrp.0'];
+  // Once landed, nothing is "live" any more — just show the final static
+  // total like the inactive tank. Otherwise the active tank's total is:
+  // (accumulated hours from every entry before the last one) + a
+  // second-by-second live count since the last entry's own timestamp,
+  // which is far more precise than round-tripping through HH:MM strings.
+  var liveSecsBase = 0, liveTicking = false;
+  if(activeTank && !landing && log.length){
+    var lastEntry = log[log.length-1];
+    var priorTotals = tankTimeSegments(log.slice(0,-1), lastEntry.time);
+    liveSecsBase = (priorTotals[activeTank]||0) * 3600;
+    liveTicking = !!lastEntry.ts;
+  }
+  function btnClass(t){
+    if(activeTank === t) return ' active';
+    if(sel === t) return ' sel';
+    return '';
+  }
+  function tankLine(t){
+    var s = status[t];
+    var noFuelData = status.fob===null || status.burn<=0;
+    var isLiveTank = liveTicking && activeTank === t;
+    var loggedHtml = isLiveTank
+      ? '<span id="tankLiveSecs" data-base="'+liveSecsBase+'" data-ts="'+log[log.length-1].ts+'">'+secsToHMS(liveSecsBase + (Date.now()-log[log.length-1].ts)/1000)+'</span>'
+      : secsToHMS(s.hrs*3600);
+    if(noFuelData){
+      return '<span class="tankStatLetter">'+t+'</span> logged '+loggedHtml+' <span class="tankStatDim">\u00b7 set Fuel Plan for qty/endurance</span>';
+    }
+    return '<span class="tankStatLetter">'+t+'</span> '+fmtFuel(s.qty)+' \u00b7 '+decToHM(s.end)+' left \u00b7 logged '+loggedHtml;
+  }
+  el.innerHTML =
+    (liveTicking ? '<div class="tankLiveTop">TANK '+activeTank+' &#9201; <span id="tankLiveSecsTop" data-base="'+liveSecsBase+'" data-ts="'+log[log.length-1].ts+'">'+secsToHMS(liveSecsBase + (Date.now()-log[log.length-1].ts)/1000)+'</span></div>' : '')+
+    '<div class="tankBarRow">'+
+      '<span class="tankBarLbl">&#9981;</span>'+
+      '<button type="button" class="tankBtn'+btnClass('L')+'" data-tank="L">L</button>'+
+      '<button type="button" class="tankBtn'+btnClass('R')+'" data-tank="R">R</button>'+
+      '<button type="button" class="tankLogBtn" id="tankLogBtnHeader">Log</button>'+
+      '<button type="button" class="tankUnitBtn" id="tankUnitBtn">'+STATE.fuel.unit+'</button>'+
+    '</div>'+
+    '<div class="tankStats">'+
+      '<div class="tankStatRow">'+tankLine('L')+'</div>'+
+      '<div class="tankStatRow">'+tankLine('R')+'</div>'+
+    '</div>';
+  el.querySelectorAll('.tankBtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      STATE.tankSelected = b.getAttribute('data-tank');
+      saveState();
+      renderTankHeaderBar();
+    });
+  });
+  var logBtn = document.getElementById('tankLogBtnHeader');
+  if(logBtn) logBtn.addEventListener('click', function(){
+    var t = nowUTCStrSecs();
+    STATE.tankLog.push({ tank: STATE.tankSelected, time: t, ts: Date.now() });
+    saveState();
+    renderTankHeaderBar();
+    renderCalculations();
+  });
+  // Toggles the SAME STATE.fuel.unit the Fuel Plan page uses (one shared
+  // setting, not a separate copy) — so switching it here also shows up
+  // there and in Post Flight, and vice versa.
+  var unitBtn = document.getElementById('tankUnitBtn');
+  if(unitBtn) unitBtn.addEventListener('click', function(){
+    STATE.fuel.unit = STATE.fuel.unit === 'USG' ? 'L' : 'USG';
+    saveState();
+    renderTankHeaderBar();
+    renderCalculations();
+  });
+  syncHeaderOffset();
+}
+// Fuel & endurance remaining at 30-minute marks from a full FOB — a static
+// planning reference (not tied to elapsed real time; that's what Endurance
+// Remaining on the Airborne page is for). Ported from FlightDeck's
+// fuelTable(fob, burn).
+function fuelTableRows(fob, burn){
+  var rows = [];
+  if(fob===null || isNaN(fob) || isNaN(burn) || burn<=0) return rows;
+  var hr = 0;
+  while(hr <= 20){
+    var fuelRem = fob - burn*hr;
+    if(fuelRem <= 0){
+      rows.push({ hr:hr, fuel:0, exhausted:true });
+      break;
+    }
+    rows.push({ hr:hr, fuel:fuelRem, exhausted:false });
+    hr += 0.5;
+  }
+  return rows;
+}
+function fuelTableInnerHtml(c){
+  var rows = fuelTableRows(c.fob, c.burn);
+  if(!rows.length) return '<div class="fpTableEmpty">Enter Burn Rate and Initial Fuel to see this.</div>';
+  var html = '';
+  rows.forEach(function(r){
+    html += '<div class="fpTableRow'+(r.exhausted?' out':'')+'">'+
+      '<span class="fpTT">T+'+decToHM(r.hr)+'</span>'+
+      '<span class="fpTF">'+(r.exhausted?'Dry':fmtFuel(r.fuel))+'</span>'+
+      '<span class="fpTE">'+(r.exhausted?'\u2014':decToHM(r.fuel/c.burn)+' left')+'</span>'+
+    '</div>';
+  });
+  return html;
+}
+function fuelTableHtml(c){
+  return '<div class="fpTableWrap"><div class="fpTableTitle">Fuel &amp; Time Remaining (every 30 min)</div><div class="fpTable" id="fpTable">'+fuelTableInnerHtml(c)+'</div></div>';
+}
+// Weather API Settings — the one place any API key/requirement for the
+// app lives, kept at the bottom of the Reference tab since it's
+// configuration rather than a checklist item.
+function renderApiSettingsHtml(){
+  var version = (document.getElementById('versionBadge')||{}).textContent || '';
+  var html = '<div class="fpBlock" style="border-color:var(--border);background:var(--card)"><div class="fpBlockTitle" style="color:var(--muted)">About</div>'+
+    '<div class="fpBlockVal small" style="color:var(--text)">CheckDeck '+version+'</div>'+
+  '</div>';
+  html += '<div class="fpBlock amber" style="margin-top:14px"><div class="fpBlockTitle">Live Updates</div>'+
+    '<button type="button" id="pauseLiveBtn" class="nowBtn" style="margin-top:6px;'+(liveUpdatesPaused?'background:var(--rose)':'')+'">'+(liveUpdatesPaused?'\u25B6 Resume':'\u23F8 Pause')+'</button>'+
+    '<div class="fpBlockNote">Freezes the countdown, Endurance Remaining, and tank stopwatch so they stop ticking — for example while showing the screen to someone else. Resets to running on reload.</div>'+
+  '</div>';
+  // Same Tank Log figures shown in Post Flight — reference copy here too,
+  // so it's checkable without switching all the way to Post Flight.
+  var ts = tankFuelStatus();
+  html += '<div class="fpBlock violet" style="margin-top:14px"><div class="fpBlockTitle">Fuel / Tank Log</div>';
+  if(!STATE.tankLog.length){
+    html += '<div class="fpBlockNote">No tank changes logged yet.</div></div>';
+  } else {
+    html += '<div class="legs"><span>Time on L <b>'+secsToHMS(ts.L.hrs*3600)+'</b></span><span>Time on R <b>'+secsToHMS(ts.R.hrs*3600)+'</b></span></div>';
+    if(ts.fob!==null && ts.burn>0){
+      html += '<div class="legs" style="margin-top:6px"><span>L remaining <b>'+fmtFuel(ts.L.qty)+'</b></span><span>R remaining <b>'+fmtFuel(ts.R.qty)+'</b></span></div>';
+    }
+    html += '<div class="resHead" style="margin:10px 0 4px"><h2 style="font-size:12px">Log Entries</h2></div>';
+    STATE.tankLog.forEach(function(entry){
+      html += '<div class="resRow"><span class="rt">Tank '+entry.tank+'</span><span class="rv go">'+entry.time+' UTC</span></div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+function wireApiSettings(){
+  var pauseBtn = document.getElementById('pauseLiveBtn');
+  if(pauseBtn) pauseBtn.addEventListener('click', function(){
+    liveUpdatesPaused = !liveUpdatesPaused;
+    pauseBtn.textContent = liveUpdatesPaused ? '\u25B6 Resume' : '\u23F8 Pause';
+    pauseBtn.style.background = liveUpdatesPaused ? 'var(--rose)' : '';
+  });
+}
+function renderFuelPlanHtml(cardId){
+  var f = STATE.fuel, u = f.unit, c = fuelCalc();
+  var tc = fuelTimesCalc(c);
+  function row(letter, label, key, minsKey){
+    return '<div class="fpRow">'+
+      '<div class="fpLetter">'+letter+'</div>'+
+      '<div class="fpName">'+label+'</div>'+
+      (minsKey ? '<input type="text" inputmode="numeric" class="fpMins" data-key="'+minsKey+'" placeholder="mins" value="'+(f[minsKey]||'')+'"/>' : '<span class="fpMinsGap"></span>')+
+      '<input type="text" inputmode="numeric" class="fpAmt" data-key="'+key+'" placeholder="0" value="'+fuelInputVal(f[key])+'"/>'+
+      '<span class="fpU">'+u+'</span>'+
+    '</div>';
+  }
+  var html = '';
+  html += '<div class="fuelUnitToggle"><button data-u="USG" class="'+(u==='USG'?'on':'')+'">USG</button><button data-u="L" class="'+(u==='L'?'on':'')+'">LITRES</button></div>';
+  html += '<div class="fpTotalFob"><div class="fpTotalFobLbl">Total Fuel on Board</div><div class="fpTotalFobVal" id="fpTotalFob">'+fmtFuel(c.fob)+'</div><div class="fpTotalFobSub">Initial Fuel + Fuel Uplifted</div></div>';
+  html += '<div class="fpFieldsRow">'+
+    '<div class="fpField"><label>Burn Rate / hr</label><input type="text" inputmode="numeric" id="fpBurnRate" value="'+fuelInputVal(f.burnRate)+'"/></div>'+
+    '<div class="fpField"><label>Initial Fuel</label><input type="text" inputmode="numeric" id="fpFob" value="'+fuelInputVal(f.fob)+'"/></div>'+
+    '<div class="fpField"><label>Uplifted</label><input type="text" inputmode="numeric" id="fpUplifted" value="'+fuelInputVal(f.uplifted)+'"/></div>'+
+  '</div>';
+  html += '<div class="fpTtcafe">';
+  html += row('T','Taxi','taxi','taxiMins');
+  html += row('T','Trip','trip','tripMins');
+  html += '<div class="fpRow">'+
+    '<div class="fpLetter">C</div><div class="fpName">Contingency</div>'+
+    '<input type="text" inputmode="numeric" class="fpContPct" placeholder="5" value="'+(f.contPct||'')+'"/><span class="fpU">%</span>'+
+    '<span class="fpContOut">'+fmtFuel(c.cont)+'</span>'+
+  '</div>';
+  html += row('A','Alternate','alt','altMins');
+  html += row('F','Final Reserve','final','finalMins');
+  html += row('E','Extra','extra','extraMins');
+  html += '</div>';
+  var surplusClass = c.surplus===null ? '' : (c.surplus < 0 ? 'neg' : 'pos');
+  html += '<div class="fpSummary">'+
+    '<div class="fpSumItem"><div class="fpSumLbl">Total Required</div><div class="fpSumVal">'+fmtFuel(c.total)+'</div><div class="fpSumSub">'+(c.enduranceReq===null?'\u2014':decToHM(c.enduranceReq)+' hrs')+'</div></div>'+
+    '<div class="fpSumItem"><div class="fpSumLbl">Surplus / Deficit</div><div class="fpSumVal '+surplusClass+'">'+fmtFuelSigned(c.surplus)+'</div><div class="fpSumSub">'+(c.surplusEnd===null?'\u2014':(c.surplusEnd<0?'\u2212':'+')+decToHM(Math.abs(c.surplusEnd))+' hrs')+'</div></div>'+
+    '<div class="fpSumItem"><div class="fpSumLbl">Endurance (Total FOB)</div><div class="fpSumVal">'+(c.endurance===null?'\u2014':decToHM(c.endurance)+' hrs')+'</div></div>'+
+  '</div>';
+  // Fuel & time remaining every 30 minutes, from full FOB — a compact,
+  // single-line-per-row reference table for the planning stage.
+  html += fuelTableHtml(c);
+  // Expected fuel on landing — planned (excludes reserves you'd only dip into)
+  html += '<div class="fpBlock amber"><div class="fpBlockTitle">Expected Fuel on Landing</div>'+
+    '<div class="fpBlockVal '+fuelLevelClass(c.expLanding, c.final_)+'" id="fpExpLand">'+fmtFuel(c.expLanding)+'</div>'+
+    '<div class="fpBlockNote">FOB &minus; Taxi &minus; Trip &minus; Extra. Excludes contingency, alternate and final reserve.</div>'+
+  '</div>';
+  // Expected fuel from actual flight times
+  html += '<div class="fpBlock amber"><div class="fpBlockTitle">Expected Fuel from Flight Times</div>'+
+    '<div class="fpBlockVal '+fuelLevelClass(tc.val, c.final_)+'" id="fpTimeFuel">'+fmtFuel(tc.val)+'</div>'+
+    '<div class="fpBlockNote" id="fpTimeFuelNote">'+(tc.airHr===null ? 'Set Off Blocks/Take Off and Landing times to see this.' : 'Air '+decToHM(tc.airHr)+' ('+tc.airHr.toFixed(2)+' hrs) \u00d7 '+c.burn+' = '+tc.tripActual.toFixed(2)+' '+u)+'</div>'+
+  '</div>';
+  // Actual fuel on landing + variance
+  var actual = parseFloat(f.actualLanding);
+  var variance = (!isNaN(actual) && c.expLanding!==null) ? actual - c.expLanding : null;
+  var variancePct = (variance!==null && c.expLanding) ? (Math.abs(variance/c.expLanding*100)).toFixed(1) : null;
+  html += '<div class="fpBlock violet"><div class="fpBlockTitle">Actual Fuel on Landing</div>'+
+    '<input type="text" inputmode="numeric" id="fpActualLanding" placeholder="value" value="'+fuelInputVal(f.actualLanding)+'" style="margin:6px 0 8px"/>'+
+    '<div class="fpVarianceRow"><span class="fpBlockNote" style="margin:0">Variance vs Expected:</span> <span class="fpBlockVal small '+(variance===null?'':(variance<0?'neg':'pos'))+'" id="fpVariance">'+(variance===null?'\u2014':fmtFuelSigned(variance))+'</span>'+
+    (variancePct!==null ? ' <span class="fpBlockNote" style="margin:0" id="fpVariancePct">('+(variance<0?'-':'+')+variancePct+'%)</span>' : '<span id="fpVariancePct"></span>')+
+    '</div>'+
+  '</div>';
+  html += '<div class="fpFieldsRow" style="margin-top:14px">'+
+    '<div class="fpField"><label>Oil Level (qts)</label><input type="text" inputmode="decimal" step="0.1" id="fpOilLevel" value="'+(f.oilLevel||'')+'"/></div>'+
+    '<div class="fpField"><label>Oil Added (qts)</label><input type="text" inputmode="decimal" step="0.1" id="fpOilAdded" value="'+(f.oilAdded||'')+'"/></div>'+
+  '</div>';
+  html += '<label class="fdCheckRow" id="fpCompleteRow" style="margin-top:16px;width:100%"><input type="checkbox" id="fpCompleteBox"'+(STATE.checked[cardId]==='go'?' checked':'')+'/> <span>Fuel Plan Complete</span></label>';
+  return html;
+}
+function fmtVal(vFt, unit){
+  if(unit==='FL') return 'FL'+('00'+Math.round(vFt/100)).slice(-3);
+  return Math.round(vFt)+' '+unit;
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+function renderSwitchBank(card){
+  if(card.type === 'hobbstacho' || card.type === 'timenow'){
+    elSwitchBank.innerHTML =
+      '<button class="rocker go" id="btnGo"><span class="ic">&#10003;</span><span class="lb">SAVE &amp; NEXT</span></button>'+
+      '<button class="rocker skip" id="btnSkip"><span class="ic">&#8677;</span><span class="lb">SKIP</span></button>';
+    document.getElementById('btnGo').addEventListener('click', function(){ mark('go'); });
+  } else if(card.type === 'grouplist'){
+    elSwitchBank.innerHTML =
+      '<button class="rocker go" id="btnAllGo"><span class="ic">&#10003;</span><span class="lb">ALL DONE</span></button>'+
+      '<button class="rocker na" id="btnAllNa"><span class="ic">&#8709;</span><span class="lb">ALL N/A</span></button>'+
+      '<button class="rocker skip" id="btnSkip"><span class="ic">&#8677;</span><span class="lb">SKIP</span></button>';
+    document.getElementById('btnAllGo').addEventListener('click', function(){ markAllGroup(card,'go'); });
+    document.getElementById('btnAllNa').addEventListener('click', function(){ markAllGroup(card,'na'); });
+  } else {
+    elSwitchBank.innerHTML =
+      '<button class="rocker go" id="btnGo"><span class="ic">&#10003;</span><span class="lb">DONE</span></button>'+
+      '<button class="rocker na" id="btnNa"><span class="ic">&#8709;</span><span class="lb">N / A</span></button>'+
+      '<button class="rocker skip" id="btnSkip"><span class="ic">&#8677;</span><span class="lb">SKIP</span></button>';
+    document.getElementById('btnGo').addEventListener('click', function(){ mark('go'); });
+    document.getElementById('btnNa').addEventListener('click', function(){ mark('na'); });
+  }
+  document.getElementById('btnSkip').addEventListener('click', skipCard);
+}
+
+// Bulk-mark every line in a group list card at once (still per-line
+// resolvable individually beforehand — this is just a fast path when
+// everything genuinely is done, or genuinely doesn't apply).
+function markAllGroup(card, m){
+  // Only fill in items that aren't already decided — a bulk "ALL DONE"
+  // shouldn't silently overwrite something already marked N/A (and vice
+  // versa for "ALL N/A"); those decisions stand until changed by hand.
+  card.children.forEach(function(_, i){
+    var key = card.id+'.'+i;
+    if(!STATE.checked[key]) STATE.checked[key] = m;
+  });
+  saveState();
+  renderCard(card);
+  buildAnnunFor(curSection());
+  var st = sectionTotals(curSection());
+  elDoneCount.textContent = st.done;
+  renderResults(); renderCalculations();
+  setTimeout(function(){ advanceAfterAction(); }, 260);
+}
+
+/* ============================================================
+   NAVIGATION LOGIC
+   ============================================================ */
+function mark(m){
+  var card = curCard();
+  STATE.checked[card.id] = m;
+  saveState();
+  elCard.classList.remove('flash-go','flash-na');
+  void elCard.offsetWidth;
+  elCard.classList.add(m==='go' ? 'flash-go' : 'flash-na');
+  buildAnnunFor(curSection());
+  var st = sectionTotals(curSection());
+  elDoneCount.textContent = st.done;
+  setTimeout(function(){
+    advanceAfterAction();
+  }, 220);
+}
+
+// Skip always moves to the literal next card in the section, regardless of
+// anyone's resolution state — deliberately NOT the "jump to next unresolved"
+// logic mark()/markAllGroup() use. That smart-jump is only safe after an
+// action that actually resolves something; Skip resolves nothing, so if it
+// used the same logic it could bounce forever between several un-filled
+// cards (e.g. two blank text-entry cards repeatedly pointing at each other)
+// without ever reaching the end of the section.
+function skipCard(){
+  var sec = curSection();
+  if(curCardIdx < sec.cards.length - 1){
+    curCardIdx++;
+    render();
+  } else {
+    showingSectDone = true;
+    render();
+  }
+}
+
+function advanceAfterAction(){
+  var sec = curSection();
+  // Jump to the next unresolved card in this section — but only among the
+  // OTHER cards, never wrapping back to the one we're currently on. With a
+  // section as small as 2 cards, including self in the search could find
+  // "itself" as still-unresolved and never actually advance (infinite loop
+  // on Skip in particular, since Skip doesn't change resolution status).
+  for(var i=1;i<sec.cards.length;i++){
+    var cand = (curCardIdx+i) % sec.cards.length;
+    if(!cardResolved(sec.cards[cand])){ curCardIdx = cand; render(); return; }
+  }
+  // every other card is resolved — nothing left to jump to
+  showingSectDone = true;
+  render();
+}
+
+function nextCard(){
+  showingSectDone = false; showingPhaseDone = false;
+  var sec = curSection();
+  curCardIdx = (curCardIdx+1) % sec.cards.length;
+  render();
+}
+function prevCard(){
+  showingSectDone = false; showingPhaseDone = false;
+  var sec = curSection();
+  curCardIdx = (curCardIdx-1+sec.cards.length) % sec.cards.length;
+  render();
+}
+
+document.getElementById('navPrev').addEventListener('click', prevCard);
+document.getElementById('navNext').addEventListener('click', nextCard);
+
+document.getElementById('sectContinue').addEventListener('click', function(){
+  showingSectDone = false;
+  var sections = curSections();
+  if(curSectionIdx < sections.length-1){
+    curSectionIdx++; curCardIdx = 0; render();
+  } else {
+    showingPhaseDone = true; render();
+  }
+});
+document.getElementById('sectReview').addEventListener('click', function(){
+  showingSectDone = false; curCardIdx = 0; render();
+});
+document.getElementById('phaseGoResults').addEventListener('click', function(){
+  setMode('results');
+});
+document.getElementById('phaseReview').addEventListener('click', function(){
+  showingPhaseDone = false; curSectionIdx = 0; curCardIdx = 0; render();
+});
+// Reset All — clears every entered flight value (ticks, values, ETOB/CTOT,
+// custom TEM items, Fuel Plan, Tank Log) so the app is ready for a new
+// flight. Deliberately keeps app-level preferences intact: Hide Completed
+// and the user's added transponder codes aren't "entered values" for a
+// specific flight, they're settings that should carry over.
+// Scales the visible tab's content down to fit one printed page, since
+// there's no CSS-only way to guarantee that for content whose length
+// varies with how much has been entered. Measures the actual rendered
+// height, shrinks proportionally if it's over a page's worth, and
+// restores normal size again once the print dialog has been dismissed.
+function printOnePage(){
+  var wrap = document.querySelector('#calcMode.on .resWrap, #resultsMode.on .resWrap') ||
+             document.querySelector((document.getElementById('calcMode').classList.contains('on') ? '#calcMode' : '#resultsMode') + ' .resWrap');
+  if(wrap){
+    wrap.style.transform = 'none'; wrap.style.width = '';
+    var contentHeight = wrap.scrollHeight;
+    var pageHeightPx = 1000; // ~one A4/Letter page of content at typical print scale
+    var scale = contentHeight > pageHeightPx ? pageHeightPx/contentHeight : 1;
+    wrap.style.transformOrigin = 'top left';
+    wrap.style.transform = 'scale('+scale+')';
+    wrap.style.width = (100/scale)+'%';
+  }
+  setTimeout(function(){
+    window.print();
+    setTimeout(function(){ if(wrap){ wrap.style.transform=''; wrap.style.width=''; } }, 700);
+  }, 60);
+}
+function resetAllData(){
+  STATE.checked = {};
+  STATE.values = {};
+  STATE.global = { etob:'', ctot:'', transponderCode:'' };
+  STATE.customItems = {};
+  STATE.fuel = { unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
+  STATE.tankLog = [];
+  STATE.tankSelected = 'L';
+  STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' };
+  saveState();
+  // Stay on whatever view the person is already looking at (they pressed
+  // this from Post Flight) rather than jumping them elsewhere — just
+  // reflect the now-cleared data everywhere it's shown.
+  showingSectDone = false; showingPhaseDone = false;
+  renderHeadingRow(); renderPhaseRow();
+  render();
+  renderResults(); renderCalculations();
+  updateCountdown();
+}
+// Generic in-app confirm — shows the modal, resolves the given callback
+// only if the person taps the destructive action button.
+function showConfirm(msg, okLabel, onConfirm){
+  var modal = document.getElementById('confirmModal');
+  document.getElementById('confirmMsg').textContent = msg;
+  var okBtn = document.getElementById('confirmOkBtn');
+  okBtn.textContent = okLabel;
+  modal.style.display = 'flex';
+  function cleanup(){
+    modal.style.display = 'none';
+    okBtn.removeEventListener('click', onOk);
+    cancelBtn.removeEventListener('click', onCancel);
+  }
+  function onOk(){ cleanup(); onConfirm(); }
+  function onCancel(){ cleanup(); }
+  var cancelBtn = document.getElementById('confirmCancelBtn');
+  okBtn.addEventListener('click', onOk);
+  cancelBtn.addEventListener('click', onCancel);
+}
+document.getElementById('resetAllBtn').addEventListener('click', function(){
+  showConfirm('Reset all entered values for this flight? This cannot be undone.', 'Reset All', resetAllData);
+});
+// Plain-text summary for Share/Email — same figures the Calculations tab
+// shows. Kept to plain text (no HTML) since mail clients and the Web
+// Share API both vary in how much markup they honour.
+function buildFlightSummary(){
+  var lines = ['CheckDeck — Flight Summary', ''];
+  var fd = STATE.flightDetails;
+  if(fd.date || fd.registration || fd.student || fd.departure || fd.destination){
+    if(fd.date) lines.push('Date: '+fd.date);
+    if(fd.slotFrom || fd.slotTo) lines.push('Slot: '+(fd.slotFrom||'--')+' \u2013 '+(fd.slotTo||'--')+' UTC');
+    if(fd.registration) lines.push('Registration: '+fd.registration);
+    if(fd.student) lines.push('Student: '+fd.student);
+    if(fd.departure || fd.destination) lines.push('Route: '+(fd.departure||'--')+' \u2192 '+(fd.destination||'--'));
+    if(fd.landAway) lines.push('Land Away: '+fd.landAway);
+    if(fd.defects) lines.push('Defects: '+fd.defects);
+    if(fd.notes) lines.push('Notes: '+fd.notes);
+    lines.push('');
+  }
+  var chocksOff = STATE.values['offblockspretakeoff.otpgrp.0'];
+  var takeoff = STATE.values['offblockspretakeoff.otpgrp.14'];
+  var landing = STATE.values['airborne.airbornegrp.0'];
+  var chocksOn = STATE.values['airborne.airbornegrp.1'];
+  var tachoStartV = STATE.values['start.startgrp.1'] || {};
+  var tachoEndV = STATE.values['airborne.airbornegrp.4'] || {};
+  lines.push('Block Time: Chocks Off '+(chocksOff||'--')+' / Chocks On '+(chocksOn||'--'));
+  lines.push('Air Time: Takeoff '+(takeoff||'--')+' / Landing '+(landing||'--'));
+  lines.push('Tacho: Start '+(tachoStartV.tacho||'--')+' / End '+(tachoEndV.tacho||'--'));
+  lines.push('Hobbs: Start '+(tachoStartV.hobbs||'--')+' / End '+(tachoEndV.hobbs||'--'));
+  lines.push('');
+  var fc = fuelCalc();
+  if(fc.fob !== null || fc.total > 0){
+    lines.push('Fuel Plan: Total FOB '+fmtFuel(fc.fob)+' / Required '+fmtFuel(fc.total)+' / '+(fc.surplus===null?'--':fmtFuelSigned(fc.surplus))+' surplus-deficit');
+  }
+  if(STATE.tankLog.length){
+    var ts = tankFuelStatus();
+    lines.push('Tank Log: Time on L '+secsToHMS(ts.L.hrs*3600)+' / Time on R '+secsToHMS(ts.R.hrs*3600));
+  }
+  return lines.join('\n');
+}
+document.getElementById('shareCalcBtn').addEventListener('click', function(){
+  var text = buildFlightSummary();
+  if(navigator.share){
+    navigator.share({ title:'CheckDeck Flight Summary', text:text }).catch(function(){});
+  } else {
+    window.location.href = 'mailto:?subject='+encodeURIComponent('CheckDeck Flight Summary')+'&body='+encodeURIComponent(text);
+  }
+});
+// Same idea, but for adding a transponder code — takes both a code and a
+// name in one go rather than chaining two separate prompts.
+// Generic single-field prompt — used for manually editing a captured time.
+function showPrompt(msg, currentVal, onSubmit){
+  var modal = document.getElementById('promptModal');
+  document.getElementById('promptMsg').textContent = msg;
+  var input = document.getElementById('promptInput');
+  input.value = currentVal || '';
+  modal.style.display = 'flex';
+  setTimeout(function(){ input.focus(); input.select(); }, 50);
+  var okBtn = document.getElementById('promptOkBtn');
+  var cancelBtn = document.getElementById('promptCancelBtn');
+  function cleanup(){
+    modal.style.display = 'none';
+    okBtn.removeEventListener('click', onOk);
+    cancelBtn.removeEventListener('click', onCancel);
+    input.removeEventListener('keydown', onKeydown);
+  }
+  function onOk(){ var v = input.value; cleanup(); onSubmit(v); }
+  function onCancel(){ cleanup(); }
+  function onKeydown(e){ if(e.key === 'Enter'){ e.preventDefault(); onOk(); } }
+  okBtn.addEventListener('click', onOk);
+  cancelBtn.addEventListener('click', onCancel);
+  input.addEventListener('keydown', onKeydown);
+}
+function showCodePrompt(onSubmit){
+  var modal = document.getElementById('codePromptModal');
+  var codeInput = document.getElementById('codePromptCode');
+  var nameInput = document.getElementById('codePromptName');
+  codeInput.value = ''; nameInput.value = '';
+  modal.style.display = 'flex';
+  setTimeout(function(){ codeInput.focus(); }, 50);
+  var okBtn = document.getElementById('codePromptOkBtn');
+  var cancelBtn = document.getElementById('codePromptCancelBtn');
+  function cleanup(){
+    modal.style.display = 'none';
+    okBtn.removeEventListener('click', onOk);
+    cancelBtn.removeEventListener('click', onCancel);
+    codeInput.removeEventListener('keydown', onKeydown);
+    nameInput.removeEventListener('keydown', onKeydown);
+  }
+  function onOk(){ var c = codeInput.value, n = nameInput.value; cleanup(); onSubmit(c, n); }
+  function onCancel(){ cleanup(); }
+  function onKeydown(e){ if(e.key === 'Enter'){ e.preventDefault(); onOk(); } }
+  okBtn.addEventListener('click', onOk);
+  cancelBtn.addEventListener('click', onCancel);
+  codeInput.addEventListener('keydown', onKeydown);
+  nameInput.addEventListener('keydown', onKeydown);
+}
+// Lists every saved transponder code with a delete button — tapping one
+// removes it immediately (no extra confirm step; codes are trivial to
+// re-add, unlike Reset All's flight data). onClosed runs when the modal is
+// dismissed, so the caller can refresh its own dropdown to match.
+function showManageCodesModal(onClosed){
+  var modal = document.getElementById('manageCodesModal');
+  function renderList(){
+    var listEl = document.getElementById('manageCodesList');
+    if(!STATE.codes.length){
+      listEl.innerHTML = '<div class="manageCodesEmpty">No codes saved yet.</div>';
+      return;
+    }
+    listEl.innerHTML = STATE.codes.map(function(c, idx){
+      return '<div class="manageCodeItem">'+
+        '<span class="manageCodeText">'+escapeHtml(c.code)+(c.name?'<small>'+escapeHtml(c.name)+'</small>':'')+'</span>'+
+        '<button type="button" class="manageCodeDelBtn" data-idx="'+idx+'">Delete</button>'+
+      '</div>';
+    }).join('');
+    listEl.querySelectorAll('.manageCodeDelBtn').forEach(function(b){
+      b.addEventListener('click', function(){
+        STATE.codes.splice(parseInt(b.getAttribute('data-idx'),10), 1);
+        saveState();
+        renderList();
+      });
+    });
+  }
+  renderList();
+  modal.style.display = 'flex';
+  var closeBtn = document.getElementById('manageCodesCloseBtn');
+  function onClose(){
+    modal.style.display = 'none';
+    closeBtn.removeEventListener('click', onClose);
+    if(onClosed) onClosed();
+  }
+  closeBtn.addEventListener('click', onClose);
+}
+
+document.addEventListener('keydown', function(e){
+  if(showingSectDone || showingPhaseDone) return;
+  var tag = document.activeElement.tagName;
+  if(tag === 'INPUT') return;
+  if(e.key === 'ArrowRight') { e.preventDefault(); mark('go'); }
+  if(e.key === 'ArrowLeft') { e.preventDefault(); mark('na'); }
+  if(e.key === ' ' || e.key === 'Enter') { e.preventDefault(); skipCard(); }
+  if(e.key === 'j') nextCard();
+  if(e.key === 'k') prevCard();
+});
+
+// Swipe pages through the deck only — never marks anything. Requires a
+// clearly horizontal, deliberate gesture: previously this only checked
+// horizontal distance, so scrolling through a long card (very common now
+// that most pages are one big list) could accidentally register as a
+// swipe if the scroll wasn't perfectly vertical. Now it also checks that
+// the gesture is mostly horizontal, and needs a bigger, more deliberate
+// distance before it counts.
+var touchX = null, touchY = null;
+elStage.addEventListener('touchstart', function(e){
+  touchX = e.touches[0].clientX;
+  touchY = e.touches[0].clientY;
+});
+elStage.addEventListener('touchend', function(e){
+  if(touchX === null) return;
+  var dx = e.changedTouches[0].clientX - touchX;
+  var dy = e.changedTouches[0].clientY - touchY;
+  var horizontal = Math.abs(dx) > Math.abs(dy) * 1.8;
+  if(horizontal && Math.abs(dx) > 80){
+    if(dx > 0) prevCard(); else nextCard();
+  }
+  touchX = null; touchY = null;
+});
+
+/* ============================================================
+   RESULTS / PRINT
+   ============================================================ */
+var elResSummary = document.getElementById('resSummary');
+var elResBody = document.getElementById('resBody');
+function valueLabel(card){
+  var v = STATE.values[card.id];
+  if(card.type === 'keypad'){
+    if(!v || v.valFt === undefined || v.valFt === '') return null;
+    return fmtVal(parseFloat(v.valFt), v.unit || card.unit);
+  }
+  if(card.type === 'text'){ return v || null; }
+  if(card.type === 'davis'){ if(!v) return null; var parts=[]; if(v.da) parts.push('DA '+v.da+'ft'); if(v.vis) parts.push('Vis '+v.vis+'m'); return parts.length?parts.join(', '):null; }
+  if(card.type === 'hobbstacho'){ if(!v) return null; var parts2=[]; if(v.tacho) parts2.push('Tacho '+v.tacho); if(v.hobbs) parts2.push('Hobbs '+v.hobbs); return parts2.length?parts2.join(', '):null; }
+  if(card.type === 'timenow'){ return v ? v+' UTC' : null; }
+  return null;
+}
+// Shared by the Calculations tab (whole app) and section-complete screens
+// (one section) — every genuinely entered value, in one flat list.
+function collectDataEntries(cards, seenGlobal){
+  var entries = [];
+  // ETOB/CTOT and the transponder code are shared fields that legitimately
+  // appear as children on more than one page — only list each once even
+  // when a caller walks several cards/sections in one pass. Callers that
+  // want dedup to persist across several calls (e.g. one call per phase)
+  // can pass in their own shared tracker; otherwise each call gets its own.
+  seenGlobal = seenGlobal || {};
+  cards.forEach(function(c){
+    if(c.type !== 'grouplist') return;
+    c.children.forEach(function(child, i){
+      var key = c.id+'.'+i;
+      var vObj = STATE.values[key];
+      if(child.davis){
+        if(!vObj) return;
+        var parts=[]; if(vObj.da) parts.push('DA '+vObj.da+'ft'); if(vObj.vis) parts.push('Vis '+vObj.vis+'m');
+        if(parts.length) entries.push({label:child.text, value:parts.join(', ')});
+      } else if(child.hobbstacho){
+        if(!vObj) return;
+        var parts2=[]; if(vObj.tacho) parts2.push('Tacho '+vObj.tacho); if(vObj.hobbs) parts2.push('Hobbs '+vObj.hobbs);
+        if(parts2.length) entries.push({label:child.text, value:parts2.join(', ')});
+      } else if(child.timenow){
+        if(vObj) entries.push({label:child.text, value:vObj+' UTC'});
+      } else if(child.etobctot){
+        if((STATE.global.etob || STATE.global.ctot) && !seenGlobal.etobctot){
+          seenGlobal.etobctot = true;
+          var p=[]; if(STATE.global.etob) p.push('ETOB '+STATE.global.etob+' UTC'); if(STATE.global.ctot) p.push('CTOT '+STATE.global.ctot+' UTC');
+          entries.push({label:child.text, value:p.join(', ')});
+        }
+      } else if(child.keypad && child.unitToggle){
+        if(vObj && vObj.valFt !== undefined && vObj.valFt !== ''){
+          entries.push({label:child.text, value:fmtVal(parseFloat(vObj.valFt), vObj.unit||child.unit)});
+        }
+      } else if(child.fuelQty){
+        if(vObj && vObj.valUSG !== undefined && vObj.valUSG !== ''){
+          entries.push({label:child.text, value:fmtFuel(vObj.valUSG)});
+        }
+      } else if(child.weightToggle){
+        if(vObj && vObj.valKG !== undefined && vObj.valKG !== ''){
+          entries.push({label:child.text, value:fmtWeight(vObj.valKG, vObj.unit)});
+        }
+      } else if(child.codeEntry){
+        if(STATE.global.transponderCode && !seenGlobal.transponderCode){
+          seenGlobal.transponderCode = true;
+          var codeMatch = STATE.codes.filter(function(c){ return c.code === STATE.global.transponderCode; })[0];
+          entries.push({label:child.text, value:STATE.global.transponderCode+(codeMatch&&codeMatch.name?' ('+codeMatch.name+')':'')});
+        }
+      } else if(vObj && vObj.val){
+        entries.push({label:child.text, value:vObj.val+(child.keypad?(' '+(child.unit||'')):'')});
+      }
+    });
+  });
+  return entries;
+}
+function dataEntriesHtml(entries){
+  if(!entries.length) return '';
+  return entries.map(function(e){
+    return '<div class="resRow"><span class="rt">'+escapeHtml(e.label)+'</span><span class="rv go">'+escapeHtml(e.value)+'</span></div>';
+  }).join('');
+}
+function renderResults(){
+  var totalAll=0, doneAll=0, naAll=0, valuesAll=0;
+  var html = '';
+  PHASES.forEach(function(phase){
+    var pt = phaseTotals(phase);
+    totalAll += pt.total; doneAll += pt.done;
+    html += '<div class="resPhase">'+phase+' &middot; '+pt.done+' / '+pt.total+'</div>';
+    SECTIONS[phase].forEach(function(sec){
+      html += '<div class="resSect">'+escapeHtml(sec.title)+'</div>';
+      sec.cards.forEach(function(c){
+        if(c.type === 'grouplist'){
+          html += '<div class="resRow" style="font-weight:800;background:#f8fafc"><span class="rt">'+escapeHtml(c.text)+'</span><span class="rv">'+groupChildDone(c)+' / '+groupTotalCount(c)+'</span></div>';
+          c.children.forEach(function(child, i){
+            var s = STATE.checked[c.id+'.'+i];
+            if(s==='na') naAll++;
+            var vObj = STATE.values[c.id+'.'+i] || {};
+            var kv, stateLabel, cls;
+            if(child.davis){
+              var parts=[]; if(vObj.da) parts.push('DA '+vObj.da+'ft'); if(vObj.vis) parts.push('Vis '+vObj.vis+'m');
+              kv = parts.length ? parts.join(', ') : null;
+              if(kv) valuesAll++;
+              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : (kv ? kv : '&mdash;');
+              cls = s==='go' ? 'go' : s==='na' ? 'na' : 'pending';
+            } else if(child.hobbstacho){
+              var parts2=[]; if(vObj.tacho) parts2.push('Tacho '+vObj.tacho); if(vObj.hobbs) parts2.push('Hobbs '+vObj.hobbs);
+              kv = parts2.length ? parts2.join(', ') : null;
+              if(kv) valuesAll++;
+              stateLabel = kv ? kv : '&mdash;';
+              cls = groupChildResolved(c, i) ? 'go' : 'pending';
+            } else if(child.timenow){
+              kv = STATE.values[c.id+'.'+i];
+              if(kv) valuesAll++;
+              stateLabel = kv ? kv+' UTC' : '&mdash;';
+              cls = kv ? 'go' : 'pending';
+            } else if(child.keypad && child.unitToggle){
+              kv = (vObj.valFt !== undefined && vObj.valFt !== '') ? fmtVal(parseFloat(vObj.valFt), vObj.unit||child.unit) : null;
+              if(kv) valuesAll++;
+              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : (kv ? kv : '&mdash;');
+              cls = s==='go' ? 'go' : s==='na' ? 'na' : 'pending';
+            } else if(child.fuelQty){
+              kv = (vObj.valUSG !== undefined && vObj.valUSG !== '') ? fmtFuel(vObj.valUSG) : null;
+              if(kv) valuesAll++;
+              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : (kv ? kv : '&mdash;');
+              cls = s==='go' ? 'go' : s==='na' ? 'na' : 'pending';
+            } else if(child.weightToggle){
+              kv = (vObj.valKG !== undefined && vObj.valKG !== '') ? fmtWeight(vObj.valKG, vObj.unit) : null;
+              if(kv) valuesAll++;
+              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : (kv ? kv : '&mdash;');
+              cls = s==='go' ? 'go' : s==='na' ? 'na' : 'pending';
+            } else if(child.codeEntry){
+              kv = STATE.global.transponderCode || null;
+              if(kv) valuesAll++;
+              var codeMatchR = kv ? STATE.codes.filter(function(c){ return c.code === kv; })[0] : null;
+              var kvDisplay2 = kv ? (kv+(codeMatchR&&codeMatchR.name?' ('+codeMatchR.name+')':'')) : null;
+              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : (kvDisplay2 ? kvDisplay2 : '&mdash;');
+              cls = s==='go' ? 'go' : s==='na' ? 'na' : 'pending';
+            } else {
+              kv = vObj.val;
+              if(kv) valuesAll++;
+              var kvDisplay = kv ? (kv+(child.keypad?(' '+(child.unit||'')):'')) : null;
+              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : (kvDisplay ? kvDisplay : '&mdash;');
+              cls = s==='go' ? 'go' : s==='na' ? 'na' : 'pending';
+            }
+            html += '<div class="resRow" style="padding-left:20px"><span class="rt">'+escapeHtml(child.text)+'</span><span class="rv '+cls+'">'+stateLabel+'</span></div>';
+          });
+          return;
+        }
+        var s = STATE.checked[c.id];
+        var vLabel = valueLabel(c);
+        if(s==='na') naAll++;
+        if(vLabel) valuesAll++;
+        var stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : (vLabel ? vLabel : '&mdash;');
+        var cls = s==='go' ? 'go' : s==='na' ? 'na' : 'pending';
+        html += '<div class="resRow"><span class="rt">'+escapeHtml(c.text)+(vLabel && s ? ' <b>('+escapeHtml(vLabel)+')</b>' : '')+'</span><span class="rv '+cls+'">'+stateLabel+'</span></div>';
+      });
+    });
+  });
+  elResSummary.innerHTML =
+    '<div class="sumCard"><div class="k">Total Items</div><div class="v">'+totalAll+'</div></div>'+
+    '<div class="sumCard"><div class="k">Done</div><div class="v" style="color:#047857">'+doneAll+'</div></div>'+
+    '<div class="sumCard"><div class="k">N/A</div><div class="v" style="color:#b45309">'+naAll+'</div></div>'+
+    '<div class="sumCard"><div class="k">Values Entered</div><div class="v">'+valuesAll+'</div></div>';
+  elResBody.innerHTML = html;
+}
+
+/* ============================================================
+   CALCULATIONS — Block/Air/Tacho/Hobbs time, derived from the
+   timeNow captures and the two Tacho/Hobbs readings.
+   ============================================================ */
+function parseHM(s){
+  if(!s) return null;
+  var p = s.split(':');
+  var h = parseInt(p[0],10), m = parseInt(p[1],10);
+  var sec = p.length>2 ? parseInt(p[2],10) : 0;
+  if(isNaN(sec)) sec = 0;
+  if(isNaN(h)||isNaN(m)) return null;
+  return h + m/60 + sec/3600;
+}
+function timeDiffCalc(s,e){
+  var sh=parseHM(s), eh=parseHM(e);
+  if(sh===null||eh===null) return null;
+  var d = eh-sh;
+  if(d<0) d+=24; // crossed midnight
+  return Math.round(d*10)/10;
+}
+// Fuel tank log — given a chronological list of {tank:'L'|'R', time:'HH:MM'}
+// switch events plus an end-of-window time (landing time if set, else "now"
+// for a live in-progress estimate), returns hours spent on each tank. Each
+// entry's duration runs from its own timestamp to the next entry's
+// timestamp (or to endTimeStr for the last one). Ported from FlightDeck.
+function tankTimeSegments(log, endTimeStr){
+  var totals = { L:0, R:0 };
+  if(!log || !log.length) return totals;
+  var sorted = log.slice().sort(function(a,b){
+    var pa=parseHM(a.time), pb=parseHM(b.time);
+    if(pa===null) return 1; if(pb===null) return -1;
+    return pa-pb;
+  });
+  for(var i=0;i<sorted.length;i++){
+    var startH = parseHM(sorted[i].time);
+    var endStr = (i+1<sorted.length) ? sorted[i+1].time : endTimeStr;
+    var endH = endStr ? parseHM(endStr) : null;
+    if(startH===null || endH===null) continue;
+    // A genuine midnight crossing gives a large negative delta; a tiny
+    // negative delta (well under a minute) is almost always just a
+    // precision mismatch — e.g. a tank entry logged with seconds compared
+    // against Landing, which is intentionally minute-only — so clamp that
+    // to zero rather than wrapping a full day onto it.
+    var d = endH-startH;
+    if(d < -0.02) d += 24;
+    else if(d < 0) d = 0;
+    var tank = (sorted[i].tank === 'R') ? 'R' : 'L';
+    totals[tank] += d;
+  }
+  return totals;
+}
+function nowUTCStr(){
+  var d = new Date();
+  return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2);
+}
+// The Fuel/Tank Log specifically wants second precision (unlike Off Blocks/
+// Takeoff/Landing captures elsewhere, which are conventionally minute-only)
+// since tank switches can happen close together and the live stopwatch
+// already counts in seconds.
+function nowUTCStrSecs(){
+  var d = new Date();
+  return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2)+':'+('0'+d.getUTCSeconds()).slice(-2);
+}
+// Per-tank fuel/endurance remaining — assumes Total FOB is split evenly
+// between the two tanks at the start (the common case for light aircraft
+// with L/R selectors), then burns down whichever tank was actually
+// selected, using the same tankTimeSegments hours already shown as
+// "time on tank".
+function tankFuelStatus(){
+  var c = fuelCalc();
+  var landing = STATE.values['airborne.airbornegrp.0'];
+  var endTime = landing || nowUTCStrSecs();
+  var totals = tankTimeSegments(STATE.tankLog, endTime);
+  var half = c.fob===null ? null : c.fob/2;
+  function forTank(hrs){
+    if(half===null || c.burn<=0) return { qty:null, end:null, hrs:hrs };
+    var qty = half - hrs*c.burn;
+    return { qty:qty, end:qty/c.burn, hrs:hrs };
+  }
+  return { L: forTank(totals.L), R: forTank(totals.R), burn:c.burn, fob:c.fob };
+}
+// Endurance Remaining — now derived directly from the Tank Log (via
+// tankFuelStatus), not a separate Takeoff-time calculation, so the two
+// figures can never disagree with each other. This also means it
+// automatically freezes the moment Landing is set, since tankFuelStatus
+// already stops counting at that point — no separate handling needed.
+function enduranceRemainingCalc(){
+  var ts = tankFuelStatus();
+  if(ts.fob===null || ts.burn<=0 || ts.L.qty===null || ts.R.qty===null){
+    return { val:null, elapsed:null, elapsedSecs:null };
+  }
+  var totalRemaining = ts.L.qty + ts.R.qty;
+  var totalHrsLogged = ts.L.hrs + ts.R.hrs;
+  return { val: totalRemaining/ts.burn, elapsed: totalHrsLogged, elapsedSecs: totalHrsLogged*3600, fuelRemaining: totalRemaining };
+}
+function decToHM(d){
+  if(d===null||d===undefined||isNaN(d)) return '--';
+  var h=Math.floor(d), m=Math.round((d-h)*60);
+  if(m===60){ h+=1; m=0; } // rounding can land exactly on the next hour
+  return h+':'+(m<10?'0':'')+m;
+}
+// Live per-second stopwatch, forced to always show full zero-padded
+// HH:MM:SS (never drops the hours the way a plain stopwatch might under
+// an hour), so the fuel/tank log counter reads consistently at a glance.
+function secsToHMS(totalSecs){
+  if(totalSecs===null||totalSecs===undefined||isNaN(totalSecs)||totalSecs<0) return '00:00:00';
+  var s = Math.floor(totalSecs);
+  var h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  var hh = (h<10?'0':'')+h, mm = (m<10?'0':'')+m, ss = (sec<10?'0':'')+sec;
+  return hh+':'+mm+':'+ss;
+}
+
+/* ============================================================
+   COUNTDOWN — ETOB/CTOT, live, shown at the top of the app whenever
+   either is set. The header's actual height changes depending on
+   whether this row is showing, so the content area's offset is kept
+   in sync via JS rather than a fixed CSS number.
+   ============================================================ */
+function syncHeaderOffset(){
+  var h = document.querySelector('.topStrip').getBoundingClientRect().height;
+  ['cardMode','resultsMode','calcMode'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.style.top = h+'px';
+  });
+}
+function countdownText(target){
+  var p = (target||'').split(':');
+  var h = parseInt(p[0],10), m = parseInt(p[1],10);
+  if(isNaN(h) || isNaN(m)) return null;
+  var now = new Date();
+  var nowMin = now.getUTCHours()*60 + now.getUTCMinutes();
+  var targetMin = h*60+m;
+  var diff = targetMin - nowMin;
+  if(diff < -720) diff += 1440;
+  if(diff > 720) diff -= 1440;
+  var overdue = diff < 0;
+  var absDiff = Math.abs(diff);
+  var hh = Math.floor(absDiff/60), mm = absDiff%60;
+  return { label:(overdue?'-':'')+hh+':'+(mm<10?'0':'')+mm, overdue:overdue };
+}
+function updateCountdown(){
+  var row = document.getElementById('countdownRow');
+  if(!row) return;
+  var etob = STATE.global.etob, ctot = STATE.global.ctot;
+  if(!etob && !ctot){ row.style.display = 'none'; syncHeaderOffset(); return; }
+  var parts = [];
+  [['ETOB',etob],['CTOT',ctot]].forEach(function(pair){
+    if(!pair[1]) return;
+    var cd = countdownText(pair[1]);
+    parts.push(pair[0]+' '+pair[1]+' UTC <span class="cdT'+(cd&&cd.overdue?' overdue':'')+'">'+(cd?cd.label:'--')+'</span>');
+  });
+  row.innerHTML = parts.join(' &nbsp;&middot;&nbsp; ');
+  row.style.display = 'flex';
+  syncHeaderOffset();
+}
+// Refreshes just the Endurance Remaining numbers in place — avoids a full
+// renderCard() (and the focus loss that would cause). Runs every second
+// now, same as the tank stopwatch, so both count in real time rather than
+// only moving once a whole minute has passed.
+function updateEnduranceLive(){
+  if(!(curPhase==='Airborne' && !showingSectDone && !showingPhaseDone)) return;
+  var valEl = document.getElementById('enduranceVal');
+  if(!valEl) return;
+  var er = enduranceRemainingCalc();
+  valEl.textContent = er.val===null ? '\u2014' : (er.val<0?'\u2212':'')+secsToHMS(Math.abs(er.val)*3600);
+  var subEl = document.getElementById('enduranceSub');
+  if(subEl) subEl.innerHTML = er.val===null ? 'Set Take Off time and the Fuel Plan (burn rate + FOB) to see this.' : 'Elapsed <span id="enduranceElapsed">'+secsToHMS(er.elapsedSecs)+'</span> since Take Off \u00b7 Fuel remaining '+fmtFuel(er.fuelRemaining);
+}
+// Session-only (not persisted) — a pause deliberately resets on reload
+// rather than silently freezing a future session's live figures.
+var liveUpdatesPaused = false;
+setInterval(function(){ if(!liveUpdatesPaused) updateCountdown(); }, 15000);
+// Ticks the active tank's live stopwatch AND Endurance Remaining every
+// second — lightweight text updates, not re-renders, so neither disturbs
+// anything else on screen (or steals focus) while counting.
+setInterval(function(){
+  if(liveUpdatesPaused) return;
+  updateEnduranceLive();
+  ['tankLiveSecs','tankLiveSecsTop'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el) return;
+    var base = parseFloat(el.getAttribute('data-base')) || 0;
+    var ts = parseFloat(el.getAttribute('data-ts'));
+    if(isNaN(ts)) return;
+    el.textContent = secsToHMS(base + (Date.now()-ts)/1000);
+  });
+}, 1000);
+
+function renderCalculations(){
+  var elCalcBody = document.getElementById('calcBody');
+  if(!elCalcBody) return;
+  var chocksOff = STATE.values['offblockspretakeoff.otpgrp.0'];
+  var takeoff = STATE.values['offblockspretakeoff.otpgrp.14'];
+  var landing = STATE.values['airborne.airbornegrp.0'];
+  var chocksOn = STATE.values['airborne.airbornegrp.1'];
+  var tachoStartV = STATE.values['start.startgrp.1'] || {};
+  var tachoEndV = STATE.values['airborne.airbornegrp.4'] || {};
+
+  var blockTime = timeDiffCalc(chocksOff, chocksOn);
+  var airTime = timeDiffCalc(takeoff, landing);
+  var tachoTime = (tachoStartV.tacho && tachoEndV.tacho) ? Math.round((parseFloat(tachoEndV.tacho)-parseFloat(tachoStartV.tacho))*10)/10 : null;
+  var hobbsTime = (tachoStartV.hobbs && tachoEndV.hobbs) ? Math.round((parseFloat(tachoEndV.hobbs)-parseFloat(tachoStartV.hobbs))*10)/10 : null;
+
+  function calcCard(title, legL, legLV, legR, legRV, val, unit){
+    var pending = val===null;
+    return '<div class="calcCard"><div class="ck">'+title+'</div>'+
+      '<div class="legs"><span>'+legL+' <b>'+(legLV||'--')+'</b></span><span>'+legR+' <b>'+(legRV||'--')+'</b></span></div>'+
+      '<div class="cv'+(pending?' pending':'')+'">'+(pending ? 'Awaiting both readings' : (decToHM(val)+' <small>('+val.toFixed(1)+' '+unit+')</small>'))+'</div>'+
+    '</div>';
+  }
+
+  var html = '';
+  var fd = STATE.flightDetails;
+  html += '<div class="calcCard flightDetailsCard"><div class="ck">Flight Details</div>'+
+    '<div class="fdGrid">'+
+      '<div class="fdField"><label>Date</label><div class="fdDateRow"><input type="date" id="fdDate" value="'+escapeHtml(fd.date||'')+'"/><button type="button" id="fdTodayBtn">Today</button></div></div>'+
+      '<div class="fdField"><label>Slot From (UTC)</label><input type="text" inputmode="numeric" id="fdSlotFrom" placeholder="HHMM" maxlength="5" value="'+escapeHtml(fd.slotFrom||'')+'"/></div>'+
+      '<div class="fdField"><label>Slot To (UTC)</label><input type="text" inputmode="numeric" id="fdSlotTo" placeholder="HHMM" maxlength="5" value="'+escapeHtml(fd.slotTo||'')+'"/></div>'+
+      '<div class="fdField"><label>Registration</label><input type="text" id="fdReg" placeholder="G-XXXX" value="'+escapeHtml(fd.registration||'')+'" style="text-transform:uppercase"/></div>'+
+      '<div class="fdField"><label>Student</label><input type="text" id="fdStudent" value="'+escapeHtml(fd.student||'')+'"/></div>'+
+      '<div class="fdField"><label>Departure</label><input type="text" id="fdDeparture" placeholder="ICAO" value="'+escapeHtml(fd.departure||'')+'"/></div>'+
+      '<div class="fdField"><label>Destination</label><input type="text" id="fdDestination" placeholder="ICAO" value="'+escapeHtml(fd.destination||'')+'"/></div>'+
+      '<div class="fdField"><label>Land Away</label><input type="text" id="fdLandAway" placeholder="e.g. EGTK" value="'+escapeHtml(fd.landAway||'')+'"/></div>'+
+    '</div>'+
+    '<div class="fdField full"><label>Defects</label><textarea id="fdDefects" rows="3" placeholder="None" autocomplete="off" autocorrect="off" spellcheck="false">'+escapeHtml(fd.defects||'')+'</textarea></div>'+
+    '<div class="fdField full"><label>Notes</label><textarea id="fdNotes" rows="3" placeholder="Anything else worth recording" autocomplete="off" autocorrect="off" spellcheck="false">'+escapeHtml(fd.notes||'')+'</textarea></div>'+
+  '</div>';
+  html += calcCard('Block Time', 'Chocks Off', chocksOff?chocksOff+' UTC':null, 'Chocks On', chocksOn?chocksOn+' UTC':null, blockTime, 'hrs');
+  html += calcCard('Air Time', 'Takeoff', takeoff?takeoff+' UTC':null, 'Landing', landing?landing+' UTC':null, airTime, 'hrs');
+  html += calcCard('Tacho Time', 'Start', tachoStartV.tacho||null, 'End', tachoEndV.tacho||null, tachoTime, 'hrs');
+  html += calcCard('Hobbs Time', 'Start', tachoStartV.hobbs||null, 'End', tachoEndV.hobbs||null, hobbsTime, 'hrs');
+
+  var fc = fuelCalc();
+  if(fc.fob !== null || fc.total > 0){
+    html += '<div class="calcCard"><div class="ck">Fuel Plan</div>'+
+      '<div class="legs"><span>Total FOB <b>'+fmtFuel(fc.fob)+'</b></span><span>Required <b>'+fmtFuel(fc.total)+'</b></span></div>'+
+      '<div class="cv" style="color:'+(fc.surplus===null?'#94a3b8':(fc.surplus<0?'#be123c':'#047857'))+'">'+
+        (fc.surplus===null?'\u2014':(fc.surplus<0?'\u2212':'+')+fmtFuel(Math.abs(fc.surplus)))+
+        ' <small>surplus/deficit</small></div>'+
+    '</div>';
+  }
+
+  if(STATE.tankLog.length){
+    var ts = tankFuelStatus();
+    html += '<div class="calcCard"><div class="ck">Tank Log</div>'+
+      '<div class="legs"><span>Time on L <b>'+secsToHMS(ts.L.hrs*3600)+'</b></span><span>Time on R <b>'+secsToHMS(ts.R.hrs*3600)+'</b></span></div>';
+    if(ts.fob!==null && ts.burn>0){
+      html += '<div class="legs" style="margin-top:6px"><span>L remaining <b>'+fmtFuel(ts.L.qty)+'</b></span><span>R remaining <b>'+fmtFuel(ts.R.qty)+'</b></span></div>';
+      var shutdownV = STATE.values['airborne.airbornegrp.5'];
+      var enteredUSG = (shutdownV && shutdownV.valUSG !== undefined && shutdownV.valUSG !== '') ? shutdownV.valUSG : null;
+      var calcUSG = (ts.L.qty!==null && ts.R.qty!==null) ? (ts.L.qty + ts.R.qty) : null;
+      if(enteredUSG !== null && calcUSG !== null){
+        var diff = enteredUSG - calcUSG;
+        html += '<div class="legs" style="margin-top:6px"><span>Entered at shutdown <b>'+fmtFuel(enteredUSG)+'</b></span><span>Calculated from log <b>'+fmtFuel(calcUSG)+'</b></span></div>'+
+          '<div class="cv" style="color:'+(Math.abs(diff)<0.01?'#047857':(diff<0?'#be123c':'#b45309'))+'">'+fmtFuelSigned(diff)+' <small>entered vs. logged</small></div>';
+      }
+    }
+    html += '<div class="resHead" style="margin:10px 0 4px"><h2 style="font-size:12px">Log Entries</h2></div>';
+    STATE.tankLog.forEach(function(entry){
+      html += '<div class="resRow"><span class="rt">Tank '+entry.tank+'</span><span class="rv go">'+entry.time+' UTC</span></div>';
+    });
+    html += '</div>';
+  }
+
+  html += '<div class="resHead" style="margin:20px 0 8px"><h2 style="font-size:14px">All Data Entries</h2></div>';
+  var anyEntries = false;
+  var seenGlobalAll = {};
+  PHASES.forEach(function(p){
+    var phaseEntries = [];
+    SECTIONS[p].forEach(function(sec){
+      var secEntries = collectDataEntries(sec.cards, seenGlobalAll);
+      if(secEntries.length) phaseEntries.push({ title: sec.title, entries: secEntries });
+    });
+    if(!phaseEntries.length) return;
+    anyEntries = true;
+    html += '<div class="resPhase">'+escapeHtml(PHASE_LABELS[p]||p)+'</div>';
+    phaseEntries.forEach(function(s){
+      if(phaseEntries.length > 1) html += '<div class="resSect">'+escapeHtml(s.title)+'</div>';
+      html += dataEntriesHtml(s.entries);
+    });
+  });
+  if(!anyEntries) html += '<div class="grNote" style="padding:8px 2px">No values entered yet.</div>';
+  elCalcBody.innerHTML = html;
+  wireFlightDetails();
+}
+function wireFlightDetails(){
+  function bind(id, key, formatter){
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('input', function(){
+      STATE.flightDetails[key] = formatter ? formatter(el.value) : el.value;
+      if(formatter) el.value = STATE.flightDetails[key];
+      saveState();
+    });
+  }
+  bind('fdDate', 'date');
+  bind('fdSlotFrom', 'slotFrom', autoFormatTime);
+  bind('fdSlotTo', 'slotTo', autoFormatTime);
+  bind('fdReg', 'registration', function(v){ return v.toUpperCase(); });
+  bind('fdStudent', 'student');
+  bind('fdDeparture', 'departure');
+  bind('fdDestination', 'destination');
+  bind('fdLandAway', 'landAway');
+  bind('fdDefects', 'defects');
+  bind('fdNotes', 'notes');
+  var todayBtn = document.getElementById('fdTodayBtn');
+  if(todayBtn) todayBtn.addEventListener('click', function(){
+    var d = new Date();
+    var iso = d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+    STATE.flightDetails.date = iso;
+    document.getElementById('fdDate').value = iso;
+    saveState();
+  });
+}
+
+/* ============================================================
+   MODE SWITCH
+   ============================================================ */
+function setMode(mode){
+  curMode = mode;
+  curHeading = mode==='card' ? headingFor(curPhase) : 'PostFlight';
+  document.getElementById('cardMode').style.display = mode==='card' ? 'flex' : 'none';
+  document.getElementById('calcMode').classList.toggle('on', mode==='calc');
+  document.getElementById('resultsMode').classList.toggle('on', mode==='results');
+  renderHeadingRow();
+  renderPhaseRow();
+  if(mode==='card') render();
+  if(mode==='results') renderResults();
+  if(mode==='calc') renderCalculations();
+}
+
+setMode('calc');
+updateCountdown();
+
+// Registers the service worker (sw.js, in the same folder as this file)
+// so the app has a genuine offline copy available, not just whatever
+// Safari's own opportunistic cache happens to keep. Safe to call even
+// where service workers aren't supported — it just quietly does nothing.
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){ /* offline-first still works via the browser's own cache even if this fails */ });
+  });
+}
+</script>
+</body>
+</html>
