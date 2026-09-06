@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck v38 — Pre-Flight Card Checklist</title>
+<title>CheckDeck v40 — Pre-Flight Card Checklist</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
 
@@ -372,7 +372,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v38</div>
+  <div id="versionBadge">v40</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="tankBar" id="tankBarHeader" style="display:none"></div>
@@ -415,7 +415,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
     <div class="resHead" style="flex-direction:column; align-items:stretch; gap:10px">
       <h2>Calculated Times</h2>
       <div class="calcActions">
-        <button class="printBtn" onclick="window.print()">Print / PDF</button>
+        <button class="printBtn" onclick="printOnePage()">Print / PDF</button>
         <button class="printBtn shareBtn" id="shareCalcBtn" style="background:#047857">Share / Email</button>
         <button class="resetBtn" id="resetAllBtn">Reset All</button>
       </div>
@@ -715,8 +715,8 @@ var PHASES = ['Weather','Navigation','Planning','Fuel','PaxBrief','Ground','Airb
 var HEADINGS = [
   { key:'Briefing', label:'BRIEFING', phases:['Weather','Navigation','Planning','Fuel','PaxBrief'] },
   { key:'Airbourne', label:'AIRBOURNE', phases:['Ground','Airborne'] },
-  { key:'ReferenceH', label:'REFERENCE', phases:['Reference'] },
-  { key:'PostFlight', label:'POST FLIGHT', phases:[] }
+  { key:'PostFlight', label:'POST FLIGHT', phases:[] },
+  { key:'ReferenceH', label:'REFERENCE', phases:['Reference'] }
 ];
 var curHeading = 'PostFlight';
 var curMode = 'calc';
@@ -790,7 +790,7 @@ var USG_TO_L = 3.785;
 var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
   fuel:{ unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
   tankLog:[], tankSelected:'L',
-  flightDetails:{ date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'' } };
+  flightDetails:{ date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' } };
 // checked[cardId] = 'go'|'na'; values[cardId] = string/obj; global = shared
 // fields synced across every place they appear (ETOB/CTOT); codes = the
 // user-editable transponder code list; customItems[groupCardId] = array of
@@ -808,7 +808,7 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     if(!STATE.global) STATE.global = { etob:'', ctot:'', transponderCode:'' };
     if(STATE.global.transponderCode === undefined) STATE.global.transponderCode = '';
     if(!STATE.codes) STATE.codes = [{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}];
-    if(!STATE.flightDetails) STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'' };
+    if(!STATE.flightDetails) STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' };
     if(STATE.flightDetails.landAway === undefined || STATE.flightDetails.landAway === false) STATE.flightDetails.landAway = '';
     if(STATE.flightDetails.landAway === true) STATE.flightDetails.landAway = 'Yes';
     // Migrate anyone with the old plain-string codes list (from before names
@@ -2019,10 +2019,31 @@ function fuelTableHtml(c){
 // app lives, kept at the bottom of the Reference tab since it's
 // configuration rather than a checklist item.
 function renderApiSettingsHtml(){
-  var html = '<div class="fpBlock amber"><div class="fpBlockTitle">Live Updates</div>'+
+  var version = (document.getElementById('versionBadge')||{}).textContent || '';
+  var html = '<div class="fpBlock" style="border-color:var(--border);background:var(--card)"><div class="fpBlockTitle" style="color:var(--muted)">About</div>'+
+    '<div class="fpBlockVal small" style="color:var(--text)">CheckDeck '+version+'</div>'+
+  '</div>';
+  html += '<div class="fpBlock amber" style="margin-top:14px"><div class="fpBlockTitle">Live Updates</div>'+
     '<button type="button" id="pauseLiveBtn" class="nowBtn" style="margin-top:6px;'+(liveUpdatesPaused?'background:var(--rose)':'')+'">'+(liveUpdatesPaused?'\u25B6 Resume':'\u23F8 Pause')+'</button>'+
     '<div class="fpBlockNote">Freezes the countdown, Endurance Remaining, and tank stopwatch so they stop ticking — for example while showing the screen to someone else. Resets to running on reload.</div>'+
   '</div>';
+  // Same Tank Log figures shown in Post Flight — reference copy here too,
+  // so it's checkable without switching all the way to Post Flight.
+  var ts = tankFuelStatus();
+  html += '<div class="fpBlock violet" style="margin-top:14px"><div class="fpBlockTitle">Fuel / Tank Log</div>';
+  if(!STATE.tankLog.length){
+    html += '<div class="fpBlockNote">No tank changes logged yet.</div></div>';
+  } else {
+    html += '<div class="legs"><span>Time on L <b>'+secsToHMS(ts.L.hrs*3600)+'</b></span><span>Time on R <b>'+secsToHMS(ts.R.hrs*3600)+'</b></span></div>';
+    if(ts.fob!==null && ts.burn>0){
+      html += '<div class="legs" style="margin-top:6px"><span>L remaining <b>'+fmtFuel(ts.L.qty)+'</b></span><span>R remaining <b>'+fmtFuel(ts.R.qty)+'</b></span></div>';
+    }
+    html += '<div class="resHead" style="margin:10px 0 4px"><h2 style="font-size:12px">Log Entries</h2></div>';
+    STATE.tankLog.forEach(function(entry){
+      html += '<div class="resRow"><span class="rt">Tank '+entry.tank+'</span><span class="rv go">'+entry.time+' UTC</span></div>';
+    });
+    html += '</div>';
+  }
   return html;
 }
 function wireApiSettings(){
@@ -2135,7 +2156,13 @@ function renderSwitchBank(card){
 // resolvable individually beforehand — this is just a fast path when
 // everything genuinely is done, or genuinely doesn't apply).
 function markAllGroup(card, m){
-  card.children.forEach(function(_, i){ STATE.checked[card.id+'.'+i] = m; });
+  // Only fill in items that aren't already decided — a bulk "ALL DONE"
+  // shouldn't silently overwrite something already marked N/A (and vice
+  // versa for "ALL N/A"); those decisions stand until changed by hand.
+  card.children.forEach(function(_, i){
+    var key = card.id+'.'+i;
+    if(!STATE.checked[key]) STATE.checked[key] = m;
+  });
   saveState();
   renderCard(card);
   buildAnnunFor(curSection());
@@ -2236,6 +2263,28 @@ document.getElementById('phaseReview').addEventListener('click', function(){
 // flight. Deliberately keeps app-level preferences intact: Hide Completed
 // and the user's added transponder codes aren't "entered values" for a
 // specific flight, they're settings that should carry over.
+// Scales the visible tab's content down to fit one printed page, since
+// there's no CSS-only way to guarantee that for content whose length
+// varies with how much has been entered. Measures the actual rendered
+// height, shrinks proportionally if it's over a page's worth, and
+// restores normal size again once the print dialog has been dismissed.
+function printOnePage(){
+  var wrap = document.querySelector('#calcMode.on .resWrap, #resultsMode.on .resWrap') ||
+             document.querySelector((document.getElementById('calcMode').classList.contains('on') ? '#calcMode' : '#resultsMode') + ' .resWrap');
+  if(wrap){
+    wrap.style.transform = 'none'; wrap.style.width = '';
+    var contentHeight = wrap.scrollHeight;
+    var pageHeightPx = 1000; // ~one A4/Letter page of content at typical print scale
+    var scale = contentHeight > pageHeightPx ? pageHeightPx/contentHeight : 1;
+    wrap.style.transformOrigin = 'top left';
+    wrap.style.transform = 'scale('+scale+')';
+    wrap.style.width = (100/scale)+'%';
+  }
+  setTimeout(function(){
+    window.print();
+    setTimeout(function(){ if(wrap){ wrap.style.transform=''; wrap.style.width=''; } }, 700);
+  }, 60);
+}
 function resetAllData(){
   STATE.checked = {};
   STATE.values = {};
@@ -2244,7 +2293,7 @@ function resetAllData(){
   STATE.fuel = { unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
   STATE.tankLog = [];
   STATE.tankSelected = 'L';
-  STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'' };
+  STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' };
   saveState();
   // Stay on whatever view the person is already looking at (they pressed
   // this from Post Flight) rather than jumping them elsewhere — just
@@ -2291,6 +2340,7 @@ function buildFlightSummary(){
     if(fd.departure || fd.destination) lines.push('Route: '+(fd.departure||'--')+' \u2192 '+(fd.destination||'--'));
     if(fd.landAway) lines.push('Land Away: '+fd.landAway);
     if(fd.defects) lines.push('Defects: '+fd.defects);
+    if(fd.notes) lines.push('Notes: '+fd.notes);
     lines.push('');
   }
   var chocksOff = STATE.values['offblockspretakeoff.otpgrp.0'];
@@ -2687,30 +2737,19 @@ function tankFuelStatus(){
   }
   return { L: forTank(totals.L), R: forTank(totals.R), burn:c.burn, fob:c.fob };
 }
-// Endurance Remaining — elapsed time since Take Off against the Fuel Plan's
-// Total FOB and burn rate, so it's a live "how much flying time is left"
-// figure once airborne, independent of the Fuel Plan tab's own summaries
-// (which are pre-flight planning figures, not a live countdown).
+// Endurance Remaining — now derived directly from the Tank Log (via
+// tankFuelStatus), not a separate Takeoff-time calculation, so the two
+// figures can never disagree with each other. This also means it
+// automatically freezes the moment Landing is set, since tankFuelStatus
+// already stops counting at that point — no separate handling needed.
 function enduranceRemainingCalc(){
-  var takeoff = STATE.values['offblockspretakeoff.otpgrp.14'];
-  var fc = fuelCalc();
-  if(!takeoff || fc.fob===null || fc.burn<=0) return { val:null, elapsed:null, elapsedSecs:null };
-  var p = takeoff.split(':');
-  var th = parseInt(p[0],10), tm = parseInt(p[1],10);
-  if(isNaN(th)||isNaN(tm)) return { val:null, elapsed:null, elapsedSecs:null };
-  // Reconstructed as a real Date (today, HH:MM:00 UTC) rather than the
-  // coarser HH:MM string-diff math used elsewhere, so elapsed time — and
-  // therefore fuel/endurance remaining — can tick smoothly every second
-  // instead of only moving once a whole minute has passed.
-  var now = new Date();
-  var takeoffDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), th, tm, 0));
-  var elapsedMs = now.getTime() - takeoffDate.getTime();
-  if(elapsedMs < 0) elapsedMs += 24*3600*1000; // crossed midnight
-  var elapsedSecs = elapsedMs/1000;
-  var elapsedHrs = elapsedSecs/3600;
-  var fuelUsed = elapsedHrs * fc.burn;
-  var remaining = fc.fob - fuelUsed;
-  return { val: remaining/fc.burn, elapsed: elapsedHrs, elapsedSecs: elapsedSecs, fuelRemaining: remaining };
+  var ts = tankFuelStatus();
+  if(ts.fob===null || ts.burn<=0 || ts.L.qty===null || ts.R.qty===null){
+    return { val:null, elapsed:null, elapsedSecs:null };
+  }
+  var totalRemaining = ts.L.qty + ts.R.qty;
+  var totalHrsLogged = ts.L.hrs + ts.R.hrs;
+  return { val: totalRemaining/ts.burn, elapsed: totalHrsLogged, elapsedSecs: totalHrsLogged*3600, fuelRemaining: totalRemaining };
 }
 function decToHM(d){
   if(d===null||d===undefined||isNaN(d)) return '--';
@@ -2841,7 +2880,8 @@ function renderCalculations(){
       '<div class="fdField"><label>Destination</label><input type="text" id="fdDestination" placeholder="ICAO" value="'+escapeHtml(fd.destination||'')+'"/></div>'+
       '<div class="fdField"><label>Land Away</label><input type="text" id="fdLandAway" placeholder="e.g. EGTK" value="'+escapeHtml(fd.landAway||'')+'"/></div>'+
     '</div>'+
-    '<div class="fdField full"><label>Defects</label><textarea id="fdDefects" rows="3" placeholder="None">'+escapeHtml(fd.defects||'')+'</textarea></div>'+
+    '<div class="fdField full"><label>Defects</label><textarea id="fdDefects" rows="3" placeholder="None" autocomplete="off" autocorrect="off" spellcheck="false">'+escapeHtml(fd.defects||'')+'</textarea></div>'+
+    '<div class="fdField full"><label>Notes</label><textarea id="fdNotes" rows="3" placeholder="Anything else worth recording" autocomplete="off" autocorrect="off" spellcheck="false">'+escapeHtml(fd.notes||'')+'</textarea></div>'+
   '</div>';
   html += calcCard('Block Time', 'Chocks Off', chocksOff?chocksOff+' UTC':null, 'Chocks On', chocksOn?chocksOn+' UTC':null, blockTime, 'hrs');
   html += calcCard('Air Time', 'Takeoff', takeoff?takeoff+' UTC':null, 'Landing', landing?landing+' UTC':null, airTime, 'hrs');
@@ -2920,6 +2960,7 @@ function wireFlightDetails(){
   bind('fdDestination', 'destination');
   bind('fdLandAway', 'landAway');
   bind('fdDefects', 'defects');
+  bind('fdNotes', 'notes');
   var todayBtn = document.getElementById('fdTodayBtn');
   if(todayBtn) todayBtn.addEventListener('click', function(){
     var d = new Date();
