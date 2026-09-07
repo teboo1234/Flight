@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck v44 — Pre-Flight Card Checklist</title>
+<title>CheckDeck v46 — Pre-Flight Card Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -252,6 +252,11 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .grKeypadUnit{ width:100%; padding:9px 10px; font-size:16px; border-radius:8px; font-family:'JetBrains Mono',monospace; font-weight:700; text-align:right; background:var(--card); border:1px solid var(--border); color:var(--text); }
 #kpInput{ font-size:16px; }
 .grDaVisRow{ display:flex; gap:8px; margin-top:8px; }
+/* .grDa/.grVis/.grTacho/.grHobbs/.grEtob/.grCtot all share this row —
+   without flex:1 + min-width:0 they fall back to the browser's native
+   default input width (~230px), which doesn't shrink on a phone-width
+   screen and pushes the second field off the right edge entirely. */
+.grDaVisRow input{ flex:1; min-width:0; padding:9px 10px; font-size:15px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text); font-family:'JetBrains Mono',monospace; font-weight:700; }
 .grCodeRow{ display:flex; gap:6px; margin-top:8px; align-items:center; }
 .grCodeSelect{ flex:1; min-width:0; background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:9px 8px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px; }
 .grCodeAddBtn{ flex-shrink:0; border:1px solid var(--border); background:var(--surface); color:var(--muted); border-radius:8px; padding:9px 10px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:11px; cursor:pointer; white-space:nowrap; }
@@ -283,6 +288,8 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .savedFlightLoadBtn{ border:1px solid var(--sky); background:var(--surface); color:var(--sky); }
 .savedFlightSyncBtn{ border:1px solid var(--em); background:var(--surface); color:var(--em); }
 .savedFlightDelBtn{ border:1px solid var(--rose); background:var(--surface); color:var(--rose); }
+.savedFlightTopBtns{ display:flex; gap:8px; width:100%; }
+.savedFlightExportBtn{ flex:1; border:1px solid var(--violet); background:var(--surface); color:var(--violet); border-radius:7px; padding:7px 0; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; cursor:pointer; }
 .addItemRow{ display:flex; gap:8px; margin-top:4px; }
 .addItemRow input{ flex:1; background:var(--surface); border:1px dashed var(--border); border-radius:10px; padding:10px 12px; font-family:'JetBrains Mono',monospace; font-size:16px; color:var(--text); }
 .addItemRow button{ flex-shrink:0; border:1px solid var(--em); background:rgba(16,185,129,.08); color:var(--em); border-radius:10px; padding:10px 16px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; cursor:pointer; }
@@ -403,7 +410,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v44</div>
+  <div id="versionBadge">v46</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="tankBar" id="tankBarHeader" style="display:none"></div>
@@ -496,6 +503,31 @@ input,select{ font-family:'JetBrains Mono',monospace; }
     <div class="confirmBtns">
       <button type="button" id="promptCancelBtn" class="confirmCancel">Cancel</button>
       <button type="button" id="promptOkBtn" class="confirmOk" style="background:#0369a1">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="exportFlightModal" class="confirmModal" style="display:none">
+  <div class="confirmBox">
+    <div class="confirmMsg">Send to another device</div>
+    <div class="codePresetsLbl" style="margin-bottom:6px">Share this, or copy it and paste it into Import on the other device.</div>
+    <textarea id="exportFlightText" class="promptInput" rows="6" readonly style="text-align:left;font-size:11px;height:auto"></textarea>
+    <div class="confirmBtns">
+      <button type="button" id="exportFlightCloseBtn" class="confirmCancel" style="flex:1">Close</button>
+      <button type="button" id="exportFlightCopyBtn" class="confirmOk" style="background:#047857">Copy</button>
+      <button type="button" id="exportFlightShareBtn" class="confirmOk" style="background:#0369a1">Share</button>
+    </div>
+  </div>
+</div>
+
+<div id="importFlightModal" class="confirmModal" style="display:none">
+  <div class="confirmBox">
+    <div class="confirmMsg">Import a flight</div>
+    <div class="codePresetsLbl" style="margin-bottom:6px">Paste what was shared or copied from the other device.</div>
+    <textarea id="importFlightText" class="promptInput" rows="6" placeholder="Paste here" style="text-align:left;font-size:11px;height:auto"></textarea>
+    <div class="confirmBtns">
+      <button type="button" id="importFlightCancelBtn" class="confirmCancel">Cancel</button>
+      <button type="button" id="importFlightOkBtn" class="confirmOk" style="background:#0369a1">Import</button>
     </div>
   </div>
 </div>
@@ -2139,7 +2171,10 @@ function flightSummaryLabel(snap){
 }
 function renderSavedFlightsHtml(){
   var names = Object.keys(STATE.savedFlights);
-  var html = '<button type="button" id="saveFlightBtn" class="grCodeAddBtn" style="width:100%">+ Save Current Flight&hellip;</button>';
+  var html = '<div class="savedFlightTopBtns">'+
+    '<button type="button" id="saveFlightBtn" class="grCodeAddBtn" style="flex:1">+ Save Current Flight&hellip;</button>'+
+    '<button type="button" id="importFlightBtn" class="grCodeAddBtn" style="flex:1">\u2913 Import Flight&hellip;</button>'+
+  '</div>';
   html += '<div id="savedFlightsList" style="width:100%;margin-top:14px">';
   if(!names.length){
     html += '<div class="manageCodesEmpty">No flights saved yet.</div>';
@@ -2152,13 +2187,94 @@ function renderSavedFlightsHtml(){
         '<div class="savedFlightBtns">'+
           '<button type="button" class="savedFlightLoadBtn" data-name="'+escapeHtml(name)+'">Load</button>'+
           '<button type="button" class="savedFlightSyncBtn" data-name="'+escapeHtml(name)+'">Sync</button>'+
-          '<button type="button" class="savedFlightDelBtn" data-name="'+escapeHtml(name)+'">Delete</button>'+
+        '</div>'+
+        '<div class="savedFlightBtns" style="margin-top:6px">'+
+          '<button type="button" class="savedFlightExportBtn" data-name="'+escapeHtml(name)+'">\u2197 Send to Device&hellip;</button>'+
+          '<button type="button" class="savedFlightDelBtn" data-name="'+escapeHtml(name)+'" style="flex:0 0 auto;padding:7px 14px">Delete</button>'+
         '</div>'+
       '</div>';
     }).join('');
   }
   html += '</div>';
   return html;
+}
+// Export/Import — the actual cross-device mechanism, since GitHub Pages
+// has no server to sync through. Packages one flight as JSON text, sent
+// via the Web Share API where available (AirDrop, Messages, Mail — all
+// work great on iPad) or copied to the clipboard as a fallback; Import
+// reverses it by pasting that same text back in on the receiving device.
+function exportFlightPayload(name){
+  return JSON.stringify({ checkdeckFlight:1, name:name, snapshot:STATE.savedFlights[name] });
+}
+function showExportFlightModal(name){
+  var modal = document.getElementById('exportFlightModal');
+  var textEl = document.getElementById('exportFlightText');
+  var payload = exportFlightPayload(name);
+  textEl.value = payload;
+  modal.style.display = 'flex';
+  var closeBtn = document.getElementById('exportFlightCloseBtn');
+  var copyBtn = document.getElementById('exportFlightCopyBtn');
+  var shareBtn = document.getElementById('exportFlightShareBtn');
+  function onClose(){
+    modal.style.display = 'none';
+    closeBtn.removeEventListener('click', onClose);
+    copyBtn.removeEventListener('click', onCopy);
+    shareBtn.removeEventListener('click', onShare);
+  }
+  function onCopy(){
+    textEl.select();
+    try{ navigator.clipboard.writeText(payload); }catch(e){ document.execCommand('copy'); }
+    copyBtn.textContent = 'Copied!';
+    setTimeout(function(){ copyBtn.textContent = 'Copy'; }, 1500);
+  }
+  function onShare(){
+    if(navigator.share){
+      navigator.share({ title:'CheckDeck flight: '+name, text:payload }).catch(function(){});
+    } else {
+      onCopy();
+    }
+  }
+  closeBtn.addEventListener('click', onClose);
+  copyBtn.addEventListener('click', onCopy);
+  shareBtn.addEventListener('click', onShare);
+}
+function showImportFlightModal(card){
+  var modal = document.getElementById('importFlightModal');
+  var textEl = document.getElementById('importFlightText');
+  textEl.value = '';
+  modal.style.display = 'flex';
+  setTimeout(function(){ textEl.focus(); }, 50);
+  var cancelBtn = document.getElementById('importFlightCancelBtn');
+  var okBtn = document.getElementById('importFlightOkBtn');
+  function cleanup(){
+    modal.style.display = 'none';
+    cancelBtn.removeEventListener('click', onCancel);
+    okBtn.removeEventListener('click', onOk);
+  }
+  function onCancel(){ cleanup(); }
+  function onOk(){
+    var raw = textEl.value.trim();
+    var parsed;
+    try{ parsed = JSON.parse(raw); }catch(e){ parsed = null; }
+    if(!parsed || !parsed.checkdeckFlight || !parsed.snapshot){
+      showConfirm('That doesn\u2019t look like a CheckDeck flight export — check it was copied in full and try again.', 'OK', function(){});
+      return;
+    }
+    cleanup();
+    var name = parsed.name || 'Imported flight';
+    function doImport(finalName){
+      STATE.savedFlights[finalName] = parsed.snapshot;
+      saveState();
+      renderCard(card);
+    }
+    if(STATE.savedFlights[name]){
+      showConfirm('A saved flight named "'+name+'" already exists. Importing will overwrite it. Continue?', 'Overwrite', function(){ doImport(name); });
+    } else {
+      doImport(name);
+    }
+  }
+  cancelBtn.addEventListener('click', onCancel);
+  okBtn.addEventListener('click', onOk);
 }
 function wireSavedFlights(card){
   var saveBtn = document.getElementById('saveFlightBtn');
@@ -2172,6 +2288,11 @@ function wireSavedFlights(card){
       saveState();
       renderCard(card);
     });
+  });
+  var importBtn = document.getElementById('importFlightBtn');
+  if(importBtn) importBtn.addEventListener('click', function(){ showImportFlightModal(card); });
+  document.querySelectorAll('.savedFlightExportBtn').forEach(function(b){
+    b.addEventListener('click', function(){ showExportFlightModal(b.getAttribute('data-name')); });
   });
   document.querySelectorAll('.savedFlightLoadBtn').forEach(function(b){
     b.addEventListener('click', function(){
