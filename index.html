@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck v52 — Pre-Flight Card Checklist</title>
+<title>CheckDeck v56 — Pre-Flight Card Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -44,6 +44,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .countdownRow .cdT.overdue{ color:var(--rose); }
 .headingRow{ display:flex; height:42px; border-bottom:1px solid var(--border); }
 .headingBtn{ flex:1; border:none; border-right:1px solid var(--border); background:var(--surface); color:var(--text); font-family:'Syne',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; }
+.notesBtnHeading{ flex:0 0 42px; border:none; border-right:1px solid var(--border); background:rgba(109,40,217,.06); color:var(--violet); font-size:15px; cursor:pointer; }
 .headingBtn:last-child{ border-right:none; }
 .headingBtn.on{ background:var(--sky); color:#fff; }
 .phaseRow{ display:flex; gap:6px; height:38px; overflow-x:auto; padding:0 10px; align-items:center; border-bottom:1px solid var(--border); }
@@ -67,7 +68,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 
 /* ===== CARD MODE ===== */
 #cardMode{ position:fixed; inset:60px 0 0 0; display:flex; flex-direction:column; }
-.eyebrow{ padding:12px 16px 6px; flex-shrink:0; }
+.eyebrow{ display:none; }
 .eyebrow .grp{ font-size:10px; font-weight:700; letter-spacing:.1em; color:var(--sky); text-transform:uppercase; margin-bottom:2px; min-height:12px; }
 .eyebrow .sec{ display:flex; justify-content:space-between; align-items:baseline; }
 .eyebrow .sec span:first-child{ font-family:'Syne',sans-serif; font-size:14px; font-weight:700; letter-spacing:.02em; color:var(--text); text-transform:uppercase; }
@@ -159,9 +160,6 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .tankBar{ display:flex; flex-direction:column; gap:3px; padding:6px 10px; background:var(--surface); border-bottom:1px solid var(--border); overflow:hidden; }
 .tankLiveTop{ text-align:center; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:15px; letter-spacing:.03em; color:var(--em); background:rgba(4,120,87,.08); border-radius:6px; padding:3px 0; margin-bottom:2px; }
 .tankSinceChange{ display:block; font-size:11px; font-weight:700; color:var(--amber); letter-spacing:normal; margin-top:1px; }
-.airNotesBar{ padding:6px 10px; background:var(--surface); border-bottom:1px solid var(--border); }
-.airNotesToggle{ width:100%; text-align:left; border:1px solid var(--violet); background:rgba(109,40,217,.06); color:var(--violet); border-radius:8px; padding:7px 12px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12.5px; cursor:pointer; }
-.airNotesTextarea{ width:100%; margin-top:6px; padding:9px 10px; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; resize:vertical; min-height:70px; }
 .tankBarRow{ display:flex; align-items:center; gap:6px; }
 .tankBarLbl{ font-size:13px; flex-shrink:0; }
 .tankBtn{ flex:0 0 60px; height:44px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px; background:var(--surface); color:var(--muted); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:15px; cursor:pointer; white-space:nowrap; text-align:center; }
@@ -420,22 +418,20 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v52</div>
+  <div id="versionBadge">v56</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="tankBar" id="tankBarHeader" style="display:none"></div>
-  <div class="airNotesBar" id="airNotesBar" style="display:none"></div>
   <div class="phaseRow" id="phaseRow"></div>
 </div>
 
 <div id="cardMode">
-  <div class="sectionRow" id="sectionRow"></div>
   <div class="eyebrow">
     <div class="grp" id="grpName"></div>
     <div class="sec"><span id="secName">—</span><span class="cnt"><b id="doneCount">0</b> / <span id="totalCount">0</span></span></div>
-    <button id="skipSectionBtn" style="margin-top:6px;background:none;border:1px solid var(--border);color:var(--muted);font-family:'JetBrains Mono',monospace;font-weight:700;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:7px;cursor:pointer">Skip Whole Section &#187;</button>
   </div>
   <div class="annun" id="annun"></div>
+  <div class="sectionRow" id="sectionRow"></div>
   <div class="stage" id="stage">
     <button class="navSide left" id="navPrev">&#10094;</button>
     <div class="card" id="card"></div>
@@ -503,6 +499,16 @@ input,select{ font-family:'JetBrains Mono',monospace; }
     <div class="confirmBtns">
       <button type="button" id="codePromptCancelBtn" class="confirmCancel">Cancel</button>
       <button type="button" id="codePromptOkBtn" class="confirmOk" style="background:#0369a1">Add</button>
+    </div>
+  </div>
+</div>
+
+<div id="notesModal" class="confirmModal" style="display:none">
+  <div class="confirmBox">
+    <div class="confirmMsg">Notes</div>
+    <textarea id="notesModalText" class="promptInput" rows="6" placeholder="Quick note\u2026" autocomplete="off" autocorrect="off" style="text-align:left;font-size:14px;height:auto;font-family:'DM Sans',sans-serif"></textarea>
+    <div class="confirmBtns">
+      <button type="button" id="notesModalCloseBtn" class="confirmOk" style="background:#0369a1;flex:1">Done</button>
     </div>
   </div>
 </div>
@@ -1046,6 +1052,15 @@ var elPhaseRow = document.getElementById('phaseRow');
 function renderHeadingRow(){
   var elHeadingRow = document.getElementById('headingRow');
   elHeadingRow.innerHTML = '';
+  // Notes lives here, far left, on the same row as the heading tabs
+  // themselves — one sticky button, always in the same spot regardless
+  // of which heading/tab is active.
+  var notesBtn = document.createElement('button');
+  notesBtn.className = 'notesBtnHeading';
+  notesBtn.innerHTML = '\u270E'+(STATE.flightDetails.notes?' \u2022':'');
+  notesBtn.title = 'Notes';
+  notesBtn.addEventListener('click', showNotesModal);
+  elHeadingRow.appendChild(notesBtn);
   HEADINGS.forEach(function(h){
     var btn = document.createElement('button');
     btn.className = 'headingBtn' + (h.key===curHeading?' on':'');
@@ -1067,7 +1082,6 @@ function renderHeadingRow(){
     elHeadingRow.appendChild(btn);
   });
   renderTankHeaderBar();
-  renderAirNotesBar();
 }
 // Only needed where the internal phase key isn't already good display
 // text (e.g. camelCase used as a plain identifier) — anything absent here
@@ -1146,11 +1160,10 @@ function render(){
   renderSectionRow();
   var sections = curSections();
   var sec = sections[curSectionIdx];
-  var elSkipSection = document.getElementById('skipSectionBtn');
 
   if(showingPhaseDone){
     elCard.style.display='none'; elSectDone.style.display='none'; elPhaseDone.style.display='flex';
-    elSwitchBank.style.display='none'; elSkipSection.style.display='none';
+    elSwitchBank.style.display='none';
     var pt = phaseTotals(curPhase);
     var goN=0, naN=0;
     sections.forEach(function(s){ s.cards.forEach(function(c){ var v=STATE.checked[c.id]; if(v==='go')goN++; if(v==='na')naN++; }); });
@@ -1176,7 +1189,7 @@ function render(){
   }
   if(showingSectDone){
     elCard.style.display='none'; elPhaseDone.style.display='none'; elSectDone.style.display='flex';
-    elSwitchBank.style.display='none'; elSkipSection.style.display='none';
+    elSwitchBank.style.display='none';
     var st = sectionTotals(sec);
     var goN2=0, naN2=0;
     sec.cards.forEach(function(c){ var v=STATE.checked[c.id]; if(v==='go')goN2++; if(v==='na')naN2++; });
@@ -1191,7 +1204,7 @@ function render(){
     return;
   }
   elSectDone.style.display='none'; elPhaseDone.style.display='none'; elCard.style.display='flex';
-  elSwitchBank.style.display='flex'; elSkipSection.style.display='inline-block';
+  elSwitchBank.style.display='flex';
 
   var card = sec.cards[curCardIdx];
   var st2 = sectionTotals(sec);
@@ -1204,22 +1217,6 @@ function render(){
   renderResults();
   renderCalculations();
 }
-
-// Skip the WHOLE current section — leaves every card in it unresolved
-// (dark on the annunciator, "—" in Results) and moves straight to the next
-// section, or to the phase-complete screen if it was the last one. This is
-// deliberately not the same as clearing/marking anything; it's for "not
-// relevant to this flight, move on".
-function skipSection(){
-  var sections = curSections();
-  showingSectDone = false;
-  if(curSectionIdx < sections.length-1){
-    curSectionIdx++; curCardIdx = 0; render();
-  } else {
-    showingPhaseDone = true; render();
-  }
-}
-document.getElementById('skipSectionBtn').addEventListener('click', skipSection);
 
 function buildAnnunFor(sec){
   elAnnun.innerHTML = '';
@@ -1236,8 +1233,7 @@ function buildAnnunFor(sec){
 }
 
 function renderCard(card){
-  var html = '<div class="tag">'+escapeHtml(curSection().title)+'</div>';
-  html += '<h1>'+escapeHtml(card.text)+'</h1>';
+  var html = '';
   if(card.note) html += '<div class="note">'+escapeHtml(card.note)+'</div>';
   if(card.hasLaw){
     html += '<div class="law" id="lawBadge">LAW &middot; TAP TO VIEW</div>';
@@ -2020,33 +2016,24 @@ function renderEnduranceBarHtml(){
 // Compact, single-line Tank Log bar — lives in the persistent header, right
 // below the AIRBOURNE heading, so it's visible on Ground and Airborne alike
 // rather than buried inside one specific card. The tank you most recently
-// logged (i.e. the one time is actually counting against right now) shows
-// green; tapping L/R only "arms" a selection (amber) until Log confirms it.
-// Session-only, resets to collapsed on reload — matches the spirit of
-// Pause (a display preference for right now, not a saved flight fact).
-var airNotesExpanded = false;
-function renderAirNotesBar(){
-  var el = document.getElementById('airNotesBar');
-  if(!el) return;
-  if(curHeading !== 'Airbourne'){ el.style.display = 'none'; syncHeaderOffset(); return; }
-  el.style.display = 'block';
-  var notes = STATE.flightDetails.notes || '';
-  el.innerHTML =
-    '<button type="button" class="airNotesToggle" id="airNotesToggleBtn">'+(airNotesExpanded?'\u25BC':'\u270E')+' Notes'+(notes && !airNotesExpanded?' \u2022':'')+'</button>'+
-    (airNotesExpanded ? '<textarea id="airNotesText" class="airNotesTextarea" placeholder="Quick note\u2026" autocomplete="off" autocorrect="off">'+escapeHtml(notes)+'</textarea>' : '');
-  document.getElementById('airNotesToggleBtn').addEventListener('click', function(){
-    airNotesExpanded = !airNotesExpanded;
-    renderAirNotesBar();
-    if(airNotesExpanded){
-      setTimeout(function(){ var ta = document.getElementById('airNotesText'); if(ta) ta.focus(); }, 50);
-    }
-  });
-  var ta = document.getElementById('airNotesText');
-  if(ta) ta.addEventListener('input', function(){
+// Notes — a single sticky button next to Log, available on every tab
+// (not just Airbourne), opening a small modal to jot something down.
+// Session-only "last opened" state isn't needed since it's a modal now,
+// not an expanding inline row.
+function showNotesModal(){
+  var modal = document.getElementById('notesModal');
+  var ta = document.getElementById('notesModalText');
+  ta.value = STATE.flightDetails.notes || '';
+  modal.style.display = 'flex';
+  setTimeout(function(){ ta.focus(); }, 50);
+  ta.oninput = function(){
     STATE.flightDetails.notes = ta.value;
     saveState();
-  });
-  syncHeaderOffset();
+  };
+  document.getElementById('notesModalCloseBtn').onclick = function(){
+    modal.style.display = 'none';
+    renderHeadingRow();
+  };
 }
 function renderTankHeaderBar(){
   var el = document.getElementById('tankBarHeader');
