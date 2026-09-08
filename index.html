@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck v50 — Pre-Flight Card Checklist</title>
+<title>CheckDeck v52 — Pre-Flight Card Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -420,7 +420,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v50</div>
+  <div id="versionBadge">v52</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="tankBar" id="tankBarHeader" style="display:none"></div>
@@ -722,6 +722,9 @@ var CHECKLIST_DATA = [
   { phase:'Ground', id:'crewpax', title:'Crew/Pax Brief', items: [
     { id:'2x', text:'Crew/Pax Brief', type:'group', children:['Exits','Belts','Oxygen','Life jackets','Dinghy','Emergency actions'] }
   ]},
+  { phase:'Ground', id:'atis', title:'ATIS', items: [
+    { id:'atisgrp', text:'ATIS', type:'atis' }
+  ]},
   { phase:'Ground', id:'start', title:'Start', items: [
     { id:'startgrp', text:'Start', type:'group', children:[
       'Booked out',
@@ -870,6 +873,7 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
         if(item.type === 'fuelplan'){ card.type = 'fuelplan'; }
         if(item.type === 'apisettings'){ card.type = 'apisettings'; }
         if(item.type === 'savedflights'){ card.type = 'savedflights'; }
+        if(item.type === 'atis'){ card.type = 'atis'; }
         sec.cards.push(card);
         ALLCARDS[card.id] = card;
       }
@@ -883,7 +887,7 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
    ============================================================ */
 var STORE_KEY = 'checkdeck_state_v1';
 var USG_TO_L = 3.785;
-var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
+var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, atisEntries:[], atisDraft:{ icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' }, customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
   fuel:{ unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
   tankLog:[], tankSelected:'L',
   flightDetails:{ date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' } };
@@ -910,6 +914,8 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     if(!STATE.codePresets) STATE.codePresets = {};
     if(!STATE.savedFlights) STATE.savedFlights = {};
     if(STATE.autoPrintOnSync === undefined) STATE.autoPrintOnSync = false;
+    if(!STATE.atisEntries) STATE.atisEntries = [];
+    if(!STATE.atisDraft) STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
     if(!STATE.flightDetails) STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' };
     if(STATE.flightDetails.landAway === undefined || STATE.flightDetails.landAway === false) STATE.flightDetails.landAway = '';
     if(STATE.flightDetails.landAway === true) STATE.flightDetails.landAway = 'Yes';
@@ -1392,10 +1398,12 @@ function renderCard(card){
     html += renderApiSettingsHtml();
   } else if(card.type === 'savedflights'){
     html += renderSavedFlightsHtml();
+  } else if(card.type === 'atis'){
+    html += renderAtisHtml();
   }
 
   elCard.innerHTML = html;
-  elCard.classList.toggle('list-mode', card.type === 'grouplist' || card.type === 'fuelplan' || card.type === 'apisettings' || card.type === 'savedflights');
+  elCard.classList.toggle('list-mode', card.type === 'grouplist' || card.type === 'fuelplan' || card.type === 'apisettings' || card.type === 'savedflights' || card.type === 'atis');
   requestAnimationFrame(updateScrollHint);
 
   var lawBadge = document.getElementById('lawBadge');
@@ -1847,6 +1855,8 @@ function renderCard(card){
     wireApiSettings();
   } else if(card.type === 'savedflights'){
     wireSavedFlights(card);
+  } else if(card.type === 'atis'){
+    wireAtis(card);
   }
 
   if(card.type === 'keypad'){
@@ -2215,7 +2225,8 @@ function captureFlightSnapshot(){
     tankLog: JSON.parse(JSON.stringify(STATE.tankLog)),
     tankSelected: STATE.tankSelected,
     flightDetails: JSON.parse(JSON.stringify(STATE.flightDetails)),
-    customItems: JSON.parse(JSON.stringify(STATE.customItems))
+    customItems: JSON.parse(JSON.stringify(STATE.customItems)),
+    atisEntries: JSON.parse(JSON.stringify(STATE.atisEntries))
   };
 }
 function applyFlightSnapshot(snap){
@@ -2227,6 +2238,7 @@ function applyFlightSnapshot(snap){
   STATE.tankSelected = snap.tankSelected || 'L';
   STATE.flightDetails = snap.flightDetails ? JSON.parse(JSON.stringify(snap.flightDetails)) : { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' };
   STATE.customItems = snap.customItems ? JSON.parse(JSON.stringify(snap.customItems)) : {};
+  STATE.atisEntries = snap.atisEntries ? JSON.parse(JSON.stringify(snap.atisEntries)) : [];
 }
 // Preview PDF — borrows the exact same rendering renderCalculations()
 // uses for Post Flight, but for a SAVED flight rather than the live one,
@@ -2260,6 +2272,133 @@ function showFlightPreview(name){
   }
   closeBtn.addEventListener('click', onClose);
   printBtn.addEventListener('click', onPrint);
+}
+// ATIS — same fields FlightDeck's ATIS page captures (time, ICAO, info
+// letter, runway, wind, CAVOK-or-vis/cloud, QNH, temp/dewpoint, notes),
+// entered with CheckDeck's normal text/numeric inputs rather than a
+// separate custom picker-widget system. One in-progress draft at a time;
+// Submit locks it into the list below and starts a fresh draft.
+function atisDraftDefault(){
+  return { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
+}
+function atisEntryString(e){
+  var parts = [];
+  if(e.icao) parts.push(e.icao);
+  if(e.time) parts.push(e.time+'Z');
+  if(e.wind) parts.push(e.wind);
+  if(e.cavok) parts.push('CAVOK');
+  else {
+    if(e.vis) parts.push(e.vis+'KM');
+    [e.cloud1,e.cloud2,e.cloud3].forEach(function(c){ if(c) parts.push(c.toUpperCase()); });
+  }
+  if(e.tempDew) parts.push(e.tempDew);
+  if(e.qnh) parts.push('Q'+e.qnh);
+  if(e.info) parts.push('INFO '+e.info);
+  return parts.length ? parts.join(' ') : '(empty entry)';
+}
+function renderAtisHtml(){
+  var d = STATE.atisDraft;
+  var html = '<div class="fpBlock" style="border-color:var(--sky);width:100%"><div class="fpBlockTitle" style="color:var(--sky)">Current ATIS Entry</div>'+
+    '<div class="fdGrid" style="margin-top:8px">'+
+      '<div class="fdField"><label>Time (UTC)</label><input type="text" inputmode="numeric" id="atisTime" placeholder="HHMM" maxlength="5" value="'+escapeHtml(d.time||'')+'"/></div>'+
+      '<div class="fdField"><label>ICAO</label><input type="text" id="atisIcao" placeholder="EGKB" maxlength="4" value="'+escapeHtml(d.icao||'')+'" style="text-transform:uppercase"/></div>'+
+      '<div class="fdField"><label>Info</label><input type="text" id="atisInfo" placeholder="A\u2013Z" maxlength="1" value="'+escapeHtml(d.info||'')+'" style="text-transform:uppercase"/></div>'+
+      '<div class="fdField"><label>Runway</label><input type="text" id="atisRwy" placeholder="e.g. 24" value="'+escapeHtml(d.rwy||'')+'"/></div>'+
+    '</div>'+
+    '<div class="fdField full" style="margin-top:10px"><label>Wind (DDD/SS[GXX])</label><input type="text" id="atisWind" placeholder="e.g. 250/12G20" value="'+escapeHtml(d.wind||'')+'"/></div>'+
+    '<div class="fdGrid" style="margin-top:10px">'+
+      '<div class="fdField"><label>QNH (hPa)</label><input type="text" inputmode="numeric" id="atisQnh" value="'+escapeHtml(d.qnh||'')+'"/></div>'+
+      '<div class="fdField"><label>Temp/Dewpoint</label><input type="text" id="atisTempDew" placeholder="e.g. 18/12" value="'+escapeHtml(d.tempDew||'')+'"/></div>'+
+    '</div>'+
+    '<label class="fdCheckRow" style="margin-top:10px;width:100%"><input type="checkbox" id="atisCavok"'+(d.cavok?' checked':'')+'/> <span>CAVOK</span></label>'+
+    '<div id="atisVisCloudFields" style="width:100%;'+(d.cavok?'display:none':'')+'">'+
+      '<div class="fdField" style="margin-top:10px"><label>Visibility (km)</label><input type="text" inputmode="decimal" id="atisVis" value="'+escapeHtml(d.vis||'')+'"/></div>'+
+      '<div class="fdGrid" style="margin-top:10px">'+
+        '<div class="fdField"><label>Cloud 1</label><input type="text" id="atisCloud1" placeholder="e.g. SCT025" value="'+escapeHtml(d.cloud1||'')+'"/></div>'+
+        '<div class="fdField"><label>Cloud 2</label><input type="text" id="atisCloud2" value="'+escapeHtml(d.cloud2||'')+'"/></div>'+
+        '<div class="fdField"><label>Cloud 3</label><input type="text" id="atisCloud3" value="'+escapeHtml(d.cloud3||'')+'"/></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="fdField full" style="margin-top:10px"><label>Notes</label><textarea id="atisNotes" rows="2" placeholder="Additional remarks, NOTAMs\u2026" autocomplete="off" autocorrect="off">'+escapeHtml(d.notes||'')+'</textarea></div>'+
+    '<div class="savedFlightBtns" style="margin-top:12px">'+
+      '<button type="button" id="atisSubmitBtn" style="flex:1;border:1px solid var(--em);background:var(--em);color:#fff;border-radius:8px;padding:10px 0;font-family:\'JetBrains Mono\',monospace;font-weight:800;font-size:13px;cursor:pointer">\u2713 Submit ATIS</button>'+
+      '<button type="button" id="atisClearBtn" class="savedFlightDelBtn" style="flex:0 0 auto;padding:10px 16px">Clear</button>'+
+    '</div>'+
+  '</div>';
+  html += '<div style="width:100%;margin-top:16px">';
+  if(!STATE.atisEntries.length){
+    html += '<div class="manageCodesEmpty">No ATIS entries submitted yet.</div>';
+  } else {
+    html += '<div class="resHead" style="margin:0 0 8px"><h2 style="font-size:13px">Submitted ATIS</h2></div>';
+    html += STATE.atisEntries.map(function(e, idx){
+      return '<div class="savedFlightItem">'+
+        '<div class="savedFlightName" style="font-size:12px;line-height:1.5">'+escapeHtml(atisEntryString(e))+'</div>'+
+        (e.notes ? '<div class="savedFlightSub">'+escapeHtml(e.notes)+'</div>' : '')+
+        '<button type="button" class="atisDelBtn" data-idx="'+idx+'" style="margin-top:8px;width:100%;border:1px solid var(--rose);background:var(--surface);color:var(--rose);border-radius:7px;padding:7px 0;font-family:\'JetBrains Mono\',monospace;font-weight:800;font-size:11.5px;cursor:pointer">Delete</button>'+
+      '</div>';
+    }).join('');
+  }
+  html += '</div>';
+  return html;
+}
+function wireAtis(card){
+  function bindDraft(id, key, formatter){
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('input', function(){
+      STATE.atisDraft[key] = formatter ? formatter(el.value) : el.value;
+      if(formatter) el.value = STATE.atisDraft[key];
+      saveState();
+    });
+  }
+  bindDraft('atisTime', 'time', autoFormatTime);
+  bindDraft('atisIcao', 'icao', function(v){ return v.toUpperCase(); });
+  bindDraft('atisInfo', 'info', function(v){ return v.toUpperCase(); });
+  bindDraft('atisRwy', 'rwy');
+  bindDraft('atisWind', 'wind');
+  bindDraft('atisQnh', 'qnh');
+  bindDraft('atisTempDew', 'tempDew');
+  bindDraft('atisVis', 'vis');
+  bindDraft('atisCloud1', 'cloud1');
+  bindDraft('atisCloud2', 'cloud2');
+  bindDraft('atisCloud3', 'cloud3');
+  bindDraft('atisNotes', 'notes');
+  var cavokBox = document.getElementById('atisCavok');
+  if(cavokBox) cavokBox.addEventListener('change', function(){
+    STATE.atisDraft.cavok = cavokBox.checked;
+    saveState();
+    renderCard(card);
+  });
+  var submitBtn = document.getElementById('atisSubmitBtn');
+  if(submitBtn) submitBtn.addEventListener('click', function(){
+    var d = STATE.atisDraft;
+    if(!d.icao && !d.time && !d.wind && !d.qnh){
+      showConfirm('This ATIS entry looks empty \u2014 nothing to submit.', 'OK', function(){});
+      return;
+    }
+    STATE.atisEntries.push(JSON.parse(JSON.stringify(d)));
+    STATE.atisDraft = atisDraftDefault();
+    saveState();
+    renderCard(card);
+    renderCalculations();
+  });
+  var clearBtn = document.getElementById('atisClearBtn');
+  if(clearBtn) clearBtn.addEventListener('click', function(){
+    STATE.atisDraft = atisDraftDefault();
+    saveState();
+    renderCard(card);
+  });
+  document.querySelectorAll('.atisDelBtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      var idx = parseInt(b.getAttribute('data-idx'),10);
+      showConfirm('Delete this ATIS entry?', 'Delete', function(){
+        STATE.atisEntries.splice(idx,1);
+        saveState();
+        renderCard(card);
+        renderCalculations();
+      });
+    });
+  });
 }
 function flightSummaryLabel(snap){
   var fd = (snap && snap.flightDetails) || {};
@@ -2695,6 +2834,8 @@ function resetAllData(){
   STATE.tankLog = [];
   STATE.tankSelected = 'L';
   STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' };
+  STATE.atisEntries = [];
+  STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
   saveState();
   // Stay on whatever view the person is already looking at (they pressed
   // this from Post Flight) rather than jumping them elsewhere — just
@@ -3289,8 +3430,13 @@ function updateCountdown(){
   [['ETOB',etob],['CTOT',ctot]].forEach(function(pair){
     if(!pair[1]) return;
     var cd = countdownText(pair[1]);
-    parts.push(pair[0]+' '+pair[1]+' UTC <span class="cdT'+(cd&&cd.overdue?' overdue':'')+'">'+(cd?cd.label:'--')+'</span>');
+    // Fully disconnected from the flight timer above, and from each
+    // other — once a target expires it's just removed from the bar
+    // rather than lingering in a red "overdue" state.
+    if(cd && cd.overdue) return;
+    parts.push(pair[0]+' '+pair[1]+' UTC <span class="cdT">'+(cd?cd.label:'--')+'</span>');
   });
+  if(!parts.length){ row.style.display = 'none'; syncHeaderOffset(); return; }
   row.innerHTML = parts.join(' &nbsp;&middot;&nbsp; ');
   row.style.display = 'flex';
   syncHeaderOffset();
@@ -3395,6 +3541,17 @@ function renderCalculations(){
       (!isNaN(actualLanding) ? '<div class="legs" style="margin-top:6px"><span>Actual (entered) <b>'+fmtFuel(actualLanding)+'</b></span><span>Variance <b style="color:'+(landingVariance===null?'inherit':(landingVariance<0?'#be123c':'#047857'))+'">'+fmtFuelSigned(landingVariance)+'</b></span></div>' : '')+
       ((STATE.fuel.oilLevel || STATE.fuel.oilAdded) ? '<div class="resHead" style="margin:10px 0 4px"><h2 style="font-size:12px">Oil</h2></div><div class="legs"><span>Level <b>'+(STATE.fuel.oilLevel||'\u2014')+' qts</b></span><span>Added <b>'+(STATE.fuel.oilAdded||'\u2014')+' qts</b></span></div>' : '')+
     '</div>';
+  }
+
+  if(STATE.atisEntries.length){
+    html += '<div class="calcCard"><div class="ck">ATIS</div>';
+    STATE.atisEntries.forEach(function(e, idx){
+      html += '<div class="resRow" style="'+(idx>0?'border-top:1px solid #e2e8f0;':'')+'flex-direction:column;align-items:flex-start;padding:8px 2px">'+
+        '<span class="rt" style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escapeHtml(atisEntryString(e))+'</span>'+
+        (e.notes ? '<span style="font-size:11px;color:var(--muted);margin-top:3px">'+escapeHtml(e.notes)+'</span>' : '')+
+      '</div>';
+    });
+    html += '</div>';
   }
 
   if(STATE.tankLog.length){
