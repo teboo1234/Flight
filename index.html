@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck v59 — Pre-Flight Card Checklist</title>
+<title>CheckDeck v63 — Pre-Flight Card Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -43,12 +43,13 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .countdownRow .cdT{ color:var(--em); margin-left:3px; }
 .countdownRow .cdT.overdue{ color:var(--rose); }
 .headingRow{ display:flex; height:42px; border-bottom:1px solid var(--border); }
-.headingBtn{ flex:1; border:none; border-right:1px solid var(--border); background:var(--surface); color:var(--text); font-family:'Syne',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; }
+.headingBtn{ flex:1; min-width:0; border:none; border-right:1px solid var(--border); background:var(--surface); color:var(--text); font-family:'Syne',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; padding:0 2px; }
 .slotBar{ width:100%; height:14px; background:var(--border); overflow:hidden; }
 .slotBarFill{ height:100%; width:0%; background:var(--em); transition:width 1s linear, background 0.4s; }
 .slotBarFill.amber{ background:var(--amber); }
 .slotBarFill.overdue{ background:var(--rose); }
 .notesBtnHeading{ flex:0 0 42px; border:none; border-right:1px solid var(--border); background:rgba(109,40,217,.06); color:var(--violet); font-size:15px; cursor:pointer; }
+.tasksBtnHeading{ border-right:none; border-left:1px solid var(--border); background:rgba(3,105,161,.06); color:var(--sky); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; }
 .headingBtn:last-child{ border-right:none; }
 .headingBtn.on{ background:var(--sky); color:#fff; }
 .phaseRow{ display:flex; gap:6px; height:38px; overflow-x:auto; padding:0 10px; align-items:center; border-bottom:1px solid var(--border); }
@@ -378,6 +379,13 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .calcCard .cv{ font-family:'JetBrains Mono',monospace; font-size:30px; font-weight:800; color:#047857; }
 .calcCard .cv.pending{ color:#94a3b8; font-size:20px; font-weight:600; }
 .calcCard .cv small{ font-size:14px; color:#64748b; font-weight:600; margin-left:6px; }
+.timesTable{ width:100%; border-collapse:collapse; font-family:'JetBrains Mono',monospace; }
+.timesTable th{ text-align:left; font-size:9.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#94a3b8; padding:0 6px 6px 0; border-bottom:1.5px solid #e2e8f0; }
+.timesTable td{ padding:9px 6px 9px 0; border-bottom:1px solid #eef1f5; font-size:12.5px; color:#475569; white-space:nowrap; }
+.timesTable tr:last-child td{ border-bottom:none; }
+.timesTable .ttLabel{ font-weight:800; color:#0f172a; text-transform:uppercase; font-size:11px; letter-spacing:.03em; }
+.timesTable .ttTotal{ font-weight:800; color:#047857; }
+.timesTable .ttPending{ color:#94a3b8; font-style:italic; font-weight:600; }
 .resWrap{ max-width:720px; margin:0 auto; padding:18px 16px 60px; }
 .resHead{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
 .resHead h2{ font-family:'JetBrains Mono',monospace; font-size:16px; }
@@ -425,7 +433,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v59</div>
+  <div id="versionBadge">v63</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -470,6 +478,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
       <div class="calcActions">
         <button class="printBtn" onclick="printOnePage()">Print / PDF</button>
         <button class="printBtn shareBtn" id="shareCalcBtn" style="background:#047857">Share / Email</button>
+        <button class="resetBtn" id="loadSecondFlightBtn" style="border-color:var(--amber);color:var(--amber)">Load Second Flight</button>
         <button class="resetBtn" id="resetAllBtn">Reset All</button>
       </div>
     </div>
@@ -514,9 +523,23 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <div id="notesModal" class="confirmModal" style="display:none">
   <div class="confirmBox">
     <div class="confirmMsg">Notes</div>
-    <textarea id="notesModalText" class="promptInput" rows="6" placeholder="Quick note\u2026" autocomplete="off" autocorrect="off" style="text-align:left;font-size:14px;height:auto;font-family:'DM Sans',sans-serif"></textarea>
+    <textarea id="notesModalText" class="promptInput" rows="6" placeholder="Quick note&hellip;" autocomplete="off" autocorrect="off" style="text-align:left;font-size:14px;height:auto;font-family:'DM Sans',sans-serif"></textarea>
     <div class="confirmBtns">
       <button type="button" id="notesModalCloseBtn" class="confirmOk" style="background:#0369a1;flex:1">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="tasksModal" class="confirmModal" style="display:none">
+  <div class="confirmBox">
+    <div class="confirmMsg">Tasks</div>
+    <div id="tasksModalList" class="manageCodesList" style="max-height:45vh;overflow-y:auto"></div>
+    <div class="savedFlightTopBtns" style="margin-top:10px">
+      <input type="text" id="taskNewInput" class="promptInput" placeholder="Add a task&hellip;" style="flex:1;margin:0"/>
+      <button type="button" id="taskAddBtn" class="grCodeAddBtn" style="flex:0 0 auto;padding:0 16px">Add</button>
+    </div>
+    <div class="confirmBtns">
+      <button type="button" id="tasksModalCloseBtn" class="confirmOk" style="background:#0369a1;flex:1">Done</button>
     </div>
   </div>
 </div>
@@ -553,6 +576,22 @@ input,select{ font-family:'JetBrains Mono',monospace; }
     <div class="confirmBtns">
       <button type="button" id="importFlightCancelBtn" class="confirmCancel">Cancel</button>
       <button type="button" id="importFlightOkBtn" class="confirmOk" style="background:#0369a1">Import</button>
+    </div>
+  </div>
+</div>
+
+<div id="newFlightModal" class="confirmModal" style="display:none">
+  <div class="confirmBox">
+    <div class="confirmMsg">Add a new flight</div>
+    <div class="codePresetsLbl" style="margin-bottom:6px">Starts blank — nothing ticked, default fuel — ready to Load whenever this flight happens.</div>
+    <div class="fdGrid" style="width:100%">
+      <div class="fdField"><label>Date</label><input type="date" id="newFlightDate"/></div>
+      <div class="fdField"><label>Registration</label><input type="text" id="newFlightReg" placeholder="G-XXXX" style="text-transform:uppercase"/></div>
+    </div>
+    <div class="fdField full" style="margin-top:8px"><label>Student</label><input type="text" id="newFlightStudent"/></div>
+    <div class="confirmBtns">
+      <button type="button" id="newFlightCancelBtn" class="confirmCancel">Cancel</button>
+      <button type="button" id="newFlightOkBtn" class="confirmOk" style="background:#047857">Add Flight</button>
     </div>
   </div>
 </div>
@@ -776,6 +815,7 @@ var CHECKLIST_DATA = [
       note:'Reminder — run the paper Taxi / Power / Pre-Take-Off checklists in sequence.',
       children:[
         {text:'Off Blocks', type:'timeNow'},
+        {text:'Start SkyDemon'},
         {text:'Taxi Checks', prompt:true, note:'Complete the paper taxi checklist.'},
         {text:'Power Checks', prompt:true, note:'Complete the paper power checklist.'},
         {text:'Pre-Take Off Checks', prompt:true, note:'Complete the paper pre-take-off checklist.'},
@@ -794,6 +834,7 @@ var CHECKLIST_DATA = [
     { id:'airbornegrp', text:'Airborne', type:'group', children:[
       {text:'Landing', type:'timeNow'},
       {text:'On Blocks', type:'timeNow'},
+      {text:'Stop SkyDemon'},
       {text:'Flight plan closed if not automatically closed by tower', hasLaw:true, lawKey:'7a'},
       {text:'Logbook/tech log entries made if required', hasLaw:true, lawKey:'7d'},
       {text:'Tacho & Hobbs — End', type:'hobbsTacho'},
@@ -901,7 +942,7 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
    ============================================================ */
 var STORE_KEY = 'checkdeck_state_v1';
 var USG_TO_L = 3.785;
-var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, atisEntries:[], atisDraft:{ icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' }, customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
+var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, atisEntries:[], atisDraft:{ icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' }, manualTasks:[], customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
   fuel:{ unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
   tankLog:[], tankSelected:'L',
   flightDetails:{ date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' } };
@@ -930,6 +971,7 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     if(STATE.autoPrintOnSync === undefined) STATE.autoPrintOnSync = false;
     if(!STATE.atisEntries) STATE.atisEntries = [];
     if(!STATE.atisDraft) STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
+    if(!STATE.manualTasks) STATE.manualTasks = [];
     if(!STATE.flightDetails) STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' };
     if(STATE.flightDetails.landAway === undefined || STATE.flightDetails.landAway === false) STATE.flightDetails.landAway = '';
     if(STATE.flightDetails.landAway === true) STATE.flightDetails.landAway = 'Yes';
@@ -1089,6 +1131,16 @@ function renderHeadingRow(){
     });
     elHeadingRow.appendChild(btn);
   });
+  // Tasks mirrors Notes — one sticky button, far right this time — for a
+  // manual tick-box list independent of the main checklist phases.
+  var doneCount = STATE.manualTasks.filter(function(t){ return t.done; }).length;
+  var openCount = STATE.manualTasks.length - doneCount;
+  var tasksBtn = document.createElement('button');
+  tasksBtn.className = 'notesBtnHeading tasksBtnHeading';
+  tasksBtn.innerHTML = '\u2611'+(openCount>0?' '+openCount:'');
+  tasksBtn.title = 'Tasks';
+  tasksBtn.addEventListener('click', showTasksModal);
+  elHeadingRow.appendChild(tasksBtn);
   renderTankHeaderBar();
 }
 // Only needed where the internal phase key isn't already good display
@@ -1976,7 +2028,7 @@ function fuelCalc(){
 // Calculations tab's Air Time card already reads), so this reflects the
 // flight as actually flown rather than the planned Trip figure.
 function fuelTimesCalc(c){
-  var takeoff = STATE.values['offblockspretakeoff.otpgrp.14'];
+  var takeoff = STATE.values['offblockspretakeoff.otpgrp.15'];
   var landing = STATE.values['airborne.airbornegrp.0'];
   var airHr = timeDiffCalc(takeoff, landing);
   if(c.fob===null || airHr===null || c.burn<=0) return { val:null, airHr:airHr, tripActual:null };
@@ -2041,6 +2093,68 @@ function showNotesModal(){
   document.getElementById('notesModalCloseBtn').onclick = function(){
     modal.style.display = 'none';
     renderHeadingRow();
+  };
+}
+// Tasks — a manual tick-box list, separate from the main phase checklists.
+// addManualTask() is the entry point a future checklist could call to add
+// its own items here automatically; for now it's only ever called from
+// the "Add" button below.
+function addManualTask(text){
+  text = (text||'').trim();
+  if(!text) return;
+  STATE.manualTasks.push({ text:text, done:false });
+  saveState();
+}
+function renderTasksModalList(){
+  var listEl = document.getElementById('tasksModalList');
+  if(!STATE.manualTasks.length){
+    listEl.innerHTML = '<div class="manageCodesEmpty">No tasks yet.</div>';
+    return;
+  }
+  listEl.innerHTML = STATE.manualTasks.map(function(t, idx){
+    return '<div class="manageCodeItem">'+
+      '<label style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer">'+
+        '<input type="checkbox" class="taskCheckbox" data-idx="'+idx+'"'+(t.done?' checked':'')+' style="flex-shrink:0;width:18px;height:18px"/>'+
+        '<span class="manageCodeText" style="'+(t.done?'text-decoration:line-through;opacity:.55':'')+'">'+escapeHtml(t.text)+'</span>'+
+      '</label>'+
+      '<button type="button" class="manageCodeDelBtn taskDelBtn" data-idx="'+idx+'">Delete</button>'+
+    '</div>';
+  }).join('');
+  listEl.querySelectorAll('.taskCheckbox').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      STATE.manualTasks[parseInt(cb.getAttribute('data-idx'),10)].done = cb.checked;
+      saveState();
+      renderTasksModalList();
+      renderHeadingRow();
+    });
+  });
+  listEl.querySelectorAll('.taskDelBtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      STATE.manualTasks.splice(parseInt(b.getAttribute('data-idx'),10), 1);
+      saveState();
+      renderTasksModalList();
+      renderHeadingRow();
+    });
+  });
+}
+function showTasksModal(){
+  var modal = document.getElementById('tasksModal');
+  renderTasksModalList();
+  modal.style.display = 'flex';
+  var input = document.getElementById('taskNewInput');
+  input.value = '';
+  var addBtn = document.getElementById('taskAddBtn');
+  function onAdd(){
+    addManualTask(input.value);
+    input.value = '';
+    renderTasksModalList();
+    renderHeadingRow();
+    input.focus();
+  }
+  addBtn.onclick = onAdd;
+  input.onkeydown = function(e){ if(e.key === 'Enter'){ e.preventDefault(); onAdd(); } };
+  document.getElementById('tasksModalCloseBtn').onclick = function(){
+    modal.style.display = 'none';
   };
 }
 function renderTankHeaderBar(){
@@ -2223,7 +2337,8 @@ function captureFlightSnapshot(){
     tankSelected: STATE.tankSelected,
     flightDetails: JSON.parse(JSON.stringify(STATE.flightDetails)),
     customItems: JSON.parse(JSON.stringify(STATE.customItems)),
-    atisEntries: JSON.parse(JSON.stringify(STATE.atisEntries))
+    atisEntries: JSON.parse(JSON.stringify(STATE.atisEntries)),
+    manualTasks: JSON.parse(JSON.stringify(STATE.manualTasks))
   };
 }
 function applyFlightSnapshot(snap){
@@ -2236,6 +2351,44 @@ function applyFlightSnapshot(snap){
   STATE.flightDetails = snap.flightDetails ? JSON.parse(JSON.stringify(snap.flightDetails)) : { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' };
   STATE.customItems = snap.customItems ? JSON.parse(JSON.stringify(snap.customItems)) : {};
   STATE.atisEntries = snap.atisEntries ? JSON.parse(JSON.stringify(snap.atisEntries)) : [];
+  STATE.manualTasks = snap.manualTasks ? JSON.parse(JSON.stringify(snap.manualTasks)) : [];
+}
+// A brand new flight created from scratch in Saved Flights (as opposed to
+// captureFlightSnapshot, which snapshots whatever's currently live) —
+// nothing ticked, default fuel, just the details entered at creation time.
+function blankFlightSnapshot(){
+  return {
+    checked: {}, values: {}, global: { etob:'', ctot:'', transponderCode:'' },
+    fuel: { unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
+    tankLog: [], tankSelected: 'L',
+    flightDetails: { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' },
+    customItems: {}, atisEntries: [], manualTasks: []
+  };
+}
+function showNewFlightModal(card){
+  var modal = document.getElementById('newFlightModal');
+  document.getElementById('newFlightDate').value = '';
+  document.getElementById('newFlightReg').value = '';
+  document.getElementById('newFlightStudent').value = '';
+  modal.style.display = 'flex';
+  document.getElementById('newFlightCancelBtn').onclick = function(){ modal.style.display = 'none'; };
+  document.getElementById('newFlightOkBtn').onclick = function(){
+    var date = document.getElementById('newFlightDate').value || '';
+    var reg = document.getElementById('newFlightReg').value.trim().toUpperCase();
+    var student = document.getElementById('newFlightStudent').value.trim();
+    var snap = blankFlightSnapshot();
+    snap.flightDetails.date = date;
+    snap.flightDetails.registration = reg;
+    snap.flightDetails.student = student;
+    var suggested = [date, reg, student].filter(Boolean).join(' - ') || 'New flight';
+    var name = suggested;
+    var n = 2;
+    while(STATE.savedFlights[name]){ name = suggested+' ('+n+')'; n++; }
+    STATE.savedFlights[name] = snap;
+    saveState();
+    modal.style.display = 'none';
+    renderCard(card);
+  };
 }
 // Preview PDF — borrows the exact same rendering renderCalculations()
 // uses for Post Flight, but for a SAVED flight rather than the live one,
@@ -2407,7 +2560,8 @@ function flightSummaryLabel(snap){
 }
 function renderSavedFlightsHtml(){
   var names = Object.keys(STATE.savedFlights);
-  var html = '<div class="savedFlightTopBtns">'+
+  var html = '<button type="button" id="addNewFlightBtn" class="grCodeAddBtn" style="width:100%;border-color:var(--em);color:var(--em)">+ Add New Flight&hellip;</button>';
+  html += '<div class="savedFlightTopBtns" style="margin-top:8px">'+
     '<button type="button" id="saveFlightBtn" class="grCodeAddBtn" style="flex:1">+ Save Current Flight&hellip;</button>'+
     '<button type="button" id="importFlightBtn" class="grCodeAddBtn" style="flex:1">\u2913 Import Flight&hellip;</button>'+
   '</div>';
@@ -2516,10 +2670,12 @@ function showImportFlightModal(card){
   okBtn.addEventListener('click', onOk);
 }
 function wireSavedFlights(card){
+  var addNewBtn = document.getElementById('addNewFlightBtn');
+  if(addNewBtn) addNewBtn.addEventListener('click', function(){ showNewFlightModal(card); });
   var saveBtn = document.getElementById('saveFlightBtn');
   if(saveBtn) saveBtn.addEventListener('click', function(){
     var fd = STATE.flightDetails;
-    var takeoffV = STATE.values['offblockspretakeoff.otpgrp.14'];
+    var takeoffV = STATE.values['offblockspretakeoff.otpgrp.15'];
     var suggested = [fd.date, fd.registration, fd.student, takeoffV].filter(Boolean).join(' - ');
     showPrompt('Name this flight:', suggested, function(name){
       name = (name||'').trim();
@@ -2833,6 +2989,7 @@ function resetAllData(){
   STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', notes:'' };
   STATE.atisEntries = [];
   STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
+  STATE.manualTasks = [];
   saveState();
   // Stay on whatever view the person is already looking at (they pressed
   // this from Post Flight) rather than jumping them elsewhere — just
@@ -2842,6 +2999,37 @@ function resetAllData(){
   render();
   renderResults(); renderCalculations();
   updateCountdown();
+}
+// Load Second Flight — for back-to-back flights in the SAME aircraft on
+// the same day. Clears the Ground/Airborne checklist progress and the
+// per-flight timing (ETOB/CTOT, transponder, tank log) so the next leg
+// starts clean, but deliberately leaves the Fuel Plan untouched (it's
+// still the same aircraft with whatever fuel is actually left), and
+// carries the just-finished flight's End Tacho/Hobbs over as the new
+// flight's Start Tacho/Hobbs, since those genuinely are continuous.
+var AIRBOURNE_CARD_PREFIXES = ['crewpax.2x','atis.atisgrp','start.startgrp','therest.restgrp','offblockspretakeoff.otpgrp','airborne.airbornegrp'];
+function isAirbourneCardKey(key){
+  return AIRBOURNE_CARD_PREFIXES.some(function(p){ return key === p || key.indexOf(p+'.') === 0; });
+}
+function loadSecondFlight(){
+  var prevEnd = STATE.values['airborne.airbornegrp.5'] || {};
+  Object.keys(STATE.checked).forEach(function(k){ if(isAirbourneCardKey(k)) delete STATE.checked[k]; });
+  Object.keys(STATE.values).forEach(function(k){ if(isAirbourneCardKey(k)) delete STATE.values[k]; });
+  STATE.global = { etob:'', ctot:'', transponderCode:'' };
+  STATE.tankLog = [];
+  STATE.tankSelected = 'L';
+  STATE.atisEntries = [];
+  STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
+  if(prevEnd.tacho || prevEnd.hobbs){
+    STATE.values['start.startgrp.1'] = { tacho: prevEnd.tacho||'', hobbs: prevEnd.hobbs||'' };
+  }
+  saveState();
+  showingSectDone = false; showingPhaseDone = false;
+  renderHeadingRow(); renderPhaseRow();
+  render();
+  renderResults(); renderCalculations();
+  updateCountdown();
+  renderTankHeaderBar();
 }
 // Generic in-app confirm — shows the modal, resolves the given callback
 // only if the person taps the destructive action button.
@@ -2865,6 +3053,9 @@ function showConfirm(msg, okLabel, onConfirm){
 document.getElementById('resetAllBtn').addEventListener('click', function(){
   showConfirm('Reset all entered values for this flight? This cannot be undone.', 'Reset All', resetAllData);
 });
+document.getElementById('loadSecondFlightBtn').addEventListener('click', function(){
+  showConfirm('Load a second flight? This clears Ground/Airborne checklist progress, ETOB/CTOT, transponder, and the tank log — but keeps the Fuel Plan as-is, and carries End Tacho/Hobbs over as the new Start Tacho/Hobbs. This cannot be undone.', 'Load Second Flight', loadSecondFlight);
+});
 // Plain-text summary for Share/Email — same figures the Calculations tab
 // shows. Kept to plain text (no HTML) since mail clients and the Web
 // Share API both vary in how much markup they honour.
@@ -2883,11 +3074,11 @@ function buildFlightSummary(){
     lines.push('');
   }
   var chocksOff = STATE.values['offblockspretakeoff.otpgrp.0'];
-  var takeoff = STATE.values['offblockspretakeoff.otpgrp.14'];
+  var takeoff = STATE.values['offblockspretakeoff.otpgrp.15'];
   var landing = STATE.values['airborne.airbornegrp.0'];
   var chocksOn = STATE.values['airborne.airbornegrp.1'];
   var tachoStartV = STATE.values['start.startgrp.1'] || {};
-  var tachoEndV = STATE.values['airborne.airbornegrp.4'] || {};
+  var tachoEndV = STATE.values['airborne.airbornegrp.5'] || {};
   lines.push('Block Time: Chocks Off '+(chocksOff||'--')+' / Chocks On '+(chocksOn||'--'));
   lines.push('Air Time: Takeoff '+(takeoff||'--')+' / Landing '+(landing||'--'));
   lines.push('Tacho: Start '+(tachoStartV.tacho||'--')+' / End '+(tachoEndV.tacho||'--'));
@@ -3430,7 +3621,7 @@ function updateCountdown(){
   if(!row) return;
   var parts = [];
   var etob = STATE.global.etob, ctot = STATE.global.ctot;
-  var takeoff = STATE.values['offblockspretakeoff.otpgrp.14'];
+  var takeoff = STATE.values['offblockspretakeoff.otpgrp.15'];
   var landing = STATE.values['airborne.airbornegrp.0'];
   // Take Off is the trigger, full stop — not gated on ETOB/CTOT existing
   // or having expired, since once you're actually airborne, watching a
@@ -3524,23 +3715,25 @@ function renderCalculations(){
   var elCalcBody = document.getElementById('calcBody');
   if(!elCalcBody) return;
   var chocksOff = STATE.values['offblockspretakeoff.otpgrp.0'];
-  var takeoff = STATE.values['offblockspretakeoff.otpgrp.14'];
+  var takeoff = STATE.values['offblockspretakeoff.otpgrp.15'];
   var landing = STATE.values['airborne.airbornegrp.0'];
   var chocksOn = STATE.values['airborne.airbornegrp.1'];
   var tachoStartV = STATE.values['start.startgrp.1'] || {};
-  var tachoEndV = STATE.values['airborne.airbornegrp.4'] || {};
+  var tachoEndV = STATE.values['airborne.airbornegrp.5'] || {};
 
   var blockTime = timeDiffCalc(chocksOff, chocksOn);
   var airTime = timeDiffCalc(takeoff, landing);
   var tachoTime = (tachoStartV.tacho && tachoEndV.tacho) ? Math.round((parseFloat(tachoEndV.tacho)-parseFloat(tachoStartV.tacho))*10)/10 : null;
   var hobbsTime = (tachoStartV.hobbs && tachoEndV.hobbs) ? Math.round((parseFloat(tachoEndV.hobbs)-parseFloat(tachoStartV.hobbs))*10)/10 : null;
 
-  function calcCard(title, legL, legLV, legR, legRV, val, unit){
+  function timeRow(label, fromV, toV, val){
     var pending = val===null;
-    return '<div class="calcCard"><div class="ck">'+title+'</div>'+
-      '<div class="legs"><span>'+legL+' <b>'+(legLV||'--')+'</b></span><span>'+legR+' <b>'+(legRV||'--')+'</b></span></div>'+
-      '<div class="cv'+(pending?' pending':'')+'">'+(pending ? 'Awaiting both readings' : (decToHM(val)+' <small>('+val.toFixed(1)+' '+unit+')</small>'))+'</div>'+
-    '</div>';
+    return '<tr>'+
+      '<td class="ttLabel">'+label+'</td>'+
+      '<td>'+(fromV||'\u2014')+'</td>'+
+      '<td>'+(toV||'\u2014')+'</td>'+
+      '<td class="'+(pending?'ttPending':'ttTotal')+'">'+(pending?'Awaiting both':decToHM(val))+'</td>'+
+    '</tr>';
   }
 
   var html = '';
@@ -3559,10 +3752,14 @@ function renderCalculations(){
     '<div class="fdField full"><label>Defects</label><textarea id="fdDefects" rows="3" placeholder="None" autocomplete="off" autocorrect="off" spellcheck="false">'+escapeHtml(fd.defects||'')+'</textarea></div>'+
     '<div class="fdField full"><label>Notes</label><textarea id="fdNotes" rows="3" placeholder="Anything else worth recording" autocomplete="off" autocorrect="off" spellcheck="false">'+escapeHtml(fd.notes||'')+'</textarea></div>'+
   '</div>';
-  html += calcCard('Block Time', 'Chocks Off', chocksOff?chocksOff+' UTC':null, 'Chocks On', chocksOn?chocksOn+' UTC':null, blockTime, 'hrs');
-  html += calcCard('Air Time', 'Takeoff', takeoff?takeoff+' UTC':null, 'Landing', landing?landing+' UTC':null, airTime, 'hrs');
-  html += calcCard('Tacho Time', 'Start', tachoStartV.tacho||null, 'End', tachoEndV.tacho||null, tachoTime, 'hrs');
-  html += calcCard('Hobbs Time', 'Start', tachoStartV.hobbs||null, 'End', tachoEndV.hobbs||null, hobbsTime, 'hrs');
+  html += '<div class="calcCard"><div class="ck">Times</div>'+
+    '<table class="timesTable"><thead><tr><th></th><th>From</th><th>To</th><th>Total</th></tr></thead><tbody>'+
+    timeRow('Block', chocksOff?chocksOff+' UTC':null, chocksOn?chocksOn+' UTC':null, blockTime)+
+    timeRow('Air', takeoff?takeoff+' UTC':null, landing?landing+' UTC':null, airTime)+
+    timeRow('Tacho', tachoStartV.tacho, tachoEndV.tacho, tachoTime)+
+    timeRow('Hobbs', tachoStartV.hobbs, tachoEndV.hobbs, hobbsTime)+
+    '</tbody></table>'+
+  '</div>';
 
   var fc = fuelCalc();
   if(fc.fob !== null || fc.total > 0){
@@ -3606,7 +3803,7 @@ function renderCalculations(){
       '<div class="legs"><span>Time on L <b>'+secsToHMS(ts.L.hrs*3600)+'</b></span><span>Time on R <b>'+secsToHMS(ts.R.hrs*3600)+'</b></span></div>';
     if(ts.fob!==null && ts.burn>0){
       html += '<div class="legs" style="margin-top:6px"><span>L remaining <b>'+fmtFuel(ts.L.qty)+'</b></span><span>R remaining <b>'+fmtFuel(ts.R.qty)+'</b></span></div>';
-      var shutdownV = STATE.values['airborne.airbornegrp.5'];
+      var shutdownV = STATE.values['airborne.airbornegrp.6'];
       var enteredUSG = (shutdownV && shutdownV.valUSG !== undefined && shutdownV.valUSG !== '') ? shutdownV.valUSG : null;
       var calcUSG = (ts.L.qty!==null && ts.R.qty!==null) ? (ts.L.qty + ts.R.qty) : null;
       if(enteredUSG !== null && calcUSG !== null){
