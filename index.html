@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v2 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v9 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -112,7 +112,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 @keyframes flashGo{ 0%{ background:rgba(16,185,129,.15);} 100%{ background:var(--surface); } }
 @keyframes flashNa{ 0%{ background:rgba(245,158,11,.15);} 100%{ background:var(--surface); } }
 
-.navSide{ position:absolute; top:0; bottom:0; width:50px; display:flex; align-items:center; justify-content:center; background:none; border:none; color:rgba(15,23,42,.2); font-size:20px; cursor:pointer; z-index:5; }
+.navSide{ display:none; }
 .navSide.left{ left:0; } .navSide.right{ right:0; }
 .navSide:active{ color:rgba(15,23,42,.45); }
 
@@ -284,6 +284,11 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .manageCodesEmpty{ text-align:center; color:#3f4c5e; font-size:13px; padding:16px 0; }
 .codePresetsBlock{ border-top:1px solid #e2e8f0; margin-top:14px; padding-top:14px; }
 .codePresetsLbl{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#3f4c5e; margin-bottom:8px; }
+.cloudTypeGrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; width:100%; }
+.cloudTypeBtn{ padding:16px 0; font-size:15px; font-family:'JetBrains Mono',monospace; font-weight:800; background:var(--card); color:var(--text); border:1.5px solid var(--border); border-radius:8px; cursor:pointer; }
+.cloudTypeBtn.on{ background:#1e3a8a; color:#fff; border-color:#1e3a8a; }
+@keyframes digCursorBlink{ 0%,50%{ opacity:1; } 51%,100%{ opacity:.15; } }
+.dig-active{ animation:digCursorBlink 1s step-end infinite; }
 .codePresetsList{ display:flex; flex-direction:column; gap:6px; }
 .codePresetsEmpty{ font-size:12px; color:#3f4c5e; font-style:italic; }
 .codePresetItem{ display:flex; align-items:center; gap:8px; background:#f5f7fa; border:1px solid #e2e8f0; border-radius:8px; padding:7px 10px; }
@@ -366,6 +371,8 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .fdField.full{ margin-top:12px; }
 .fdField label{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#3f4c5e; }
 .fdField input, .fdField textarea{ padding:9px 10px; border:1px solid #cbd5e1; border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:14px; color:#0f172a; background:#f8fafc; width:100%; }
+.cloudPickBtn{ padding:9px 10px; border:1px solid #cbd5e1; border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:14px; color:#0f172a; background:#f8fafc; width:100%; text-align:left; cursor:pointer; }
+.cloudPickBtn:empty, .cloudPickBtn.placeholder{ color:#94a3b8; }
 .fdCheckRow{ display:flex; align-items:center; gap:8px; padding:9px 10px; border:1px solid #cbd5e1; border-radius:8px; background:#f8fafc; cursor:pointer; }
 .fdCheckRow input{ width:auto; }
 .fdCheckRow span{ font-family:'JetBrains Mono',monospace; font-size:14px; color:#0f172a; }
@@ -433,7 +440,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v2</div>
+  <div id="versionBadge">v9</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -596,6 +603,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
   </div>
 </div>
 
+
 <div id="flightPreviewModal" class="confirmModal" style="display:none;align-items:stretch;padding:0">
   <div class="flightPreviewWrap">
     <div class="flightPreviewHead">
@@ -686,9 +694,6 @@ var CHECKLIST_DATA = [
   { phase:'Ground', id:'crewpax', title:'Crew/Pax Brief', items: [
     { id:'2x', text:'Crew/Pax Brief', type:'group', children:['Exits','Belts','Oxygen','Life jackets','Dinghy','Emergency actions'] }
   ]},
-  { phase:'Ground', id:'atis', title:'ATIS', items: [
-    { id:'atisgrp', text:'ATIS', type:'atis' }
-  ]},
   { phase:'Ground', id:'start', title:'Start', items: [
     { id:'startgrp', text:'Start', type:'group', children:[
       'Booked out',
@@ -703,6 +708,9 @@ var CHECKLIST_DATA = [
       {text:'QNH-SPS difference', keypad:'alt', unit:'ft'},
       {text:'Transponder code set', type:'code'}
     ] }
+  ]},
+  { phase:'Ground', id:'atis', title:'ATIS', items: [
+    { id:'atisgrp', text:'ATIS', type:'atis' }
   ]},
   { phase:'Ground', id:'offblockspretakeoff', title:'Off Blocks \u2192 Pre-Take Off Checks', items:[
     { id:'otpgrp', text:'Off Blocks to Pre-Take Off Checks', type:'group',
@@ -761,7 +769,7 @@ var HEADINGS = [
   { key:'FuelH', label:'FUEL', phases:['Fuel'] },
   { key:'Airbourne', label:'AIRBOURNE', phases:['Ground','Airborne'] },
   { key:'PostFlight', label:'POST FLIGHT', phases:[] },
-  { key:'ReferenceH', label:'REFERENCE', phases:['Reference'] }
+  { key:'ReferenceH', label:'REF', phases:['Reference'] }
 ];
 var curHeading = 'PostFlight';
 var curMode = 'calc';
@@ -2092,14 +2100,12 @@ function renderTankHeaderBar(){
       '<button type="button" class="tankBtn'+btnClass('L')+'" data-tank="L">L</button>'+
       '<button type="button" class="tankBtn'+btnClass('R')+'" data-tank="R">R</button>'+
       '<button type="button" class="tankLogBtn" id="tankLogBtnHeader">Log</button>'+
-      '<span id="slotTimerInline" style="display:none"></span>'+
       '<button type="button" class="tankUnitBtn" id="tankUnitBtn">'+STATE.fuel.unit+'</button>'+
     '</div>'+
     '<div class="tankStats">'+
       '<div class="tankStatRow">'+tankLine('L')+'</div>'+
       '<div class="tankStatRow">'+tankLine('R')+'</div>'+
     '</div>';
-  updateSlotTimerInline(slotProgressInfo());
   el.querySelectorAll('.tankBtn').forEach(function(b){
     b.addEventListener('click', function(){
       STATE.tankSelected = b.getAttribute('data-tank');
@@ -2335,25 +2341,30 @@ function atisEntryString(e){
 }
 function renderAtisHtml(){
   var d = STATE.atisDraft;
+  function dispVis(v){ return v ? v+' km' : '--'; }
+  function dispQnh(v){ return v ? v+' hPa' : '--'; }
+  function dispTempDew(v){ return v ? v.replace(/M/g,'-')+' \u00b0C' : '--'; }
   var html = '<div class="fpBlock" style="border-color:var(--sky);width:100%"><div class="fpBlockTitle" style="color:var(--sky)">Current ATIS Entry</div>'+
     '<div class="fdGrid" style="margin-top:8px">'+
-      '<div class="fdField"><label>Time (UTC)</label><input type="text" inputmode="numeric" id="atisTime" placeholder="HHMM" maxlength="5" value="'+escapeHtml(d.time||'')+'"/></div>'+
+      '<div class="fdField"><label>Time (UTC)</label>'+timeSpinnerHtml('atisTime', d.time)+'</div>'+
       '<div class="fdField"><label>ICAO</label><input type="text" id="atisIcao" placeholder="EGKB" maxlength="4" value="'+escapeHtml(d.icao||'')+'" style="text-transform:uppercase"/></div>'+
-      '<div class="fdField"><label>Info</label><input type="text" id="atisInfo" placeholder="A\u2013Z" maxlength="1" value="'+escapeHtml(d.info||'')+'" style="text-transform:uppercase"/></div>'+
-      '<div class="fdField"><label>Runway</label><input type="text" id="atisRwy" placeholder="e.g. 24" value="'+escapeHtml(d.rwy||'')+'"/></div>'+
     '</div>'+
-    '<div class="fdField full" style="margin-top:10px"><label>Wind (DDD/SS[GXX])</label><input type="text" id="atisWind" placeholder="e.g. 250/12G20" value="'+escapeHtml(d.wind||'')+'"/></div>'+
     '<div class="fdGrid" style="margin-top:10px">'+
-      '<div class="fdField"><label>QNH (hPa)</label><input type="text" inputmode="numeric" id="atisQnh" value="'+escapeHtml(d.qnh||'')+'"/></div>'+
-      '<div class="fdField"><label>Temp/Dewpoint</label><input type="text" id="atisTempDew" placeholder="e.g. 18/12" value="'+escapeHtml(d.tempDew||'')+'"/></div>'+
+      '<div class="fdField"><label>Info</label><button type="button" class="cloudPickBtn" id="atisInfoBtn">'+(d.info?escapeHtml(d.info):'Tap to set')+'</button></div>'+
+      '<div class="fdField"><label>Runway</label><button type="button" class="cloudPickBtn" id="atisRwyBtn">'+(d.rwy?escapeHtml(d.rwy):'Tap to set')+'</button></div>'+
+    '</div>'+
+    '<div class="fdField full" style="margin-top:10px"><label>Wind (DDD/SS[GXX])</label><button type="button" class="cloudPickBtn" id="atisWindBtn">'+(d.wind?escapeHtml(d.wind):'Tap to set')+'</button></div>'+
+    '<div class="fdGrid" style="margin-top:10px">'+
+      '<div class="fdField"><label>QNH</label><button type="button" class="cloudPickBtn" id="atisQnhBtn">'+dispQnh(d.qnh)+'</button></div>'+
+      '<div class="fdField"><label>Temp/Dewpoint</label><button type="button" class="cloudPickBtn" id="atisTempDewBtn">'+dispTempDew(d.tempDew)+'</button></div>'+
     '</div>'+
     '<label class="fdCheckRow" style="margin-top:10px;width:100%"><input type="checkbox" id="atisCavok"'+(d.cavok?' checked':'')+'/> <span>CAVOK</span></label>'+
     '<div id="atisVisCloudFields" style="width:100%;'+(d.cavok?'display:none':'')+'">'+
-      '<div class="fdField" style="margin-top:10px"><label>Visibility (km)</label><input type="text" inputmode="decimal" id="atisVis" value="'+escapeHtml(d.vis||'')+'"/></div>'+
+      '<div class="fdField" style="margin-top:10px"><label>Visibility</label><button type="button" class="cloudPickBtn" id="atisVisBtn">'+dispVis(d.vis)+'</button></div>'+
       '<div class="fdGrid" style="margin-top:10px">'+
-        '<div class="fdField"><label>Cloud 1</label><input type="text" id="atisCloud1" placeholder="e.g. SCT025" value="'+escapeHtml(d.cloud1||'')+'"/></div>'+
-        '<div class="fdField"><label>Cloud 2</label><input type="text" id="atisCloud2" value="'+escapeHtml(d.cloud2||'')+'"/></div>'+
-        '<div class="fdField"><label>Cloud 3</label><input type="text" id="atisCloud3" value="'+escapeHtml(d.cloud3||'')+'"/></div>'+
+        '<div class="fdField"><label>Cloud 1</label><button type="button" class="cloudPickBtn" id="atisCloud1Btn" data-slot="1">'+(d.cloud1?escapeHtml(d.cloud1):'Tap to set')+'</button></div>'+
+        '<div class="fdField"><label>Cloud 2</label><button type="button" class="cloudPickBtn" id="atisCloud2Btn" data-slot="2">'+(d.cloud2?escapeHtml(d.cloud2):'Tap to set')+'</button></div>'+
+        '<div class="fdField"><label>Cloud 3</label><button type="button" class="cloudPickBtn" id="atisCloud3Btn" data-slot="3">'+(d.cloud3?escapeHtml(d.cloud3):'Tap to set')+'</button></div>'+
       '</div>'+
     '</div>'+
     '<div class="fdField full" style="margin-top:10px"><label>Notes</label><textarea id="atisNotes" rows="2" placeholder="Additional remarks, NOTAMs\u2026" autocomplete="off" autocorrect="off">'+escapeHtml(d.notes||'')+'</textarea></div>'+
@@ -2378,6 +2389,537 @@ function renderAtisHtml(){
   html += '</div>';
   return html;
 }
+// Time entry as HH/MM dropdowns, matching FlightDeck's timeSpinnerHtml
+// exactly (24 hour options, 6-minute-step minute options).
+function timeSpinnerHtml(baseId, stored){
+  var h='', m='';
+  if(stored && /^\d{1,2}:\d{2}$/.test(stored)){
+    var p=stored.split(':');
+    h=('0'+parseInt(p[0],10)).slice(-2);
+    m=p[1];
+  }
+  var hOpts='<option value="">HH</option>';
+  for(var i=0;i<24;i++){
+    var v=('0'+i).slice(-2);
+    hOpts+='<option value="'+v+'"'+(h===v?' selected':'')+'>'+v+'</option>';
+  }
+  var mOpts='<option value="">MM</option>';
+  ['00','06','12','18','24','30','36','42','48','54'].forEach(function(v){
+    mOpts+='<option value="'+v+'"'+(m===v?' selected':'')+'>'+v+'</option>';
+  });
+  return '<div style="display:flex;gap:4px;align-items:center">'+
+    '<select class="cloudPickBtn" id="'+baseId+'-h" style="padding:9px 4px;text-align:center">'+hOpts+'</select>'+
+    '<span style="color:var(--muted);font-weight:700">:</span>'+
+    '<select class="cloudPickBtn" id="'+baseId+'-m" style="padding:9px 4px;text-align:center">'+mOpts+'</select>'+
+  '</div>';
+}
+// Cloud layer picker — same idea as FlightDeck's: pick a type (FEW/SCT/
+// BKN/OVC), enter height in hundreds of feet, stored METAR-style (e.g.
+// "SCT025"). A tap-to-open button replaces the old free-text field.
+// The following pickers are ported directly from FlightDeck's ATIS entry
+// system - same digit-slot entry UX, same colors/layout, same validation
+// rules - just built as dynamically-created overlays (matching how
+// FlightDeck itself built them) rather than the app's other modals.
+function openLetterPicker(title, currentValue, onDone){
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:14px;padding:20px;max-width:440px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)';
+  var letters = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+  box.innerHTML =
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace">'+title+'</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">'+
+      letters.map(function(l){
+        var isSel = l === currentValue;
+        return '<button type="button" class="lp-key" data-l="'+l+'" style="padding:18px 0;font-size:22px;font-weight:700;font-family:\'JetBrains Mono\',monospace;background:'+(isSel?'#1e3a8a':'var(--card)')+';color:'+(isSel?'#fff':'var(--text)')+';border:1px solid var(--border);border-radius:8px;cursor:pointer">'+l+'</button>';
+      }).join('')+
+    '</div>';
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  box.querySelectorAll('.lp-key').forEach(function(b){
+    b.addEventListener('click', function(){
+      onDone(b.getAttribute('data-l'));
+      document.body.removeChild(ov);
+    });
+  });
+  ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
+}
+function openRunwayPicker(currentValue, onDone){
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:14px;padding:20px;max-width:360px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)';
+  var digits = '', suffix = '';
+  if(currentValue){
+    var m = currentValue.match(/^(\d{1,2})([LCR]?)$/i);
+    if(m){ digits = m[1]; suffix = m[2].toUpperCase(); }
+  }
+  function fmt(){
+    var slots = ['',''];
+    for(var i=0;i<digits.length && i<2;i++) slots[i] = digits.charAt(i);
+    var activePos = (digits.length>=2) ? -1 : digits.length;
+    var html = '';
+    for(var i=0;i<2;i++){
+      var ch = slots[i] || '\u00a0';
+      var filled = !!slots[i];
+      var isActive = i === activePos;
+      var color = filled ? '#1e3a8a' : 'rgba(30,58,138,.25)';
+      var borderColor = isActive ? '#1e3a8a' : (filled ? 'transparent' : 'rgba(30,58,138,.15)');
+      var bg = isActive ? 'rgba(30,58,138,.10)' : 'transparent';
+      html += '<span class="'+(isActive?'dig-active':'')+'" style="display:inline-block;min-width:22px;text-align:center;color:'+color+';background:'+bg+';border-bottom:3px solid '+borderColor+';border-radius:4px 4px 0 0;padding:0 3px">'+ch+'</span>';
+    }
+    html += '<span style="min-width:24px;display:inline-block;color:#0369a1;margin-left:6px">'+(suffix||'\u00a0')+'</span>';
+    return html;
+  }
+  function refresh(){
+    var d = box.querySelector('#rp-display');
+    if(d) d.innerHTML = fmt();
+    box.querySelectorAll('.rp-suffix').forEach(function(b){
+      var v = b.getAttribute('data-s');
+      b.style.background = v===suffix ? '#0369a1' : 'var(--card)';
+      b.style.color = v===suffix ? '#fff' : 'var(--text)';
+    });
+  }
+  box.innerHTML =
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:\'JetBrains Mono\',monospace">Runway In Use</div>'+
+    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;font-size:36px;font-weight:700"><span id="rp-display">'+fmt()+'</span></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">'+
+      '<button class="rp-num" data-k="1">1</button><button class="rp-num" data-k="2">2</button><button class="rp-num" data-k="3">3</button>'+
+      '<button class="rp-num" data-k="4">4</button><button class="rp-num" data-k="5">5</button><button class="rp-num" data-k="6">6</button>'+
+      '<button class="rp-num" data-k="7">7</button><button class="rp-num" data-k="8">8</button><button class="rp-num" data-k="9">9</button>'+
+      '<span></span><button class="rp-num" data-k="0">0</button><span></span>'+
+    '</div>'+
+    '<div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px;font-family:\'JetBrains Mono\',monospace">Pick suffix to submit</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">'+
+      '<button type="button" class="rp-suffix" data-s="" style="padding:22px 0;font-size:18px;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:rgba(4,120,87,.1);color:#047857;border:1px solid rgba(4,120,87,.3);border-radius:8px;cursor:pointer">None</button>'+
+      '<button type="button" class="rp-suffix" data-s="L" style="padding:22px 0;font-size:20px;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:rgba(3,105,161,.1);color:#0369a1;border:1px solid rgba(3,105,161,.3);border-radius:8px;cursor:pointer">L</button>'+
+      '<button type="button" class="rp-suffix" data-s="C" style="padding:22px 0;font-size:20px;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:rgba(3,105,161,.1);color:#0369a1;border:1px solid rgba(3,105,161,.3);border-radius:8px;cursor:pointer">C</button>'+
+      '<button type="button" class="rp-suffix" data-s="R" style="padding:22px 0;font-size:20px;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:rgba(3,105,161,.1);color:#0369a1;border:1px solid rgba(3,105,161,.3);border-radius:8px;cursor:pointer">R</button>'+
+    '</div>'+
+    '<button type="button" id="rp-clear" style="width:100%;padding:12px;font-size:13px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>';
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  var rpCss = document.createElement('style');
+  rpCss.textContent = '.rp-num{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.rp-num:active{background:var(--border)}';
+  box.appendChild(rpCss);
+  refresh();
+  box.querySelectorAll('.rp-num').forEach(function(k){
+    k.addEventListener('click', function(){
+      var v = k.getAttribute('data-k');
+      if(digits.length >= 2) digits = v; else digits += v;
+      refresh();
+    });
+  });
+  box.querySelector('#rp-clear').addEventListener('click', function(){ digits=''; suffix=''; refresh(); });
+  box.querySelectorAll('.rp-suffix').forEach(function(b){
+    b.addEventListener('click', function(){
+      if(digits.length < 2) return;
+      suffix = b.getAttribute('data-s');
+      onDone(digits + suffix);
+      document.body.removeChild(ov);
+    });
+  });
+  ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
+}
+function openWindKeypad(currentValue, onDone){
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:14px;padding:20px;max-width:400px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)';
+  var dir='', spd='', gust='', hasGust=false, hasVar=false, varFrom='', varTo='';
+  if(currentValue){
+    var wparts = String(currentValue).trim().split(/\s+/);
+    var m = wparts[0].match(/^(\d{1,3})\/(\d{1,2})(?:G(\d{1,2}))?$/);
+    if(m){ dir=m[1]; spd=m[2]; if(m[3]){ hasGust=true; gust=m[3]; } }
+    if(wparts[1]){
+      var vm = wparts[1].match(/^(\d{1,3})V(\d{1,3})$/);
+      if(vm){ hasVar=true; varFrom=vm[1]; varTo=vm[2]; }
+    }
+  }
+  function stage(){
+    if(dir.length<3) return 'dir';
+    if(spd.length<2) return 'spd';
+    if(hasGust && gust.length<2) return 'gust';
+    if(hasVar && varFrom.length<3) return 'varFrom';
+    if(hasVar && varTo.length<3) return 'varTo';
+    return 'done';
+  }
+  function fmtSlot(text, active, filled){
+    var color = filled ? '#1e3a8a' : 'rgba(30,58,138,.25)';
+    var border = active ? '#1e3a8a' : (filled?'transparent':'rgba(30,58,138,.15)');
+    var bg = active ? 'rgba(30,58,138,.10)' : 'transparent';
+    return '<span class="'+(active?'dig-active':'')+'" style="display:inline-block;min-width:20px;text-align:center;color:'+color+';background:'+bg+';border-bottom:3px solid '+border+';border-radius:4px 4px 0 0;padding:0 2px">'+(text||'\u00a0')+'</span>';
+  }
+  function fmt(){
+    var st = stage();
+    var html = '';
+    for(var i=0;i<3;i++){ var filled=i<dir.length; html += fmtSlot(filled?dir.charAt(i):'', st==='dir'&&i===dir.length, filled); }
+    html += '<span style="color:var(--muted);padding:0 3px;font-weight:700">/</span>';
+    for(var i=0;i<2;i++){ var filled=i<spd.length; html += fmtSlot(filled?spd.charAt(i):'', st==='spd'&&i===spd.length, filled); }
+    if(hasGust){
+      html += '<span style="color:var(--muted);padding:0 3px;font-weight:700">G</span>';
+      for(var i=0;i<2;i++){ var filled=i<gust.length; html += fmtSlot(filled?gust.charAt(i):'', st==='gust'&&i===gust.length, filled); }
+    }
+    html += '<span style="font-size:16px;color:var(--muted);margin:0 8px">kt</span>';
+    if(hasVar){
+      html += '<br/><span style="font-size:20px">';
+      for(var i=0;i<3;i++){ var filled=i<varFrom.length; html += fmtSlot(filled?varFrom.charAt(i):'', st==='varFrom'&&i===varFrom.length, filled); }
+      html += '<span style="color:#b45309;padding:0 5px;font-weight:800">V</span>';
+      for(var i=0;i<3;i++){ var filled=i<varTo.length; html += fmtSlot(filled?varTo.charAt(i):'', st==='varTo'&&i===varTo.length, filled); }
+      html += '</span>';
+    }
+    return html;
+  }
+  function assembled(){
+    if(dir.length<3 || spd.length<1) return '';
+    var s = spd.length===1 ? '0'+spd : spd;
+    var out = dir+'/'+s;
+    if(hasGust && gust.length>=1){ out += 'G'+(gust.length===1?'0'+gust:gust); }
+    if(hasVar && varFrom.length===3 && varTo.length===3){ out += ' '+varFrom+'V'+varTo; }
+    return out;
+  }
+  function isComplete(){
+    if(dir.length!==3 || spd.length<1) return false;
+    if(hasGust && gust.length<1) return false;
+    if(hasVar && (varFrom.length<3 || varTo.length<3)) return false;
+    return true;
+  }
+  box.innerHTML =
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:\'JetBrains Mono\',monospace">Wind \u00b7 DDD/SS [GXX] [+ vvvVvvv]</div>'+
+    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;font-size:30px;font-weight:700;line-height:1.6"><span id="wk-display">'+fmt()+'</span></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">'+
+      '<button class="wk-k" data-k="1">1</button><button class="wk-k" data-k="2">2</button><button class="wk-k" data-k="3">3</button>'+
+      '<button class="wk-k" data-k="4">4</button><button class="wk-k" data-k="5">5</button><button class="wk-k" data-k="6">6</button>'+
+      '<button class="wk-k" data-k="7">7</button><button class="wk-k" data-k="8">8</button><button class="wk-k" data-k="9">9</button>'+
+      '<button class="wk-k wk-k-var" id="wk-var" data-k="var">V</button><button class="wk-k" data-k="0">0</button><button class="wk-k wk-k-gust" id="wk-gust" data-k="gust">G</button>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px">'+
+      '<button type="button" id="wk-clear" style="flex:1;padding:16px;font-size:14px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>'+
+      '<button type="button" id="wk-ok" style="flex:2;padding:16px;font-size:17px;font-weight:700;border-radius:9px;border:none;cursor:pointer;background:rgba(4,120,87,.15);color:#047857" '+(isComplete()?'':'disabled')+'>Enter</button>'+
+    '</div>';
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  var wkCss = document.createElement('style');
+  wkCss.textContent = '.wk-k{padding:22px 0;font-size:26px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.wk-k:active{background:var(--border)}.wk-k-gust{background:rgba(180,83,9,.1);color:#b45309;border-color:rgba(180,83,9,.3)}.wk-k-gust:active{background:rgba(180,83,9,.25)}.wk-k-var{background:rgba(3,105,161,.1);color:#0369a1;border-color:rgba(3,105,161,.3)}.wk-k-var:active{background:rgba(3,105,161,.25)}';
+  box.appendChild(wkCss);
+  function refresh(){
+    var d = box.querySelector('#wk-display'); if(d) d.innerHTML = fmt();
+    var okBtn = box.querySelector('#wk-ok'); if(okBtn) okBtn.disabled = !isComplete();
+    var gustBtn = box.querySelector('#wk-gust');
+    if(gustBtn){ var canAddGust = (dir.length===3 && spd.length>=1 && !hasGust && !hasVar); gustBtn.style.opacity = canAddGust ? '1' : '.4'; }
+    var varBtn = box.querySelector('#wk-var');
+    if(varBtn){ var canAddVar = (dir.length===3 && spd.length>=1 && !hasVar && (!hasGust || gust.length>=1)); varBtn.style.opacity = canAddVar ? '1' : '.4'; }
+  }
+  box.querySelectorAll('.wk-k').forEach(function(k){
+    k.addEventListener('click', function(){
+      var v = k.getAttribute('data-k');
+      if(v === 'gust'){ if(dir.length===3 && spd.length>=1 && !hasGust && !hasVar) hasGust = true; }
+      else if(v === 'var'){ if(dir.length===3 && spd.length>=1 && !hasVar && (!hasGust || gust.length>=1)) hasVar = true; }
+      else {
+        var st = stage();
+        if(st === 'dir'){ dir = (dir.length>=3) ? v : dir+v; }
+        else if(st === 'spd'){ spd = (spd.length>=2) ? v : spd+v; }
+        else if(st === 'gust'){ gust = (gust.length>=2) ? v : gust+v; }
+        else if(st === 'varFrom'){ varFrom = (varFrom.length>=3) ? v : varFrom+v; }
+        else if(st === 'varTo'){ varTo = (varTo.length>=3) ? v : varTo+v; }
+        else { dir=v; spd=''; gust=''; hasGust=false; hasVar=false; varFrom=''; varTo=''; }
+      }
+      refresh();
+    });
+  });
+  box.querySelector('#wk-ok').addEventListener('click', function(){
+    var a = assembled();
+    if(a){ onDone(a); document.body.removeChild(ov); }
+  });
+  box.querySelector('#wk-clear').addEventListener('click', function(){
+    dir=''; spd=''; gust=''; hasGust=false; hasVar=false; varFrom=''; varTo=''; refresh();
+  });
+  ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
+}
+function openTempDewKeypad(currentValue, onDone){
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:14px;padding:20px;max-width:360px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)';
+  var tempNeg=false, tempDigits='', dewNeg=false, dewDigits='';
+  if(currentValue){
+    var m = currentValue.match(/^(M?)(\d{1,2})\/(M?)(\d{1,2})$/);
+    if(m){ tempNeg = m[1]==='M'; tempDigits=m[2]; dewNeg = m[3]==='M'; dewDigits=m[4]; }
+  }
+  function stage(){ if(tempDigits.length<2) return 'temp'; if(dewDigits.length<2) return 'dew'; return 'done'; }
+  function fmtSlot(text, active, filled){
+    var color = filled ? '#1e3a8a' : 'rgba(30,58,138,.25)';
+    var border = active ? '#1e3a8a' : (filled?'transparent':'rgba(30,58,138,.15)');
+    var bg = active ? 'rgba(30,58,138,.10)' : 'transparent';
+    return '<span class="'+(active?'dig-active':'')+'" style="display:inline-block;min-width:22px;text-align:center;color:'+color+';background:'+bg+';border-bottom:3px solid '+border+';border-radius:4px 4px 0 0;padding:0 2px">'+(text||'\u00a0')+'</span>';
+  }
+  function fmtSign(neg){ return '<span style="display:inline-block;min-width:14px;text-align:center;color:'+(neg?'#be123c':'rgba(30,58,138,.25)')+';font-size:20px;font-weight:700;padding:0 2px">'+(neg?'-':'')+'</span>'; }
+  function fmt(){
+    var st = stage();
+    var html = '';
+    html += fmtSign(tempNeg);
+    for(var i=0;i<2;i++){ var filled=i<tempDigits.length; html += fmtSlot(filled?tempDigits.charAt(i):'', st==='temp'&&i===tempDigits.length, filled); }
+    html += '<span style="color:var(--muted);padding:0 6px;font-weight:700">/</span>';
+    html += fmtSign(dewNeg);
+    for(var i=0;i<2;i++){ var filled=i<dewDigits.length; html += fmtSlot(filled?dewDigits.charAt(i):'', st==='dew'&&i===dewDigits.length, filled); }
+    html += '<span style="font-size:16px;color:var(--muted);margin-left:8px">\u00b0C</span>';
+    return html;
+  }
+  function assembled(){
+    if(tempDigits.length<1 || dewDigits.length<1) return '';
+    var t = tempDigits.length===1 ? '0'+tempDigits : tempDigits;
+    var d = dewDigits.length===1 ? '0'+dewDigits : dewDigits;
+    return (tempNeg?'M':'')+t+'/'+(dewNeg?'M':'')+d;
+  }
+  function complete(){ return tempDigits.length>=1 && dewDigits.length>=1; }
+  box.innerHTML =
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:\'JetBrains Mono\',monospace">Temperature / Dewpoint</div>'+
+    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;font-size:32px;font-weight:700"><span id="td-display">'+fmt()+'</span></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">'+
+      '<button class="td-k" data-k="1">1</button><button class="td-k" data-k="2">2</button><button class="td-k" data-k="3">3</button>'+
+      '<button class="td-k" data-k="4">4</button><button class="td-k" data-k="5">5</button><button class="td-k" data-k="6">6</button>'+
+      '<button class="td-k" data-k="7">7</button><button class="td-k" data-k="8">8</button><button class="td-k" data-k="9">9</button>'+
+      '<button class="td-k td-k-neg" data-k="neg">\u00b1</button><button class="td-k" data-k="0">0</button><button class="td-k td-k-next" data-k="next">Next</button>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px">'+
+      '<button type="button" id="td-clear" style="flex:1;padding:16px;font-size:14px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>'+
+      '<button type="button" id="td-ok" style="flex:2;padding:16px;font-size:17px;font-weight:700;border-radius:9px;border:none;cursor:pointer;background:rgba(4,120,87,.15);color:#047857" '+(complete()?'':'disabled')+'>Enter</button>'+
+    '</div>';
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  var tdCss = document.createElement('style');
+  tdCss.textContent = '.td-k{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.td-k:active{background:var(--border)}.td-k-neg{background:rgba(190,18,60,.08);color:#be123c;border-color:rgba(190,18,60,.25)}.td-k-neg:active{background:rgba(190,18,60,.18)}.td-k-next{background:rgba(3,105,161,.1);color:#0369a1;border-color:rgba(3,105,161,.3);font-size:16px}.td-k-next:active{background:rgba(3,105,161,.2)}';
+  box.appendChild(tdCss);
+  function doSet(){
+    var a = assembled();
+    if(a){ onDone(a); document.body.removeChild(ov); }
+  }
+  function refresh(){
+    var d = box.querySelector('#td-display'); if(d) d.innerHTML = fmt();
+    var ok = box.querySelector('#td-ok'); if(ok) ok.disabled = !complete();
+    // Auto-collapses once both sides have their full 2 digits — no
+    // separate Enter tap needed in the common case.
+    if(tempDigits.length===2 && dewDigits.length===2) doSet();
+  }
+  box.querySelectorAll('.td-k').forEach(function(k){
+    k.addEventListener('click', function(){
+      var v = k.getAttribute('data-k');
+      if(v === 'neg'){
+        var st = stage();
+        if(st === 'temp' || (st === 'dew' && dewDigits.length===0)) tempNeg = !tempNeg; else dewNeg = !dewNeg;
+      } else if(v === 'next'){
+        var st = stage();
+        if(st === 'temp' && tempDigits.length >= 1){ if(tempDigits.length === 1) tempDigits = '0' + tempDigits; }
+        else if(st === 'dew' && dewDigits.length >= 1){ if(dewDigits.length === 1) dewDigits = '0' + dewDigits; }
+      } else {
+        var st = stage();
+        if(st === 'temp'){ tempDigits = (tempDigits.length>=2) ? v : tempDigits+v; }
+        else if(st === 'dew'){ dewDigits = (dewDigits.length>=2) ? v : dewDigits+v; }
+        else { tempDigits = v; dewDigits=''; tempNeg=false; dewNeg=false; }
+      }
+      refresh();
+    });
+  });
+  box.querySelector('#td-clear').addEventListener('click', function(){
+    tempNeg=false; tempDigits=''; dewNeg=false; dewDigits=''; refresh();
+  });
+  box.querySelector('#td-ok').addEventListener('click', doSet);
+  ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
+}
+function openNumericKeypad(config, currentValue, onDone){
+  var cfg = Object.assign({ title:'Enter value', digits:3, suffix:'', allowNeg:false, allowEmpty:false, min:null, max:null, help:'' }, config);
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:14px;padding:20px;max-width:340px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)';
+  var digits = '', negative = false;
+  if(currentValue !== null && currentValue !== undefined && currentValue !== ''){
+    var s = String(currentValue);
+    if(s.charAt(0)==='-'){ negative = true; s = s.substring(1); }
+    digits = s.replace(/[^0-9]/g,'').substring(0, cfg.digits);
+  }
+  function assembled(){ if(!digits) return ''; return (negative ? '-' : '') + digits; }
+  function fmtDisplay(){
+    var slots = [];
+    for(var i=0;i<cfg.digits;i++) slots.push(i<digits.length ? digits.charAt(i) : '');
+    var activePos = (digits.length>=cfg.digits) ? -1 : digits.length;
+    var html = '';
+    if(cfg.allowNeg) html += '<span style="display:inline-block;min-width:16px;color:'+(negative?'#be123c':'rgba(30,58,138,.25)')+'">'+(negative?'-':'')+'</span>';
+    for(var i=0;i<cfg.digits;i++){
+      var ch = slots[i] || '\u00a0';
+      var filled = !!slots[i];
+      var isActive = i === activePos;
+      var color = filled ? '#1e3a8a' : 'rgba(30,58,138,.25)';
+      var borderColor = isActive ? '#1e3a8a' : (filled ? 'transparent' : 'rgba(30,58,138,.15)');
+      var bg = isActive ? 'rgba(30,58,138,.10)' : 'transparent';
+      html += '<span class="'+(isActive?'dig-active':'')+'" style="display:inline-block;min-width:20px;text-align:center;color:'+color+';background:'+bg+';border-bottom:3px solid '+borderColor+';border-radius:4px 4px 0 0;padding:0 2px">'+ch+'</span>';
+    }
+    if(cfg.suffix) html += '<span style="font-size:16px;color:var(--muted);margin-left:6px">'+cfg.suffix+'</span>';
+    return html;
+  }
+  function validate(){
+    var val = assembled();
+    if(!val){ return cfg.allowEmpty ? '' : 'Enter a value'; }
+    var num = parseInt(val,10);
+    if(isNaN(num)) return 'Invalid';
+    if(cfg.min !== null && num<cfg.min) return 'Min '+cfg.min;
+    if(cfg.max !== null && num>cfg.max) return 'Max '+cfg.max;
+    return '';
+  }
+  box.innerHTML =
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:\'JetBrains Mono\',monospace">'+cfg.title+'</div>'+
+    '<div style="display:flex;align-items:baseline;justify-content:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:8px;font-family:\'JetBrains Mono\',monospace;font-size:32px;font-weight:700"><span id="fnk-display">'+fmtDisplay()+'</span></div>'+
+    '<div id="fnk-status" style="font-size:12px;text-align:center;min-height:16px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;color:var(--muted)">'+(cfg.help||'&nbsp;')+'</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">'+
+      '<button class="nk-k" data-k="1">1</button><button class="nk-k" data-k="2">2</button><button class="nk-k" data-k="3">3</button>'+
+      '<button class="nk-k" data-k="4">4</button><button class="nk-k" data-k="5">5</button><button class="nk-k" data-k="6">6</button>'+
+      '<button class="nk-k" data-k="7">7</button><button class="nk-k" data-k="8">8</button><button class="nk-k" data-k="9">9</button>'+
+      (cfg.allowNeg ? '<button class="nk-k nk-k-neg" data-k="neg">\u00b1</button>' : '<span></span>')+
+      '<button class="nk-k" data-k="0">0</button><span></span>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px">'+
+      '<button type="button" id="fnk-clear" style="flex:1;padding:16px;font-size:14px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>'+
+      '<button type="button" id="fnk-ok" style="flex:2;padding:16px;font-size:17px;font-weight:700;border-radius:9px;border:none;cursor:pointer;background:rgba(4,120,87,.15);color:#047857">Enter</button>'+
+    '</div>';
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  var nkCss = document.createElement('style');
+  nkCss.textContent = '.nk-k{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.nk-k:active{background:var(--border)}.nk-k-neg{background:rgba(190,18,60,.08);color:#be123c;border-color:rgba(190,18,60,.25)}.nk-k-neg:active{background:rgba(190,18,60,.18)}';
+  box.appendChild(nkCss);
+  function doSet(){
+    if(!validate()){ onDone(assembled()); document.body.removeChild(ov); }
+  }
+  function refresh(){
+    var d = box.querySelector('#fnk-display'); if(d) d.innerHTML = fmtDisplay();
+    var s = box.querySelector('#fnk-status'); if(!s) return;
+    var err = validate();
+    if(err){ s.textContent = err; s.style.color='#b45309'; }
+    else { s.textContent = cfg.help || '\u00a0'; s.style.color='var(--muted)'; }
+    // Auto-collapses once the digit limit is reached and the value is
+    // actually valid — no separate Enter tap needed in the common case.
+    if(digits.length===cfg.digits && !err) doSet();
+  }
+  box.querySelectorAll('.nk-k').forEach(function(k){
+    k.addEventListener('click', function(){
+      var v = k.getAttribute('data-k');
+      if(v === 'neg'){ negative = !negative; }
+      else { digits = (digits.length >= cfg.digits) ? v : digits+v; }
+      refresh();
+    });
+  });
+  box.querySelector('#fnk-clear').addEventListener('click', function(){ digits=''; negative=false; refresh(); });
+  box.querySelector('#fnk-ok').addEventListener('click', doSet);
+  ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
+}
+function showCloudPicker(slot, card){
+  var key = 'cloud'+slot;
+  var currentValue = STATE.atisDraft[key] || '';
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:14px;padding:20px;max-width:400px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)';
+  var type='', digits='';
+  if(currentValue){
+    var m = currentValue.match(/^(FEW|SCT|BKN|OVC)(\d{1,3})$/);
+    if(m){
+      type = m[1];
+      var hundreds = parseInt(m[2],10);
+      var tenths = Math.round(hundreds / 10);
+      digits = String(tenths);
+    }
+  }
+  var types = ['FEW','SCT','BKN','OVC'];
+  function fmtDigits(){
+    var slots = ['',''];
+    for(var i=0;i<digits.length && i<2;i++) slots[i] = digits.charAt(i);
+    var activePos = (digits.length<2) ? digits.length : -1;
+    var html = '';
+    for(var i=0;i<2;i++){
+      var filled = !!slots[i];
+      var isActive = i===activePos;
+      var color = filled?'#1e3a8a':'rgba(30,58,138,.25)';
+      var border = isActive?'#1e3a8a':(filled?'transparent':'rgba(30,58,138,.15)');
+      var bg = isActive?'rgba(30,58,138,.10)':'transparent';
+      html += '<span class="'+(isActive?'dig-active':'')+'" style="display:inline-block;min-width:22px;text-align:center;color:'+color+';background:'+bg+';border-bottom:3px solid '+border+';border-radius:4px 4px 0 0;padding:0 3px">'+(filled?digits.charAt(i):'\u00a0')+'</span>';
+      if(i===0) html += '<span style="color:var(--muted);padding:0 2px;font-weight:700">.</span>';
+    }
+    var ft = '';
+    if(digits.length===2){
+      var thousands = parseFloat(digits.charAt(0)+'.'+digits.charAt(1));
+      ft = ' \u00b7 '+Math.round(thousands*1000)+' ft';
+    }
+    return html + '<span style="font-size:14px;color:var(--muted);margin-left:8px">k ft'+ft+'</span>';
+  }
+  function complete(){ return type && digits.length===2; }
+  function doSet(){
+    if(!complete()) return;
+    var thousands = parseFloat(digits.charAt(0)+'.'+digits.charAt(1));
+    var hundreds = Math.round(thousands*10);
+    var padded = ('00'+hundreds).slice(-3);
+    STATE.atisDraft[key] = type+padded;
+    saveState();
+    document.body.removeChild(ov);
+    renderCard(card);
+  }
+  box.innerHTML =
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace">Cloud Layer '+slot+'</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">'+
+      types.map(function(t){
+        return '<button type="button" class="cp-type" data-t="'+t+'" style="padding:22px 0;font-size:18px;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:'+(t===type?'#1e3a8a':'var(--card)')+';color:'+(t===type?'#fff':'var(--text)')+';border:1px solid var(--border);border-radius:8px;cursor:pointer">'+t+'</button>';
+      }).join('')+
+    '</div>'+
+    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;font-size:30px;font-weight:700"><span id="cp-display">'+fmtDigits()+'</span></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">'+
+      '<button class="cp-k" data-k="1">1</button><button class="cp-k" data-k="2">2</button><button class="cp-k" data-k="3">3</button>'+
+      '<button class="cp-k" data-k="4">4</button><button class="cp-k" data-k="5">5</button><button class="cp-k" data-k="6">6</button>'+
+      '<button class="cp-k" data-k="7">7</button><button class="cp-k" data-k="8">8</button><button class="cp-k" data-k="9">9</button>'+
+      '<span></span><button class="cp-k" data-k="0">0</button><span></span>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px">'+
+      '<button type="button" id="cp-clear" style="flex:1;padding:14px;font-size:13px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>'+
+      '<button type="button" id="cp-remove" style="flex:1;padding:14px;font-size:13px;font-weight:700;border-radius:9px;border:1px solid var(--rose);background:var(--surface);color:var(--rose);cursor:pointer">Remove Layer</button>'+
+    '</div>';
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  var cpCss = document.createElement('style');
+  cpCss.textContent = '.cp-k{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.cp-k:active{background:var(--border)}';
+  box.appendChild(cpCss);
+  function refresh(){
+    var d = box.querySelector('#cp-display');
+    if(d) d.innerHTML = fmtDigits();
+    box.querySelectorAll('.cp-type').forEach(function(b){
+      var t = b.getAttribute('data-t');
+      b.style.background = t===type ? '#1e3a8a' : 'var(--card)';
+      b.style.color = t===type ? '#fff' : 'var(--text)';
+    });
+  }
+  box.querySelectorAll('.cp-type').forEach(function(b){
+    b.addEventListener('click', function(){
+      type = b.getAttribute('data-t');
+      refresh();
+      // Auto-collapses once both the type and a full 2-digit height are
+      // set, whichever is entered last — no separate Enter tap needed.
+      doSet();
+    });
+  });
+  box.querySelectorAll('.cp-k').forEach(function(k){
+    k.addEventListener('click', function(){
+      var v = k.getAttribute('data-k');
+      digits = (digits.length>=2) ? v : digits+v;
+      refresh();
+      doSet();
+    });
+  });
+  box.querySelector('#cp-clear').addEventListener('click', function(){ type=''; digits=''; refresh(); });
+  box.querySelector('#cp-remove').addEventListener('click', function(){
+    STATE.atisDraft[key] = '';
+    saveState();
+    document.body.removeChild(ov);
+    renderCard(card);
+  });
+  ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
+}
+
 function wireAtis(card){
   function bindDraft(id, key, formatter){
     var el = document.getElementById(id);
@@ -2388,18 +2930,58 @@ function wireAtis(card){
       saveState();
     });
   }
-  bindDraft('atisTime', 'time', autoFormatTime);
   bindDraft('atisIcao', 'icao', function(v){ return v.toUpperCase(); });
-  bindDraft('atisInfo', 'info', function(v){ return v.toUpperCase(); });
-  bindDraft('atisRwy', 'rwy');
-  bindDraft('atisWind', 'wind');
-  bindDraft('atisQnh', 'qnh');
-  bindDraft('atisTempDew', 'tempDew');
-  bindDraft('atisVis', 'vis');
-  bindDraft('atisCloud1', 'cloud1');
-  bindDraft('atisCloud2', 'cloud2');
-  bindDraft('atisCloud3', 'cloud3');
   bindDraft('atisNotes', 'notes');
+  // Time spinner — two plain selects, matching FlightDeck exactly.
+  var timeH = document.getElementById('atisTime-h');
+  var timeM = document.getElementById('atisTime-m');
+  function onTimeChange(){
+    STATE.atisDraft.time = (timeH.value && timeM.value) ? (timeH.value+':'+timeM.value) : '';
+    saveState();
+  }
+  if(timeH) timeH.addEventListener('change', onTimeChange);
+  if(timeM) timeM.addEventListener('change', onTimeChange);
+  // Every other field below opens a dedicated picker, ported from
+  // FlightDeck, instead of typing into a plain box.
+  var infoBtn = document.getElementById('atisInfoBtn');
+  if(infoBtn) infoBtn.addEventListener('click', function(){
+    openLetterPicker('ATIS Information', STATE.atisDraft.info||'', function(v){
+      STATE.atisDraft.info = v; saveState(); renderCard(card);
+    });
+  });
+  var rwyBtn = document.getElementById('atisRwyBtn');
+  if(rwyBtn) rwyBtn.addEventListener('click', function(){
+    openRunwayPicker(STATE.atisDraft.rwy||'', function(v){
+      STATE.atisDraft.rwy = v; saveState(); renderCard(card);
+    });
+  });
+  var windBtn = document.getElementById('atisWindBtn');
+  if(windBtn) windBtn.addEventListener('click', function(){
+    openWindKeypad(STATE.atisDraft.wind||'', function(v){
+      STATE.atisDraft.wind = v; saveState(); renderCard(card);
+    });
+  });
+  var tempDewBtn = document.getElementById('atisTempDewBtn');
+  if(tempDewBtn) tempDewBtn.addEventListener('click', function(){
+    openTempDewKeypad(STATE.atisDraft.tempDew||'', function(v){
+      STATE.atisDraft.tempDew = v; saveState(); renderCard(card);
+    });
+  });
+  var qnhBtn = document.getElementById('atisQnhBtn');
+  if(qnhBtn) qnhBtn.addEventListener('click', function(){
+    openNumericKeypad({ title:'QNH', digits:4, suffix:'hPa', min:900, max:1100, help:'hectopascals' }, STATE.atisDraft.qnh||'', function(v){
+      STATE.atisDraft.qnh = v; saveState(); renderCard(card);
+    });
+  });
+  var visBtn = document.getElementById('atisVisBtn');
+  if(visBtn) visBtn.addEventListener('click', function(){
+    openNumericKeypad({ title:'Visibility', digits:2, suffix:'km', min:0, max:99, help:'kilometres' }, STATE.atisDraft.vis||'', function(v){
+      STATE.atisDraft.vis = v; saveState(); renderCard(card);
+    });
+  });
+  document.querySelectorAll('[data-slot]').forEach(function(b){
+    b.addEventListener('click', function(){ showCloudPicker(b.getAttribute('data-slot'), card); });
+  });
   var cavokBox = document.getElementById('atisCavok');
   if(cavokBox) cavokBox.addEventListener('change', function(){
     STATE.atisDraft.cavok = cavokBox.checked;
@@ -3390,26 +3972,18 @@ function updateCountdown(){
       parts.push(pair[0]+' '+pair[1]+' UTC <span class="cdT">'+(cd?cd.label:'--')+'</span>');
     });
   }
-  // Slot time now shows next to the fuel log buttons instead of up here —
-  // still computed every second so it stays in sync with the bar below
-  // the tabs, just displayed in a different spot.
+  // Slot time shows right alongside whatever else is up here (Air Time
+  // or ETOB/CTOT) rather than down by the fuel log — one place to glance
+  // at all the live timers together.
   var slotInfo = slotProgressInfo();
   updateHeadingRowProgress(slotInfo);
-  updateSlotTimerInline(slotInfo);
+  if(slotInfo){
+    parts.push('SLOT <span class="cdT'+(slotInfo.overdue?' overdue':'')+'">'+slotInfo.label+'</span>');
+  }
   if(!parts.length){ row.style.display = 'none'; syncHeaderOffset(); return; }
   row.innerHTML = parts.join(' &nbsp;&middot;&nbsp; ');
   row.style.display = 'flex';
   syncHeaderOffset();
-}
-function updateSlotTimerInline(slotInfo){
-  var el = document.getElementById('slotTimerInline');
-  if(!el) return;
-  if(!slotInfo){ el.style.display = 'none'; return; }
-  el.style.display = 'inline';
-  // Shorter than the wording used elsewhere (no "SLOT"/"left") since this
-  // sits inline in an already-crowded row next to Log and the unit toggle.
-  el.textContent = (slotInfo.overdue ? '' : '\u23f1 ') + slotInfo.label.replace(' left','');
-  el.className = 'slotTimerInline'+(slotInfo.overdue?' overdue':(slotInfo.amber?' amber':''));
 }
 // Refreshes just the Endurance Remaining numbers in place — avoids a full
 // renderCard() (and the focus loss that would cause). Runs every second
