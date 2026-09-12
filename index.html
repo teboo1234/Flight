@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v10 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v12 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -440,7 +440,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v10</div>
+  <div id="versionBadge">v12</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -483,10 +483,8 @@ input,select{ font-family:'JetBrains Mono',monospace; }
     <div class="resHead" style="flex-direction:column; align-items:stretch; gap:10px">
       <h2>Calculated Times</h2>
       <div class="calcActions">
-        <button class="printBtn" onclick="printOnePage()">Print / PDF</button>
-        <button class="printBtn shareBtn" id="shareCalcBtn" style="background:#047857">Share / Email</button>
-        <button class="resetBtn" id="loadSecondFlightBtn" style="border-color:var(--amber);color:var(--amber)">Load Second Flight</button>
-        <button class="resetBtn" id="resetAllBtn">Reset All</button>
+        <button class="printBtn shareBtn" id="shareCalcBtn" style="background:#047857">Share</button>
+        <button class="resetBtn" id="resetAllBtn">Reset</button>
       </div>
     </div>
     <div id="calcBody"></div>
@@ -2671,11 +2669,15 @@ function openTempDewKeypad(currentValue, onDone){
   function fmt(){
     var st = stage();
     var html = '';
+    html += '<span id="td-temp-zone" style="cursor:pointer">';
     html += fmtSign(tempNeg);
     for(var i=0;i<2;i++){ var filled=i<tempDigits.length; html += fmtSlot(filled?tempDigits.charAt(i):'', st==='temp'&&i===tempDigits.length, filled); }
+    html += '</span>';
     html += '<span style="color:var(--muted);padding:0 6px;font-weight:700">/</span>';
+    html += '<span id="td-dew-zone" style="cursor:pointer">';
     html += fmtSign(dewNeg);
     for(var i=0;i<2;i++){ var filled=i<dewDigits.length; html += fmtSlot(filled?dewDigits.charAt(i):'', st==='dew'&&i===dewDigits.length, filled); }
+    html += '</span>';
     html += '<span style="font-size:16px;color:var(--muted);margin-left:8px">\u00b0C</span>';
     return html;
   }
@@ -2708,12 +2710,25 @@ function openTempDewKeypad(currentValue, onDone){
     var a = assembled();
     if(a){ onDone(a); document.body.removeChild(ov); }
   }
-  function refresh(){
+  function refresh(isInitial){
     var d = box.querySelector('#td-display'); if(d) d.innerHTML = fmt();
     var ok = box.querySelector('#td-ok'); if(ok) ok.disabled = !complete();
+    // Tapping directly on the temp/dew digits themselves commits a
+    // single-digit entry and moves on — the same thing "Next" does, just
+    // far more discoverable than a small separate button.
+    var tempZone = box.querySelector('#td-temp-zone');
+    if(tempZone) tempZone.addEventListener('click', function(){
+      if(stage()==='temp' && tempDigits.length===1){ tempDigits = '0'+tempDigits; refresh(); }
+    });
+    var dewZone = box.querySelector('#td-dew-zone');
+    if(dewZone) dewZone.addEventListener('click', function(){
+      if(stage()==='dew' && dewDigits.length===1){ dewDigits = '0'+dewDigits; refresh(); }
+    });
     // Auto-collapses once both sides have their full 2 digits — no
-    // separate Enter tap needed in the common case.
-    if(tempDigits.length===2 && dewDigits.length===2) doSet();
+    // separate Enter tap needed in the common case. Skipped on the
+    // very first render so opening the picker on an already-complete
+    // saved value doesn't instantly close it again.
+    if(!isInitial && tempDigits.length===2 && dewDigits.length===2) doSet();
   }
   box.querySelectorAll('.td-k').forEach(function(k){
     k.addEventListener('click', function(){
@@ -2739,6 +2754,7 @@ function openTempDewKeypad(currentValue, onDone){
   });
   box.querySelector('#td-ok').addEventListener('click', doSet);
   ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
+  refresh(true);
 }
 function openNumericKeypad(config, currentValue, onDone){
   var cfg = Object.assign({ title:'Enter value', digits:3, suffix:'', allowNeg:false, allowEmpty:false, min:null, max:null, help:'' }, config);
@@ -3381,9 +3397,6 @@ function showConfirm(msg, okLabel, onConfirm){
 }
 document.getElementById('resetAllBtn').addEventListener('click', function(){
   showConfirm('Reset all entered values for this flight? This cannot be undone.', 'Reset All', resetAllData);
-});
-document.getElementById('loadSecondFlightBtn').addEventListener('click', function(){
-  showConfirm('Load a second flight? This clears Ground/Airborne checklist progress, ETOB/CTOT, transponder, and the tank log — but keeps the Fuel Plan as-is, and carries End Tacho/Hobbs over as the new Start Tacho/Hobbs. This cannot be undone.', 'Load Second Flight', loadSecondFlight);
 });
 // Plain-text summary for Share/Email — same figures the Calculations tab
 // shows. Kept to plain text (no HTML) since mail clients and the Web
