@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v9 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v10 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -440,7 +440,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v9</div>
+  <div id="versionBadge">v10</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -2613,8 +2613,22 @@ function openWindKeypad(currentValue, onDone){
   box.querySelectorAll('.wk-k').forEach(function(k){
     k.addEventListener('click', function(){
       var v = k.getAttribute('data-k');
-      if(v === 'gust'){ if(dir.length===3 && spd.length>=1 && !hasGust && !hasVar) hasGust = true; }
-      else if(v === 'var'){ if(dir.length===3 && spd.length>=1 && !hasVar && (!hasGust || gust.length>=1)) hasVar = true; }
+      if(v === 'gust'){
+        if(dir.length===3 && spd.length>=1 && !hasGust && !hasVar){
+          // Commit speed to its final 2 digits right now — otherwise
+          // stage() still thinks speed needs another digit, and the next
+          // number typed completes speed instead of starting gust.
+          if(spd.length===1) spd = '0'+spd;
+          hasGust = true;
+        }
+      }
+      else if(v === 'var'){
+        if(dir.length===3 && spd.length>=1 && !hasVar && (!hasGust || gust.length>=1)){
+          if(spd.length===1) spd = '0'+spd;
+          if(hasGust && gust.length===1) gust = '0'+gust;
+          hasVar = true;
+        }
+      }
       else {
         var st = stage();
         if(st === 'dir'){ dir = (dir.length>=3) ? v : dir+v; }
