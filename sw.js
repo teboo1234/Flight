@@ -1,17 +1,14 @@
-// CheckDeck service worker.
+// CheckDeck Flight service worker.
 //
-// Strategy: network-first, cache as fallback. Every request tries the
-// network first — so whenever there's a connection, you always get
-// whatever's actually live on GitHub (today's upload, not a stale copy).
-// The response is also saved to the cache as it comes back, so the very
-// last version that loaded successfully is what's available the next
-// time there's no connection at all.
+// Strategy: network-first, cache as fallback — same approach as the
+// combined app this was split from. Every request tries the network
+// first (so an upload always wins once you're online), and falls back
+// to the cache when there's no connection.
 //
-// Bump CACHE_NAME whenever you want to force old cached files to be
-// cleared out (e.g. if you rename files or want a clean slate) — it
-// doesn't need to change on every normal update, since network-first
-// already keeps the cache fresh on its own whenever you're online.
-const CACHE_NAME = 'checkdeck-cache-v1';
+// Cache name is namespaced separately from the Briefing app's, so the
+// two can be hosted in neighbouring folders on the same domain without
+// ever touching each other's cached files.
+const CACHE_NAME = 'checkdeck-flight-cache-v1';
 const APP_SHELL = [
   './index.html',
   './manifest.json',
@@ -46,10 +43,6 @@ self.addEventListener('activate', function(event){
 
 self.addEventListener('fetch', function(event){
   if(event.request.method !== 'GET') return;
-  // Only handle same-origin requests (the app shell). Cross-origin
-  // requests (Google Fonts) are left to the browser's own handling —
-  // if they fail offline, the page's CSS already falls back to a
-  // system font, which is a fine trade-off for keeping this simple.
   var url = new URL(event.request.url);
   if(url.origin !== self.location.origin) return;
 

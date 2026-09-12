@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck v63 — Pre-Flight Card Checklist</title>
+<title>CheckDeck Flight v2 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -12,7 +12,7 @@
      icon'd, offline-capable "app" when added to the Home Screen. -->
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="CheckDeck"/>
+<meta name="apple-mobile-web-app-title" content="CheckDeck Flight"/>
 <link rel="apple-touch-icon" href="icon-180.png"/>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
@@ -80,7 +80,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .eyebrow .cnt{ font-size:12px; font-weight:700; color:var(--muted); }
 .eyebrow .cnt b{ color:var(--em); }
 
-.annun{ display:flex; flex-wrap:wrap; gap:3px; padding:0 16px 10px; flex-shrink:0; max-height:34px; overflow:hidden; }
+.annun{ display:none; }
 .dot{ width:8px; height:8px; border-radius:2px; background:var(--border); transition:background .15s, box-shadow .15s; cursor:pointer; flex-shrink:0; }
 .dot.go{ background:var(--em); }
 .dot.na{ background:var(--amber); }
@@ -433,7 +433,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v63</div>
+  <div id="versionBadge">v2</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -489,7 +489,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <div id="resultsMode">
   <div class="resWrap">
     <div class="resHead">
-      <h2>CheckDeck Results</h2>
+      <h2>CheckDeck Flight Results</h2>
     </div>
     <div class="resSummary" id="resSummary"></div>
     <div id="resBody"></div>
@@ -652,124 +652,35 @@ var LAW = {
 };
 
 var CHECKLIST_DATA = [
-  { phase:'Navigation', id:'prenav', title:'Navigation Checklist', items: [
-    { id:'navgrp', text:'Navigation Checklist', type:'group', children:[
-      'Chart — correct chart, VFR amendments current',
-      'Route: Anchor points / satellite imagery reviewed',
-      'Route: Controlled airspace + VFR holding points — clearance required?',
-      'Route: Danger / Prohibited / Restricted / HIRTA / Gliding / AIAA / Wildlife / Parachute areas checked',
-      'Route: Obstacles / Terrain / IAP OCAS / MATZ checked',
-      'Route: NOTAMs marked on chart',
-      'Route: Airspace rules reviewed',
-      'MSA: MEF + 1000\u2019',
-      'MSA: Spot height +1300\u2019 or obstacle +1000\u2019 within 5nm of track',
-      'VFR Safety Altitude: Terrain +500\u2019 (LFR) within sensible distance',
-      'VFR Safety Altitude: Spot height +500\u2019 (LFR) / +300\u2019 (uncharted) within sensible distance',
-      'RT: Radio frequencies noted (checked from official source)',
-      'ATSU: Radar service available?',
-      'ATSU: Service level — Basic / Traffic / Procedural / LARS',
-      'ATSU: FMC or transponder codes noted',
-      'ATSU: Distance of coverage checked',
-      'ATSU: Hours of operation checked (NOTAM)',
-      'Destination: Local procedures / approach plates (all runways)',
-      'Destination: Daylight hours checked',
-      'Destination: Weather checked',
-      'Destination: Opening hours checked',
-      'Destination: PPR obtained',
-      'Destination: Arrival brief noted',
-      'Destination: Services availability — fuel, oil etc.',
-      'Alternate(s): as above',
-      'Performance calculations — departure, destination, alternate',
-      'Fuel & oil requirements noted (endurance and reserves)',
-      'Equipment — diversion ruler, full batteries, phone charger etc.',
-      'Useful phone numbers noted',
-      'Weather checked',
-      'NOTAMs checked',
-      'Departure brief — set heading point, initial heading and altitude',
-      'Booked out and PPR confirmed',
-      'PLOG completed',
-      'Airborne: Fly accurate speed & heading',
-      'Airborne: Gross error checking',
-      'Airborne: FREDA & HAT checks',
-      'Airborne: Wind and forced landing sites noted along route',
-      'Airborne: Map to ground — large to small features, don\u2019t fixate on the chart',
-      'Airborne: At waypoint — Turn, Time, Twist, Talk, Task, ETA',
-      'Airborne: Arrival briefed',
-      'Regaining track: Standard closing angle — 60 / GS or TAS, turn toward track',
-      'Regaining track: Drift lines — mark 10\u00b0 either side of track',
-      'Regaining track: ETA revision method applied',
-      'Lost / unsure of position: Get help early — vectors / position fix / moving map',
-      'Lost / unsure of position: Know your endurance',
-      'Lost / unsure of position: Check DI, headings, times, big features',
-      'Time management: Lunch taken',
-      'Time management: Weather en route checked',
-      'Time management: Not hanging around',
-      'Time management: Time limitations assessed — fuel, taxi, holding, diversions, daylight, booking, admin'
-    ] }
+  { phase:'PreFlight', id:'personalcurrency', title:'Personal Currency', items: [
+    { id:'1pc', text:'Personal Currency', type:'group', children:['Pilot licence and IR rating current','Logbook up to date','Medical certificate valid','Glasses/sunglasses'] }
   ]},
-  { phase:'Planning', id:'administration', title:'Administration', items: [
-    { id:'1pc', text:'Personal Currency', type:'group', children:['Pilot licence and IR rating current','Logbook up to date','Medical certificate valid','Glasses/sunglasses'] },
-    { id:'1td', text:'Travel Documents', type:'group', children:['Photo ID carried','Correct Passport(s)', {text:'GAR / GENDEC submitted', hasLaw:true, lawKey:'1g'}, 'Customs/immigration informed'] },
-    { id:'1admin', text:'Admin: Charts, Flight Plan & Tech Log', shortTitle:'Admin', type:'group', children:[
-      {text:'Charts, Electrics, AIP and AIRAC cycle current', hasLaw:true, lawKey:'1l'},
-      {text:'Flight plan filed', hasLaw:true, lawKey:'1m'},
-      'Operational flight plan prepared',
-      'Tech Log',
-      {text:'Hours Remaining', keypad:'alt', unit:'hrs'},
-      'Defects'
-    ] },
-    { id:'1k', text:'Documents to be carried (NCO.GEN.135)', shortTitle:'Docs to be carried', type:'group', hasLaw:true, children:['AFM (or equivalent)','Certificate of Registration (original)','Certificate of Airworthiness (original) & ARC','Noise certificate (if applicable)','List of specific approvals (if applicable)','Aircraft radio licence (if applicable)','Third-party liability insurance certificate(s)','Journey log (or equivalent)','Details of filed ATS flight plan (if applicable)','Current & suitable aeronautical charts (route + diversions)','Interception procedures & visual signals','MEL or CDL (if applicable)','Any other documentation pertinent / required by States'] },
-    { id:'1n', text:'Destination', type:'group', children:['Fees','Fuel availability','PPR','Slots','Opening hours','Phone/Email details'] },
-    { id:'1p', text:'No-go review', type:'group', children:['Weather','Recency','Aircraft equipment','Day/night','Complexity','Endurance','Personal limits','External pressure'], note:'Traffic-light check — e.g. cloud base <600ft is a no-fly threshold; consider whether a check flight/safety pilot is needed.' },
-    { id:'1q', text:'I\'M SAFE self-assessment', type:'group', hasLaw:true, children:['Illness','Medication','Stress','Alcohol','Fatigue','Eating/Emotion'] },
-    { id:'1r', text:'Personal equipment checked', type:'group', children:['Batteries','Cables','Devices/updates','Night flight equipment/torches','Life jacket'] },
+  { phase:'PreFlight', id:'imsafe', title:'I\'M SAFE', items: [
+    { id:'1q', text:'I\'M SAFE self-assessment', type:'group', hasLaw:true, children:['Illness','Medication','Stress','Alcohol','Fatigue','Eating/Emotion'] }
+  ]},
+  { phase:'PreFlight', id:'personalequip', title:'Personal Equipment', items: [
+    { id:'1r', text:'Personal equipment checked', type:'group', children:['Batteries','Cables','Devices/updates','Night flight equipment/torches','Life jacket'] }
+  ]},
+  { phase:'PreFlight', id:'tem', title:'Threat & Error Management', items: [
     { id:'1s', text:'Threat & Error Management', type:'group', allowAddItems:true, children:['Terrain','CFIT','MSA','Emergency options'] }
   ]},
-  { phase:'Planning', id:'notams', title:'NOTAMs', items: [
-    { id:'2b', text:'NOTAMs checked', type:'group', hasLaw:true, children:['Departure','Destination','Alternate','En-route'] }
+  { phase:'PreFlight', id:'dapa', title:'DA / PA', items: [
+    { id:'dapagrp', text:'DA / PA', type:'group', children:[
+      {text:'Density Altitude (DA)', keypad:'alt', unit:'ft'},
+      {text:'Pressure Altitude (PA)', keypad:'alt', unit:'ft'}
+    ] }
   ]},
-  { phase:'Planning', id:'flight', title:'Flight', items: [
-    { id:'flightgrp', text:'Flight', type:'group', children:[
-      'Route/altitude selected — MSA/MOCA/grid MORA checked, terrain & obstacles considered',
-      {text:'Planned cruising level', keypad:'alt', unit:'ft', unitToggle:true},
-      {text:'Alternate(s)', hasLaw:true, lawKey:'2h'},
-      {text:'GNSS/SBAS certification (RNP APCH LNAV/LPV)', hasLaw:true, lawKey:'2c'},
-      'ILS/LOC capability',
-      'RAIM/FDE prediction (AUGUR or equivalent)',
-      'GPS outage NOTAMs',
-      'Fuel Plan Complete',
-      {text:'Transition level(s)', type:'text'},
-      'Escape Plan',
-      'Operational flight plan complete',
-      'Destination/Alternate charts briefed',
-      {text:'Charts (1:500,000 / Airways / Min Altitude)'},
-      {text:'Mass and balance calculated and within limits', hasLaw:true, lawKey:'2s'},
-      {text:'Underload', type:'weight', hasLaw:true, lawKey:'2t'},
-      'Performance check: takeoff/landing distance vs. runway available (Hot/High/Heavy/Humid considered)',
+  { phase:'PreFlight', id:'etob', title:'ETOB / CTOT', items: [
+    { id:'etobgrp', text:'ETOB / CTOT', type:'group', children:[
       {text:'ETOB / CTOT (UTC)', type:'etobctot'}
     ] }
   ]},
   { phase:'Fuel', id:'fuelplan', title:'Fuel Plan', items: [
     { id:'fuelplangrp', text:'Fuel Plan', type:'fuelplan' }
   ]},
-  { phase:'PaxBrief', id:'paxbrief', title:'Pax Brief', items: [
+  { phase:'PreFlight', id:'paxbrief', title:'Pax Brief', items: [
     { id:'paxbriefgrp', text:'Pax Brief', type:'group', children:[
       'Content to be added.'
-    ] }
-  ]},
-  { phase:'Weather', id:'sources', title:'Sources', items: [
-    { id:'srcgrp', text:'Sources', type:'group', children:['Surface Pressure','Airmass Type','F214 — Spot Wind & Temperature','F215 — Significant Weather Chart','GAMET','Radar','Temperature','Skew T'] }
-  ]},
-  { phase:'Weather', id:'weather', title:'Weather', items: [
-    { id:'2a', text:'Weather calculations', type:'group', hasLaw:true, children:[
-      'Crosswind & upper winds','Max drift','Convective activity','SIGMET','Visibility','Forecast single hold drift',
-      {text:'Freezing level', keypad:'alt', unit:'ft'},
-      {text:'Cloud base', keypad:'alt', unit:'ft'},
-      {text:'Cloud top', keypad:'alt', unit:'ft'},
-      {text:'MSA to freezing level buffer checked', keypad:'alt', unit:'ft'},
-      {text:'Departure minima', hasLaw:true, lawKey:'2k'},
-      {text:'Density Altitude (DA)', keypad:'alt', unit:'ft'},
-      {text:'Pressure Altitude (PA)', keypad:'alt', unit:'ft'}
     ] }
   ]},
   { phase:'Ground', id:'crewpax', title:'Crew/Pax Brief', items: [
@@ -788,26 +699,9 @@ var CHECKLIST_DATA = [
       'Starter warning light out',
       'Oil pressure rising',
       'Autopilot/Trim check','Compass fluid/smell checked',
-      {text:'SPS, Xponder, Baro ±60\'', hasLaw:true, lawKey:'3c'},
+      {text:'SPS, Xponder, Baro \u00b160\'', hasLaw:true, lawKey:'3c'},
       {text:'QNH-SPS difference', keypad:'alt', unit:'ft'},
       {text:'Transponder code set', type:'code'}
-    ] }
-  ]},
-  { phase:'Ground', id:'therest', title:'IFR', items: [
-    { id:'restgrp', text:'IFR', type:'group', children:[
-      'ADF','VOR/ILS','DME','Stopwatch','Audio Panel check','Annunciator Check',
-      'COM/NAV radios set',
-      {text:'GPS/FMS flight plan loaded and cross-checked against clearance'},
-      'OBS/CDI course set for initial departure routing',
-      'Hdg bug set','Alt bug set',
-      {text:'ATIS re-checked', hasLaw:true, lawKey:'4a'},
-      {text:'Obtain Clearance', hasLaw:true, lawKey:'4b', prompt:true},
-      {text:'Transponder code set', type:'code'},
-      'OCAS to CAS transition',
-      {text:'ETOB / CTOT (UTC)', type:'etobctot'},
-      'Route entered/verified in GPS or nav equipment; matches clearance',
-      {text:'Departure procedure (SID or Instrument Departure Procedure) briefed if applicable', hasLaw:true, lawKey:'4f'},
-      'RNAV/GNSS Loss of Integrity (LOI) contingency reviewed'
     ] }
   ]},
   { phase:'Ground', id:'offblockspretakeoff', title:'Off Blocks \u2192 Pre-Take Off Checks', items:[
@@ -852,21 +746,19 @@ var CHECKLIST_DATA = [
   ]},
   { phase:'Reference', id:'savedflights', title:'Saved Flights', items: [
     { id:'savedflightsgrp', text:'Saved Flights', type:'savedflights' }
-  ]},
-  { phase:'Reference', id:'apisettings', title:'Settings', items: [
-    { id:'apisettingsgrp', text:'Settings', type:'apisettings' }
   ]}
 ];
 
 /* ============================================================
    FLATTEN into one card per checkable thing
    ============================================================ */
-var PHASES = ['Weather','Navigation','Planning','Fuel','PaxBrief','Ground','Airborne','Reference'];
+var PHASES = ['PreFlight','Fuel','Ground','Airborne','Reference'];
 // Four top-level headings group the phases (and, for Post Flight, the
 // Calculations/Results views) so the header stays at a handful of big
 // choices instead of a flat row of phase buttons.
 var HEADINGS = [
-  { key:'Briefing', label:'BRIEFING', phases:['Weather','Navigation','Planning','Fuel','PaxBrief'] },
+  { key:'PreFlightH', label:'PRE-FLIGHT', phases:['PreFlight'] },
+  { key:'FuelH', label:'FUEL', phases:['Fuel'] },
   { key:'Airbourne', label:'AIRBOURNE', phases:['Ground','Airborne'] },
   { key:'PostFlight', label:'POST FLIGHT', phases:[] },
   { key:'ReferenceH', label:'REFERENCE', phases:['Reference'] }
@@ -875,7 +767,7 @@ var curHeading = 'PostFlight';
 var curMode = 'calc';
 function headingFor(phase){
   var h = HEADINGS.find(function(h){ return h.phases.indexOf(phase) !== -1; });
-  return h ? h.key : 'Briefing';
+  return h ? h.key : 'PreFlightH';
 }
 var SECTIONS = {}; // phase -> [ {id,title, cards:[...]} ]
 var ALLCARDS = {}; // cardId -> card spec (for lookups)
@@ -926,7 +818,6 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
         if(item.type === 'hobbsTacho'){ card.type = 'hobbstacho'; }
         if(item.type === 'timeNow'){ card.type = 'timenow'; }
         if(item.type === 'fuelplan'){ card.type = 'fuelplan'; }
-        if(item.type === 'apisettings'){ card.type = 'apisettings'; }
         if(item.type === 'savedflights'){ card.type = 'savedflights'; }
         if(item.type === 'atis'){ card.type = 'atis'; }
         sec.cards.push(card);
@@ -1146,7 +1037,7 @@ function renderHeadingRow(){
 // Only needed where the internal phase key isn't already good display
 // text (e.g. camelCase used as a plain identifier) — anything absent here
 // just falls back to showing its own key.
-var PHASE_LABELS = { PaxBrief: 'Pax Brief' };
+var PHASE_LABELS = { PreFlight: 'Pre-Flight' };
 function renderPhaseRow(){
   elPhaseRow.innerHTML = '';
   var heading = HEADINGS.filter(function(h){ return h.key === curHeading; })[0];
@@ -1450,8 +1341,6 @@ function renderCard(card){
     html += '</div>';
   } else if(card.type === 'fuelplan'){
     html += renderFuelPlanHtml(card.id);
-  } else if(card.type === 'apisettings'){
-    html += renderApiSettingsHtml();
   } else if(card.type === 'savedflights'){
     html += renderSavedFlightsHtml();
   } else if(card.type === 'atis'){
@@ -1459,7 +1348,7 @@ function renderCard(card){
   }
 
   elCard.innerHTML = html;
-  elCard.classList.toggle('list-mode', card.type === 'grouplist' || card.type === 'fuelplan' || card.type === 'apisettings' || card.type === 'savedflights' || card.type === 'atis');
+  elCard.classList.toggle('list-mode', card.type === 'grouplist' || card.type === 'fuelplan' || card.type === 'savedflights' || card.type === 'atis');
   requestAnimationFrame(updateScrollHint);
 
   var lawBadge = document.getElementById('lawBadge');
@@ -1907,8 +1796,6 @@ function renderCard(card){
       if(varPctEl) varPctEl.textContent = (variance!==null && c.expLanding) ? '('+(variance<0?'-':'+')+(Math.abs(variance/c.expLanding*100)).toFixed(1)+'%)' : '';
       renderResults(); renderCalculations();
     }
-  } else if(card.type === 'apisettings'){
-    wireApiSettings();
   } else if(card.type === 'savedflights'){
     wireSavedFlights(card);
   } else if(card.type === 'atis'){
@@ -2281,7 +2168,7 @@ function fuelTableHtml(c){
 function renderApiSettingsHtml(){
   var version = (document.getElementById('versionBadge')||{}).textContent || '';
   var html = '<div class="fpBlock" style="border-color:var(--border);background:var(--card)"><div class="fpBlockTitle" style="color:var(--muted)">About</div>'+
-    '<div class="fpBlockVal small" style="color:var(--text)">CheckDeck '+version+'</div>'+
+    '<div class="fpBlockVal small" style="color:var(--text)">CheckDeck Flight '+version+'</div>'+
   '</div>';
   html += '<div class="fpBlock amber" style="margin-top:14px"><div class="fpBlockTitle">Live Updates</div>'+
     '<button type="button" id="pauseLiveBtn" class="nowBtn" style="margin-top:6px;'+(liveUpdatesPaused?'background:var(--rose)':'')+'">'+(liveUpdatesPaused?'\u25B6 Resume':'\u23F8 Pause')+'</button>'+
@@ -2559,192 +2446,38 @@ function flightSummaryLabel(snap){
   return parts.length ? parts.join(' \u00b7 ') : 'No flight details set';
 }
 function renderSavedFlightsHtml(){
-  var names = Object.keys(STATE.savedFlights);
-  var html = '<button type="button" id="addNewFlightBtn" class="grCodeAddBtn" style="width:100%;border-color:var(--em);color:var(--em)">+ Add New Flight&hellip;</button>';
-  html += '<div class="savedFlightTopBtns" style="margin-top:8px">'+
-    '<button type="button" id="saveFlightBtn" class="grCodeAddBtn" style="flex:1">+ Save Current Flight&hellip;</button>'+
-    '<button type="button" id="importFlightBtn" class="grCodeAddBtn" style="flex:1">\u2913 Import Flight&hellip;</button>'+
+  return '<div class="fpBlock" style="border-color:var(--sky);width:100%;text-align:center">'+
+    '<div class="fpBlockTitle" style="color:var(--sky)">Flight Summary</div>'+
+    '<div class="fpBlockNote" style="margin-bottom:12px">Preview this flight formatted for printing, then use Print / PDF \u2014 choosing Share from that sheet lets you save it straight to Files on your iPad.</div>'+
+    '<button type="button" id="previewShareBtn" style="width:100%;border:1px solid var(--sky);background:var(--sky);color:#fff;border-radius:8px;padding:12px 0;font-family:\'JetBrains Mono\',monospace;font-weight:800;font-size:14px;cursor:pointer">\u2318 Preview &amp; Share PDF</button>'+
   '</div>';
-  html += '<div id="savedFlightsList" style="width:100%;margin-top:14px">';
-  if(!names.length){
-    html += '<div class="manageCodesEmpty">No flights saved yet.</div>';
-  } else {
-    html += names.map(function(name){
-      var snap = STATE.savedFlights[name];
-      return '<div class="savedFlightItem">'+
-        '<div class="savedFlightName">'+escapeHtml(name)+'</div>'+
-        '<div class="savedFlightSub">'+escapeHtml(flightSummaryLabel(snap))+'</div>'+
-        '<div class="savedFlightBtns">'+
-          '<button type="button" class="savedFlightLoadBtn" data-name="'+escapeHtml(name)+'">Load</button>'+
-          '<button type="button" class="savedFlightSyncBtn" data-name="'+escapeHtml(name)+'">Sync</button>'+
-        '</div>'+
-        '<div class="savedFlightBtns" style="margin-top:6px">'+
-          '<button type="button" class="savedFlightPreviewBtn" data-name="'+escapeHtml(name)+'">\u2318 Preview PDF</button>'+
-          '<button type="button" class="savedFlightExportBtn" data-name="'+escapeHtml(name)+'">\u2197 Send&hellip;</button>'+
-        '</div>'+
-        '<div class="savedFlightBtns" style="margin-top:6px">'+
-          '<button type="button" class="savedFlightDelBtn" data-name="'+escapeHtml(name)+'" style="width:100%">Delete</button>'+
-        '</div>'+
-      '</div>';
-    }).join('');
-  }
-  html += '</div>';
-  return html;
 }
-// Export/Import — the actual cross-device mechanism, since GitHub Pages
-// has no server to sync through. Packages one flight as JSON text, sent
-// via the Web Share API where available (AirDrop, Messages, Mail — all
-// work great on iPad) or copied to the clipboard as a fallback; Import
-// reverses it by pasting that same text back in on the receiving device.
-function exportFlightPayload(name){
-  return JSON.stringify({ checkdeckFlight:1, name:name, snapshot:STATE.savedFlights[name] });
-}
-function showExportFlightModal(name){
-  var modal = document.getElementById('exportFlightModal');
-  var textEl = document.getElementById('exportFlightText');
-  var payload = exportFlightPayload(name);
-  textEl.value = payload;
+// Preview + Share — replaces the old saved-flights library with one
+// button for whatever flight is currently active. Reuses the same full-
+// screen preview modal and print-scaling logic as before.
+function showCurrentFlightPreview(){
+  renderCalculations();
+  var html = document.getElementById('calcBody').innerHTML;
+  var fd = STATE.flightDetails;
+  var title = [fd.date, fd.registration, fd.student].filter(Boolean).join(' - ') || 'Flight Summary';
+  document.getElementById('flightPreviewTitle').textContent = title;
+  document.getElementById('flightPreviewBody').innerHTML = html;
+  var modal = document.getElementById('flightPreviewModal');
   modal.style.display = 'flex';
-  var closeBtn = document.getElementById('exportFlightCloseBtn');
-  var copyBtn = document.getElementById('exportFlightCopyBtn');
-  var shareBtn = document.getElementById('exportFlightShareBtn');
+  var closeBtn = document.getElementById('flightPreviewCloseBtn');
+  var printBtn = document.getElementById('flightPreviewPrintBtn');
   function onClose(){
     modal.style.display = 'none';
     closeBtn.removeEventListener('click', onClose);
-    copyBtn.removeEventListener('click', onCopy);
-    shareBtn.removeEventListener('click', onShare);
+    printBtn.removeEventListener('click', onPrint);
   }
-  function onCopy(){
-    textEl.select();
-    try{ navigator.clipboard.writeText(payload); }catch(e){ document.execCommand('copy'); }
-    copyBtn.textContent = 'Copied!';
-    setTimeout(function(){ copyBtn.textContent = 'Copy'; }, 1500);
-  }
-  function onShare(){
-    if(navigator.share){
-      navigator.share({ title:'CheckDeck flight: '+name, text:payload }).catch(function(){});
-    } else {
-      onCopy();
-    }
-  }
+  function onPrint(){ printOnePage('#flightPreviewModal .resWrap'); }
   closeBtn.addEventListener('click', onClose);
-  copyBtn.addEventListener('click', onCopy);
-  shareBtn.addEventListener('click', onShare);
-}
-function showImportFlightModal(card){
-  var modal = document.getElementById('importFlightModal');
-  var textEl = document.getElementById('importFlightText');
-  textEl.value = '';
-  modal.style.display = 'flex';
-  setTimeout(function(){ textEl.focus(); }, 50);
-  var cancelBtn = document.getElementById('importFlightCancelBtn');
-  var okBtn = document.getElementById('importFlightOkBtn');
-  function cleanup(){
-    modal.style.display = 'none';
-    cancelBtn.removeEventListener('click', onCancel);
-    okBtn.removeEventListener('click', onOk);
-  }
-  function onCancel(){ cleanup(); }
-  function onOk(){
-    var raw = textEl.value.trim();
-    var parsed;
-    try{ parsed = JSON.parse(raw); }catch(e){ parsed = null; }
-    if(!parsed || !parsed.checkdeckFlight || !parsed.snapshot){
-      showConfirm('That doesn\u2019t look like a CheckDeck flight export — check it was copied in full and try again.', 'OK', function(){});
-      return;
-    }
-    cleanup();
-    var name = parsed.name || 'Imported flight';
-    function doImport(finalName){
-      STATE.savedFlights[finalName] = parsed.snapshot;
-      saveState();
-      renderCard(card);
-    }
-    if(STATE.savedFlights[name]){
-      showConfirm('A saved flight named "'+name+'" already exists. Importing will overwrite it. Continue?', 'Overwrite', function(){ doImport(name); });
-    } else {
-      doImport(name);
-    }
-  }
-  cancelBtn.addEventListener('click', onCancel);
-  okBtn.addEventListener('click', onOk);
+  printBtn.addEventListener('click', onPrint);
 }
 function wireSavedFlights(card){
-  var addNewBtn = document.getElementById('addNewFlightBtn');
-  if(addNewBtn) addNewBtn.addEventListener('click', function(){ showNewFlightModal(card); });
-  var saveBtn = document.getElementById('saveFlightBtn');
-  if(saveBtn) saveBtn.addEventListener('click', function(){
-    var fd = STATE.flightDetails;
-    var takeoffV = STATE.values['offblockspretakeoff.otpgrp.15'];
-    var suggested = [fd.date, fd.registration, fd.student, takeoffV].filter(Boolean).join(' - ');
-    showPrompt('Name this flight:', suggested, function(name){
-      name = (name||'').trim();
-      if(!name) return;
-      STATE.savedFlights[name] = captureFlightSnapshot();
-      saveState();
-      renderCard(card);
-    });
-  });
-  var importBtn = document.getElementById('importFlightBtn');
-  if(importBtn) importBtn.addEventListener('click', function(){ showImportFlightModal(card); });
-  document.querySelectorAll('.savedFlightExportBtn').forEach(function(b){
-    b.addEventListener('click', function(){ showExportFlightModal(b.getAttribute('data-name')); });
-  });
-  document.querySelectorAll('.savedFlightPreviewBtn').forEach(function(b){
-    b.addEventListener('click', function(){ showFlightPreview(b.getAttribute('data-name')); });
-  });
-  document.querySelectorAll('.savedFlightLoadBtn').forEach(function(b){
-    b.addEventListener('click', function(){
-      var name = b.getAttribute('data-name');
-      showConfirm('Load "'+name+'"? This replaces all current flight data (fuel, times, ticks) with the saved version. This cannot be undone.', 'Load Flight', function(){
-        applyFlightSnapshot(STATE.savedFlights[name]);
-        saveState();
-        renderCard(card);
-        renderResults(); renderCalculations(); renderPhaseRow(); renderTankHeaderBar();
-      });
-    });
-  });
-  document.querySelectorAll('.savedFlightSyncBtn').forEach(function(b){
-    b.addEventListener('click', function(){
-      var name = b.getAttribute('data-name');
-      var saved = STATE.savedFlights[name];
-      var savedFd = (saved && saved.flightDetails) || {};
-      var curFd = STATE.flightDetails;
-      var dateMatch = (savedFd.date||'') === (curFd.date||'');
-      var regMatch = (savedFd.registration||'') === (curFd.registration||'');
-      function doSyncPrint(){
-        // Sync happens on the flight that's already live/active, so the
-        // current Calculations view already reflects exactly what was
-        // just saved — no need to swap/preview first, just print it.
-        if(STATE.autoPrintOnSync) setTimeout(function(){ printOnePage(); }, 300);
-      }
-      if(!dateMatch || !regMatch){
-        showConfirm('The currently active flight ('+(curFd.date||'no date')+' '+(curFd.registration||'no reg')+') doesn\u2019t match what was saved as "'+name+'" ('+(savedFd.date||'no date')+' '+(savedFd.registration||'no reg')+'). Sync anyway and overwrite it?', 'Sync Anyway', function(){
-          STATE.savedFlights[name] = captureFlightSnapshot();
-          saveState();
-          renderCard(card);
-          doSyncPrint();
-        });
-        return;
-      }
-      showConfirm('Update saved flight "'+name+'" with the current data? This overwrites what was previously saved under that name.', 'Sync', function(){
-        STATE.savedFlights[name] = captureFlightSnapshot();
-        saveState();
-        renderCard(card);
-        doSyncPrint();
-      });
-    });
-  });
-  document.querySelectorAll('.savedFlightDelBtn').forEach(function(b){
-    b.addEventListener('click', function(){
-      var name = b.getAttribute('data-name');
-      showConfirm('Delete saved flight "'+name+'"? This cannot be undone.', 'Delete', function(){
-        delete STATE.savedFlights[name];
-        saveState();
-        renderCard(card);
-      });
-    });
-  });
+  var btn = document.getElementById('previewShareBtn');
+  if(btn) btn.addEventListener('click', function(){ showCurrentFlightPreview(); });
 }
 function renderFuelPlanHtml(cardId){
   var f = STATE.fuel, u = f.unit, c = fuelCalc();
@@ -3007,7 +2740,7 @@ function resetAllData(){
 // still the same aircraft with whatever fuel is actually left), and
 // carries the just-finished flight's End Tacho/Hobbs over as the new
 // flight's Start Tacho/Hobbs, since those genuinely are continuous.
-var AIRBOURNE_CARD_PREFIXES = ['crewpax.2x','atis.atisgrp','start.startgrp','therest.restgrp','offblockspretakeoff.otpgrp','airborne.airbornegrp'];
+var AIRBOURNE_CARD_PREFIXES = ['crewpax.2x','atis.atisgrp','start.startgrp','offblockspretakeoff.otpgrp','airborne.airbornegrp'];
 function isAirbourneCardKey(key){
   return AIRBOURNE_CARD_PREFIXES.some(function(p){ return key === p || key.indexOf(p+'.') === 0; });
 }
