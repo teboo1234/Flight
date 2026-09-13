@@ -1008,18 +1008,22 @@ var CHECKLIST_DATA = [
       'Ex 19 – Basic Instrument Flight'
     ] }
   ]},
+  { phase:'AircraftRef', id:'aircraftref', title:'Aircraft Reference', items: [
+    { id:'aircraftrefgrp', text:'Aircraft Reference', type:'aircraftref' }
+  ]},
 ];
 
 /* ============================================================
    FLATTEN into one card per checkable thing
    ============================================================ */
-var PHASES = ['Weather','Navigation','Planning','Fuel','PaxBrief','SkillTest','GroundSyllabus','AirSyllabus'];
-// Three headings — everything here is pre-flight planning, so there's no
+var PHASES = ['Weather','Navigation','Planning','Fuel','PaxBrief','SkillTest','GroundSyllabus','AirSyllabus','AircraftRef'];
+// Four headings — everything here is pre-flight planning, so there's no
 // Airbourne/Post Flight distinction the way the Flight app needs.
 var HEADINGS = [
   { key:'Briefing', label:'BRIEFING', phases:['Weather','Navigation','Planning','PaxBrief'] },
   { key:'FuelH', label:'FUEL', phases:['Fuel'] },
-  { key:'ReadinessH', label:'READINESS', phases:['SkillTest','GroundSyllabus','AirSyllabus'] }
+  { key:'ReadinessH', label:'READINESS', phases:['SkillTest','GroundSyllabus','AirSyllabus'] },
+  { key:'ReferenceH', label:'REFERENCE', phases:['AircraftRef'] }
 ];
 var curHeading = 'Briefing';
 var curMode = 'card';
@@ -1076,6 +1080,7 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
         if(item.type === 'hobbsTacho'){ card.type = 'hobbstacho'; }
         if(item.type === 'timeNow'){ card.type = 'timenow'; }
         if(item.type === 'fuelplan'){ card.type = 'fuelplan'; }
+        if(item.type === 'aircraftref'){ card.type = 'aircraftref'; }
         if(item.type === 'apisettings'){ card.type = 'apisettings'; }
         if(item.type === 'savedflights'){ card.type = 'savedflights'; }
         if(item.type === 'atis'){ card.type = 'atis'; }
@@ -1090,6 +1095,143 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
 /* ============================================================
    STATE
    ============================================================ */
+// Aircraft Reference — ported from FlightDeck V2-1. Deliberately kept on
+// its own localStorage keys (like FlightDeck itself) rather than folded
+// into STATE, since these are persistent aircraft profiles, not
+// per-flight data — they shouldn't be touched by Reset All.
+var AC_STORAGE_KEY = 'fd_ac_profiles_v1';
+var AC_SELECTED_KEY = 'fd_ac_selected_v1';
+// Field schema: [key, label, unit, category]
+var AC_FIELDS = [
+  ['vne',       'Vne', 'KIAS', 'Limits'],
+  ['vno',       'Vno (structural cruise)', 'KIAS', 'Limits'],
+  ['vfe',       'Vfe (max flap)', 'KIAS', 'Limits'],
+  ['vlo',       'Vlo (max gear retract)', 'KIAS', 'Limits'],
+  ['vle',       'Vle (max gear extend)', 'KIAS', 'Limits'],
+  ['vaMax',     'Va at gross weight', 'KIAS', 'Limits'],
+  ['vaLight',   'Va at light weight', 'KIAS', 'Limits'],
+  ['xwind',     'Max demonstrated crosswind', 'kt', 'Limits'],
+  ['vs',        'Vs (clean stall)', 'KIAS', 'Stalls'],
+  ['vso',       'Vso (dirty stall)', 'KIAS', 'Stalls'],
+  ['vr',        'Vr (rotate)', 'KIAS', 'Operating'],
+  ['vy',        'Vy (best ROC, clean)', 'KIAS', 'Operating'],
+  ['vyGear',    'Vy (best ROC, gear dn)', 'KIAS', 'Operating'],
+  ['vx',        'Vx (best angle, clean)', 'KIAS', 'Operating'],
+  ['vxGear',    'Vx (best angle, gear dn)', 'KIAS', 'Operating'],
+  ['vcClimb',   'Vc (cruise climb)', 'KIAS', 'Operating'],
+  ['vGlide',    'Vglide (best glide)', 'KIAS', 'Operating'],
+  ['vCruise',   'Cruise @ 2300 RPM', 'KIAS', 'Operating'],
+  ['vInitApp',  'Initial approach', 'KIAS', 'Approach'],
+  ['vApp40',    'Approach with 40\u00b0 flap', 'KIAS', 'Approach'],
+  ['vFlapless', 'Flapless approach', 'KIAS', 'Approach'],
+  ['vRef',      'Vref (over threshold)', 'KIAS', 'Approach'],
+  ['vLift',     'Lift-off range', 'KIAS', 'Approach'],
+  ['fuelFlow',  'Planning fuel flow', 'L/hr', 'Fuel & Oil'],
+  ['fuelFull',  'Full fuel', 'L', 'Fuel & Oil'],
+  ['fuelUseable','Useable fuel', 'L', 'Fuel & Oil'],
+  ['fuelToTabs','To tabs (per tank)', 'L', 'Fuel & Oil'],
+  ['fuelFullUsg','Full fuel', 'USG', 'Fuel & Oil'],
+  ['fuelTabsUsg','To tabs', 'USG', 'Fuel & Oil'],
+  ['oilMin',    'Min oil (do not launch below)', 'qt', 'Fuel & Oil']
+];
+// Power Settings phases: each phase has three sub-fields — MAP (inches), RPM, Speed (kts).
+var PWR_PHASES = [
+  ['pwrClimbInit', 'Initial climb'],
+  ['pwrClimbNorm', 'Normal climb'],
+  ['pwrCruise',    'Normal cruise'],
+  ['pwrDescent',   'Descent'],
+  ['pwrHold',      'Hold'],
+  ['pwrFinal',     'Final approach']
+];
+function acDefaults(){
+  return {
+    'PA28R-200 (G-OMNI)': {
+      vne:'160', vno:'126', vfe:'103', vlo:'108', vle:'130',
+      vaMax:'111', vaLight:'88', xwind:'17',
+      vs:'62', vso:'55',
+      vr:'65', vy:'79', vyGear:'', vx:'63', vxGear:'',
+      vcClimb:'88', vGlide:'73', vCruise:'95',
+      vInitApp:'70', vApp40:'63', vFlapless:'70', vRef:'75', vLift:'40-52',
+      fuelFlow:'40', fuelFull:'190', fuelUseable:'182', fuelToTabs:'60',
+      fuelFullUsg:'48', fuelTabsUsg:'34', oilMin:'6',
+      pwrClimbInitMap:'FULL', pwrClimbInitRpm:'FULL', pwrClimbInitSpd:'85-90',
+      pwrClimbNormMap:'25',   pwrClimbNormRpm:'2500', pwrClimbNormSpd:'87',
+      pwrCruiseMap:'22',      pwrCruiseRpm:'2400',    pwrCruiseSpd:'120',
+      pwrDescentMap:'18',     pwrDescentRpm:'2400',   pwrDescentSpd:'130',
+      pwrHoldMap:'22',        pwrHoldRpm:'2400',      pwrHoldSpd:'120',
+      pwrFinalMap:'18',       pwrFinalRpm:'2400',     pwrFinalSpd:'90'
+    },
+    'PA28 Warrior': {
+      vne:'154', vno:'129', vfe:'103', vlo:'', vle:'',
+      vaMax:'111', vaLight:'88', xwind:'17',
+      vs:'50', vso:'44',
+      vr:'55', vy:'79', vyGear:'', vx:'63', vxGear:'',
+      vcClimb:'87', vGlide:'73', vCruise:'108',
+      vInitApp:'75', vApp40:'65', vFlapless:'75', vRef:'65', vLift:'55',
+      fuelFlow:'30', fuelFull:'182', fuelUseable:'182', fuelToTabs:'128',
+      fuelFullUsg:'48', fuelTabsUsg:'34', oilMin:'6',
+      pwrClimbInitMap:'', pwrClimbInitRpm:'2700', pwrClimbInitSpd:'79',
+      pwrClimbNormMap:'', pwrClimbNormRpm:'2500', pwrClimbNormSpd:'87',
+      pwrCruiseMap:'',    pwrCruiseRpm:'2400',    pwrCruiseSpd:'108',
+      pwrDescentMap:'',   pwrDescentRpm:'2200',   pwrDescentSpd:'120',
+      pwrHoldMap:'',      pwrHoldRpm:'2200',      pwrHoldSpd:'90',
+      pwrFinalMap:'',     pwrFinalRpm:'1800',     pwrFinalSpd:'70'
+    },
+    'PA28 Arrow': {
+      vne:'174', vno:'148', vfe:'103', vlo:'129', vle:'129',
+      vaMax:'118', vaLight:'100', xwind:'17',
+      vs:'55', vso:'55',
+      vr:'60', vy:'90', vyGear:'', vx:'78', vxGear:'',
+      vcClimb:'90', vGlide:'79', vCruise:'135',
+      vInitApp:'85', vApp40:'75', vFlapless:'85', vRef:'75', vLift:'55',
+      fuelFlow:'42', fuelFull:'284', fuelUseable:'265', fuelToTabs:'174',
+      fuelFullUsg:'75', fuelTabsUsg:'46', oilMin:'6',
+      pwrClimbInitMap:'FULL', pwrClimbInitRpm:'2700', pwrClimbInitSpd:'90',
+      pwrClimbNormMap:'25',   pwrClimbNormRpm:'2500', pwrClimbNormSpd:'95',
+      pwrCruiseMap:'23',      pwrCruiseRpm:'2400',    pwrCruiseSpd:'135',
+      pwrDescentMap:'18',     pwrDescentRpm:'2400',   pwrDescentSpd:'135',
+      pwrHoldMap:'22',        pwrHoldRpm:'2400',      pwrHoldSpd:'120',
+      pwrFinalMap:'15',       pwrFinalRpm:'2400',     pwrFinalSpd:'80'
+    },
+    'C172': {
+      vne:'158', vno:'129', vfe:'85',
+      vaMax:'105', vaLight:'90', xwind:'15',
+      vs:'47', vso:'40',
+      vr:'55', vy:'74', vyGear:'', vx:'62', vxGear:'',
+      vcClimb:'80', vGlide:'65', vCruise:'122',
+      vInitApp:'70', vApp40:'60', vFlapless:'70', vRef:'60', vLift:'55',
+      fuelFlow:'30', fuelFull:'159', fuelUseable:'150', fuelToTabs:'106',
+      fuelFullUsg:'42', fuelTabsUsg:'28', oilMin:'5',
+      pwrClimbInitMap:'', pwrClimbInitRpm:'2500', pwrClimbInitSpd:'74',
+      pwrClimbNormMap:'', pwrClimbNormRpm:'2400', pwrClimbNormSpd:'80',
+      pwrCruiseMap:'',    pwrCruiseRpm:'2400',    pwrCruiseSpd:'105',
+      pwrDescentMap:'',   pwrDescentRpm:'2200',   pwrDescentSpd:'100',
+      pwrHoldMap:'',      pwrHoldRpm:'2000',      pwrHoldSpd:'80',
+      pwrFinalMap:'',     pwrFinalRpm:'1500',     pwrFinalSpd:'65'
+    }
+  };
+}
+function loadAcProfiles(){
+  var p = null;
+  try {
+    var raw = localStorage.getItem(AC_STORAGE_KEY);
+    if(raw){
+      var parsed = JSON.parse(raw);
+      if(parsed && typeof parsed === 'object') p = parsed;
+    }
+  } catch(e){}
+  if(!p) p = {};
+  var defaults = acDefaults();
+  var changed = false;
+  Object.keys(defaults).forEach(function(name){
+    if(!p[name]){ p[name] = defaults[name]; changed = true; }
+  });
+  if(changed) saveAcProfiles(p);
+  return p;
+}
+function saveAcProfiles(p){
+  try { localStorage.setItem(AC_STORAGE_KEY, JSON.stringify(p)); } catch(e){}
+}
 var STORE_KEY = 'checkdeck_briefing_state_v1';
 var USG_TO_L = 3.785;
 var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, atisEntries:[], atisDraft:{ icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' }, manualTasks:[], customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
@@ -1296,7 +1438,7 @@ function renderHeadingRow(){
 // Only needed where the internal phase key isn't already good display
 // text (e.g. camelCase used as a plain identifier) — anything absent here
 // just falls back to showing its own key.
-var PHASE_LABELS = { PaxBrief: 'Pax Brief', SkillTest: 'Skill Test', GroundSyllabus: 'Ground Syllabus', AirSyllabus: 'Air Syllabus' };
+var PHASE_LABELS = { PaxBrief: 'Pax Brief', SkillTest: 'Skill Test', GroundSyllabus: 'Ground Syllabus', AirSyllabus: 'Air Syllabus', AircraftRef: 'Aircraft Reference' };
 function renderPhaseRow(){
   elPhaseRow.innerHTML = '';
   var heading = HEADINGS.filter(function(h){ return h.key === curHeading; })[0];
@@ -1600,6 +1742,8 @@ function renderCard(card){
     html += '</div>';
   } else if(card.type === 'fuelplan'){
     html += renderFuelPlanHtml(card.id);
+  } else if(card.type === 'aircraftref'){
+    html += renderAircraftRefHtml();
   } else if(card.type === 'apisettings'){
     html += renderApiSettingsHtml();
   } else if(card.type === 'savedflights'){
@@ -1609,7 +1753,7 @@ function renderCard(card){
   }
 
   elCard.innerHTML = html;
-  elCard.classList.toggle('list-mode', card.type === 'grouplist' || card.type === 'fuelplan' || card.type === 'apisettings' || card.type === 'savedflights' || card.type === 'atis');
+  elCard.classList.toggle('list-mode', card.type === 'grouplist' || card.type === 'fuelplan' || card.type === 'aircraftref' || card.type === 'apisettings' || card.type === 'savedflights' || card.type === 'atis');
   requestAnimationFrame(updateScrollHint);
 
   var lawBadge = document.getElementById('lawBadge');
@@ -2057,6 +2201,8 @@ function renderCard(card){
       if(varPctEl) varPctEl.textContent = (variance!==null && c.expLanding) ? '('+(variance<0?'-':'+')+(Math.abs(variance/c.expLanding*100)).toFixed(1)+'%)' : '';
       renderResults(); renderCalculations();
     }
+  } else if(card.type === 'aircraftref'){
+    wireAircraftRef(card);
   } else if(card.type === 'apisettings'){
     wireApiSettings();
   } else if(card.type === 'savedflights'){
@@ -2893,6 +3039,162 @@ function wireSavedFlights(card){
         saveState();
         renderCard(card);
       });
+    });
+  });
+}
+// Aircraft Reference — same field schema and unit conversions as
+// FlightDeck V2-1's Aircraft Ref panel, rendered as a normal CheckDeck
+// card. Editable values persist per aircraft profile, independent of
+// the current flight/checklist state.
+function acConvertMap(unit){
+  if(unit === 'KIAS' || unit === 'kt') return { unit:'mph',    factor:1.15078 };
+  if(unit === 'L')                     return { unit:'USG',    factor:0.264172 };
+  if(unit === 'USG')                   return { unit:'L',      factor:3.78541 };
+  if(unit === 'L/hr')                  return { unit:'USG/hr', factor:0.264172 };
+  return null;
+}
+function acFmtConv(n){ return isNaN(n) ? '' : String(Math.round(n * 100) / 100); }
+function acFmtConvInt(n){ return isNaN(n) ? '' : String(Math.round(n)); }
+var AC_KT_MPH_FACTOR = 1.15078;
+function acFmtByFactor(n, factor){ return (factor === AC_KT_MPH_FACTOR) ? acFmtConvInt(n) : acFmtConv(n); }
+function renderAircraftRefHtml(){
+  var profiles = loadAcProfiles();
+  var selected = localStorage.getItem(AC_SELECTED_KEY) || Object.keys(profiles)[0] || '';
+  if(!profiles[selected]) selected = Object.keys(profiles)[0];
+  var prof = profiles[selected] || {};
+  var html = '<div style="width:100%">';
+  html += '<div class="fpBlock" style="border-color:var(--sky);width:100%">'+
+    '<div class="fpBlockTitle" style="color:var(--sky)">Aircraft</div>'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">'+
+      '<select class="cloudPickBtn" id="acrSelect" style="flex:1;min-width:160px">'+
+        Object.keys(profiles).map(function(n){
+          return '<option value="'+escapeHtml(n)+'"'+(n===selected?' selected':'')+'>'+escapeHtml(n)+'</option>';
+        }).join('')+
+      '</select>'+
+      '<button type="button" class="grCodeAddBtn" id="acrAddBtn" style="flex:0 0 auto;padding:0 14px">+ Add</button>'+
+      '<button type="button" class="grCodeAddBtn" id="acrRenameBtn" style="flex:0 0 auto;padding:0 14px">Rename</button>'+
+      '<button type="button" class="savedFlightDelBtn" id="acrDeleteBtn" style="flex:0 0 auto;padding:0 14px;border-radius:7px">Delete</button>'+
+    '</div>'+
+  '</div>';
+  var byCat = {};
+  var catOrder = [];
+  AC_FIELDS.forEach(function(f){
+    var cat = f[3];
+    if(!byCat[cat]){ byCat[cat] = []; catOrder.push(cat); }
+    byCat[cat].push(f);
+  });
+  catOrder.forEach(function(cat){
+    html += '<div class="fpBlock" style="margin-top:12px;width:100%"><div class="fpBlockTitle">'+escapeHtml(cat)+'</div>';
+    byCat[cat].forEach(function(f){
+      var key = f[0], label = f[1], unit = f[2];
+      var val = prof[key] || '';
+      var cv = acConvertMap(unit);
+      var num = parseFloat(val);
+      var convVal = (cv && !isNaN(num)) ? acFmtByFactor(num * cv.factor, cv.factor) : '';
+      html += '<div class="fpRow" style="gap:8px">'+
+        '<div class="fpName" style="flex:1;text-align:left">'+escapeHtml(label)+'</div>'+
+        '<input type="text" class="acr-fld fpAmt" data-k="'+key+'"'+(cv?' data-conv-factor="'+cv.factor+'"':'')+' value="'+escapeHtml(val)+'" style="flex:0 0 58px;width:58px"/>'+
+        '<span class="fpU">'+unit+'</span>'+
+        (cv ? '<input type="text" class="acr-conv fpAmt" data-k="'+key+'" data-conv-factor="'+cv.factor+'" value="'+escapeHtml(convVal)+'" style="flex:0 0 58px;width:58px"/><span class="fpU">'+cv.unit+'</span>' : '')+
+      '</div>';
+    });
+    html += '</div>';
+  });
+  // Power Settings — MAP / RPM / Speed per flight phase
+  html += '<div class="fpBlock" style="margin-top:12px;width:100%"><div class="fpBlockTitle">Power Settings</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 44px 50px 42px 42px;gap:4px 6px;align-items:center;font-family:\'JetBrains Mono\',monospace;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:8px 0 4px">'+
+      '<div>Phase</div><div style="text-align:right">MAP&quot;</div><div style="text-align:right">RPM</div><div style="text-align:right">Kt</div><div style="text-align:right">Mph</div>'+
+    '</div>';
+  PWR_PHASES.forEach(function(row){
+    var base = row[0], label = row[1];
+    html += '<div style="display:grid;grid-template-columns:1fr 44px 50px 42px 42px;gap:4px 6px;align-items:center;margin-bottom:4px">'+
+      '<div style="font-size:12px;color:var(--text)">'+escapeHtml(label)+'</div>';
+    ['Map','Rpm'].forEach(function(sub){
+      var k = base + sub;
+      html += '<input type="text" class="acr-fld" data-k="'+k+'" value="'+escapeHtml(prof[k]||'')+'" style="width:100%;padding:5px 4px;font-size:11px;text-align:right;font-family:\'JetBrains Mono\',monospace;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text)"/>';
+    });
+    var spdK = base + 'Spd';
+    var spdV = prof[spdK] || '';
+    var spdNum = parseFloat(spdV);
+    var spdMph = isNaN(spdNum) ? '' : acFmtConvInt(spdNum * AC_KT_MPH_FACTOR);
+    html += '<input type="text" class="acr-fld" data-k="'+spdK+'" data-conv-factor="'+AC_KT_MPH_FACTOR+'" value="'+escapeHtml(spdV)+'" style="width:100%;padding:5px 4px;font-size:11px;text-align:right;font-family:\'JetBrains Mono\',monospace;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text)"/>'+
+      '<input type="text" class="acr-conv" data-k="'+spdK+'" data-conv-factor="'+AC_KT_MPH_FACTOR+'" value="'+escapeHtml(spdMph)+'" style="width:100%;padding:5px 4px;font-size:11px;text-align:right;font-family:\'JetBrains Mono\',monospace;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text)"/>'+
+    '</div>';
+  });
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+function wireAircraftRef(card){
+  var profiles = loadAcProfiles();
+  var selected = localStorage.getItem(AC_SELECTED_KEY) || Object.keys(profiles)[0] || '';
+  if(!profiles[selected]) selected = Object.keys(profiles)[0];
+  document.querySelectorAll('.acr-fld').forEach(function(inp){
+    inp.addEventListener('input', function(){
+      var k = inp.getAttribute('data-k');
+      if(!profiles[selected]) profiles[selected] = {};
+      profiles[selected][k] = inp.value;
+      saveAcProfiles(profiles);
+      var factor = parseFloat(inp.getAttribute('data-conv-factor'));
+      if(factor && !isNaN(factor)){
+        var convEl = document.querySelector('.acr-conv[data-k="'+k+'"]');
+        if(convEl){
+          var n = parseFloat(inp.value);
+          convEl.value = isNaN(n) ? '' : acFmtByFactor(n * factor, factor);
+        }
+      }
+    });
+  });
+  document.querySelectorAll('.acr-conv').forEach(function(inp){
+    inp.addEventListener('input', function(){
+      var k = inp.getAttribute('data-k');
+      var factor = parseFloat(inp.getAttribute('data-conv-factor'));
+      if(!factor || isNaN(factor)) return;
+      var n = parseFloat(inp.value);
+      var back = isNaN(n) ? '' : acFmtByFactor(n / factor, factor);
+      if(!profiles[selected]) profiles[selected] = {};
+      profiles[selected][k] = back;
+      saveAcProfiles(profiles);
+      var srcEl = document.querySelector('.acr-fld[data-k="'+k+'"]');
+      if(srcEl) srcEl.value = back;
+    });
+  });
+  var sel = document.getElementById('acrSelect');
+  if(sel) sel.addEventListener('change', function(){
+    localStorage.setItem(AC_SELECTED_KEY, sel.value);
+    renderCard(card);
+  });
+  var addBtn = document.getElementById('acrAddBtn');
+  if(addBtn) addBtn.addEventListener('click', function(){
+    showPrompt('New aircraft name:', '', function(name){
+      name = (name||'').trim();
+      if(!name) return;
+      profiles[name] = {};
+      saveAcProfiles(profiles);
+      localStorage.setItem(AC_SELECTED_KEY, name);
+      renderCard(card);
+    });
+  });
+  var renameBtn = document.getElementById('acrRenameBtn');
+  if(renameBtn) renameBtn.addEventListener('click', function(){
+    showPrompt('Rename "'+selected+'" to:', selected, function(newName){
+      newName = (newName||'').trim();
+      if(!newName || newName === selected) return;
+      profiles[newName] = profiles[selected];
+      delete profiles[selected];
+      saveAcProfiles(profiles);
+      localStorage.setItem(AC_SELECTED_KEY, newName);
+      renderCard(card);
+    });
+  });
+  var deleteBtn = document.getElementById('acrDeleteBtn');
+  if(deleteBtn) deleteBtn.addEventListener('click', function(){
+    if(Object.keys(profiles).length<=1) return;
+    showConfirm('Delete aircraft profile "'+selected+'"? This cannot be undone.', 'Delete', function(){
+      delete profiles[selected];
+      saveAcProfiles(profiles);
+      localStorage.setItem(AC_SELECTED_KEY, Object.keys(profiles)[0]);
+      renderCard(card);
     });
   });
 }
