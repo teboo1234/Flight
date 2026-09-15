@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v21 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v30 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -286,9 +286,6 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .manageCodesEmpty{ text-align:center; color:#3f4c5e; font-size:13px; padding:16px 0; }
 .codePresetsBlock{ border-top:1px solid #e2e8f0; margin-top:14px; padding-top:14px; }
 .codePresetsLbl{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#3f4c5e; margin-bottom:8px; }
-.cloudTypeGrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; width:100%; }
-.cloudTypeBtn{ padding:16px 0; font-size:15px; font-family:'JetBrains Mono',monospace; font-weight:800; background:var(--card); color:var(--text); border:1.5px solid var(--border); border-radius:8px; cursor:pointer; }
-.cloudTypeBtn.on{ background:#1e3a8a; color:#fff; border-color:#1e3a8a; }
 @keyframes digCursorBlink{ 0%,50%{ opacity:1; } 51%,100%{ opacity:.15; } }
 .dig-active{ animation:digCursorBlink 1s step-end infinite; }
 .codePresetsList{ display:flex; flex-direction:column; gap:6px; }
@@ -302,15 +299,8 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .savedFlightSub{ font-size:12px; color:var(--muted); margin-top:2px; margin-bottom:10px; }
 .savedFlightBtns{ display:flex; gap:6px; }
 .savedFlightBtns button{ flex:1; border-radius:7px; padding:7px 0; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; cursor:pointer; }
-.savedFlightLoadBtn{ border:1px solid var(--sky); background:var(--surface); color:var(--sky); }
-.savedFlightSyncBtn{ border:1px solid var(--em); background:var(--surface); color:var(--em); }
 .savedFlightDelBtn{ border:1px solid var(--rose); background:var(--surface); color:var(--rose); }
 .savedFlightTopBtns{ display:flex; gap:8px; width:100%; }
-.savedFlightExportBtn{ flex:1; border:1px solid var(--violet); background:var(--surface); color:var(--violet); border-radius:7px; padding:7px 0; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; cursor:pointer; }
-.savedFlightPreviewBtn{ flex:1; border:1px solid var(--sky); background:var(--surface); color:var(--sky); border-radius:7px; padding:7px 0; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; cursor:pointer; }
-.flightPreviewWrap{ width:100%; height:100%; display:flex; flex-direction:column; background:#f5f7fa; }
-.flightPreviewHead{ flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:calc(10px + env(safe-area-inset-top)) 16px 10px; background:#fff; border-bottom:1px solid var(--border); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:13px; }
-.flightPreviewHead > div{ display:flex; gap:8px; }
 .addItemRow{ display:flex; gap:8px; margin-top:4px; }
 .addItemRow input{ flex:1; background:var(--surface); border:1px dashed var(--border); border-radius:10px; padding:10px 12px; font-family:'JetBrains Mono',monospace; font-size:16px; color:var(--text); }
 .addItemRow button{ flex-shrink:0; border:1px solid var(--em); background:rgba(16,185,129,.08); color:var(--em); border-radius:10px; padding:10px 16px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; cursor:pointer; }
@@ -433,8 +423,6 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 @media print{
   .topStrip,.printBtn,.resetBtn,.shareBtn{ display:none !important; }
   #resultsMode,#calcMode{ position:static; inset:auto; background:#fff; }
-  #flightPreviewModal{ position:static; inset:auto; background:#fff; padding:0; }
-  #flightPreviewModal .flightPreviewHead{ display:none; }
   body{ overflow:visible; }
 }
 </style>
@@ -442,7 +430,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v21</div>
+  <div id="versionBadge">v30</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -587,35 +575,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
   </div>
 </div>
 
-<div id="newFlightModal" class="confirmModal" style="display:none">
-  <div class="confirmBox">
-    <div class="confirmMsg">Add a new flight</div>
-    <div class="codePresetsLbl" style="margin-bottom:6px">Starts blank — nothing ticked, default fuel — ready to Load whenever this flight happens.</div>
-    <div class="fdGrid" style="width:100%">
-      <div class="fdField"><label>Date</label><input type="date" id="newFlightDate"/></div>
-      <div class="fdField"><label>Registration</label><input type="text" id="newFlightReg" placeholder="G-XXXX" style="text-transform:uppercase"/></div>
-    </div>
-    <div class="fdField full" style="margin-top:8px"><label>Student</label><input type="text" id="newFlightStudent"/></div>
-    <div class="confirmBtns">
-      <button type="button" id="newFlightCancelBtn" class="confirmCancel">Cancel</button>
-      <button type="button" id="newFlightOkBtn" class="confirmOk" style="background:#047857">Add Flight</button>
-    </div>
-  </div>
-</div>
 
-
-<div id="flightPreviewModal" class="confirmModal" style="display:none;align-items:stretch;padding:0">
-  <div class="flightPreviewWrap">
-    <div class="flightPreviewHead">
-      <span id="flightPreviewTitle">Preview</span>
-      <div>
-        <button type="button" class="printBtn" id="flightPreviewPrintBtn" style="padding:8px 14px;font-size:12px">Print / PDF</button>
-        <button type="button" class="confirmCancel" id="flightPreviewCloseBtn" style="padding:8px 14px;font-size:12px">Close</button>
-      </div>
-    </div>
-    <div class="resWrap" id="flightPreviewBody" style="overflow-y:auto;flex:1"></div>
-  </div>
-</div>
 
 <div id="manageCodesModal" class="confirmModal" style="display:none">
   <div class="confirmBox">
@@ -1039,6 +999,9 @@ var CHECKLIST_DATA = [
   { phase:'PreFlight', id:'personalcurrency', title:'Personal Currency', items: [
     { id:'1pc', text:'Personal Currency', type:'group', children:['Pilot licence and IR rating current','Logbook up to date','Medical certificate valid','Glasses/sunglasses'] }
   ]},
+  { phase:'PreFlight', id:'notams', title:'NOTAMs', items: [
+    { id:'2b', text:'NOTAMs checked', type:'group', hasLaw:true, children:['Departure','Destination','Alternate','En-route'] }
+  ]},
   { phase:'PreFlight', id:'imsafe', title:'I\'M SAFE', items: [
     { id:'1q', text:'I\'M SAFE self-assessment', type:'group', hasLaw:true, children:['Illness','Medication','Stress','Alcohol','Fatigue','Eating/Emotion'] }
   ]},
@@ -1192,7 +1155,6 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
         if(item.type === 'hobbsTacho'){ card.type = 'hobbstacho'; }
         if(item.type === 'timeNow'){ card.type = 'timenow'; }
         if(item.type === 'fuelplan'){ card.type = 'fuelplan'; }
-        if(item.type === 'savedflights'){ card.type = 'savedflights'; }
         if(item.type === 'atis'){ card.type = 'atis'; }
         sec.cards.push(card);
         ALLCARDS[card.id] = card;
@@ -1207,7 +1169,7 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
    ============================================================ */
 var STORE_KEY = 'checkdeck_state_v1';
 var USG_TO_L = 3.785;
-var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, atisEntries:[], atisDraft:{ icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' }, manualTasks:[], customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
+var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, atisEntries:[], atisDraft:{ icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' }, manualTasks:[], flightHistory:[], lastSavedSnapshot:null, customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
   fuel:{ unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
   tankLog:[], tankSelected:'L',
   flightDetails:{ date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', safetyReport:'', notes:'' } };
@@ -1237,6 +1199,7 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     if(!STATE.atisEntries) STATE.atisEntries = [];
     if(!STATE.atisDraft) STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
     if(!STATE.manualTasks) STATE.manualTasks = [];
+    if(!STATE.flightHistory) STATE.flightHistory = [];
     if(!STATE.flightDetails) STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', safetyReport:'', notes:'' };
     if(STATE.flightDetails.landAway === undefined || STATE.flightDetails.landAway === false) STATE.flightDetails.landAway = '';
     if(STATE.flightDetails.landAway === true) STATE.flightDetails.landAway = 'Yes';
@@ -1722,14 +1685,12 @@ function renderCard(card){
     html += '</div>';
   } else if(card.type === 'fuelplan'){
     html += renderFuelPlanHtml(card.id);
-  } else if(card.type === 'savedflights'){
-    html += renderSavedFlightsHtml();
   } else if(card.type === 'atis'){
     html += renderAtisHtml();
   }
 
   elCard.innerHTML = html;
-  elCard.classList.toggle('list-mode', card.type === 'grouplist' || card.type === 'fuelplan' || card.type === 'savedflights' || card.type === 'atis');
+  elCard.classList.toggle('list-mode', card.type === 'grouplist' || card.type === 'fuelplan' || card.type === 'atis');
   requestAnimationFrame(updateScrollHint);
 
   var lawBadge = document.getElementById('lawBadge');
@@ -1859,7 +1820,7 @@ function renderCard(card){
         var kind = btn.getAttribute('data-kind');
         var key = card.id+'.'+i;
         var current = (STATE.values[key]||{})[kind] || '';
-        openNumericKeypad({ title: kind==='tacho'?'Tacho':'Hobbs', digits:5, decimalPlaces:1, allowEmpty:true, help:'reading' }, current, function(v){
+        openNumericKeypad({ title: kind==='tacho'?'Tacho':'Hobbs', digits:6, decimalPlaces:2, allowEmpty:true, help:'reading' }, current, function(v){
           var val = STATE.values[key] || {}; val[kind] = v; STATE.values[key] = val;
           saveState(); renderCard(card); buildAnnunFor(curSection()); updateGroupProgress();
           var st = sectionTotals(curSection()); elDoneCount.textContent = st.done;
@@ -2188,8 +2149,6 @@ function renderCard(card){
       if(varPctEl) varPctEl.textContent = (variance!==null && c.expLanding) ? '('+(variance<0?'-':'+')+(Math.abs(variance/c.expLanding*100)).toFixed(1)+'%)' : '';
       renderResults(); renderCalculations();
     }
-  } else if(card.type === 'savedflights'){
-    wireSavedFlights(card);
   } else if(card.type === 'atis'){
     wireAtis(card);
   }
@@ -2583,154 +2542,6 @@ function fuelTableInnerHtml(c){
 }
 function fuelTableHtml(c){
   return '<div class="fpTableWrap"><div class="fpTableTitle">Fuel &amp; Time Remaining (every 30 min)</div><div class="fpTable" id="fpTable">'+fuelTableInnerHtml(c)+'</div></div>';
-}
-// Weather API Settings — the one place any API key/requirement for the
-// app lives, kept at the bottom of the Reference tab since it's
-// configuration rather than a checklist item.
-function renderApiSettingsHtml(){
-  var version = (document.getElementById('versionBadge')||{}).textContent || '';
-  var html = '<div class="fpBlock" style="border-color:var(--border);background:var(--card)"><div class="fpBlockTitle" style="color:var(--muted)">About</div>'+
-    '<div class="fpBlockVal small" style="color:var(--text)">CheckDeck Flight '+version+'</div>'+
-  '</div>';
-  html += '<div class="fpBlock amber" style="margin-top:14px"><div class="fpBlockTitle">Live Updates</div>'+
-    '<button type="button" id="pauseLiveBtn" class="nowBtn" style="margin-top:6px;'+(liveUpdatesPaused?'background:var(--rose)':'')+'">'+(liveUpdatesPaused?'\u25B6 Resume':'\u23F8 Pause')+'</button>'+
-    '<div class="fpBlockNote">Freezes the countdown, Endurance Remaining, and tank stopwatch so they stop ticking — for example while showing the screen to someone else. Resets to running on reload.</div>'+
-  '</div>';
-  html += '<div class="fpBlock" style="border-color:var(--sky);margin-top:14px"><div class="fpBlockTitle" style="color:var(--sky)">Saved Flights</div>'+
-    '<label class="fdCheckRow" style="margin-top:6px"><input type="checkbox" id="autoPrintSyncBox"'+(STATE.autoPrintOnSync?' checked':'')+'/> <span>Open Print / PDF automatically after Sync</span></label>'+
-    '<div class="fpBlockNote">A browser can\u2019t silently write a file to your device — this just puts the Print dialog one tap away (choose "Save as PDF" there) the moment a saved flight is synced, instead of you having to open Preview and tap Print yourself.</div>'+
-  '</div>';
-  // Same Tank Log figures shown in Post Flight — reference copy here too,
-  // so it's checkable without switching all the way to Post Flight.
-  var ts = tankFuelStatus();
-  html += '<div class="fpBlock violet" style="margin-top:14px"><div class="fpBlockTitle">Fuel / Tank Log</div>';
-  if(!STATE.tankLog.length){
-    html += '<div class="fpBlockNote">No tank changes logged yet.</div></div>';
-  } else {
-    html += '<div class="legs"><span>Time on L <b>'+secsToHMS(ts.L.hrs*3600)+'</b></span><span>Time on R <b>'+secsToHMS(ts.R.hrs*3600)+'</b></span></div>';
-    if(ts.fob!==null && ts.burn>0){
-      html += '<div class="legs" style="margin-top:6px"><span>L remaining <b>'+fmtFuel(ts.L.qty)+'</b></span><span>R remaining <b>'+fmtFuel(ts.R.qty)+'</b></span></div>';
-    }
-    html += '<div class="resHead" style="margin:10px 0 4px"><h2 style="font-size:12px">Log Entries</h2></div>';
-    STATE.tankLog.forEach(function(entry){
-      html += '<div class="resRow"><span class="rt">Tank '+entry.tank+'</span><span class="rv go">'+entry.time+' UTC</span></div>';
-    });
-    html += '</div>';
-  }
-  return html;
-}
-function wireApiSettings(){
-  var pauseBtn = document.getElementById('pauseLiveBtn');
-  if(pauseBtn) pauseBtn.addEventListener('click', function(){
-    liveUpdatesPaused = !liveUpdatesPaused;
-    pauseBtn.textContent = liveUpdatesPaused ? '\u25B6 Resume' : '\u23F8 Pause';
-    pauseBtn.style.background = liveUpdatesPaused ? 'var(--rose)' : '';
-  });
-  var autoPrintBox = document.getElementById('autoPrintSyncBox');
-  if(autoPrintBox) autoPrintBox.addEventListener('change', function(){
-    STATE.autoPrintOnSync = autoPrintBox.checked;
-    saveState();
-  });
-}
-// Saved Flights — named snapshots of everything that's specific to one
-// flight (ticks, values, fuel, tank log, flight details) and resets on
-// Reset All. Deliberately excludes app-level config (transponder codes/
-// presets, Hide Completed) since those aren't per-flight.
-function captureFlightSnapshot(){
-  return {
-    checked: JSON.parse(JSON.stringify(STATE.checked)),
-    values: JSON.parse(JSON.stringify(STATE.values)),
-    global: JSON.parse(JSON.stringify(STATE.global)),
-    fuel: JSON.parse(JSON.stringify(STATE.fuel)),
-    tankLog: JSON.parse(JSON.stringify(STATE.tankLog)),
-    tankSelected: STATE.tankSelected,
-    flightDetails: JSON.parse(JSON.stringify(STATE.flightDetails)),
-    customItems: JSON.parse(JSON.stringify(STATE.customItems)),
-    atisEntries: JSON.parse(JSON.stringify(STATE.atisEntries)),
-    manualTasks: JSON.parse(JSON.stringify(STATE.manualTasks))
-  };
-}
-function applyFlightSnapshot(snap){
-  STATE.checked = snap.checked ? JSON.parse(JSON.stringify(snap.checked)) : {};
-  STATE.values = snap.values ? JSON.parse(JSON.stringify(snap.values)) : {};
-  STATE.global = snap.global ? JSON.parse(JSON.stringify(snap.global)) : { etob:'', ctot:'', transponderCode:'' };
-  STATE.fuel = snap.fuel ? JSON.parse(JSON.stringify(snap.fuel)) : { unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
-  STATE.tankLog = snap.tankLog ? JSON.parse(JSON.stringify(snap.tankLog)) : [];
-  STATE.tankSelected = snap.tankSelected || 'L';
-  STATE.flightDetails = snap.flightDetails ? JSON.parse(JSON.stringify(snap.flightDetails)) : { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', safetyReport:'', notes:'' };
-  STATE.customItems = snap.customItems ? JSON.parse(JSON.stringify(snap.customItems)) : {};
-  STATE.atisEntries = snap.atisEntries ? JSON.parse(JSON.stringify(snap.atisEntries)) : [];
-  STATE.manualTasks = snap.manualTasks ? JSON.parse(JSON.stringify(snap.manualTasks)) : [];
-}
-// A brand new flight created from scratch in Saved Flights (as opposed to
-// captureFlightSnapshot, which snapshots whatever's currently live) —
-// nothing ticked, default fuel, just the details entered at creation time.
-function blankFlightSnapshot(){
-  return {
-    checked: {}, values: {}, global: { etob:'', ctot:'', transponderCode:'' },
-    fuel: { unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
-    tankLog: [], tankSelected: 'L',
-    flightDetails: { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', safetyReport:'', notes:'' },
-    customItems: {}, atisEntries: [], manualTasks: []
-  };
-}
-function showNewFlightModal(card){
-  var modal = document.getElementById('newFlightModal');
-  document.getElementById('newFlightDate').value = '';
-  document.getElementById('newFlightReg').value = '';
-  document.getElementById('newFlightStudent').value = '';
-  modal.style.display = 'flex';
-  document.getElementById('newFlightCancelBtn').onclick = function(){ modal.style.display = 'none'; };
-  document.getElementById('newFlightOkBtn').onclick = function(){
-    var date = document.getElementById('newFlightDate').value || '';
-    var reg = document.getElementById('newFlightReg').value.trim().toUpperCase();
-    var student = document.getElementById('newFlightStudent').value.trim();
-    var snap = blankFlightSnapshot();
-    snap.flightDetails.date = date;
-    snap.flightDetails.registration = reg;
-    snap.flightDetails.student = student;
-    var suggested = [date, reg, student].filter(Boolean).join(' - ') || 'New flight';
-    var name = suggested;
-    var n = 2;
-    while(STATE.savedFlights[name]){ name = suggested+' ('+n+')'; n++; }
-    STATE.savedFlights[name] = snap;
-    saveState();
-    modal.style.display = 'none';
-    renderCard(card);
-  };
-}
-// Preview PDF — borrows the exact same rendering renderCalculations()
-// uses for Post Flight, but for a SAVED flight rather than the live one,
-// without ever letting that saved data become the active state a person
-// could accidentally edit. Swaps it in just long enough to capture the
-// HTML, then immediately swaps the real live state back before anyone
-// sees anything change.
-function showFlightPreview(name){
-  var saved = STATE.savedFlights[name];
-  if(!saved) return;
-  var backup = captureFlightSnapshot();
-  applyFlightSnapshot(saved);
-  renderCalculations();
-  var html = document.getElementById('calcBody').innerHTML;
-  applyFlightSnapshot(backup);
-  renderCalculations();
-
-  document.getElementById('flightPreviewTitle').textContent = name;
-  document.getElementById('flightPreviewBody').innerHTML = html;
-  var modal = document.getElementById('flightPreviewModal');
-  modal.style.display = 'flex';
-  var closeBtn = document.getElementById('flightPreviewCloseBtn');
-  var printBtn = document.getElementById('flightPreviewPrintBtn');
-  function onClose(){
-    modal.style.display = 'none';
-    closeBtn.removeEventListener('click', onClose);
-    printBtn.removeEventListener('click', onPrint);
-  }
-  function onPrint(){
-    printOnePage('#flightPreviewModal .resWrap');
-  }
-  closeBtn.addEventListener('click', onClose);
-  printBtn.addEventListener('click', onPrint);
 }
 // ATIS — same fields FlightDeck's ATIS page captures (time, ICAO, info
 // letter, runway, wind, CAVOK-or-vis/cloud, QNH, temp/dewpoint, notes),
@@ -3235,48 +3046,52 @@ function openTempDewKeypad(currentValue, onDone){
 }
 function openNumericKeypad(config, currentValue, onDone){
   var cfg = Object.assign({ title:'Enter value', digits:3, decimalPlaces:0, suffix:'', allowNeg:false, allowEmpty:false, min:null, max:null, help:'' }, config);
+  var allowDecimal = cfg.decimalPlaces > 0;
   var ov = document.createElement('div');
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
   var box = document.createElement('div');
   box.style.cssText = 'background:var(--surface);border-radius:14px;padding:20px;max-width:340px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)';
-  var digits = '', negative = false;
+  // Whole and fractional digits are tracked separately, and the decimal
+  // point only appears once you actually tap it — a plain "2" means 2,
+  // never 0.2, exactly like tapping "2" on a real calculator.
+  var whole = '', frac = '', hasDot = false, negative = false;
   if(currentValue !== null && currentValue !== undefined && currentValue !== ''){
     var s = String(currentValue);
     if(s.charAt(0)==='-'){ negative = true; s = s.substring(1); }
-    if(cfg.decimalPlaces>0){
-      // Reverse the same padding assembled() applies, so re-opening on an
-      // existing decimal value (e.g. "2.5") shows the right digits again.
-      var num = parseFloat(s);
-      if(!isNaN(num)) digits = Math.round(num * Math.pow(10,cfg.decimalPlaces)).toString().substring(0, cfg.digits);
-    } else {
-      digits = s.replace(/[^0-9]/g,'').substring(0, cfg.digits);
+    var parts = s.split('.');
+    whole = (parts[0]||'').replace(/[^0-9]/g,'').substring(0, cfg.digits);
+    if(allowDecimal && parts.length>1){
+      hasDot = true;
+      frac = parts[1].replace(/[^0-9]/g,'').substring(0, cfg.decimalPlaces);
     }
   }
   function assembled(){
-    if(!digits) return '';
-    if(cfg.decimalPlaces>0){
-      var padded = digits.length <= cfg.decimalPlaces ? ('0'.repeat(cfg.decimalPlaces+1-digits.length)+digits) : digits;
-      var whole = padded.slice(0, padded.length-cfg.decimalPlaces);
-      var frac = padded.slice(padded.length-cfg.decimalPlaces);
-      return (negative?'-':'') + parseFloat(whole+'.'+frac).toString();
-    }
-    return (negative ? '-' : '') + digits;
+    if(!whole && !frac) return '';
+    var w = whole || '0';
+    return (negative?'-':'') + w + (hasDot ? '.'+frac : '');
   }
   function fmtDisplay(){
-    var slots = [];
-    for(var i=0;i<cfg.digits;i++) slots.push(i<digits.length ? digits.charAt(i) : '');
-    var activePos = (digits.length>=cfg.digits) ? -1 : digits.length;
     var html = '';
     if(cfg.allowNeg) html += '<span style="display:inline-block;min-width:16px;color:'+(negative?'#be123c':'rgba(30,58,138,.25)')+'">'+(negative?'-':'')+'</span>';
+    var activeWhole = !hasDot && whole.length<cfg.digits;
     for(var i=0;i<cfg.digits;i++){
-      var ch = slots[i] || '\u00a0';
-      var filled = !!slots[i];
-      var isActive = i === activePos;
+      var filled = i<whole.length;
+      var isActive = activeWhole && i===whole.length;
       var color = filled ? '#1e3a8a' : 'rgba(30,58,138,.25)';
       var borderColor = isActive ? '#1e3a8a' : (filled ? 'transparent' : 'rgba(30,58,138,.15)');
       var bg = isActive ? 'rgba(30,58,138,.10)' : 'transparent';
-      html += '<span class="'+(isActive?'dig-active':'')+'" style="display:inline-block;min-width:20px;text-align:center;color:'+color+';background:'+bg+';border-bottom:3px solid '+borderColor+';border-radius:4px 4px 0 0;padding:0 2px">'+ch+'</span>';
-      if(cfg.decimalPlaces>0 && i === cfg.digits-cfg.decimalPlaces-1) html += '<span style="color:var(--muted);padding:0 1px;font-weight:700">.</span>';
+      html += '<span class="'+(isActive?'dig-active':'')+'" style="display:inline-block;min-width:20px;text-align:center;color:'+color+';background:'+bg+';border-bottom:3px solid '+borderColor+';border-radius:4px 4px 0 0;padding:0 2px">'+(filled?whole.charAt(i):'\u00a0')+'</span>';
+    }
+    if(allowDecimal){
+      html += '<span style="color:'+(hasDot?'var(--muted)':'rgba(30,58,138,.25)')+';padding:0 1px;font-weight:700">.</span>';
+      for(var j=0;j<cfg.decimalPlaces;j++){
+        var fFilled = j<frac.length;
+        var fActive = hasDot && j===frac.length;
+        var fColor = fFilled ? '#1e3a8a' : 'rgba(30,58,138,.25)';
+        var fBorder = fActive ? '#1e3a8a' : (fFilled ? 'transparent' : 'rgba(30,58,138,.15)');
+        var fBg = fActive ? 'rgba(30,58,138,.10)' : 'transparent';
+        html += '<span class="'+(fActive?'dig-active':'')+'" style="display:inline-block;min-width:20px;text-align:center;color:'+fColor+';background:'+fBg+';border-bottom:3px solid '+fBorder+';border-radius:4px 4px 0 0;padding:0 2px">'+(fFilled?frac.charAt(j):'\u00a0')+'</span>';
+      }
     }
     if(cfg.suffix) html += '<span style="font-size:16px;color:var(--muted);margin-left:6px">'+cfg.suffix+'</span>';
     return html;
@@ -3299,7 +3114,8 @@ function openNumericKeypad(config, currentValue, onDone){
       '<button class="nk-k" data-k="4">4</button><button class="nk-k" data-k="5">5</button><button class="nk-k" data-k="6">6</button>'+
       '<button class="nk-k" data-k="7">7</button><button class="nk-k" data-k="8">8</button><button class="nk-k" data-k="9">9</button>'+
       (cfg.allowNeg ? '<button class="nk-k nk-k-neg" data-k="neg">\u00b1</button>' : '<span></span>')+
-      '<button class="nk-k" data-k="0">0</button><span></span>'+
+      '<button class="nk-k" data-k="0">0</button>'+
+      (allowDecimal ? '<button class="nk-k nk-k-dot" data-k="dot">.</button>' : '<span></span>')+
     '</div>'+
     '<div style="display:flex;gap:8px">'+
       '<button type="button" id="fnk-clear" style="flex:1;padding:16px;font-size:14px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>'+
@@ -3308,7 +3124,7 @@ function openNumericKeypad(config, currentValue, onDone){
   ov.appendChild(box);
   document.body.appendChild(ov);
   var nkCss = document.createElement('style');
-  nkCss.textContent = '.nk-k{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.nk-k:active{background:var(--border)}.nk-k-neg{background:rgba(190,18,60,.08);color:#be123c;border-color:rgba(190,18,60,.25)}.nk-k-neg:active{background:rgba(190,18,60,.18)}';
+  nkCss.textContent = '.nk-k{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.nk-k:active{background:var(--border)}.nk-k-neg{background:rgba(190,18,60,.08);color:#be123c;border-color:rgba(190,18,60,.25)}.nk-k-neg:active{background:rgba(190,18,60,.18)}.nk-k-dot{background:rgba(3,105,161,.1);color:#0369a1;border-color:rgba(3,105,161,.3)}.nk-k-dot:active{background:rgba(3,105,161,.2)}';
   box.appendChild(nkCss);
   function doSet(){
     if(!validate()){ onDone(assembled()); document.body.removeChild(ov); }
@@ -3319,19 +3135,27 @@ function openNumericKeypad(config, currentValue, onDone){
     var err = validate();
     if(err){ s.textContent = err; s.style.color='#b45309'; }
     else { s.textContent = cfg.help || '\u00a0'; s.style.color='var(--muted)'; }
-    // Auto-collapses once the digit limit is reached and the value is
-    // actually valid — no separate Enter tap needed in the common case.
-    if(digits.length===cfg.digits && !err) doSet();
+    // Auto-collapses once there's nothing more useful to type: for a
+    // plain whole-number field, that's simply reaching the digit limit
+    // (unchanged from before); for a decimal-capable field, it's either
+    // the same (typed a full whole number and never touched ".") or
+    // having actually finished the fractional part after tapping ".".
+    var wholeFull = whole.length===cfg.digits;
+    var fracFull = hasDot && frac.length===cfg.decimalPlaces;
+    var shouldClose = allowDecimal ? (fracFull || (wholeFull && !hasDot)) : wholeFull;
+    if(shouldClose && !err) doSet();
   }
   box.querySelectorAll('.nk-k').forEach(function(k){
     k.addEventListener('click', function(){
       var v = k.getAttribute('data-k');
       if(v === 'neg'){ negative = !negative; }
-      else { digits = (digits.length >= cfg.digits) ? v : digits+v; }
+      else if(v === 'dot'){ if(allowDecimal) hasDot = true; }
+      else if(hasDot){ frac = (frac.length >= cfg.decimalPlaces) ? frac : frac+v; }
+      else { whole = (whole.length >= cfg.digits) ? whole : whole+v; }
       refresh();
     });
   });
-  box.querySelector('#fnk-clear').addEventListener('click', function(){ digits=''; negative=false; refresh(); });
+  box.querySelector('#fnk-clear').addEventListener('click', function(){ whole=''; frac=''; hasDot=false; negative=false; refresh(); });
   box.querySelector('#fnk-ok').addEventListener('click', doSet);
   ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
 }
@@ -3552,270 +3376,6 @@ function wireAtis(card){
     });
   });
 }
-function flightSummaryLabel(snap){
-  var fd = (snap && snap.flightDetails) || {};
-  var parts = [];
-  if(fd.date) parts.push(fd.date);
-  if(fd.registration) parts.push(fd.registration);
-  if(fd.student) parts.push(fd.student);
-  return parts.length ? parts.join(' \u00b7 ') : 'No flight details set';
-}
-function renderSavedFlightsHtml(){
-  return '<div class="fpBlock" style="border-color:var(--sky);width:100%;text-align:center">'+
-    '<div class="fpBlockTitle" style="color:var(--sky)">Flight Summary</div>'+
-    '<div class="fpBlockNote" style="margin-bottom:12px">Preview this flight formatted for printing, then use Print / PDF \u2014 choosing Share from that sheet lets you save it straight to Files on your iPad.</div>'+
-    '<button type="button" id="previewShareBtn" style="width:100%;border:1px solid var(--sky);background:var(--sky);color:#fff;border-radius:8px;padding:12px 0;font-family:\'JetBrains Mono\',monospace;font-weight:800;font-size:14px;cursor:pointer">\u2318 Preview &amp; Share PDF</button>'+
-  '</div>';
-}
-// Preview + Share — replaces the old saved-flights library with one
-// button for whatever flight is currently active. Reuses the same full-
-// screen preview modal and print-scaling logic as before.
-// Filename convention: (date) (student) (aircraft) (off blocks time),
-// sanitized for filesystem safety since colons and slashes aren't valid
-// in filenames on most systems.
-function postFlightPdfFilename(){
-  var fd = STATE.flightDetails;
-  var offBlocks = STATE.values['offblockspretakeoff.otpgrp.0'];
-  var parts = [fd.date||'', fd.student||'', fd.registration||'', offBlocks?offBlocks.replace(':',''):''].filter(Boolean);
-  var name = parts.join(' ').trim() || 'Flight Summary';
-  name = name.replace(/[\/\\:*?"<>|]/g, '-');
-  return name + '.pdf';
-}
-// Builds a jsPDF document containing everything on the Post Flight page —
-// Flight Details, Times, Fuel Plan, Tank Log, ATIS, Debrief, and the full
-// All Data Entries dump — in the same order the page itself now shows them.
-function buildPostFlightPdf(){
-  var doc = new window.jspdf.jsPDF();
-  var pageWidth = doc.internal.pageSize.getWidth();
-  var pageHeight = doc.internal.pageSize.getHeight();
-  var marginX = 14;
-  var lineH = 6;
-  var y = 15;
-
-  function ensureSpace(needed){
-    if(y + needed > pageHeight - 12){ doc.addPage(); y = 15; }
-  }
-  // jsPDF's base fonts don't cover every Unicode glyph the app uses on
-  // screen (the arrow in "Off Blocks → Pre-Take Off" rendered as garbage
-  // characters) — swap the handful that come up for plain ASCII.
-  function pdfSafe(text){
-    return String(text===null||text===undefined?'':text)
-      .replace(/\u2192/g, '->')
-      .replace(/\u2190/g, '<-')
-      .replace(/\u00b1/g, '+/-');
-  }
-  function heading(text){
-    ensureSpace(11);
-    doc.setFont(undefined, 'bold'); doc.setFontSize(13);
-    doc.text(pdfSafe(text), marginX, y);
-    y += 6;
-    doc.setDrawColor(180);
-    doc.line(marginX, y, pageWidth - marginX, y);
-    y += 5;
-    doc.setFont(undefined, 'normal'); doc.setFontSize(10);
-  }
-  function subheading(text){
-    ensureSpace(8);
-    doc.setFont(undefined, 'bold'); doc.setFontSize(10.5);
-    doc.text(pdfSafe(text), marginX, y);
-    y += 5.5;
-    doc.setFont(undefined, 'normal'); doc.setFontSize(10);
-  }
-  function row(label, value){
-    ensureSpace(lineH);
-    doc.setFont(undefined, 'bold');
-    doc.text(pdfSafe(label)+':', marginX, y);
-    doc.setFont(undefined, 'normal');
-    doc.text(pdfSafe(value===null||value===undefined||value===''?'--':value), marginX + 55, y);
-    y += lineH;
-  }
-  function paragraph(text){
-    var lines = doc.splitTextToSize(pdfSafe(text||'None'), pageWidth - marginX*2);
-    lines.forEach(function(l){
-      ensureSpace(lineH);
-      doc.text(l, marginX, y);
-      y += lineH;
-    });
-  }
-  function spacer(h){ y += (h||4); }
-
-  var fd = STATE.flightDetails;
-
-  doc.setFont(undefined,'bold'); doc.setFontSize(18);
-  doc.text('Flight Summary', marginX, y);
-  y += 10;
-  doc.setFont(undefined,'normal'); doc.setFontSize(10);
-
-  heading('Flight Details');
-  row('Date', fd.date);
-  row('Registration', fd.registration);
-  row('Student', fd.student);
-  row('Departure', fd.departure);
-  row('Destination', fd.destination);
-  row('Land Away', fd.landAway);
-  row('Slot', (fd.slotFrom||'--')+' - '+(fd.slotTo||'--')+' UTC');
-  spacer();
-
-  var chocksOff = STATE.values['offblockspretakeoff.otpgrp.0'];
-  var takeoff = STATE.values['offblockspretakeoff.otpgrp.15'];
-  var landing = STATE.values['airborne.airbornegrp.0'];
-  var chocksOn = STATE.values['airborne.airbornegrp.1'];
-  var tachoStartV = STATE.values['start.startgrp.1'] || {};
-  var tachoEndV = STATE.values['airborne.airbornegrp.5'] || {};
-  var blockTime = timeDiffCalc(chocksOff, chocksOn);
-  var airTime = timeDiffCalc(takeoff, landing);
-  var tachoTime = (tachoStartV.tacho && tachoEndV.tacho) ? Math.round((parseFloat(tachoEndV.tacho)-parseFloat(tachoStartV.tacho))*10)/10 : null;
-  var hobbsTime = (tachoStartV.hobbs && tachoEndV.hobbs) ? Math.round((parseFloat(tachoEndV.hobbs)-parseFloat(tachoStartV.hobbs))*10)/10 : null;
-
-  heading('Times');
-  var colX = [marginX, marginX+38, marginX+76, marginX+114];
-  ensureSpace(lineH*5);
-  doc.setFont(undefined,'bold');
-  doc.text('From', colX[1], y); doc.text('To', colX[2], y); doc.text('Total', colX[3], y);
-  y += lineH;
-  doc.setFont(undefined,'normal');
-  function timeRowPdf(label, fromV, toV, val){
-    doc.setFont(undefined,'bold');
-    doc.text(label, colX[0], y);
-    doc.setFont(undefined,'normal');
-    doc.text(fromV||'--', colX[1], y);
-    doc.text(toV||'--', colX[2], y);
-    doc.text(val===null?'Pending':decToHM(val), colX[3], y);
-    y += lineH;
-  }
-  timeRowPdf('Block', chocksOff?chocksOff+' UTC':null, chocksOn?chocksOn+' UTC':null, blockTime);
-  timeRowPdf('Air', takeoff?takeoff+' UTC':null, landing?landing+' UTC':null, airTime);
-  timeRowPdf('Tacho', tachoStartV.tacho, tachoEndV.tacho, tachoTime);
-  timeRowPdf('Hobbs', tachoStartV.hobbs, tachoEndV.hobbs, hobbsTime);
-  spacer();
-
-  var fc = fuelCalc();
-  if(fc.fob !== null || fc.total > 0){
-    var ftc = fuelTimesCalc(fc);
-    var actualLanding = parseFloat(STATE.fuel.actualLanding);
-    heading('Fuel Plan');
-    row('Total FOB', fmtFuel(fc.fob));
-    row('Required', fmtFuel(fc.total));
-    row('Surplus/Deficit', fc.surplus===null?'--':((fc.surplus<0?'-':'+')+fmtFuel(Math.abs(fc.surplus))));
-    row('Endurance (Total FOB)', decToHM(fc.endurance)+' hrs');
-    row('Endurance Required', decToHM(fc.enduranceReq)+' hrs');
-    subheading('Breakdown');
-    row('Taxi', fmtFuel(fc.taxi));
-    row('Trip', fmtFuel(fc.trip));
-    row('Contingency ('+fc.contPct+'%)', fmtFuel(fc.cont));
-    row('Alternate', fmtFuel(fc.alt));
-    row('Final Reserve', fmtFuel(fc.final_));
-    row('Extra', fmtFuel(fc.extra));
-    subheading('Landing Fuel');
-    row('Expected (planned trip)', fmtFuel(fc.expLanding));
-    row('Expected (actual air time)', fmtFuel(ftc.val));
-    if(!isNaN(actualLanding)) row('Actual (entered)', fmtFuel(actualLanding));
-    if(STATE.fuel.oilLevel || STATE.fuel.oilAdded){
-      subheading('Oil');
-      row('Level', (STATE.fuel.oilLevel||'--')+' qts');
-      row('Added', (STATE.fuel.oilAdded||'--')+' qts');
-    }
-    spacer();
-  }
-
-  if(STATE.tankLog.length){
-    var ts = tankFuelStatus();
-    heading('Tank Log');
-    row('Time on L', secsToHMS(ts.L.hrs*3600));
-    row('Time on R', secsToHMS(ts.R.hrs*3600));
-    if(ts.fob!==null && ts.burn>0){
-      row('L remaining', fmtFuel(ts.L.qty));
-      row('R remaining', fmtFuel(ts.R.qty));
-    }
-    subheading('Log Entries');
-    STATE.tankLog.forEach(function(entry){ row('Tank '+entry.tank, entry.time+' UTC'); });
-    spacer();
-  }
-
-  if(STATE.atisEntries.length){
-    heading('ATIS');
-    STATE.atisEntries.forEach(function(e){
-      paragraph(atisEntryString(e));
-      if(e.notes) paragraph('  '+e.notes);
-      spacer(2);
-    });
-  }
-
-  heading('Debrief');
-  subheading('Defects');
-  paragraph(fd.defects);
-  spacer(2);
-  subheading('Safety Report');
-  paragraph(fd.safetyReport);
-  spacer(2);
-  subheading('Notes');
-  paragraph(fd.notes);
-  spacer();
-
-  heading('All Data Entries');
-  var seenGlobalAll = {};
-  PHASES.forEach(function(p){
-    var phaseEntries = [];
-    SECTIONS[p].forEach(function(sec){
-      var secEntries = collectDataEntries(sec.cards, seenGlobalAll);
-      if(secEntries.length) phaseEntries.push({ title: sec.title, entries: secEntries });
-    });
-    if(!phaseEntries.length) return;
-    subheading(PHASE_LABELS[p]||p);
-    phaseEntries.forEach(function(s){
-      if(phaseEntries.length > 1){
-        ensureSpace(6);
-        doc.setFont(undefined,'italic'); doc.setFontSize(9.5);
-        doc.text(pdfSafe(s.title), marginX, y); y += 5;
-        doc.setFont(undefined,'normal'); doc.setFontSize(10);
-      }
-      s.entries.forEach(function(en){ row(en.label, en.value); });
-    });
-  });
-
-  return doc;
-}
-// Share -> generate the PDF, then hand it to the OS share sheet (Save to
-// Files, AirDrop, etc.) when available, falling back to a direct
-// download if the browser doesn't support sharing files.
-function sharePostFlightPdf(){
-  var doc = buildPostFlightPdf();
-  var filename = postFlightPdfFilename();
-  var blob = doc.output('blob');
-  if(navigator.canShare && navigator.share){
-    var file = new File([blob], filename, { type: 'application/pdf' });
-    if(navigator.canShare({ files: [file] })){
-      navigator.share({ files: [file], title: filename }).catch(function(){});
-      return;
-    }
-  }
-  doc.save(filename);
-}
-
-function showCurrentFlightPreview(){
-  renderCalculations();
-  var html = document.getElementById('calcBody').innerHTML;
-  var fd = STATE.flightDetails;
-  var title = [fd.date, fd.registration, fd.student].filter(Boolean).join(' - ') || 'Flight Summary';
-  document.getElementById('flightPreviewTitle').textContent = title;
-  document.getElementById('flightPreviewBody').innerHTML = html;
-  var modal = document.getElementById('flightPreviewModal');
-  modal.style.display = 'flex';
-  var closeBtn = document.getElementById('flightPreviewCloseBtn');
-  var printBtn = document.getElementById('flightPreviewPrintBtn');
-  function onClose(){
-    modal.style.display = 'none';
-    closeBtn.removeEventListener('click', onClose);
-    printBtn.removeEventListener('click', onPrint);
-  }
-  function onPrint(){ printOnePage('#flightPreviewModal .resWrap'); }
-  closeBtn.addEventListener('click', onClose);
-  printBtn.addEventListener('click', onPrint);
-}
-function wireSavedFlights(card){
-  var btn = document.getElementById('previewShareBtn');
-  if(btn) btn.addEventListener('click', function(){ showCurrentFlightPreview(); });
-}
 function renderFuelPlanHtml(cardId){
   var f = STATE.fuel, u = f.unit, c = fuelCalc();
   var tc = fuelTimesCalc(c);
@@ -4032,30 +3592,377 @@ document.getElementById('phaseReview').addEventListener('click', function(){
 // flight. Deliberately keeps app-level preferences intact: Hide Completed
 // and the user's added transponder codes aren't "entered values" for a
 // specific flight, they're settings that should carry over.
-// Scales the visible tab's content down to fit one printed page, since
-// there's no CSS-only way to guarantee that for content whose length
-// varies with how much has been entered. Measures the actual rendered
-// height, shrinks proportionally if it's over a page's worth, and
-// restores normal size again once the print dialog has been dismissed.
-function printOnePage(overrideSelector){
-  var wrap = overrideSelector ? document.querySelector(overrideSelector) :
-             (document.querySelector('#calcMode.on .resWrap, #resultsMode.on .resWrap') ||
-             document.querySelector((document.getElementById('calcMode').classList.contains('on') ? '#calcMode' : '#resultsMode') + ' .resWrap'));
-  if(wrap){
-    wrap.style.transform = 'none'; wrap.style.width = '';
-    var contentHeight = wrap.scrollHeight;
-    var pageHeightPx = 1000; // ~one A4/Letter page of content at typical print scale
-    var scale = contentHeight > pageHeightPx ? pageHeightPx/contentHeight : 1;
-    wrap.style.transformOrigin = 'top left';
-    wrap.style.transform = 'scale('+scale+')';
-    wrap.style.width = (100/scale)+'%';
+function flightHistoryPdfFilename(){
+  var d = new Date();
+  var iso = d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+  return 'Flight History '+iso+'.pdf';
+}
+// Same measure-then-scale approach as the Post Flight PDF — however many
+// flights are in history, they all need to fit on this one page, so the
+// row height and font size shrink together to whatever's needed.
+function buildFlightHistoryPdf(){
+  var pageHeight = new window.jspdf.jsPDF().internal.pageSize.getHeight();
+  var usableHeight = pageHeight - 12;
+  var measuredY = renderFlightHistoryContent(new window.jspdf.jsPDF(), 1);
+  var scale = measuredY > usableHeight ? Math.max(0.3, usableHeight / measuredY) : 1;
+  var doc = new window.jspdf.jsPDF();
+  renderFlightHistoryContent(doc, scale);
+  return doc;
+}
+function renderFlightHistoryContent(doc, scale){
+  var pageWidth = doc.internal.pageSize.getWidth();
+  var marginX = 12;
+  var y = 15;
+  var rowH = 6 * scale;
+  var cols = [
+    {k:'date', label:'Date', w:20},
+    {k:'student', label:'Student', w:26},
+    {k:'registration', label:'Reg', w:20},
+    {k:'offBlocks', label:'Off Bl', w:15},
+    {k:'onBlocks', label:'On Bl', w:15},
+    {k:'blockTime', label:'Block', w:15},
+    {k:'takeoff', label:'T/O', w:15},
+    {k:'landing', label:'Land', w:15},
+    {k:'airTime', label:'Air', w:15}
+  ];
+  function drawHeader(){
+    doc.setFont(undefined, 'bold'); doc.setFontSize(10*scale);
+    var x = marginX;
+    cols.forEach(function(c){ doc.text(c.label, x, y); x += c.w*scale; });
+    y += 4*scale;
+    doc.setDrawColor(180);
+    doc.line(marginX, y, pageWidth - marginX, y);
+    y += 5*scale;
+    doc.setFont(undefined, 'normal'); doc.setFontSize(9*scale);
   }
-  setTimeout(function(){
-    window.print();
-    setTimeout(function(){ if(wrap){ wrap.style.transform=''; wrap.style.width=''; } }, 700);
-  }, 60);
+  doc.setFont(undefined, 'bold'); doc.setFontSize(15*scale);
+  doc.text('Flight History', marginX, y);
+  y += 8*scale;
+  drawHeader();
+  STATE.flightHistory.forEach(function(h){
+    var x = marginX;
+    var vals = {
+      date: h.date||'--', student: h.student||'--', registration: h.registration||'--',
+      offBlocks: h.offBlocks||'--', onBlocks: h.onBlocks||'--',
+      blockTime: h.blockTime!=null?decToHM(h.blockTime):'--',
+      takeoff: h.takeoff||'--', landing: h.landing||'--',
+      airTime: h.airTime!=null?decToHM(h.airTime):'--'
+    };
+    cols.forEach(function(c){
+      var text = String(vals[c.k]).substring(0, 12);
+      doc.text(text, x, y);
+      x += c.w*scale;
+    });
+    y += rowH;
+  });
+  return y;
+}
+function shareFlightHistoryPdf(){
+  var doc = buildFlightHistoryPdf();
+  var filename = flightHistoryPdfFilename();
+  if(navigator.canShare && navigator.share){
+    var blob = doc.output('blob');
+    var file = new File([blob], filename, { type:'application/pdf' });
+    if(navigator.canShare({ files:[file] })){
+      navigator.share({ files:[file], title:filename }).catch(function(){});
+      return;
+    }
+  }
+  doc.save(filename);
+}
+function postFlightPdfFilename(){
+  var fd = STATE.flightDetails;
+  var offBlocks = STATE.values['offblockspretakeoff.otpgrp.0'];
+  var parts = [fd.date||'', fd.student||'', fd.registration||'', offBlocks?offBlocks.replace(':',''):''].filter(Boolean);
+  var name = parts.join(' ').trim() || 'Flight Summary';
+  name = name.replace(/[\/\\:*?"<>|]/g, '-');
+  return name + '.pdf';
+}
+// Builds a jsPDF document containing everything on the Post Flight page —
+// Flight Details, Times, Fuel Plan, Tank Log, ATIS, Debrief, and the full
+// All Data Entries dump — in the same order the page itself now shows
+// them. Must always fit on a single page, so this runs twice: once on a
+// throwaway document at full size purely to measure how tall the content
+// actually is, then a second time on the real document with every font
+// size and line height scaled down by whatever factor is needed to make
+// that height fit — never adding a second page.
+function buildPostFlightPdf(){
+  var pageHeight = new window.jspdf.jsPDF().internal.pageSize.getHeight();
+  var usableHeight = pageHeight - 12;
+  var measuredY = renderPostFlightContent(new window.jspdf.jsPDF(), 1);
+  var scale = measuredY > usableHeight ? Math.max(0.4, usableHeight / measuredY) : 1;
+  var doc = new window.jspdf.jsPDF();
+  renderPostFlightContent(doc, scale);
+  return doc;
+}
+// Does the actual drawing at the given scale, returning the final Y
+// position reached — the caller uses that both to measure (scale=1,
+// document discarded) and to build the real, correctly-scaled output.
+function renderPostFlightContent(doc, scale){
+  var pageWidth = doc.internal.pageSize.getWidth();
+  var pageHeight = doc.internal.pageSize.getHeight();
+  var marginX = 14;
+  var lineH = 6 * scale;
+  var y = 15;
+
+  // Deliberately does NOT add a page — the whole point of the two-pass
+  // measure/scale approach above is that everything must fit on the one
+  // page that already exists, however small the text ends up being.
+  function ensureSpace(needed){ /* no-op: fitting is handled by scale, not pagination */ }
+  // jsPDF's base fonts don't cover every Unicode glyph the app uses on
+  // screen (the arrow in "Off Blocks → Pre-Take Off" rendered as garbage
+  // characters) — swap the handful that come up for plain ASCII.
+  function pdfSafe(text){
+    return String(text===null||text===undefined?'':text)
+      .replace(/\u2192/g, '->')
+      .replace(/\u2190/g, '<-')
+      .replace(/\u00b1/g, '+/-');
+  }
+  function heading(text){
+    ensureSpace(11);
+    doc.setFont(undefined, 'bold'); doc.setFontSize(13*scale);
+    doc.text(pdfSafe(text), marginX, y);
+    y += 6*scale;
+    doc.setDrawColor(180);
+    doc.line(marginX, y, pageWidth - marginX, y);
+    y += 5*scale;
+    doc.setFont(undefined, 'normal'); doc.setFontSize(10*scale);
+  }
+  function subheading(text){
+    ensureSpace(8);
+    doc.setFont(undefined, 'bold'); doc.setFontSize(10.5*scale);
+    doc.text(pdfSafe(text), marginX, y);
+    y += 5.5*scale;
+    doc.setFont(undefined, 'normal'); doc.setFontSize(10*scale);
+  }
+  function row(label, value){
+    ensureSpace(lineH);
+    doc.setFont(undefined, 'bold');
+    doc.text(pdfSafe(label)+':', marginX, y);
+    doc.setFont(undefined, 'normal');
+    doc.text(pdfSafe(value===null||value===undefined||value===''?'--':value), marginX + 55, y);
+    y += lineH;
+  }
+  function paragraph(text){
+    var lines = doc.splitTextToSize(pdfSafe(text||'None'), pageWidth - marginX*2);
+    lines.forEach(function(l){
+      ensureSpace(lineH);
+      doc.text(l, marginX, y);
+      y += lineH;
+    });
+  }
+  function spacer(h){ y += (h||4)*scale; }
+
+  var fd = STATE.flightDetails;
+
+  doc.setFont(undefined,'bold'); doc.setFontSize(18*scale);
+  doc.text('Flight Summary', marginX, y);
+  y += 10*scale;
+  doc.setFont(undefined,'normal'); doc.setFontSize(10*scale);
+
+  heading('Flight Details');
+  row('Date', fd.date);
+  row('Registration', fd.registration);
+  row('Student', fd.student);
+  row('Departure', fd.departure);
+  row('Destination', fd.destination);
+  row('Land Away', fd.landAway);
+  row('Slot', (fd.slotFrom||'--')+' - '+(fd.slotTo||'--')+' UTC');
+  spacer();
+
+  var chocksOff = STATE.values['offblockspretakeoff.otpgrp.0'];
+  var takeoff = STATE.values['offblockspretakeoff.otpgrp.15'];
+  var landing = STATE.values['airborne.airbornegrp.0'];
+  var chocksOn = STATE.values['airborne.airbornegrp.1'];
+  var tachoStartV = STATE.values['start.startgrp.1'] || {};
+  var tachoEndV = STATE.values['airborne.airbornegrp.5'] || {};
+  var blockTime = timeDiffCalc(chocksOff, chocksOn);
+  var airTime = timeDiffCalc(takeoff, landing);
+  var tachoTime = (tachoStartV.tacho && tachoEndV.tacho) ? Math.round((parseFloat(tachoEndV.tacho)-parseFloat(tachoStartV.tacho))*10)/10 : null;
+  var hobbsTime = (tachoStartV.hobbs && tachoEndV.hobbs) ? Math.round((parseFloat(tachoEndV.hobbs)-parseFloat(tachoStartV.hobbs))*10)/10 : null;
+
+  heading('Times');
+  var colX = [marginX, marginX+38*scale, marginX+76*scale, marginX+114*scale];
+  ensureSpace(lineH*5);
+  doc.setFont(undefined,'bold');
+  doc.text('From', colX[1], y); doc.text('To', colX[2], y); doc.text('Total', colX[3], y);
+  y += lineH;
+  doc.setFont(undefined,'normal');
+  function timeRowPdf(label, fromV, toV, val){
+    doc.setFont(undefined,'bold');
+    doc.text(label, colX[0], y);
+    doc.setFont(undefined,'normal');
+    doc.text(fromV||'--', colX[1], y);
+    doc.text(toV||'--', colX[2], y);
+    doc.text(val===null?'Pending':decToHM(val), colX[3], y);
+    y += lineH;
+  }
+  timeRowPdf('Block', chocksOff?chocksOff+' UTC':null, chocksOn?chocksOn+' UTC':null, blockTime);
+  timeRowPdf('Air', takeoff?takeoff+' UTC':null, landing?landing+' UTC':null, airTime);
+  timeRowPdf('Tacho', tachoStartV.tacho, tachoEndV.tacho, tachoTime);
+  timeRowPdf('Hobbs', tachoStartV.hobbs, tachoEndV.hobbs, hobbsTime);
+  spacer();
+
+  var fc = fuelCalc();
+  if(fc.fob !== null || fc.total > 0){
+    var ftc = fuelTimesCalc(fc);
+    var actualLanding = parseFloat(STATE.fuel.actualLanding);
+    heading('Fuel Plan');
+    row('Total FOB', fmtFuel(fc.fob));
+    row('Required', fmtFuel(fc.total));
+    row('Surplus/Deficit', fc.surplus===null?'--':((fc.surplus<0?'-':'+')+fmtFuel(Math.abs(fc.surplus))));
+    row('Endurance (Total FOB)', decToHM(fc.endurance)+' hrs');
+    row('Endurance Required', decToHM(fc.enduranceReq)+' hrs');
+    subheading('Breakdown');
+    row('Taxi', fmtFuel(fc.taxi));
+    row('Trip', fmtFuel(fc.trip));
+    row('Contingency ('+fc.contPct+'%)', fmtFuel(fc.cont));
+    row('Alternate', fmtFuel(fc.alt));
+    row('Final Reserve', fmtFuel(fc.final_));
+    row('Extra', fmtFuel(fc.extra));
+    subheading('Landing Fuel');
+    row('Expected (planned trip)', fmtFuel(fc.expLanding));
+    row('Expected (actual air time)', fmtFuel(ftc.val));
+    if(!isNaN(actualLanding)) row('Actual (entered)', fmtFuel(actualLanding));
+    if(STATE.fuel.oilLevel || STATE.fuel.oilAdded){
+      subheading('Oil');
+      row('Level', (STATE.fuel.oilLevel||'--')+' qts');
+      row('Added', (STATE.fuel.oilAdded||'--')+' qts');
+    }
+    spacer();
+  }
+
+  if(STATE.tankLog.length){
+    var ts = tankFuelStatus();
+    heading('Tank Log');
+    row('Time on L', secsToHMS(ts.L.hrs*3600));
+    row('Time on R', secsToHMS(ts.R.hrs*3600));
+    if(ts.fob!==null && ts.burn>0){
+      row('L remaining', fmtFuel(ts.L.qty));
+      row('R remaining', fmtFuel(ts.R.qty));
+    }
+    subheading('Log Entries');
+    STATE.tankLog.forEach(function(entry){ row('Tank '+entry.tank, entry.time+' UTC'); });
+    spacer();
+  }
+
+  if(STATE.atisEntries.length){
+    heading('ATIS');
+    STATE.atisEntries.forEach(function(e){
+      paragraph(atisEntryString(e));
+      if(e.notes) paragraph('  '+e.notes);
+      spacer(2);
+    });
+  }
+
+  heading('Debrief');
+  subheading('Defects');
+  paragraph(fd.defects);
+  spacer(2);
+  subheading('Safety Report');
+  paragraph(fd.safetyReport);
+  spacer(2);
+  subheading('Notes');
+  paragraph(fd.notes);
+  spacer();
+
+  heading('All Data Entries');
+  var seenGlobalAll = {};
+  PHASES.forEach(function(p){
+    var phaseEntries = [];
+    SECTIONS[p].forEach(function(sec){
+      var secEntries = collectDataEntries(sec.cards, seenGlobalAll);
+      if(secEntries.length) phaseEntries.push({ title: sec.title, entries: secEntries });
+    });
+    if(!phaseEntries.length) return;
+    subheading(PHASE_LABELS[p]||p);
+    phaseEntries.forEach(function(s){
+      if(phaseEntries.length > 1){
+        ensureSpace(6);
+        doc.setFont(undefined,'italic'); doc.setFontSize(9.5*scale);
+        doc.text(pdfSafe(s.title), marginX, y); y += 5*scale;
+        doc.setFont(undefined,'normal'); doc.setFontSize(10*scale);
+      }
+      s.entries.forEach(function(en){ row(en.label, en.value); });
+    });
+  });
+
+  return y;
+}
+// Share -> generate the PDF, then hand it to the OS share sheet (Save to
+// Files, AirDrop, etc.) when available, falling back to a direct
+// download if the browser doesn't support sharing files.
+function sharePostFlightPdf(){
+  var doc = buildPostFlightPdf();
+  var filename = postFlightPdfFilename();
+  var blob = doc.output('blob');
+  if(navigator.canShare && navigator.share){
+    var file = new File([blob], filename, { type: 'application/pdf' });
+    if(navigator.canShare({ files: [file] })){
+      navigator.share({ files: [file], title: filename }).catch(function(){});
+      return;
+    }
+  }
+  doc.save(filename);
+}
+
+// A JSON fingerprint of everything that makes up "the current flight" —
+// the same set of things Reset All clears. Used only to answer "does
+// this match what was last saved to History", not stored as the actual
+// snapshot data itself.
+function currentFlightSnapshotStr(){
+  return JSON.stringify({
+    checked: STATE.checked, values: STATE.values, global: STATE.global,
+    fuel: STATE.fuel, tankLog: STATE.tankLog, flightDetails: STATE.flightDetails,
+    atisEntries: STATE.atisEntries, manualTasks: STATE.manualTasks
+  });
+}
+// True once anything has changed since the last "Save Current Flight to
+// History" (or since Reset All last archived it) — false immediately
+// after either of those, since at that instant the saved copy and the
+// live flight are identical again.
+function hasUnsavedChanges(){
+  if(!STATE.lastSavedSnapshot) return false;
+  return currentFlightSnapshotStr() !== STATE.lastSavedSnapshot;
+}
+// Captures the current flight into Flight History — either as a new
+// entry, or, if an existing entry already matches this same flight
+// (same date + registration + student), by updating that entry in
+// place instead of adding a duplicate.
+function archiveCurrentFlightToHistory(){
+  var fd = STATE.flightDetails;
+  if(!fd.date && !fd.registration && !fd.student) return;
+  var offBlocks = STATE.values['offblockspretakeoff.otpgrp.0'] || '';
+  var takeoff = STATE.values['offblockspretakeoff.otpgrp.15'] || '';
+  var landing = STATE.values['airborne.airbornegrp.0'] || '';
+  var onBlocks = STATE.values['airborne.airbornegrp.1'] || '';
+  var entry = {
+    date: fd.date, student: fd.student, registration: fd.registration,
+    offBlocks: offBlocks, onBlocks: onBlocks, takeoff: takeoff, landing: landing,
+    blockTime: timeDiffCalc(offBlocks, onBlocks),
+    airTime: timeDiffCalc(takeoff, landing),
+    archivedAt: new Date().toISOString()
+  };
+  var matchIdx = -1;
+  for(var i = STATE.flightHistory.length - 1; i >= 0; i--){
+    var h = STATE.flightHistory[i];
+    if(h.date === fd.date && h.registration === fd.registration && h.student === fd.student){
+      matchIdx = i; break;
+    }
+  }
+  if(matchIdx >= 0){
+    STATE.flightHistory[matchIdx] = entry;
+  } else {
+    STATE.flightHistory.push(entry);
+  }
+  // Remember exactly what the whole flight looked like at the moment of
+  // this save, so hasUnsavedChanges() can tell — live, as things change
+  // — whether the app still matches what's archived or has since moved
+  // on from it.
+  STATE.lastSavedSnapshot = currentFlightSnapshotStr();
 }
 function resetAllData(){
+  archiveCurrentFlightToHistory();
   STATE.checked = {};
   STATE.values = {};
   STATE.global = { etob:'', ctot:'', transponderCode:'' };
@@ -4067,6 +3974,11 @@ function resetAllData(){
   STATE.atisEntries = [];
   STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
   STATE.manualTasks = [];
+  // The snapshot archiveCurrentFlightToHistory() just took matches the
+  // PRE-reset flight — now that everything above is blank, that
+  // snapshot is stale, so there's nothing "unsaved" about this fresh,
+  // empty flight until it actually starts diverging from blank.
+  STATE.lastSavedSnapshot = null;
   saveState();
   // Stay on whatever view the person is already looking at (they pressed
   // this from Post Flight) rather than jumping them elsewhere — just
@@ -4076,37 +3988,6 @@ function resetAllData(){
   render();
   renderResults(); renderCalculations();
   updateCountdown();
-}
-// Load Second Flight — for back-to-back flights in the SAME aircraft on
-// the same day. Clears the Ground/Airborne checklist progress and the
-// per-flight timing (ETOB/CTOT, transponder, tank log) so the next leg
-// starts clean, but deliberately leaves the Fuel Plan untouched (it's
-// still the same aircraft with whatever fuel is actually left), and
-// carries the just-finished flight's End Tacho/Hobbs over as the new
-// flight's Start Tacho/Hobbs, since those genuinely are continuous.
-var AIRBOURNE_CARD_PREFIXES = ['crewpax.2x','atis.atisgrp','start.startgrp','offblockspretakeoff.otpgrp','airborne.airbornegrp'];
-function isAirbourneCardKey(key){
-  return AIRBOURNE_CARD_PREFIXES.some(function(p){ return key === p || key.indexOf(p+'.') === 0; });
-}
-function loadSecondFlight(){
-  var prevEnd = STATE.values['airborne.airbornegrp.5'] || {};
-  Object.keys(STATE.checked).forEach(function(k){ if(isAirbourneCardKey(k)) delete STATE.checked[k]; });
-  Object.keys(STATE.values).forEach(function(k){ if(isAirbourneCardKey(k)) delete STATE.values[k]; });
-  STATE.global = { etob:'', ctot:'', transponderCode:'' };
-  STATE.tankLog = [];
-  STATE.tankSelected = 'L';
-  STATE.atisEntries = [];
-  STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
-  if(prevEnd.tacho || prevEnd.hobbs){
-    STATE.values['start.startgrp.1'] = { tacho: prevEnd.tacho||'', hobbs: prevEnd.hobbs||'' };
-  }
-  saveState();
-  showingSectDone = false; showingPhaseDone = false;
-  renderHeadingRow(); renderPhaseRow();
-  render();
-  renderResults(); renderCalculations();
-  updateCountdown();
-  renderTankHeaderBar();
 }
 // Generic in-app confirm — shows the modal, resolves the given callback
 // only if the person taps the destructive action button.
@@ -4130,44 +4011,6 @@ function showConfirm(msg, okLabel, onConfirm){
 document.getElementById('resetAllBtn').addEventListener('click', function(){
   showConfirm('Reset all entered values for this flight? This cannot be undone.', 'Reset All', resetAllData);
 });
-// Plain-text summary for Share/Email — same figures the Calculations tab
-// shows. Kept to plain text (no HTML) since mail clients and the Web
-// Share API both vary in how much markup they honour.
-function buildFlightSummary(){
-  var lines = ['CheckDeck — Flight Summary', ''];
-  var fd = STATE.flightDetails;
-  if(fd.date || fd.registration || fd.student || fd.departure || fd.destination){
-    if(fd.date) lines.push('Date: '+fd.date);
-    if(fd.slotFrom || fd.slotTo) lines.push('Slot: '+(fd.slotFrom||'--')+' \u2013 '+(fd.slotTo||'--')+' UTC');
-    if(fd.registration) lines.push('Registration: '+fd.registration);
-    if(fd.student) lines.push('Student: '+fd.student);
-    if(fd.departure || fd.destination) lines.push('Route: '+(fd.departure||'--')+' \u2192 '+(fd.destination||'--'));
-    if(fd.landAway) lines.push('Land Away: '+fd.landAway);
-    if(fd.defects) lines.push('Defects: '+fd.defects);
-    if(fd.notes) lines.push('Notes: '+fd.notes);
-    lines.push('');
-  }
-  var chocksOff = STATE.values['offblockspretakeoff.otpgrp.0'];
-  var takeoff = STATE.values['offblockspretakeoff.otpgrp.15'];
-  var landing = STATE.values['airborne.airbornegrp.0'];
-  var chocksOn = STATE.values['airborne.airbornegrp.1'];
-  var tachoStartV = STATE.values['start.startgrp.1'] || {};
-  var tachoEndV = STATE.values['airborne.airbornegrp.5'] || {};
-  lines.push('Block Time: Chocks Off '+(chocksOff||'--')+' / Chocks On '+(chocksOn||'--'));
-  lines.push('Air Time: Takeoff '+(takeoff||'--')+' / Landing '+(landing||'--'));
-  lines.push('Tacho: Start '+(tachoStartV.tacho||'--')+' / End '+(tachoEndV.tacho||'--'));
-  lines.push('Hobbs: Start '+(tachoStartV.hobbs||'--')+' / End '+(tachoEndV.hobbs||'--'));
-  lines.push('');
-  var fc = fuelCalc();
-  if(fc.fob !== null || fc.total > 0){
-    lines.push('Fuel Plan: Total FOB '+fmtFuel(fc.fob)+' / Required '+fmtFuel(fc.total)+' / '+(fc.surplus===null?'--':fmtFuelSigned(fc.surplus))+' surplus-deficit');
-  }
-  if(STATE.tankLog.length){
-    var ts = tankFuelStatus();
-    lines.push('Tank Log: Time on L '+secsToHMS(ts.L.hrs*3600)+' / Time on R '+secsToHMS(ts.R.hrs*3600));
-  }
-  return lines.join('\n');
-}
 document.getElementById('shareCalcBtn').addEventListener('click', function(){
   sharePostFlightPdf();
 });
@@ -4902,6 +4745,46 @@ function renderCalculations(){
     '<div class="fdField full" style="margin-top:10px"><label>Notes</label><textarea id="fdNotes" rows="3" placeholder="Anything else worth recording" autocomplete="off" autocorrect="off" spellcheck="false">'+escapeHtml(fd.notes||'')+'</textarea></div>'+
   '</div>';
 
+  // Flight History — a running record of past flights. Reset All
+  // archives the current one automatically before wiping it, but this
+  // button lets you snapshot it into history on demand too, without
+  // clearing anything — useful for logging a leg without losing the
+  // in-progress data for whatever comes next.
+  html += '<div class="calcCard"><div class="ck">Flight History</div>';
+  html += '<button type="button" id="saveToHistoryBtn" style="width:100%;border:1px solid var(--em);background:var(--em);color:#fff;border-radius:8px;padding:11px 0;font-family:\'JetBrains Mono\',monospace;font-weight:800;font-size:13px;cursor:pointer;margin-bottom:12px">+ Save Current Flight to History</button>';
+  if(!STATE.flightHistory.length){
+    html += '<div class="grNote" style="padding:8px 2px">No flights archived yet.</div>';
+  } else {
+    var dirtyNow = hasUnsavedChanges();
+    var fdNow = STATE.flightDetails;
+    html += '<div style="overflow-x:auto"><table class="timesTable" style="min-width:640px"><thead><tr>'+
+      '<th>Date</th><th>Student</th><th>Reg</th><th>Off Blocks</th><th>On Blocks</th><th>Block</th><th>Takeoff</th><th>Landing</th><th>Air</th>'+
+      '</tr></thead><tbody>';
+    STATE.flightHistory.slice().reverse().forEach(function(h){
+      // Star sits right by this row's own name — only the row that
+      // actually matches the flight currently open, and only while it
+      // has genuinely diverged from what's saved here.
+      var isCurrent = dirtyNow && h.date===fdNow.date && h.registration===fdNow.registration && h.student===fdNow.student;
+      html += '<tr>'+
+        '<td>'+(isCurrent?'<span style="color:var(--amber)">\u2605</span> ':'')+escapeHtml(h.date||'\u2014')+'</td>'+
+        '<td>'+escapeHtml(h.student||'\u2014')+'</td>'+
+        '<td class="ttLabel">'+escapeHtml(h.registration||'\u2014')+'</td>'+
+        '<td>'+(h.offBlocks||'\u2014')+'</td>'+
+        '<td>'+(h.onBlocks||'\u2014')+'</td>'+
+        '<td class="ttTotal">'+(h.blockTime!=null?decToHM(h.blockTime):'\u2014')+'</td>'+
+        '<td>'+(h.takeoff||'\u2014')+'</td>'+
+        '<td>'+(h.landing||'\u2014')+'</td>'+
+        '<td class="ttTotal">'+(h.airTime!=null?decToHM(h.airTime):'\u2014')+'</td>'+
+      '</tr>';
+    });
+    html += '</tbody></table></div>';
+    html += '<div class="savedFlightTopBtns" style="margin-top:12px">'+
+      '<button type="button" class="printBtn shareBtn" id="exportAllHistoryPdfBtn" style="flex:1;background:#047857">Export All PDFs</button>'+
+      '<button type="button" class="resetBtn" id="clearHistoryBtn" style="flex:1">Clear History</button>'+
+    '</div>';
+  }
+  html += '</div>';
+
   html += '<div class="resHead" style="margin:20px 0 8px"><h2 style="font-size:14px">All Data Entries</h2></div>';
   var anyEntries = false;
   var seenGlobalAll = {};
@@ -4962,6 +4845,48 @@ function wireFlightDetails(){
     STATE.flightDetails.date = iso;
     document.getElementById('fdDate').value = iso;
     saveState();
+  });
+  var saveToHistoryBtn = document.getElementById('saveToHistoryBtn');
+  if(saveToHistoryBtn) saveToHistoryBtn.addEventListener('click', function(){
+    var fd = STATE.flightDetails;
+    if(!fd.date && !fd.registration && !fd.student){
+      showConfirm('Enter at least a date, registration, or student before saving to history.', 'OK', function(){});
+      return;
+    }
+    archiveCurrentFlightToHistory();
+    saveState();
+    renderCalculations();
+    // renderCalculations() just rebuilt the whole card (including this
+    // button) from scratch, so the original element reference above is
+    // now detached — grab the fresh one before showing the confirmation.
+    var freshBtn = document.getElementById('saveToHistoryBtn');
+    if(freshBtn){
+      var original = freshBtn.textContent;
+      freshBtn.textContent = '\u2713 Saved to History';
+      setTimeout(function(){
+        var stillThere = document.getElementById('saveToHistoryBtn');
+        if(stillThere) stillThere.textContent = original;
+      }, 1600);
+    }
+  });
+  var exportAllBtn = document.getElementById('exportAllHistoryPdfBtn');
+  if(exportAllBtn) exportAllBtn.addEventListener('click', function(){ shareFlightHistoryPdf(); });
+  var clearHistoryBtn = document.getElementById('clearHistoryBtn');
+  if(clearHistoryBtn) clearHistoryBtn.addEventListener('click', function(){
+    // Deliberately three separate confirmations, each worded more
+    // bluntly than the last — this is the one action in the app that
+    // destroys data with no Undo and no way to reconstruct it, so it
+    // should never be one accidental tap away.
+    var count = STATE.flightHistory.length;
+    showConfirm('Clear all '+count+' flight'+(count===1?'':'s')+' from history? This cannot be undone. (1 of 3)', 'Continue', function(){
+      showConfirm('Are you sure? Every archived flight will be permanently deleted. (2 of 3)', 'Continue', function(){
+        showConfirm('Last chance — this really cannot be undone. Delete all flight history now? (3 of 3)', 'Delete All History', function(){
+          STATE.flightHistory = [];
+          saveState();
+          renderCalculations();
+        });
+      });
+    });
   });
 }
 
