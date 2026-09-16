@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v30 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v32 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -430,7 +430,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v30</div>
+  <div id="versionBadge">v32</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -474,6 +474,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
       <h2>Calculated Times</h2>
       <div class="calcActions">
         <button class="printBtn shareBtn" id="shareCalcBtn" style="background:#047857">Share</button>
+        <button class="resetBtn" id="resetSecondFlightBtn" style="border-color:var(--amber);color:var(--amber)">Reset 2nd Flight</button>
         <button class="resetBtn" id="resetAllBtn">Reset</button>
       </div>
     </div>
@@ -1169,7 +1170,7 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
    ============================================================ */
 var STORE_KEY = 'checkdeck_state_v1';
 var USG_TO_L = 3.785;
-var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, atisEntries:[], atisDraft:{ icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' }, manualTasks:[], flightHistory:[], lastSavedSnapshot:null, customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
+var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'4520',name:'EGTK VFR Departures'},{code:'7010',name:'EGTK Circuits'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, atisEntries:[], atisDraft:{ icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' }, manualTasks:[], flightHistory:[], lastSavedSnapshot:null, customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
   fuel:{ unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
   tankLog:[], tankSelected:'L',
   flightDetails:{ date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', safetyReport:'', notes:'' } };
@@ -1192,7 +1193,20 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     if(!STATE.values) STATE.values = {};
     if(!STATE.global) STATE.global = { etob:'', ctot:'', transponderCode:'' };
     if(STATE.global.transponderCode === undefined) STATE.global.transponderCode = '';
-    if(!STATE.codes) STATE.codes = [{code:'1200',name:'VFR'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}];
+    if(!STATE.codes) STATE.codes = [{code:'4520',name:'EGTK VFR Departures'},{code:'7010',name:'EGTK Circuits'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}];
+    // One-time migration for anyone who already had codes saved before
+    // this change: drops the old default 1200/VFR entry and adds the
+    // two new ones, without touching anything the person added
+    // themselves or duplicating if this somehow runs more than once.
+    if(!STATE.codesMigratedV3){
+      STATE.codes = STATE.codes.filter(function(c){ return c.code !== '1200'; });
+      ['4520','7010'].forEach(function(code){
+        if(!STATE.codes.some(function(c){ return c.code === code; })){
+          STATE.codes.push({ code:code, name: code==='4520' ? 'EGTK VFR Departures' : 'EGTK Circuits' });
+        }
+      });
+      STATE.codesMigratedV3 = true;
+    }
     if(!STATE.codePresets) STATE.codePresets = {};
     if(!STATE.savedFlights) STATE.savedFlights = {};
     if(STATE.autoPrintOnSync === undefined) STATE.autoPrintOnSync = false;
@@ -2100,6 +2114,23 @@ function renderCard(card){
         STATE.fuel.actualLanding = isNaN(n) ? '' : (STATE.fuel.unit==='L' ? n/USG_TO_L : n);
         saveState(); renderCard(card); updateFuelSummaryOnly();
       });
+    });
+    var transferLandingBtn = document.getElementById('fpTransferLandingBtn');
+    if(transferLandingBtn) transferLandingBtn.addEventListener('click', function(){
+      // For a second flight in the same aircraft: whatever's left over
+      // from this landing becomes the next flight's starting fuel.
+      // Prefers the actual figure if it's been entered; falls back to
+      // the estimate from actual air time (not the planned-trip figure,
+      // since that ignores anything that actually happened in flight).
+      var actual = parseFloat(STATE.fuel.actualLanding);
+      var c = fuelCalc();
+      var tc = fuelTimesCalc(c);
+      var source = !isNaN(actual) ? actual : tc.val;
+      if(source === null || source === undefined || isNaN(source)) return;
+      STATE.fuel.fob = source;
+      saveState();
+      renderCard(card);
+      updateFuelSummaryOnly();
     });
     var fOilLevelBtn = document.getElementById('fpOilLevel');
     if(fOilLevelBtn) fOilLevelBtn.addEventListener('click', function(){
@@ -3436,6 +3467,8 @@ function renderFuelPlanHtml(cardId){
     '<div class="fpVarianceRow"><span class="fpBlockNote" style="margin:0">Variance vs Expected:</span> <span class="fpBlockVal small '+(variance===null?'':(variance<0?'neg':'pos'))+'" id="fpVariance">'+(variance===null?'\u2014':fmtFuelSigned(variance))+'</span>'+
     (variancePct!==null ? ' <span class="fpBlockNote" style="margin:0" id="fpVariancePct">('+(variance<0?'-':'+')+variancePct+'%)</span>' : '<span id="fpVariancePct"></span>')+
     '</div>'+
+    '<button type="button" id="fpTransferLandingBtn" style="width:100%;margin-top:10px;border:1px solid var(--violet);background:var(--surface);color:var(--violet);border-radius:8px;padding:9px 0;font-family:\'JetBrains Mono\',monospace;font-weight:800;font-size:12px;cursor:pointer">\u2193 Use Landing Fuel as Fuel on Board</button>'+
+    '<div class="fpBlockNote" style="margin-top:4px">'+(!isNaN(actual) ? 'Uses the actual figure above' : (tc.val!==null ? 'No actual entered \u2014 uses the estimated '+fmtFuel(tc.val)+' from air time' : 'Enter an actual, or set Off Blocks/Take Off/Landing times, first'))+'</div>'+
   '</div>';
   html += '<div class="fpFieldsRow" style="margin-top:14px">'+
     '<div class="fpField"><label>Oil Level (qts)</label><button type="button" class="fpFieldBtn" id="fpOilLevel">'+(f.oilLevel||'0')+'</button></div>'+
@@ -3989,6 +4022,47 @@ function resetAllData(){
   renderResults(); renderCalculations();
   updateCountdown();
 }
+// Reset 2nd Flight — for back-to-back flights in the SAME aircraft on
+// the same day, WITHOUT wiping the whole app the way Reset does.
+// Clears the Airbourne tab entirely (Ground + Airborne: Crew/Pax Brief,
+// ATIS, Start, Off Blocks -> Pre-Take Off, Airborne — including the tank
+// log), plus TEM, CTOT, and EOBT/ETOB from Pre-Flight, since none of
+// those carry over to a new leg. Deliberately leaves everything else
+// alone: Fuel Plan, Personal Currency, IMSAFE, Personal Equipment,
+// DA/PA, Pax Brief, and Flight Details (same aircraft/day) all stay as
+// they are. The one thing it doesn't just delete: End Tacho/Hobbs
+// becomes the new Start Tacho/Hobbs, since those genuinely are
+// continuous from one leg to the next.
+var AIRBOURNE_CARD_PREFIXES = ['crewpax.2x','atis.atisgrp','start.startgrp','offblockspretakeoff.otpgrp','airborne.airbornegrp'];
+function isAirbourneCardKey(key){
+  return AIRBOURNE_CARD_PREFIXES.some(function(p){ return key === p || key.indexOf(p+'.') === 0; });
+}
+function resetSecondFlight(){
+  var prevEnd = STATE.values['airborne.airbornegrp.5'] || {};
+  Object.keys(STATE.checked).forEach(function(k){ if(isAirbourneCardKey(k)) delete STATE.checked[k]; });
+  Object.keys(STATE.values).forEach(function(k){ if(isAirbourneCardKey(k)) delete STATE.values[k]; });
+  // TEM lives under Pre-Flight, not Airbourne, but is per-flight in the
+  // same way — both its built-in ticks and anything added on the day.
+  delete STATE.checked['tem.1s'];
+  Object.keys(STATE.checked).forEach(function(k){ if(k.indexOf('tem.1s.') === 0) delete STATE.checked[k]; });
+  delete STATE.customItems['tem.1s'];
+  STATE.global.etob = '';
+  STATE.global.ctot = '';
+  STATE.tankLog = [];
+  STATE.tankSelected = 'L';
+  STATE.atisEntries = [];
+  STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
+  if(prevEnd.tacho || prevEnd.hobbs){
+    STATE.values['start.startgrp.1'] = { tacho: prevEnd.tacho||'', hobbs: prevEnd.hobbs||'' };
+  }
+  saveState();
+  showingSectDone = false; showingPhaseDone = false;
+  renderHeadingRow(); renderPhaseRow();
+  render();
+  renderResults(); renderCalculations();
+  updateCountdown();
+  renderTankHeaderBar();
+}
 // Generic in-app confirm — shows the modal, resolves the given callback
 // only if the person taps the destructive action button.
 function showConfirm(msg, okLabel, onConfirm){
@@ -4010,6 +4084,9 @@ function showConfirm(msg, okLabel, onConfirm){
 }
 document.getElementById('resetAllBtn').addEventListener('click', function(){
   showConfirm('Reset all entered values for this flight? This cannot be undone.', 'Reset All', resetAllData);
+});
+document.getElementById('resetSecondFlightBtn').addEventListener('click', function(){
+  showConfirm('Reset for a 2nd flight? This clears the Airbourne tab, TEM, CTOT, and EOBT/ETOB \u2014 Fuel Plan and everything else stays as-is. End Tacho/Hobbs carries over as the new Start Tacho/Hobbs. This cannot be undone.', 'Reset 2nd Flight', resetSecondFlight);
 });
 document.getElementById('shareCalcBtn').addEventListener('click', function(){
   sharePostFlightPdf();
@@ -4048,12 +4125,22 @@ function showCodePrompt(onSubmit){
   setTimeout(function(){ codeInput.focus(); }, 50);
   var okBtn = document.getElementById('codePromptOkBtn');
   var cancelBtn = document.getElementById('codePromptCancelBtn');
+  function onNameInput(){
+    // Capitalises the first letter of each word as you type — leaves
+    // the rest of each word alone, so typing an ICAO code in full caps
+    // (e.g. "EGTK") isn't fought with or forced to lowercase.
+    var pos = nameInput.selectionStart;
+    var capped = nameInput.value.replace(/(^|\s)([a-z])/g, function(m, p1, p2){ return p1 + p2.toUpperCase(); });
+    if(capped !== nameInput.value){ nameInput.value = capped; nameInput.setSelectionRange(pos, pos); }
+  }
+  nameInput.addEventListener('input', onNameInput);
   function cleanup(){
     modal.style.display = 'none';
     okBtn.removeEventListener('click', onOk);
     cancelBtn.removeEventListener('click', onCancel);
     codeInput.removeEventListener('keydown', onKeydown);
     nameInput.removeEventListener('keydown', onKeydown);
+    nameInput.removeEventListener('input', onNameInput);
   }
   function onOk(){ var c = codeInput.value, n = nameInput.value; cleanup(); onSubmit(c, n); }
   function onCancel(){ cleanup(); }
