@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v34 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v35 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -430,7 +430,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v34</div>
+  <div id="versionBadge">v35</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -3734,6 +3734,81 @@ function postFlightPdfFilename(){
 // actually is, then a second time on the real document with every font
 // size and line height scaled down by whatever factor is needed to make
 // that height fit — never adding a second page.
+// "Export All PDFs" — one flight per page, each with the full detail
+// the Share button gives the current flight (Flight Details, Times,
+// Fuel Plan, Tank Log, ATIS, Debrief, All Data Entries), not just the
+// summary row the History table shows. Works by temporarily swapping
+// the live STATE for each flight's archived snapshot, reusing the
+// exact same rendering + one-page-fit logic as the single-flight PDF,
+// then restoring the live state — guaranteed via try/finally even if
+// rendering throws partway through, so a bad flight can't corrupt the
+// live in-progress one.
+function buildFlightHistoryFullPdf(){
+  var doc = new window.jspdf.jsPDF();
+  var pageHeight = doc.internal.pageSize.getHeight();
+  var usableHeight = pageHeight - 12;
+  var first = true;
+  STATE.flightHistory.forEach(function(h){
+    if(!first) doc.addPage();
+    first = false;
+    if(!h.full){
+      // Archived before full snapshots existed — fall back to a plain
+      // summary page rather than silently dropping this flight.
+      doc.setFont(undefined,'bold'); doc.setFontSize(16);
+      doc.text('Flight Summary', 14, 18);
+      doc.setFont(undefined,'normal'); doc.setFontSize(10);
+      var y = 30;
+      [['Date',h.date],['Registration',h.registration],['Student',h.student],
+       ['Off Blocks',h.offBlocks],['On Blocks',h.onBlocks],['Takeoff',h.takeoff],['Landing',h.landing],
+       ['Block Time', h.blockTime!=null?decToHM(h.blockTime):'--'],['Air Time', h.airTime!=null?decToHM(h.airTime):'--']
+      ].forEach(function(pair){
+        doc.setFont(undefined,'bold'); doc.text(pair[0]+':', 14, y);
+        doc.setFont(undefined,'normal'); doc.text(String(pair[1]||'--'), 70, y);
+        y += 6;
+      });
+      doc.setFontSize(8); doc.setTextColor(150);
+      doc.text('Archived before detailed records were kept \u2014 full checklist data unavailable for this flight.', 14, y+6);
+      doc.setTextColor(0);
+      return;
+    }
+    var backup = { checked:STATE.checked, values:STATE.values, global:STATE.global, fuel:STATE.fuel, tankLog:STATE.tankLog, flightDetails:STATE.flightDetails, atisEntries:STATE.atisEntries };
+    try {
+      STATE.checked = h.full.checked; STATE.values = h.full.values; STATE.global = h.full.global;
+      STATE.fuel = h.full.fuel; STATE.tankLog = h.full.tankLog; STATE.flightDetails = h.full.flightDetails;
+      STATE.atisEntries = h.full.atisEntries;
+      var measuredY = renderPostFlightContent(new window.jspdf.jsPDF(), 1);
+      var scale = measuredY > usableHeight ? Math.max(0.4, usableHeight / measuredY) : 1;
+      renderPostFlightContent(doc, scale);
+    } finally {
+      STATE.checked = backup.checked; STATE.values = backup.values; STATE.global = backup.global;
+      STATE.fuel = backup.fuel; STATE.tankLog = backup.tankLog; STATE.flightDetails = backup.flightDetails;
+      STATE.atisEntries = backup.atisEntries;
+    }
+  });
+  if(!STATE.flightHistory.length){
+    doc.setFont(undefined,'bold'); doc.setFontSize(14);
+    doc.text('No flights archived yet.', 14, 20);
+  }
+  return doc;
+}
+function flightHistoryFullPdfFilename(){
+  var d = new Date();
+  var iso = d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+  return 'Flight History Full '+iso+'.pdf';
+}
+function shareFlightHistoryFullPdf(){
+  var doc = buildFlightHistoryFullPdf();
+  var filename = flightHistoryFullPdfFilename();
+  if(navigator.canShare && navigator.share){
+    var blob = doc.output('blob');
+    var file = new File([blob], filename, { type:'application/pdf' });
+    if(navigator.canShare({ files:[file] })){
+      navigator.share({ files:[file], title:filename }).catch(function(){});
+      return;
+    }
+  }
+  doc.save(filename);
+}
 function buildPostFlightPdf(){
   var pageHeight = new window.jspdf.jsPDF().internal.pageSize.getHeight();
   var usableHeight = pageHeight - 12;
@@ -3995,7 +4070,21 @@ function archiveCurrentFlightToHistory(forceNew){
     offBlocks: offBlocks, onBlocks: onBlocks, takeoff: takeoff, landing: landing,
     blockTime: timeDiffCalc(offBlocks, onBlocks),
     airTime: timeDiffCalc(takeoff, landing),
-    archivedAt: new Date().toISOString()
+    archivedAt: new Date().toISOString(),
+    // Full snapshot of everything checked/entered for this flight — kept
+    // alongside the summary fields above (which drive the History table
+    // itself) so "Export All PDFs" can later produce the same complete,
+    // per-flight detail the Share button gives the current flight, not
+    // just the date/reg/student/times row.
+    full: {
+      checked: JSON.parse(JSON.stringify(STATE.checked)),
+      values: JSON.parse(JSON.stringify(STATE.values)),
+      global: JSON.parse(JSON.stringify(STATE.global)),
+      fuel: JSON.parse(JSON.stringify(STATE.fuel)),
+      tankLog: JSON.parse(JSON.stringify(STATE.tankLog)),
+      flightDetails: JSON.parse(JSON.stringify(STATE.flightDetails)),
+      atisEntries: JSON.parse(JSON.stringify(STATE.atisEntries))
+    }
   };
   var matchIdx = -1;
   if(!forceNew){
@@ -4938,9 +5027,10 @@ function renderCalculations(){
     });
     html += '</tbody></table></div>';
     html += '<div class="savedFlightTopBtns" style="margin-top:12px">'+
+      '<button type="button" class="printBtn shareBtn" id="exportTimesBtn" style="flex:1;background:#0369a1">Export Times</button>'+
       '<button type="button" class="printBtn shareBtn" id="exportAllHistoryPdfBtn" style="flex:1;background:#047857">Export All PDFs</button>'+
-      '<button type="button" class="resetBtn" id="clearHistoryBtn" style="flex:1">Clear History</button>'+
-    '</div>';
+    '</div>'+
+    '<button type="button" class="resetBtn" id="clearHistoryBtn" style="width:100%;margin-top:8px">Clear History</button>';
   }
   html += '</div>';
 
@@ -5046,8 +5136,10 @@ function wireFlightDetails(){
       }, 1600);
     }
   });
+  var exportTimesBtn = document.getElementById('exportTimesBtn');
+  if(exportTimesBtn) exportTimesBtn.addEventListener('click', function(){ shareFlightHistoryPdf(); });
   var exportAllBtn = document.getElementById('exportAllHistoryPdfBtn');
-  if(exportAllBtn) exportAllBtn.addEventListener('click', function(){ shareFlightHistoryPdf(); });
+  if(exportAllBtn) exportAllBtn.addEventListener('click', function(){ shareFlightHistoryFullPdf(); });
   var clearHistoryBtn = document.getElementById('clearHistoryBtn');
   if(clearHistoryBtn) clearHistoryBtn.addEventListener('click', function(){
     // Deliberately three separate confirmations, each worded more
