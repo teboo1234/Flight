@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v32 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v34 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -430,7 +430,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v32</div>
+  <div id="versionBadge">v34</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -2013,6 +2013,7 @@ function renderCard(card){
       });
       var addBtn = document.getElementById('addItemBtn');
       var addInp = document.getElementById('addItemInput');
+      wireTitleCaseInput(addInp);
       function submitAddItem(){
         var v = addInp.value.trim();
         if(!v) return;
@@ -2384,11 +2385,18 @@ function showNotesModal(){
   modal.style.display = 'flex';
   setTimeout(function(){ ta.focus(); }, 50);
   ta.oninput = function(){
-    STATE.flightDetails.notes = ta.value;
+    var raw = ta.value;
+    var formatted = sentenceCaseStr(raw);
+    STATE.flightDetails.notes = formatted;
+    if(formatted !== raw){
+      var pos = ta.selectionStart;
+      ta.value = formatted;
+      ta.setSelectionRange(pos, pos);
+    }
     saveState();
   };
   wireBulletTextarea(ta, function(v){
-    STATE.flightDetails.notes = v;
+    STATE.flightDetails.notes = sentenceCaseStr(v);
     saveState();
   });
   document.getElementById('notesModalCloseBtn').onclick = function(){
@@ -2444,6 +2452,7 @@ function showTasksModal(){
   modal.style.display = 'flex';
   var input = document.getElementById('taskNewInput');
   input.value = '';
+  if(!input.dataset.capWired){ wireTitleCaseInput(input); input.dataset.capWired = '1'; }
   var addBtn = document.getElementById('taskAddBtn');
   function onAdd(){
     addManualTask(input.value);
@@ -3311,14 +3320,20 @@ function wireAtis(card){
     var el = document.getElementById(id);
     if(!el) return;
     el.addEventListener('input', function(){
-      STATE.atisDraft[key] = formatter ? formatter(el.value) : el.value;
-      if(formatter) el.value = STATE.atisDraft[key];
+      var raw = el.value;
+      var formatted = formatter ? formatter(raw) : raw;
+      STATE.atisDraft[key] = formatted;
+      if(formatted !== raw){
+        var pos = el.selectionStart;
+        el.value = formatted;
+        el.setSelectionRange(pos, pos);
+      }
       saveState();
     });
   }
   bindDraft('atisIcao', 'icao', function(v){ return v.toUpperCase(); });
-  bindDraft('atisNotes', 'notes');
-  wireBulletTextarea(document.getElementById('atisNotes'), function(v){ STATE.atisDraft.notes = v; saveState(); });
+  bindDraft('atisNotes', 'notes', sentenceCaseStr);
+  wireBulletTextarea(document.getElementById('atisNotes'), function(v){ STATE.atisDraft.notes = sentenceCaseStr(v); saveState(); });
   var timeBtn = document.getElementById('atisTimeBtn');
   if(timeBtn) timeBtn.addEventListener('click', function(){
     openTimeKeypad(STATE.atisDraft.time||'', function(v){
@@ -3962,7 +3977,13 @@ function hasUnsavedChanges(){
 // entry, or, if an existing entry already matches this same flight
 // (same date + registration + student), by updating that entry in
 // place instead of adding a duplicate.
-function archiveCurrentFlightToHistory(){
+// forceNew skips the match-and-update logic and always appends a fresh
+// entry — used by Reset 2nd Flight, where two genuinely different legs
+// share the same date/registration/student (Reset 2nd Flight deliberately
+// leaves Flight Details untouched between legs), so matching on those
+// three fields the normal way would make leg 2's archive overwrite
+// leg 1's instead of recording both.
+function archiveCurrentFlightToHistory(forceNew){
   var fd = STATE.flightDetails;
   if(!fd.date && !fd.registration && !fd.student) return;
   var offBlocks = STATE.values['offblockspretakeoff.otpgrp.0'] || '';
@@ -3977,10 +3998,12 @@ function archiveCurrentFlightToHistory(){
     archivedAt: new Date().toISOString()
   };
   var matchIdx = -1;
-  for(var i = STATE.flightHistory.length - 1; i >= 0; i--){
-    var h = STATE.flightHistory[i];
-    if(h.date === fd.date && h.registration === fd.registration && h.student === fd.student){
-      matchIdx = i; break;
+  if(!forceNew){
+    for(var i = STATE.flightHistory.length - 1; i >= 0; i--){
+      var h = STATE.flightHistory[i];
+      if(h.date === fd.date && h.registration === fd.registration && h.student === fd.student){
+        matchIdx = i; break;
+      }
     }
   }
   if(matchIdx >= 0){
@@ -4038,6 +4061,13 @@ function isAirbourneCardKey(key){
   return AIRBOURNE_CARD_PREFIXES.some(function(p){ return key === p || key.indexOf(p+'.') === 0; });
 }
 function resetSecondFlight(){
+  // The flight that's about to have its Airbourne data cleared gets
+  // archived first, as its own distinct history entry — forceNew,
+  // since this flight and the one that follows will share the same
+  // date/registration/student (Flight Details is deliberately left
+  // alone below) and would otherwise collapse into a single overwritten
+  // record instead of two.
+  archiveCurrentFlightToHistory(true);
   var prevEnd = STATE.values['airborne.airbornegrp.5'] || {};
   Object.keys(STATE.checked).forEach(function(k){ if(isAirbourneCardKey(k)) delete STATE.checked[k]; });
   Object.keys(STATE.values).forEach(function(k){ if(isAirbourneCardKey(k)) delete STATE.values[k]; });
@@ -4055,6 +4085,11 @@ function resetSecondFlight(){
   if(prevEnd.tacho || prevEnd.hobbs){
     STATE.values['start.startgrp.1'] = { tacho: prevEnd.tacho||'', hobbs: prevEnd.hobbs||'' };
   }
+  // Re-baseline after the clearing above (not before) — otherwise the
+  // "changed since last save" star would show immediately against the
+  // just-created leg-1 entry, before anything's actually been entered
+  // for leg 2 yet.
+  STATE.lastSavedSnapshot = currentFlightSnapshotStr();
   saveState();
   showingSectDone = false; showingPhaseDone = false;
   renderHeadingRow(); renderPhaseRow();
@@ -4094,7 +4129,37 @@ document.getElementById('shareCalcBtn').addEventListener('click', function(){
 // Same idea, but for adding a transponder code — takes both a code and a
 // name in one go rather than chaining two separate prompts.
 // Generic single-field prompt — used for manually editing a captured time.
-function showPrompt(msg, currentVal, onSubmit){
+// Live auto-capitalization, applied non-destructively (never forces
+// existing capitals to lowercase, so typing an ICAO code or acronym in
+// caps is never fought with) — three flavours depending on what the
+// field is actually for.
+function wireTitleCaseInput(el){
+  if(!el) return;
+  el.addEventListener('input', function(){
+    var pos = el.selectionStart;
+    var capped = el.value.replace(/(^|\s)([a-z])/g, function(m, p1, p2){ return p1 + p2.toUpperCase(); });
+    if(capped !== el.value){ el.value = capped; el.setSelectionRange(pos, pos); }
+  });
+}
+function wireUppercaseInput(el){
+  if(!el) return;
+  el.addEventListener('input', function(){
+    var pos = el.selectionStart;
+    var upper = el.value.toUpperCase();
+    if(upper !== el.value){ el.value = upper; el.setSelectionRange(pos, pos); }
+  });
+}
+function wireSentenceCaseInput(el){
+  if(!el) return;
+  el.addEventListener('input', function(){
+    var pos = el.selectionStart;
+    var capped = el.value.replace(/(^|[.!?]\s+|\n)(\s*(?:\u2022\s*)?)([a-z])/g, function(m, p1, p2, p3){
+      return p1 + p2 + p3.toUpperCase();
+    });
+    if(capped !== el.value){ el.value = capped; el.setSelectionRange(pos, pos); }
+  });
+}
+function showPrompt(msg, currentVal, onSubmit, titleCase){
   var modal = document.getElementById('promptModal');
   document.getElementById('promptMsg').textContent = msg;
   var input = document.getElementById('promptInput');
@@ -4103,11 +4168,18 @@ function showPrompt(msg, currentVal, onSubmit){
   setTimeout(function(){ input.focus(); input.select(); }, 50);
   var okBtn = document.getElementById('promptOkBtn');
   var cancelBtn = document.getElementById('promptCancelBtn');
+  function onInput(){
+    var pos = input.selectionStart;
+    var capped = titleCaseStr(input.value);
+    if(capped !== input.value){ input.value = capped; input.setSelectionRange(pos, pos); }
+  }
+  if(titleCase) input.addEventListener('input', onInput);
   function cleanup(){
     modal.style.display = 'none';
     okBtn.removeEventListener('click', onOk);
     cancelBtn.removeEventListener('click', onCancel);
     input.removeEventListener('keydown', onKeydown);
+    if(titleCase) input.removeEventListener('input', onInput);
   }
   function onOk(){ var v = input.value; cleanup(); onSubmit(v); }
   function onCancel(){ cleanup(); }
@@ -4224,7 +4296,7 @@ function showManageCodesModal(onClosed){
       STATE.codePresets[name] = STATE.codes.map(function(c){ return { code:c.code, name:c.name }; });
       saveState();
       renderPresets();
-    });
+    }, true);
   }
   function onClose(){
     modal.style.display = 'none';
@@ -4893,13 +4965,31 @@ function renderCalculations(){
   elCalcBody.innerHTML = html;
   wireFlightDetails();
 }
+function titleCaseStr(s){
+  return String(s||'').replace(/(^|\s)([a-z])/g, function(m, p1, p2){ return p1 + p2.toUpperCase(); });
+}
+function sentenceCaseStr(s){
+  return String(s||'').replace(/(^|[.!?]\s+|\n)(\s*(?:\u2022\s*)?)([a-z])/g, function(m, p1, p2, p3){
+    return p1 + p2 + p3.toUpperCase();
+  });
+}
 function wireFlightDetails(){
   function bind(id, key, formatter){
     var el = document.getElementById(id);
     if(!el) return;
     el.addEventListener('input', function(){
-      STATE.flightDetails[key] = formatter ? formatter(el.value) : el.value;
-      if(formatter) el.value = STATE.flightDetails[key];
+      var raw = el.value;
+      var formatted = formatter ? formatter(raw) : raw;
+      STATE.flightDetails[key] = formatted;
+      if(formatted !== raw){
+        // Cursor-preserving: a plain "el.value = formatted" always
+        // snaps the cursor to the end, which is fine for a short field
+        // like Registration but would make typing in the middle of a
+        // multi-line Notes/Defects entry unusable.
+        var pos = el.selectionStart;
+        el.value = formatted;
+        el.setSelectionRange(pos, pos);
+      }
       saveState();
     });
   }
@@ -4917,14 +5007,14 @@ function wireFlightDetails(){
     });
   });
   bind('fdReg', 'registration', function(v){ return v.toUpperCase(); });
-  bind('fdStudent', 'student');
-  bind('fdDeparture', 'departure');
-  bind('fdDestination', 'destination');
-  bind('fdLandAway', 'landAway');
-  bind('fdDefects', 'defects');
-  bind('fdSafetyReport', 'safetyReport');
-  bind('fdNotes', 'notes');
-  wireBulletTextarea(document.getElementById('fdNotes'), function(v){ STATE.flightDetails.notes = v; saveState(); });
+  bind('fdStudent', 'student', titleCaseStr);
+  bind('fdDeparture', 'departure', function(v){ return v.toUpperCase(); });
+  bind('fdDestination', 'destination', function(v){ return v.toUpperCase(); });
+  bind('fdLandAway', 'landAway', function(v){ return v.toUpperCase(); });
+  bind('fdDefects', 'defects', sentenceCaseStr);
+  bind('fdSafetyReport', 'safetyReport', sentenceCaseStr);
+  bind('fdNotes', 'notes', sentenceCaseStr);
+  wireBulletTextarea(document.getElementById('fdNotes'), function(v){ STATE.flightDetails.notes = sentenceCaseStr(v); saveState(); });
   var todayBtn = document.getElementById('fdTodayBtn');
   if(todayBtn) todayBtn.addEventListener('click', function(){
     var d = new Date();
