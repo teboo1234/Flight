@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v36 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v37 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -430,7 +430,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v36</div>
+  <div id="versionBadge">v37</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -3809,6 +3809,144 @@ function shareFlightHistoryFullPdf(){
   }
   doc.save(filename);
 }
+// Sync between devices — everything the app knows, as one JSON file.
+// No server involved: the person moves this file between their own
+// devices however suits them (AirDrop, email, or saving it into a
+// shared iCloud Drive folder so it appears on the other device on its
+// own). Deliberately excludes nothing — flight history, current
+// in-progress flight, transponder codes and presets all travel
+// together, so a single Import fully catches a device up.
+function buildAllDataExport(){
+  return {
+    exportedAt: new Date().toISOString(),
+    appVersion: document.getElementById('versionBadge') ? document.getElementById('versionBadge').textContent : '',
+    flightHistory: STATE.flightHistory,
+    codes: STATE.codes,
+    codePresets: STATE.codePresets,
+    currentFlight: {
+      checked: STATE.checked, values: STATE.values, global: STATE.global,
+      fuel: STATE.fuel, tankLog: STATE.tankLog, flightDetails: STATE.flightDetails,
+      atisEntries: STATE.atisEntries, customItems: STATE.customItems, manualTasks: STATE.manualTasks
+    }
+  };
+}
+function allDataExportFilename(){
+  var d = new Date();
+  var iso = d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+  var hm = ('0'+d.getHours()).slice(-2)+('0'+d.getMinutes()).slice(-2);
+  return 'CheckDeck Sync '+iso+' '+hm+'.json';
+}
+function shareAllDataExport(){
+  var filename = allDataExportFilename();
+  var blob = new Blob([JSON.stringify(buildAllDataExport(), null, 2)], { type:'application/json' });
+  if(navigator.canShare && navigator.share){
+    var file = new File([blob], filename, { type:'application/json' });
+    if(navigator.canShare({ files:[file] })){
+      navigator.share({ files:[file], title:filename }).catch(function(){});
+      return;
+    }
+  }
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+// Merges an imported flight-history array into the current one rather
+// than replacing it — two devices used separately will each have
+// archived flights the other doesn't know about, so a blind overwrite
+// would silently lose whichever ones aren't in the imported file.
+// Where the same flight (date + registration + student) exists on
+// both sides, keeps whichever copy was archived more recently, since
+// that's the one more likely to have complete times filled in.
+function mergeFlightHistory(imported){
+  if(!Array.isArray(imported)) return { added:0, updated:0 };
+  var added = 0, updated = 0;
+  imported.forEach(function(incoming){
+    var matchIdx = -1;
+    for(var i=0;i<STATE.flightHistory.length;i++){
+      var h = STATE.flightHistory[i];
+      if(h.date===incoming.date && h.registration===incoming.registration && h.student===incoming.student){
+        matchIdx = i; break;
+      }
+    }
+    if(matchIdx === -1){
+      STATE.flightHistory.push(incoming);
+      added++;
+    } else {
+      var existing = STATE.flightHistory[matchIdx];
+      var existingTime = existing.archivedAt ? new Date(existing.archivedAt).getTime() : 0;
+      var incomingTime = incoming.archivedAt ? new Date(incoming.archivedAt).getTime() : 0;
+      if(incomingTime > existingTime){
+        STATE.flightHistory[matchIdx] = incoming;
+        updated++;
+      }
+    }
+  });
+  return { added: added, updated: updated };
+}
+// Adds any transponder codes/presets from the import that aren't
+// already present by code/name — never overwrites an existing one, so
+// importing can't silently change what a code already on this device
+// means.
+function mergeCodesAndPresets(codes, presets){
+  var codesAdded = 0, presetsAdded = 0;
+  if(Array.isArray(codes)){
+    codes.forEach(function(c){
+      if(!STATE.codes.some(function(existing){ return existing.code === c.code; })){
+        STATE.codes.push(c); codesAdded++;
+      }
+    });
+  }
+  if(presets && typeof presets === 'object'){
+    Object.keys(presets).forEach(function(name){
+      if(!STATE.codePresets[name]){ STATE.codePresets[name] = presets[name]; presetsAdded++; }
+    });
+  }
+  return { codesAdded: codesAdded, presetsAdded: presetsAdded };
+}
+function importAllDataFromJson(text){
+  var data;
+  try { data = JSON.parse(text); } catch(e){
+    showConfirm('That file doesn\u2019t look like a CheckDeck export \u2014 couldn\u2019t read it as valid data.', 'OK', function(){});
+    return;
+  }
+  if(!data || typeof data !== 'object' || !Array.isArray(data.flightHistory)){
+    showConfirm('That file doesn\u2019t look like a CheckDeck export \u2014 the data it contains isn\u2019t in the expected shape.', 'OK', function(){});
+    return;
+  }
+  var histResult = mergeFlightHistory(data.flightHistory);
+  var codeResult = mergeCodesAndPresets(data.codes, data.codePresets);
+  saveState();
+  renderCalculations();
+  var summaryParts = [];
+  if(histResult.added) summaryParts.push(histResult.added+' flight'+(histResult.added===1?'':'s')+' added');
+  if(histResult.updated) summaryParts.push(histResult.updated+' updated');
+  if(codeResult.codesAdded) summaryParts.push(codeResult.codesAdded+' transponder code'+(codeResult.codesAdded===1?'':'s')+' added');
+  if(codeResult.presetsAdded) summaryParts.push(codeResult.presetsAdded+' code preset'+(codeResult.presetsAdded===1?'':'s')+' added');
+  var summaryText = summaryParts.length ? 'Import complete: '+summaryParts.join(', ')+'.' : 'Import complete \u2014 nothing new to add, everything already matched.';
+  // Flight history and codes merge safely on their own (already done,
+  // above, regardless of what happens next) — but the in-progress
+  // flight (ticks/values/fuel/etc) isn't a list, so it can't be merged
+  // the same way. That's a separate, explicit choice, and the merge
+  // summary is folded into this same message so it's seen either way,
+  // since showConfirm has no way to run something on Cancel.
+  if(data.currentFlight){
+    showConfirm(summaryText+' Also load the in-progress flight from this file? This replaces everything currently open in the app.', 'Load It Too', function(){
+      var cf = data.currentFlight;
+      STATE.checked = cf.checked || {}; STATE.values = cf.values || {}; STATE.global = cf.global || { etob:'', ctot:'', transponderCode:'' };
+      STATE.fuel = cf.fuel || STATE.fuel; STATE.tankLog = cf.tankLog || []; STATE.flightDetails = cf.flightDetails || STATE.flightDetails;
+      STATE.atisEntries = cf.atisEntries || []; STATE.customItems = cf.customItems || {}; STATE.manualTasks = cf.manualTasks || [];
+      STATE.lastSavedSnapshot = currentFlightSnapshotStr();
+      saveState();
+      showingSectDone = false; showingPhaseDone = false;
+      renderHeadingRow(); renderPhaseRow(); render();
+      renderResults(); renderCalculations(); updateCountdown(); renderTankHeaderBar();
+    });
+  } else {
+    showConfirm(summaryText, 'OK', function(){});
+  }
+}
 function buildPostFlightPdf(){
   var pageHeight = new window.jspdf.jsPDF().internal.pageSize.getHeight();
   var usableHeight = pageHeight - 12;
@@ -5083,6 +5221,24 @@ function renderCalculations(){
   }
   html += '</div>';
 
+  // Sync between devices — no server, no accounts: exports everything
+  // as one file, which the person moves between devices themselves
+  // (AirDrop, email, or — best case — saving straight into an iCloud
+  // Drive folder that's already shared between their devices, so it
+  // shows up on the other device with nothing extra to set up).
+  // Importing MERGES flight history rather than replacing it outright,
+  // since two devices used separately will have added different
+  // flights — a blind overwrite would silently lose whichever ones
+  // aren't in the imported file.
+  html += '<div class="calcCard"><div class="ck">Sync Between Devices</div>'+
+    '<div class="grNote" style="padding:0 2px 10px">Export everything to a file, then import it on your other device. Save the exported file into an iCloud Drive folder shared between your devices and it\'ll appear on the other one automatically \u2014 just tap Import there.</div>'+
+    '<div class="savedFlightTopBtns">'+
+      '<button type="button" class="printBtn shareBtn" id="exportAllDataBtn" style="flex:1;background:#6d28d9">Export All Data</button>'+
+      '<button type="button" class="printBtn shareBtn" id="importAllDataBtn" style="flex:1;background:#0369a1">Import Data</button>'+
+    '</div>'+
+    '<input type="file" id="importAllDataFile" accept="application/json,.json" style="display:none"/>'+
+  '</div>';
+
   html += '<div class="resHead" style="margin:20px 0 8px"><h2 style="font-size:14px">All Data Entries</h2></div>';
   var anyEntries = false;
   var seenGlobalAll = {};
@@ -5201,6 +5357,21 @@ function wireFlightDetails(){
   if(exportTimesBtn) exportTimesBtn.addEventListener('click', function(){ shareFlightHistoryPdf(); });
   var exportAllBtn = document.getElementById('exportAllHistoryPdfBtn');
   if(exportAllBtn) exportAllBtn.addEventListener('click', function(){ shareFlightHistoryFullPdf(); });
+  var exportAllDataBtn = document.getElementById('exportAllDataBtn');
+  if(exportAllDataBtn) exportAllDataBtn.addEventListener('click', function(){ shareAllDataExport(); });
+  var importAllDataBtn = document.getElementById('importAllDataBtn');
+  var importAllDataFile = document.getElementById('importAllDataFile');
+  if(importAllDataBtn && importAllDataFile){
+    importAllDataBtn.addEventListener('click', function(){ importAllDataFile.click(); });
+    importAllDataFile.addEventListener('change', function(){
+      var file = importAllDataFile.files && importAllDataFile.files[0];
+      if(!file) return;
+      var reader = new FileReader();
+      reader.onload = function(){ importAllDataFromJson(String(reader.result||'')); };
+      reader.readAsText(file);
+      importAllDataFile.value = '';
+    });
+  }
   var clearHistoryBtn = document.getElementById('clearHistoryBtn');
   if(clearHistoryBtn) clearHistoryBtn.addEventListener('click', function(){
     // Deliberately three separate confirmations, each worded more
