@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v37 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v38 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -430,7 +430,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v37</div>
+  <div id="versionBadge">v38</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -1015,7 +1015,8 @@ var CHECKLIST_DATA = [
   { phase:'PreFlight', id:'dapa', title:'DA / PA', items: [
     { id:'dapagrp', text:'DA / PA', type:'group', children:[
       {text:'Density Altitude (DA)', keypad:'alt', unit:'ft'},
-      {text:'Pressure Altitude (PA)', keypad:'alt', unit:'ft'}
+      {text:'Pressure Altitude (PA)', keypad:'alt', unit:'ft'},
+      {text:'QNH-SPS difference', keypad:'alt', unit:'ft'}
     ] }
   ]},
   { phase:'PreFlight', id:'etob', title:'ETOB / CTOT', items: [
@@ -1045,7 +1046,6 @@ var CHECKLIST_DATA = [
       'Oil pressure rising',
       'Autopilot/Trim check','Compass fluid/smell checked',
       {text:'SPS, Xponder, Baro \u00b160\'', hasLaw:true, lawKey:'3c', keypad:'alt', unit:'ft'},
-      {text:'QNH-SPS difference', keypad:'alt', unit:'ft'},
       {text:'Transponder code set', type:'code'}
     ] }
   ]},
@@ -1171,7 +1171,7 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
 var STORE_KEY = 'checkdeck_state_v1';
 var USG_TO_L = 3.785;
 var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'4520',name:'EGTK VFR Departures'},{code:'7010',name:'EGTK Circuits'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, atisEntries:[], atisDraft:{ icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' }, manualTasks:[], flightHistory:[], lastSavedSnapshot:null, customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
-  fuel:{ unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
+  fuel:{ unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
   tankLog:[], tankSelected:'L',
   flightDetails:{ date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', safetyReport:'', notes:'' } };
 // checked[cardId] = 'go'|'na'; values[cardId] = string/obj; global = shared
@@ -1243,7 +1243,18 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
       STATE.hideCompleted = true;
       STATE.hideCompletedMigratedV2 = true;
     }
-    if(!STATE.fuel) STATE.fuel = { unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
+    if(!STATE.fuel) STATE.fuel = { unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
+    // Migration: Initial Fuel used to be one combined figure — anyone
+    // with existing data has STATE.fuel.fob but no fobL/fobR yet. Splits
+    // it evenly across both tanks rather than losing what they'd
+    // entered; from here on, initial fuel is always tracked per tank.
+    if(STATE.fuel.fob !== undefined && STATE.fuel.fobL === undefined){
+      var oldFob = parseFloat(STATE.fuel.fob);
+      var half = isNaN(oldFob) ? 0 : oldFob/2;
+      STATE.fuel.fobL = half;
+      STATE.fuel.fobR = half;
+      delete STATE.fuel.fob;
+    }
     // One-time migration, same idea as Hide Completed above: anyone with
     // fuel data saved before these defaults existed has a STATE.fuel
     // object already (just with blank values), so the fallback right
@@ -1252,7 +1263,8 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     // and only ever do this once.
     if(!STATE.fuelDefaultsMigrated){
       if(STATE.fuel.burnRate === '' || STATE.fuel.burnRate === undefined) STATE.fuel.burnRate = 8;
-      if(STATE.fuel.fob === '' || STATE.fuel.fob === undefined) STATE.fuel.fob = 34;
+      if(STATE.fuel.fobL === '' || STATE.fuel.fobL === undefined) STATE.fuel.fobL = 17;
+      if(STATE.fuel.fobR === '' || STATE.fuel.fobR === undefined) STATE.fuel.fobR = 17;
       if(STATE.fuel.taxi === '' || STATE.fuel.taxi === undefined) STATE.fuel.taxi = 2;
       if(STATE.fuel.taxiMins === '' || STATE.fuel.taxiMins === undefined) STATE.fuel.taxiMins = '15';
       if(STATE.fuel.final === '' || STATE.fuel.final === undefined) STATE.fuel.final = 8;
@@ -2064,10 +2076,18 @@ function renderCard(card){
         saveState(); renderCard(card); updateFuelSummaryOnly();
       });
     });
-    document.getElementById('fpFob').addEventListener('click', function(){
-      openNumericKeypad({ title:'Initial Fuel', digits:4, suffix:STATE.fuel.unit, allowEmpty:true, help:STATE.fuel.unit }, fuelInputVal(STATE.fuel.fob), function(v){
+    document.getElementById('fpFobL').addEventListener('click', function(){
+      openNumericKeypad({ title:'Initial Fuel (L)', digits:4, suffix:STATE.fuel.unit, allowEmpty:true, help:STATE.fuel.unit }, fuelInputVal(STATE.fuel.fobL), function(v){
         var n = parseFloat(v);
-        STATE.fuel.fob = isNaN(n) ? '' : (STATE.fuel.unit==='L' ? n/USG_TO_L : n);
+        STATE.fuel.fobL = isNaN(n) ? '' : (STATE.fuel.unit==='L' ? n/USG_TO_L : n);
+        saveState(); renderCard(card); updateFuelSummaryOnly();
+        if(v) autoTickCard();
+      });
+    });
+    document.getElementById('fpFobR').addEventListener('click', function(){
+      openNumericKeypad({ title:'Initial Fuel (R)', digits:4, suffix:STATE.fuel.unit, allowEmpty:true, help:STATE.fuel.unit }, fuelInputVal(STATE.fuel.fobR), function(v){
+        var n = parseFloat(v);
+        STATE.fuel.fobR = isNaN(n) ? '' : (STATE.fuel.unit==='L' ? n/USG_TO_L : n);
         saveState(); renderCard(card); updateFuelSummaryOnly();
         if(v) autoTickCard();
       });
@@ -2128,7 +2148,17 @@ function renderCard(card){
       var tc = fuelTimesCalc(c);
       var source = !isNaN(actual) ? actual : tc.val;
       if(source === null || source === undefined || isNaN(source)) return;
-      STATE.fuel.fob = source;
+      // Per-tank remaining (from the Tank Log, if there's enough data to
+      // compute it) is more accurate than an even split — it reflects
+      // whichever tank was actually selected during the flight.
+      var ts = tankFuelStatus();
+      if(ts.L.qty !== null && ts.R.qty !== null){
+        STATE.fuel.fobL = Math.max(0, ts.L.qty);
+        STATE.fuel.fobR = Math.max(0, ts.R.qty);
+      } else {
+        STATE.fuel.fobL = source/2;
+        STATE.fuel.fobR = source/2;
+      }
       saveState();
       renderCard(card);
       updateFuelSummaryOnly();
@@ -2267,9 +2297,12 @@ function autoFormatTime(raw){
 function fuelCalc(){
   var f = STATE.fuel;
   var burn = parseFloat(f.burnRate) || 0;
-  var initial = parseFloat(f.fob);
+  var initialL = parseFloat(f.fobL);
+  var initialR = parseFloat(f.fobR);
+  var initial = (isNaN(initialL)?0:initialL) + (isNaN(initialR)?0:initialR);
+  var hasInitial = !isNaN(initialL) || !isNaN(initialR);
   var uplifted = parseFloat(f.uplifted) || 0;
-  var fob = isNaN(initial) ? null : initial + uplifted;
+  var fob = hasInitial ? initial + uplifted : null;
   var taxi = parseFloat(f.taxi) || 0;
   var trip = parseFloat(f.trip) || 0;
   var contPct = parseFloat(f.contPct); if(isNaN(contPct)) contPct = 5;
@@ -2284,7 +2317,8 @@ function fuelCalc(){
   // are reserves you'd only dip into, so they're excluded here.
   var expLanding = fob===null ? null : fob - taxi - trip - extra;
   return {
-    burn:burn, fob:fob, taxi:taxi, trip:trip, cont:cont, contPct:contPct,
+    burn:burn, fob:fob, fobL:isNaN(initialL)?0:initialL, fobR:isNaN(initialR)?0:initialR, uplifted:uplifted,
+    taxi:taxi, trip:trip, cont:cont, contPct:contPct,
     alt:alt, final_:fin, extra:extra, total:total,
     surplus: surplus,
     endurance: (fob===null||burn<=0) ? null : fob/burn,
@@ -3439,8 +3473,11 @@ function renderFuelPlanHtml(cardId){
   html += '<div class="fpTotalFob"><div class="fpTotalFobLbl">Total Fuel on Board</div><div class="fpTotalFobVal" id="fpTotalFob">'+fmtFuel(c.fob)+'</div><div class="fpTotalFobSub">Initial Fuel + Fuel Uplifted</div></div>';
   html += '<div class="fpFieldsRow">'+
     '<div class="fpField"><label>Burn Rate / hr</label><button type="button" class="fpFieldBtn" id="fpBurnRate">'+(fuelInputVal(f.burnRate)||'0')+'</button></div>'+
-    '<div class="fpField"><label>Initial Fuel</label><button type="button" class="fpFieldBtn" id="fpFob">'+(fuelInputVal(f.fob)||'0')+'</button></div>'+
     '<div class="fpField"><label>Uplifted</label><button type="button" class="fpFieldBtn" id="fpUplifted">'+(fuelInputVal(f.uplifted)||'0')+'</button></div>'+
+  '</div>';
+  html += '<div class="fpFieldsRow" style="margin-top:8px">'+
+    '<div class="fpField"><label>Initial Fuel (L)</label><button type="button" class="fpFieldBtn" id="fpFobL">'+(fuelInputVal(f.fobL)||'0')+'</button></div>'+
+    '<div class="fpField"><label>Initial Fuel (R)</label><button type="button" class="fpFieldBtn" id="fpFobR">'+(fuelInputVal(f.fobR)||'0')+'</button></div>'+
   '</div>';
   html += '<div class="fpTtcafe">';
   html += row('T','Taxi','taxi','taxiMins');
@@ -4070,6 +4107,8 @@ function renderPostFlightContent(doc, scale){
     var actualLanding = parseFloat(STATE.fuel.actualLanding);
     heading('Fuel Plan');
     row('Total FOB', fmtFuel(fc.fob));
+    row('Initial Fuel (L)', fmtFuel(fc.fobL));
+    row('Initial Fuel (R)', fmtFuel(fc.fobR));
     row('Required', fmtFuel(fc.total));
     row('Surplus/Deficit', fc.surplus===null?'--':((fc.surplus<0?'-':'+')+fmtFuel(Math.abs(fc.surplus))));
     row('Endurance (Total FOB)', decToHM(fc.endurance)+' hrs');
@@ -4297,7 +4336,7 @@ function resetAllData(){
   STATE.values = {};
   STATE.global = { etob:'', ctot:'', transponderCode:'' };
   STATE.customItems = {};
-  STATE.fuel = { unit:'USG', burnRate:8, fob:34, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
+  STATE.fuel = { unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
   STATE.tankLog = [];
   STATE.tankSelected = 'L';
   STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', safetyReport:'', notes:'' };
@@ -4848,23 +4887,26 @@ function nowUTCStrSecs(){
   var d = new Date();
   return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2)+':'+('0'+d.getUTCSeconds()).slice(-2);
 }
-// Per-tank fuel/endurance remaining — assumes Total FOB is split evenly
-// between the two tanks at the start (the common case for light aircraft
-// with L/R selectors), then burns down whichever tank was actually
-// selected, using the same tankTimeSegments hours already shown as
-// "time on tank".
+// Per-tank fuel/endurance remaining — Initial Fuel is now entered
+// separately per tank (not assumed to be an even split of the total),
+// so this starts from each tank's own actual figure. Uplifted fuel has
+// no per-tank entry of its own, so that portion is still split evenly
+// between the two — everything else (which tank was actually selected,
+// via tankTimeSegments) works exactly as before.
 function tankFuelStatus(){
   var c = fuelCalc();
   var landing = STATE.values['airborne.airbornegrp.0'];
   var endTime = landing || nowUTCStrSecs();
   var totals = tankTimeSegments(STATE.tankLog, endTime);
-  var half = c.fob===null ? null : c.fob/2;
-  function forTank(hrs){
-    if(half===null || c.burn<=0) return { qty:null, end:null, hrs:hrs };
-    var qty = half - hrs*c.burn;
+  var halfUplifted = c.uplifted/2;
+  var startL = c.fob===null ? null : c.fobL + halfUplifted;
+  var startR = c.fob===null ? null : c.fobR + halfUplifted;
+  function forTank(hrs, start){
+    if(start===null || c.burn<=0) return { qty:null, end:null, hrs:hrs };
+    var qty = start - hrs*c.burn;
     return { qty:qty, end:qty/c.burn, hrs:hrs };
   }
-  return { L: forTank(totals.L), R: forTank(totals.R), burn:c.burn, fob:c.fob };
+  return { L: forTank(totals.L, startL), R: forTank(totals.R, startR), burn:c.burn, fob:c.fob };
 }
 // Endurance Remaining — now derived directly from the Tank Log (via
 // tankFuelStatus), not a separate Takeoff-time calculation, so the two
