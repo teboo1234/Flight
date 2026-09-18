@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v38 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v45 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -52,6 +52,8 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .tasksBtnHeading{ border-right:none; border-left:1px solid var(--border); background:rgba(3,105,161,.06); color:var(--sky); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; }
 .headingBtn:last-child{ border-right:none; }
 .headingBtn.on{ background:var(--sky); color:#fff; }
+.headingBtn.complete{ background:var(--em); color:#fff; }
+.headingBtn.complete.on{ background:var(--em); color:#fff; box-shadow:inset 0 -3px 0 var(--sky); }
 .phaseRow{ display:flex; gap:6px; height:38px; overflow-x:auto; padding:0 10px; align-items:center; border-bottom:1px solid var(--border); }
 .phaseBtn{ flex:0 0 auto; padding:5px 12px; border:1.5px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; letter-spacing:.04em; white-space:nowrap; cursor:pointer; }
 .phaseBtn.on{ background:var(--sky); border-color:var(--sky); color:#fff; }
@@ -112,7 +114,8 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 @keyframes flashGo{ 0%{ background:rgba(16,185,129,.15);} 100%{ background:var(--surface); } }
 @keyframes flashNa{ 0%{ background:rgba(245,158,11,.15);} 100%{ background:var(--surface); } }
 
-.navSide{ display:none; }
+.navSide{ position:absolute; top:0; bottom:0; width:50px; display:flex; align-items:center; justify-content:center; background:none; border:none; color:rgba(15,23,42,.2); font-size:20px; cursor:pointer; z-index:5; }
+.navSide.hidden{ display:none; }
 .navSide.left{ left:0; } .navSide.right{ right:0; }
 .navSide:active{ color:rgba(15,23,42,.45); }
 
@@ -240,6 +243,9 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 #fpActualLanding{ width:100%; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:9px 10px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px; text-align:right; color:var(--text); }
 .groupList{ display:flex; flex-direction:column; gap:8px; width:100%; }
 .groupRow{ background:rgba(255,255,255,.7); border:1px solid var(--border); border-radius:10px; padding:11px 12px; }
+.groupDivider{ display:flex; align-items:center; gap:10px; margin:14px 2px 4px; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.groupDivider::before, .groupDivider::after{ content:''; flex:1; height:1px; background:var(--border); }
+.groupDivider span{ flex:0 0 auto; }
 /* "Paper checklist" prompts — the same idea as the bold black reminder rows
    in the original aircraft checklist ("go run the physical Taxi/Power/
    Pre-Take-Off checklist"), not a digital item to just tick off casually.
@@ -430,7 +436,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v38</div>
+  <div id="versionBadge">v45</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -997,17 +1003,15 @@ var LAW = {
 };
 
 var CHECKLIST_DATA = [
-  { phase:'PreFlight', id:'personalcurrency', title:'Personal Currency', items: [
-    { id:'1pc', text:'Personal Currency', type:'group', children:['Pilot licence and IR rating current','Logbook up to date','Medical certificate valid','Glasses/sunglasses'] }
+  { phase:'PreFlight', id:'personal', title:'Personal', items: [
+    { id:'1pc', text:'Personal Currency', type:'group', children:[
+      'Pilot licence and IR rating current','Logbook up to date','Medical certificate valid','Glasses/sunglasses',
+      {text:'Equipment', type:'divider'},
+      'Batteries','Cables','Devices/updates','Night flight equipment/torches','Life jacket'
+    ] }
   ]},
   { phase:'PreFlight', id:'notams', title:'NOTAMs', items: [
     { id:'2b', text:'NOTAMs checked', type:'group', hasLaw:true, children:['Departure','Destination','Alternate','En-route'] }
-  ]},
-  { phase:'PreFlight', id:'imsafe', title:'I\'M SAFE', items: [
-    { id:'1q', text:'I\'M SAFE self-assessment', type:'group', hasLaw:true, children:['Illness','Medication','Stress','Alcohol','Fatigue','Eating/Emotion'] }
-  ]},
-  { phase:'PreFlight', id:'personalequip', title:'Personal Equipment', items: [
-    { id:'1r', text:'Personal equipment checked', type:'group', children:['Batteries','Cables','Devices/updates','Night flight equipment/torches','Life jacket'] }
   ]},
   { phase:'PreFlight', id:'tem', title:'Threat & Error Management', items: [
     { id:'1s', text:'Threat & Error Management', type:'group', allowAddItems:true, children:['Terrain','CFIT','MSA','Emergency options'] }
@@ -1027,9 +1031,24 @@ var CHECKLIST_DATA = [
   { phase:'Fuel', id:'fuelplan', title:'Fuel Plan', items: [
     { id:'fuelplangrp', text:'Fuel Plan', type:'fuelplan' }
   ]},
+  { phase:'PreFlight', id:'imsafe', title:'I\'M SAFE', items: [
+    { id:'1q', text:'I\'M SAFE self-assessment', type:'group', hasLaw:true, children:['Illness','Medication','Stress','Alcohol','Fatigue','Eating/Emotion'] }
+  ]},
   { phase:'PreFlight', id:'paxbrief', title:'Pax Brief', items: [
     { id:'paxbriefgrp', text:'Pax Brief', type:'group', children:[
-      'Content to be added.'
+      'Seatbelts/harness — how to fasten and release',
+      'Doors — how to open, do not open in flight',
+      'No smoking',
+      'Sick bags location',
+      'Headsets/intercom — how to use, push-to-talk if fitted',
+      'Do not touch controls, switches, or levers',
+      'Emergency exits and how to use them',
+      'Brace position',
+      'Fire extinguisher location',
+      'Life jackets — location and use (if applicable)',
+      'What to expect — noise, turbulence, manoeuvres',
+      'Sterile flight deck — no unnecessary talk below 1,000ft or during critical phases',
+      'Any questions'
     ] }
   ]},
   { phase:'Ground', id:'crewpax', title:'Crew/Pax Brief', items: [
@@ -1052,6 +1071,23 @@ var CHECKLIST_DATA = [
   { phase:'Ground', id:'atis', title:'ATIS', items: [
     { id:'atisgrp', text:'ATIS', type:'atis' }
   ]},
+  { phase:'Ground', id:'therest', title:'IFR', items: [
+    { id:'restgrp', text:'IFR', type:'group', children:[
+      'ADF','VOR/ILS','DME','Stopwatch','Audio Panel check','Annunciator Check',
+      'COM/NAV radios set',
+      {text:'GPS/FMS flight plan loaded and cross-checked against clearance'},
+      'OBS/CDI course set for initial departure routing',
+      'Hdg bug set','Alt bug set',
+      {text:'ATIS re-checked', hasLaw:true, lawKey:'4a'},
+      {text:'Obtain Clearance', hasLaw:true, lawKey:'4b', prompt:true},
+      {text:'Transponder code set', type:'code'},
+      'OCAS to CAS transition',
+      {text:'ETOB / CTOT (UTC)', type:'etobctot'},
+      'Route entered/verified in GPS or nav equipment; matches clearance',
+      {text:'Departure procedure (SID or Instrument Departure Procedure) briefed if applicable', hasLaw:true, lawKey:'4f'},
+      'RNAV/GNSS Loss of Integrity (LOI) contingency reviewed'
+    ] }
+  ]},
   { phase:'Ground', id:'offblockspretakeoff', title:'Off Blocks \u2192 Pre-Take Off Checks', items:[
     { id:'otpgrp', text:'Off Blocks to Pre-Take Off Checks', type:'group',
       note:'Reminder — run the paper Taxi / Power / Pre-Take-Off checklists in sequence.',
@@ -1068,12 +1104,12 @@ var CHECKLIST_DATA = [
         'Wind | CAS | Noise Abatement | Wake | Threats',
         {text:'IFR Departure Brief', note:'Review clearance, initial routing/altitude, and lost-comms procedure before taxi.'},
         {text:'Line up check', note:'Mnemonic — expansion pending.'},
-        {text:'SPLIITTT', note:'Mnemonic — expansion pending.'},
-        {text:'Take Off', type:'timeNow'}
+        {text:'SPLIITTT', note:'Mnemonic — expansion pending.'}
       ] }
   ]},
   { phase:'Airborne', id:'airborne', title:'Airborne', items: [
     { id:'airbornegrp', text:'Airborne', type:'group', children:[
+      {text:'Take Off', type:'timeNow'},
       {text:'Landing', type:'timeNow'},
       {text:'On Blocks', type:'timeNow'},
       {text:'Stop SkyDemon'},
@@ -1135,6 +1171,7 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
           if(isObj && childDef.type === 'fuelQty'){ child.fuelQty = true; }
           if(isObj && childDef.type === 'weight'){ child.weightToggle = true; }
           if(isObj && childDef.prompt){ child.prompt = true; }
+          if(isObj && childDef.type === 'divider'){ child.divider = true; }
           return child;
         });
         var card = {
@@ -1272,6 +1309,64 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     }
     if(!STATE.tankLog) STATE.tankLog = [];
     if(!STATE.tankSelected) STATE.tankSelected = 'L';
+    // Migration: Personal Currency, I'M SAFE, and Personal Equipment used
+    // to be three separate sections (personalcurrency/imsafe/personalequip)
+    // and now live as three cards inside one "Personal" section — but a
+    // card's storage key is its section id + card id, so without this the
+    // old sections' ticks (and any per-item values) would simply stop
+    // matching anything and look unticked, even though nothing was
+    // actually cleared. Renames every matching key's prefix once.
+    if(!STATE.personalSectionMigrated){
+      var personalPrefixMap = { 'personalcurrency.1pc':'personal.1pc', 'imsafe.1q':'personal.1q', 'personalequip.1r':'personal.1r' };
+      [STATE.checked, STATE.values].forEach(function(store){
+        Object.keys(store).forEach(function(key){
+          Object.keys(personalPrefixMap).forEach(function(oldPrefix){
+            if(key === oldPrefix || key.indexOf(oldPrefix+'.') === 0){
+              var newKey = personalPrefixMap[oldPrefix] + key.slice(oldPrefix.length);
+              store[newKey] = store[key];
+              delete store[key];
+            }
+          });
+        });
+      });
+      STATE.personalSectionMigrated = true;
+    }
+    // Migration: Personal Equipment used to be its own card (personal.1r,
+    // items 0-4) and is now folded into the end of Personal Currency
+    // (personal.1pc, after a divider) — its items shift to indices 5-9
+    // there. Without this, anyone with existing equipment ticks would
+    // find them not matching anything, same reasoning as above.
+    if(!STATE.personalEquipMergedMigrated){
+      var equipIndexShift = { 'personal.1r.0':'personal.1pc.5', 'personal.1r.1':'personal.1pc.6', 'personal.1r.2':'personal.1pc.7', 'personal.1r.3':'personal.1pc.8', 'personal.1r.4':'personal.1pc.9' };
+      [STATE.checked, STATE.values].forEach(function(store){
+        Object.keys(equipIndexShift).forEach(function(oldKey){
+          if(store[oldKey] !== undefined){
+            store[equipIndexShift[oldKey]] = store[oldKey];
+            delete store[oldKey];
+          }
+        });
+        // The old card-level key (if ever set) has nowhere meaningful to
+        // go now that Equipment isn't its own card — just drop it.
+        delete store['personal.1r'];
+      });
+      STATE.personalEquipMergedMigrated = true;
+    }
+    // Migration: I'M SAFE is back to being its own section (imsafe.1q)
+    // rather than a second card inside Personal (personal.1q) — renames
+    // both the card-level key and each of its six item keys so existing
+    // ticks aren't left stranded under the old prefix.
+    if(!STATE.imsafeSplitBackMigrated){
+      [STATE.checked, STATE.values].forEach(function(store){
+        Object.keys(store).forEach(function(key){
+          if(key === 'personal.1q' || key.indexOf('personal.1q.') === 0){
+            var newKey = 'imsafe.1q' + key.slice('personal.1q'.length);
+            store[newKey] = store[key];
+            delete store[key];
+          }
+        });
+      });
+      STATE.imsafeSplitBackMigrated = true;
+    }
   }catch(e){}
 })();
 function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); }catch(e){} }
@@ -1283,6 +1378,7 @@ function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(STATE)
 function groupChildResolved(card, i){
   var key = card.id+'.'+i;
   var child = card.children[i];
+  if(child.divider) return true;
   if(child.timenow) return !!STATE.values[key];
   if(child.hobbstacho){ var v = STATE.values[key] || {}; return !!(v.tacho && v.hobbs); }
   if(child.etobctot) return !!(STATE.global.etob || STATE.global.ctot) || !!STATE.checked[key];
@@ -1292,7 +1388,8 @@ function customItemResolved(card, idx){
   return !!STATE.checked[card.id+'.custom.'+idx];
 }
 function groupTotalCount(card){
-  return card.children.length + (STATE.customItems[card.id]||[]).length;
+  var dividerCount = card.children.filter(function(c){ return c.divider; }).length;
+  return (card.children.length - dividerCount) + (STATE.customItems[card.id]||[]).length;
 }
 function cardResolved(card){
   var s = STATE.checked[card.id];
@@ -1311,7 +1408,7 @@ function cardResolved(card){
   return false;
 }
 function groupChildDone(card){
-  var n = card.children.filter(function(_, i){ return groupChildResolved(card, i); }).length;
+  var n = card.children.filter(function(c, i){ return !c.divider && groupChildResolved(card, i); }).length;
   var custom = STATE.customItems[card.id] || [];
   n += custom.filter(function(_, i){ return customItemResolved(card, i); }).length;
   return n;
@@ -1348,6 +1445,22 @@ function sectionTotals(sec){
   sec.cards.forEach(function(c){ if(cardResolved(c)) done++; });
   return { total:total, done:done };
 }
+// True once every card across every phase under this heading is
+// resolved (go or n/a) — used to turn the top tab itself green, at a
+// glance, without opening it. A heading with no checklist phases at
+// all (Post Flight) or with nothing yet entered never counts as
+// "complete" — there's nothing to have finished.
+function headingComplete(heading){
+  if(!heading.phases.length) return false;
+  var anyTotal = false;
+  for(var i=0;i<heading.phases.length;i++){
+    var t = phaseTotals(heading.phases[i]);
+    if(t.total === 0) continue;
+    anyTotal = true;
+    if(t.done < t.total) return false;
+  }
+  return anyTotal;
+}
 
 /* ============================================================
    RENDER — phase row
@@ -1367,7 +1480,7 @@ function renderHeadingRow(){
   elHeadingRow.appendChild(notesBtn);
   HEADINGS.forEach(function(h){
     var btn = document.createElement('button');
-    btn.className = 'headingBtn' + (h.key===curHeading?' on':'');
+    btn.className = 'headingBtn' + (h.key===curHeading?' on':'') + (headingComplete(h)?' complete':'');
     btn.textContent = h.label;
     btn.addEventListener('click', function(){
       curHeading = h.key;
@@ -1485,6 +1598,8 @@ function render(){
   if(showingPhaseDone){
     elCard.style.display='none'; elSectDone.style.display='none'; elPhaseDone.style.display='flex';
     elSwitchBank.style.display='none';
+    document.getElementById('navPrev').classList.add('hidden');
+    document.getElementById('navNext').classList.add('hidden');
     var pt = phaseTotals(curPhase);
     var goN=0, naN=0;
     sections.forEach(function(s){ s.cards.forEach(function(c){ var v=STATE.checked[c.id]; if(v==='go')goN++; if(v==='na')naN++; }); });
@@ -1511,6 +1626,8 @@ function render(){
   if(showingSectDone){
     elCard.style.display='none'; elPhaseDone.style.display='none'; elSectDone.style.display='flex';
     elSwitchBank.style.display='none';
+    document.getElementById('navPrev').classList.add('hidden');
+    document.getElementById('navNext').classList.add('hidden');
     var st = sectionTotals(sec);
     var goN2=0, naN2=0;
     sec.cards.forEach(function(c){ var v=STATE.checked[c.id]; if(v==='go')goN2++; if(v==='na')naN2++; });
@@ -1528,6 +1645,14 @@ function render(){
   elSwitchBank.style.display='flex';
 
   var card = sec.cards[curCardIdx];
+  // Swipe arrows only make sense when there's actually more than one
+  // card to swipe between within this section (e.g. Personal, which
+  // holds Personal Currency / I'M SAFE / Personal Equipment as three
+  // separate cards) — hidden otherwise, so a single-card section
+  // doesn't show arrows that go nowhere.
+  var hasMultipleCards = sec.cards.length > 1;
+  document.getElementById('navPrev').classList.toggle('hidden', !hasMultipleCards);
+  document.getElementById('navNext').classList.toggle('hidden', !hasMultipleCards);
   var st2 = sectionTotals(sec);
   elSecName.textContent = sec.title;
   elGrpName.textContent = card.groupTitle || '';
@@ -1611,6 +1736,14 @@ function renderCard(card){
     html += '<div class="groupList">';
     var shownCount = 0;
     card.children.forEach(function(child, i){
+      if(child.divider){
+        // A pure visual separator — not tickable, never counted toward
+        // progress, and never hidden by "Hide Completed" (there's
+        // nothing to complete).
+        shownCount++;
+        html += '<div class="groupDivider"><span>'+escapeHtml(child.text)+'</span></div>';
+        return;
+      }
       if(STATE.hideCompleted && groupChildResolved(card, i)) return;
       shownCount++;
       var s = STATE.checked[card.id+'.'+i];
@@ -2332,8 +2465,8 @@ function fuelCalc(){
 // Calculations tab's Air Time card already reads), so this reflects the
 // flight as actually flown rather than the planned Trip figure.
 function fuelTimesCalc(c){
-  var takeoff = STATE.values['offblockspretakeoff.otpgrp.15'];
-  var landing = STATE.values['airborne.airbornegrp.0'];
+  var takeoff = STATE.values['airborne.airbornegrp.0'];
+  var landing = STATE.values['airborne.airbornegrp.1'];
   var airHr = timeDiffCalc(takeoff, landing);
   if(c.fob===null || airHr===null || c.burn<=0) return { val:null, airHr:airHr, tripActual:null };
   var tripActual = airHr * c.burn;
@@ -2510,7 +2643,7 @@ function renderTankHeaderBar(){
   var sel = STATE.tankSelected;
   var log = STATE.tankLog;
   var activeTank = log.length ? log[log.length-1].tank : null;
-  var landing = STATE.values['airborne.airbornegrp.0'];
+  var landing = STATE.values['airborne.airbornegrp.1'];
   // Once landed, nothing is "live" any more — just show the final static
   // total like the inactive tank. Otherwise the active tank's total is:
   // (accumulated hours from every entry before the last one) + a
@@ -3566,7 +3699,8 @@ function markAllGroup(card, m){
   // Only fill in items that aren't already decided — a bulk "ALL DONE"
   // shouldn't silently overwrite something already marked N/A (and vice
   // versa for "ALL N/A"); those decisions stand until changed by hand.
-  card.children.forEach(function(_, i){
+  card.children.forEach(function(child, i){
+    if(child.divider) return;
     var key = card.id+'.'+i;
     if(!STATE.checked[key]) STATE.checked[key] = m;
   });
@@ -3583,6 +3717,7 @@ function markAllGroup(card, m){
   var st = sectionTotals(curSection());
   elDoneCount.textContent = st.done;
   renderResults(); renderCalculations();
+  renderHeadingRow();
   setTimeout(function(){ advanceAfterAction(); }, 260);
 }
 
@@ -3599,6 +3734,7 @@ function mark(m){
   buildAnnunFor(curSection());
   var st = sectionTotals(curSection());
   elDoneCount.textContent = st.done;
+  renderHeadingRow();
   setTimeout(function(){
     advanceAfterAction();
   }, 220);
@@ -4069,11 +4205,11 @@ function renderPostFlightContent(doc, scale){
   spacer();
 
   var chocksOff = STATE.values['offblockspretakeoff.otpgrp.0'];
-  var takeoff = STATE.values['offblockspretakeoff.otpgrp.15'];
-  var landing = STATE.values['airborne.airbornegrp.0'];
-  var chocksOn = STATE.values['airborne.airbornegrp.1'];
+  var takeoff = STATE.values['airborne.airbornegrp.0'];
+  var landing = STATE.values['airborne.airbornegrp.1'];
+  var chocksOn = STATE.values['airborne.airbornegrp.2'];
   var tachoStartV = STATE.values['start.startgrp.1'] || {};
-  var tachoEndV = STATE.values['airborne.airbornegrp.5'] || {};
+  var tachoEndV = STATE.values['airborne.airbornegrp.6'] || {};
   var blockTime = timeDiffCalc(chocksOff, chocksOn);
   var airTime = timeDiffCalc(takeoff, landing);
   var tachoTime = (tachoStartV.tacho && tachoEndV.tacho) ? Math.round((parseFloat(tachoEndV.tacho)-parseFloat(tachoStartV.tacho))*10)/10 : null;
@@ -4239,9 +4375,9 @@ function archiveCurrentFlightToHistory(forceNew){
   var fd = STATE.flightDetails;
   if(!fd.date && !fd.registration && !fd.student) return;
   var offBlocks = STATE.values['offblockspretakeoff.otpgrp.0'] || '';
-  var takeoff = STATE.values['offblockspretakeoff.otpgrp.15'] || '';
-  var landing = STATE.values['airborne.airbornegrp.0'] || '';
-  var onBlocks = STATE.values['airborne.airbornegrp.1'] || '';
+  var takeoff = STATE.values['airborne.airbornegrp.0'] || '';
+  var landing = STATE.values['airborne.airbornegrp.1'] || '';
+  var onBlocks = STATE.values['airborne.airbornegrp.2'] || '';
   var entry = {
     date: fd.date, student: fd.student, registration: fd.registration,
     offBlocks: offBlocks, onBlocks: onBlocks, takeoff: takeoff, landing: landing,
@@ -4307,9 +4443,9 @@ function loadFlightFromHistory(idx){
     STATE.checked = {};
     STATE.values = {};
     STATE.values['offblockspretakeoff.otpgrp.0'] = h.offBlocks || '';
-    STATE.values['offblockspretakeoff.otpgrp.15'] = h.takeoff || '';
-    STATE.values['airborne.airbornegrp.0'] = h.landing || '';
-    STATE.values['airborne.airbornegrp.1'] = h.onBlocks || '';
+    STATE.values['airborne.airbornegrp.0'] = h.takeoff || '';
+    STATE.values['airborne.airbornegrp.1'] = h.landing || '';
+    STATE.values['airborne.airbornegrp.2'] = h.onBlocks || '';
     STATE.global = { etob:'', ctot:'', transponderCode:'' };
     STATE.tankLog = [];
     STATE.atisEntries = [];
@@ -4381,7 +4517,7 @@ function resetSecondFlight(){
   // alone below) and would otherwise collapse into a single overwritten
   // record instead of two.
   archiveCurrentFlightToHistory(true);
-  var prevEnd = STATE.values['airborne.airbornegrp.5'] || {};
+  var prevEnd = STATE.values['airborne.airbornegrp.6'] || {};
   Object.keys(STATE.checked).forEach(function(k){ if(isAirbourneCardKey(k)) delete STATE.checked[k]; });
   Object.keys(STATE.values).forEach(function(k){ if(isAirbourneCardKey(k)) delete STATE.values[k]; });
   // TEM lives under Pre-Flight, not Airbourne, but is per-flight in the
@@ -4690,6 +4826,7 @@ function collectDataEntries(cards, seenGlobal){
   cards.forEach(function(c){
     if(c.type !== 'grouplist') return;
     c.children.forEach(function(child, i){
+      if(child.divider) return;
       var key = c.id+'.'+i;
       var vObj = STATE.values[key];
       if(child.davis){
@@ -4895,7 +5032,7 @@ function nowUTCStrSecs(){
 // via tankTimeSegments) works exactly as before.
 function tankFuelStatus(){
   var c = fuelCalc();
-  var landing = STATE.values['airborne.airbornegrp.0'];
+  var landing = STATE.values['airborne.airbornegrp.1'];
   var endTime = landing || nowUTCStrSecs();
   var totals = tankTimeSegments(STATE.tankLog, endTime);
   var halfUplifted = c.uplifted/2;
@@ -5008,8 +5145,8 @@ function updateCountdown(){
   if(!row) return;
   var parts = [];
   var etob = STATE.global.etob, ctot = STATE.global.ctot;
-  var takeoff = STATE.values['offblockspretakeoff.otpgrp.15'];
-  var landing = STATE.values['airborne.airbornegrp.0'];
+  var takeoff = STATE.values['airborne.airbornegrp.0'];
+  var landing = STATE.values['airborne.airbornegrp.1'];
   // Take Off is the trigger, full stop — not gated on ETOB/CTOT existing
   // or having expired, since once you're actually airborne, watching a
   // pre-departure target time stops being the useful thing to show.
@@ -5109,11 +5246,11 @@ function renderCalculations(){
   var elCalcBody = document.getElementById('calcBody');
   if(!elCalcBody) return;
   var chocksOff = STATE.values['offblockspretakeoff.otpgrp.0'];
-  var takeoff = STATE.values['offblockspretakeoff.otpgrp.15'];
-  var landing = STATE.values['airborne.airbornegrp.0'];
-  var chocksOn = STATE.values['airborne.airbornegrp.1'];
+  var takeoff = STATE.values['airborne.airbornegrp.0'];
+  var landing = STATE.values['airborne.airbornegrp.1'];
+  var chocksOn = STATE.values['airborne.airbornegrp.2'];
   var tachoStartV = STATE.values['start.startgrp.1'] || {};
-  var tachoEndV = STATE.values['airborne.airbornegrp.5'] || {};
+  var tachoEndV = STATE.values['airborne.airbornegrp.6'] || {};
 
   var blockTime = timeDiffCalc(chocksOff, chocksOn);
   var airTime = timeDiffCalc(takeoff, landing);
@@ -5184,7 +5321,7 @@ function renderCalculations(){
       '<div class="legs"><span>Time on L <b>'+secsToHMS(ts.L.hrs*3600)+'</b></span><span>Time on R <b>'+secsToHMS(ts.R.hrs*3600)+'</b></span></div>';
     if(ts.fob!==null && ts.burn>0){
       html += '<div class="legs" style="margin-top:6px"><span>L remaining <b>'+fmtFuel(ts.L.qty)+'</b></span><span>R remaining <b>'+fmtFuel(ts.R.qty)+'</b></span></div>';
-      var shutdownV = STATE.values['airborne.airbornegrp.9'];
+      var shutdownV = STATE.values['airborne.airbornegrp.10'];
       var enteredUSG = (shutdownV && shutdownV.valUSG !== undefined && shutdownV.valUSG !== '') ? shutdownV.valUSG : null;
       var calcUSG = (ts.L.qty!==null && ts.R.qty!==null) ? (ts.L.qty + ts.R.qty) : null;
       if(enteredUSG !== null && calcUSG !== null){
