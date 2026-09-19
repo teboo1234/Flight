@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Briefing v1 — Pre-Flight Planning</title>
+<title>CheckDeck Briefing v2 — Pre-Flight Planning</title>
 <link rel="manifest" href="briefing-manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -247,6 +247,8 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .grTop{ display:flex; align-items:center; gap:10px; }
 .grLabel{ flex:1; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; color:var(--text); line-height:1.4; }
 .grLabel.prompt{ font-weight:800; font-size:14px; text-transform:uppercase; letter-spacing:.02em; color:var(--amber); }
+.cardTitle{ width:100%; font-family:'Syne',sans-serif; font-size:17px; font-weight:800; letter-spacing:.02em; text-transform:uppercase; color:var(--sky); text-align:left; margin:0 0 6px; }
+.cardTitle.emerg{ color:var(--rose); }
 .grNote{ margin-top:5px; font-size:11px; color:var(--muted); font-weight:500; line-height:1.4; }
 .grLaw{ display:inline-block; margin-left:6px; padding:2px 7px; border-radius:5px; background:var(--violet); color:#fff; font-size:9px; font-weight:800; letter-spacing:.08em; cursor:pointer; }
 .grBtns{ display:flex; gap:5px; flex-shrink:0; }
@@ -433,7 +435,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v1</div>
+  <div id="versionBadge">v2</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -760,7 +762,7 @@ var CHECKLIST_DATA = [
   { phase:'Weather', id:'sources', title:'Sources', items: [
     { id:'srcgrp', text:'Sources', type:'group', children:['Surface Pressure','Airmass Type','F214 — Spot Wind & Temperature','F215 — Significant Weather Chart','GAMET','Radar','Temperature','Skew T'] }
   ]},
-  { phase:'Weather', id:'weather', title:'Weather', items: [
+  { phase:'Weather', id:'weather', title:'Weather Checklist', items: [
     { id:'2a', text:'Weather calculations', type:'group', hasLaw:true, children:[
       'Crosswind & upper winds','Max drift','Convective activity','SIGMET','Visibility','Forecast single hold drift',
       {text:'Freezing level', keypad:'alt', unit:'ft'},
@@ -771,6 +773,9 @@ var CHECKLIST_DATA = [
       {text:'Density Altitude (DA)', keypad:'alt', unit:'ft'},
       {text:'Pressure Altitude (PA)', keypad:'alt', unit:'ft'}
     ] }
+  ]},
+  { phase:'Weather', id:'wxcalc', title:'Weather Calculations', items: [
+    { id:'wxcalcgrp', text:'Weather Calculations', type:'wxcalc' }
   ]},
   { phase:'SkillTest', id:'skill1', title:'Section 1 · Pre-flight Operations and Departure', items: [
     { id:'skillgrp1', text:'Section 1 · Pre-flight Operations and Departure', type:'group', children:[
@@ -1008,6 +1013,178 @@ var CHECKLIST_DATA = [
       'Ex 19 – Basic Instrument Flight'
     ] }
   ]},
+  /* ---- PA28 Cadet checklist (The Pilot Centre v8 12/22) — pages 2 & 3 ---- */
+  { phase:'PA28', id:'pa28norm', title:'Start to Hold', items: [
+    { id:'befstart', text:'Before Starting Engine', groupTitle:'Before Starting Engine', type:'group', children:[
+      'External Check — Completed',
+      'Door & Baggage Door — Closed',
+      'Parking Brake — Reset',
+      'Seat & Seatbelts — Adjusted/Secure',
+      'Ailerons & Stabilator — Check',
+      'Trimmer — Check',
+      'Flaps — Check',
+      'Circuit Breakers — Check',
+      'Radio Master Switch — Off',
+      'Battery Master Switch — On',
+      'Alternator — On',
+      'Nav lights — On'
+    ] },
+    { id:'startengine', text:'Starting Engine', groupTitle:'Starting Engine', type:'group', children:[
+      'Fuel Selector Valve — On',
+      'Fuel Pump — Audible/Fuel Pressure/Off',
+      'Mixture — Exercise, Set rich',
+      'Throttle — Exercise, Crack Open',
+      'Carburettor Heat — Exercise, Set cold',
+      'Engine — Key In (depending on engine temp), Prime 0-6 strokes',
+      'Propeller Area — Clear',
+      'Toe Brakes — On',
+      'Magneto Starter Switch — On/Start',
+      'Brakes — Holding',
+      'Starter Warning Light — Out',
+      'Oil Pressure — Green within 30 secs',
+      'Throttle — 1000 RPM',
+      'Alternator — Charging'
+    ] },
+    { id:'floodedstart', text:'Flooded Start', groupTitle:'Flooded Start', type:'group', children:[
+      'Mixture — ICO',
+      'Throttle — Full Open',
+      'Magneto Starter Switch — On/Start',
+      'Repeat start without additional priming'
+    ] },
+    { id:'afterstart', text:'After Engine Start', groupTitle:'After Engine Start', type:'group', children:[
+      'Radio Master Switch — On',
+      'Mixture — Lean as required',
+      'Magnetos — Check',
+      'Altimeter — Check Pressure Altitude, Set Airfield elevation',
+      'Transponder — STBY, crosscheck Pressure Altitude ±125’',
+      'Radios — Check, Set, Call',
+      'Flight Instruments — Check, both Altimeters +50’ -75’'
+    ] },
+    { id:'taxying', text:'Taxying', groupTitle:'Taxying', type:'group', children:[
+      'Brakes — Check',
+      'Flight Instruments — Check',
+      'Rudder — Check'
+    ] },
+    { id:'powercheck', text:'Power Check', groupTitle:'Power Check', type:'group', children:[
+      'PilotAware (Aux DC Power) — On',
+      'Brakes — On',
+      'Fuel Selector Valve — Change Tanks',
+      'Mixture — Rich',
+      'Throttle — Lookout, Set 2000 RPM',
+      'Magnetos — Maxdrop 175 / Maxdiff 50',
+      'Carburettor Heat — Hot (check positive drop in RPM), Cold (check RPM restored)',
+      'Temperature & Pressures — Green (accept oil temp if cold)',
+      'Alternator — Charging/No warning lights',
+      'Throttle — Check Idle 500-700 RPM, Reset 1000 RPM'
+    ] },
+    { id:'predeparture', text:'Pre-Departure Check', groupTitle:'Pre-Departure Check', type:'group', children:[
+      'Fuel — On Fullest Tank/Sufficient',
+      'Trimmers — Set',
+      'Flaps — As Required',
+      'Cabin Heat & Ventilation — Off & Set',
+      'Carburettor Heat — Cold',
+      'Throttle Friction — Set',
+      'Mixture — Rich',
+      'Fuel Pump — On',
+      'Primer — Locked',
+      'Engine Instruments — Check',
+      'Magnetos — Both',
+      'Radios — Set',
+      'Flight Instruments — Set',
+      'Seat & Seatbelts — Adjusted, Secure',
+      'Window & Door — Closed, Latched',
+      'Flying Controls — Full & free',
+      'Skydemon — Fly - Use PilotAware'
+    ] },
+    { id:'athold', text:'At The Hold', groupTitle:'At The Hold', type:'group', children:[
+      'Strobes & Recognition Lights — On',
+      'Pitot Heater — On (Temp < +10°C)',
+      'Nav lights — Off day',
+      'Landing light — On',
+      'Ice — Check for Carb Ice, reset cold',
+      'Time — Record',
+      'Transponder — Alt',
+      { text:'TAKE-OFF BRIEFING', prompt:true }
+    ] }
+  ]},
+  { phase:'PA28', id:'pa28emerg', title:'Emergency', items: [
+    { id:'engfail', text:'Engine Failure at Altitude', groupTitle:'Engine Failure at Altitude', type:'group', children:[
+      'Airspeed — 75 kts',
+      'Carburettor Heat — Hot',
+      'Fuel — Change Tanks/Pump ON',
+      'Mixture — Rich',
+      'Magnetos — Both',
+      'Primer — Locked',
+      'Engine — Ts & Ps'
+    ] },
+    { id:'forcedland', text:'Forced Landing', groupTitle:'Forced Landing', type:'group', children:[
+      'Airspeed — 75 kts (Flaps Up), 65 kts (Flaps Down)',
+      'Throttle — Closed',
+      'Mixture — Idle Cut Off',
+      'Fuel — Off/Pump Off',
+      'Magnetos — Off',
+      'MAYDAY (if time permits)',
+      'Battery Master Switch — Off',
+      'Flaps — As Required',
+      'Seatbelts — Tight',
+      'Doors — Unlatched'
+    ] },
+    { id:'elecoverload', text:'Electrical Overload', groupTitle:'Electrical Overload', type:'group', note:'>20A above known load', children:[
+      'Alternator — On',
+      'Battery Master Switch — Off',
+      'If load is reduced: Non-essential electrical equipment — Off',
+      'If load is reduced: Land — ASAP',
+      'If load is not reduced: Alternator — Off',
+      'If load is not reduced: Battery — As Required',
+      'If load is not reduced: Land — ASAP',
+      'Low voltage/ALT light on & ammeter zero: Non-essential electrical equipment — Off',
+      'Low voltage/ALT light on & ammeter zero: Alternator Switch — Off',
+      'Low voltage/ALT light on & ammeter zero: Alternator Circuit Breaker — Check in',
+      'Low voltage/ALT light on & ammeter zero: Alternator Switch — On',
+      'If low voltage light on: Alternator — Off',
+      'If low voltage light on: Non-essential electrical equipment — Off',
+      { text:'If low voltage light on: Land — ASAP', note:'Battery duration with minimum electrical load is approx. 30 mins.' }
+    ] },
+    { id:'firestart', text:'Engine Fire During Start', groupTitle:'Engine Fire During Start', type:'group', children:[
+      'Cranking — Continue to obtain a start, to suck flames and accumulated fuel into the engine',
+      'If engine starts: Power — 1700 RPM for 2 minutes',
+      'If engine starts: Engine — Shutdown',
+      'If engine fails to start: Mixture — Idle Cut Off',
+      'If engine fails to start: Throttle — Full open',
+      'If engine fails to start: Cranking — Continue to obtain start',
+      'If engine fails to start: Fuel — Off/Pump Off',
+      'If engine fails to start: Magnetos — Off',
+      'If engine fails to start: Battery Master Switch — Off',
+      { text:'Evacuate with fire extinguisher', prompt:true }
+    ] },
+    { id:'fireflight', text:'Engine Fire In Flight', groupTitle:'Engine Fire In Flight', type:'group', children:[
+      'Mixture — Idle Cut Off',
+      'Fuel — Off',
+      'Battery Master Switch — Off',
+      'Cabin Heat — Off',
+      'Airspeed — 85 kts',
+      'If fire persists: Flaps — Down',
+      { text:'If fire persists: Forced Landing', prompt:true }
+    ] },
+    { id:'cabinfire', text:'Cabin Fire', groupTitle:'Cabin Fire', type:'group', children:[
+      'Battery Master Switch — Off',
+      'Air Vents — Closed',
+      'Fire Extinguisher — Operate',
+      'Air Vents — Open, Ventilate Cabin'
+    ] },
+    { id:'ditching', text:'Ditching', groupTitle:'Ditching', type:'group', children:[
+      'MAYDAY — frequency in use/121.5',
+      'Transponder — 7700',
+      'Heavy objects — Secure or jettison',
+      'High wind/heavy seas — Ditch into wind',
+      'Light wind/heavy swell — Parallel swell',
+      'Doors — Unlatched',
+      'Land — Level attitude',
+      'Face — Cushion at touchdown with folded coat/seat cushion',
+      'Evacuate — If necessary open windows & flood cabin to open door',
+      'Life jacket — Inflate outside cabin'
+    ] }
+  ]},
   { phase:'AircraftRef', id:'aircraftref', title:'Aircraft Reference', items: [
     { id:'aircraftrefgrp', text:'Aircraft Reference', type:'aircraftref' }
   ]},
@@ -1016,14 +1193,19 @@ var CHECKLIST_DATA = [
 /* ============================================================
    FLATTEN into one card per checkable thing
    ============================================================ */
-var PHASES = ['Weather','Navigation','Planning','Fuel','PaxBrief','SkillTest','GroundSyllabus','AirSyllabus','AircraftRef'];
+var PHASES = ['Planning','Weather','Navigation','PaxBrief','Fuel','AircraftRef','PA28','SkillTest','GroundSyllabus','AirSyllabus'];
 // Four headings — everything here is pre-flight planning, so there's no
 // Airbourne/Post Flight distinction the way the Flight app needs.
+// Order follows an actual prep flow: are you legal and current (Planning)
+// before anything else matters -> is the weather flyable -> detailed
+// route work -> brief the passengers -> fuel the aircraft. Reference
+// material (aircraft data, training progress) sits after, since neither
+// is something you work through per-flight the way Briefing/Fuel are.
 var HEADINGS = [
-  { key:'Briefing', label:'BRIEFING', phases:['Weather','Navigation','Planning','PaxBrief'] },
+  { key:'Briefing', label:'BRIEFING', phases:['Planning','Weather','Navigation','PaxBrief'] },
   { key:'FuelH', label:'FUEL', phases:['Fuel'] },
-  { key:'ReadinessH', label:'READINESS', phases:['SkillTest','GroundSyllabus','AirSyllabus'] },
-  { key:'ReferenceH', label:'REFERENCE', phases:['AircraftRef'] }
+  { key:'ReferenceH', label:'REFERENCE', phases:['AircraftRef','PA28'] },
+  { key:'ReadinessH', label:'READINESS', phases:['SkillTest','GroundSyllabus','AirSyllabus'] }
 ];
 var curHeading = 'Briefing';
 var curMode = 'card';
@@ -1069,6 +1251,7 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
           children: children
         };
         if(item.hasLaw){ card.hasLaw = true; card.lawKey = item.id; }
+        if(item.groupTitle){ card.groupTitle = item.groupTitle; }
         sec.cards.push(card);
         ALLCARDS[card.id] = card;
       } else {
@@ -1081,6 +1264,7 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
         if(item.type === 'timeNow'){ card.type = 'timenow'; }
         if(item.type === 'fuelplan'){ card.type = 'fuelplan'; }
         if(item.type === 'aircraftref'){ card.type = 'aircraftref'; }
+        if(item.type === 'wxcalc'){ card.type = 'wxcalc'; }
         if(item.type === 'apisettings'){ card.type = 'apisettings'; }
         if(item.type === 'savedflights'){ card.type = 'savedflights'; }
         if(item.type === 'atis'){ card.type = 'atis'; }
@@ -1231,6 +1415,41 @@ function loadAcProfiles(){
 }
 function saveAcProfiles(p){
   try { localStorage.setItem(AC_STORAGE_KEY, JSON.stringify(p)); } catch(e){}
+}
+// Duplicate-field sync — several values (Freezing level, Cloud base/top,
+// MSA buffer, DA, PA, Planned cruise) are asked for in more than one
+// place across the app. Rather than making the person enter each one
+// twice, editing either copy writes through to the other automatically.
+var DUP_FIELD_SYNC = {
+  'weather.2a.6':  { cardKey:'weather.wxcalcgrp', field:'fl' },
+  'weather.2a.7':  { cardKey:'weather.wxcalcgrp', field:'cbase' },
+  'weather.2a.8':  { cardKey:'weather.wxcalcgrp', field:'ctop' },
+  'weather.2a.9':  { cardKey:'weather.wxcalcgrp', field:'msabuf' },
+  'weather.2a.11': { cardKey:'weather.wxcalcgrp', field:'da' },
+  'weather.2a.12': { cardKey:'weather.wxcalcgrp', field:'pa' }
+};
+var DUP_FIELD_SYNC_REVERSE = { fl:'weather.2a.6', cbase:'weather.2a.7', ctop:'weather.2a.8', msabuf:'weather.2a.9', da:'weather.2a.11', pa:'weather.2a.12' };
+function syncDuplicateFromGrKeypad(key, val){
+  var rule = DUP_FIELD_SYNC[key];
+  if(!rule) return;
+  var v = STATE.values[rule.cardKey] || {};
+  v[rule.field] = val;
+  STATE.values[rule.cardKey] = v;
+}
+function syncDuplicateFromWxCalc(field, val){
+  var targetKey = DUP_FIELD_SYNC_REVERSE[field];
+  if(targetKey){ STATE.values[targetKey] = { val: val }; return; }
+  if(field === 'cruise'){
+    // "Planned cruising level" (Planning > Flight) can be viewed in ft or
+    // FL, but is always stored internally in feet as valFt — so writing
+    // the wxcalc side (always feet) straight into valFt keeps whichever
+    // display unit was already chosen there.
+    var cv = STATE.values['planning.flightgrp.1'] || {};
+    cv.unit = cv.unit || 'ft';
+    var n = parseFloat(val);
+    cv.valFt = isNaN(n) ? '' : n;
+    STATE.values['planning.flightgrp.1'] = cv;
+  }
 }
 var STORE_KEY = 'checkdeck_briefing_state_v1';
 var USG_TO_L = 3.785;
@@ -1438,7 +1657,7 @@ function renderHeadingRow(){
 // Only needed where the internal phase key isn't already good display
 // text (e.g. camelCase used as a plain identifier) — anything absent here
 // just falls back to showing its own key.
-var PHASE_LABELS = { PaxBrief: 'Pax Brief', SkillTest: 'Skill Test', GroundSyllabus: 'Ground Syllabus', AirSyllabus: 'Air Syllabus', AircraftRef: 'Aircraft Reference' };
+var PHASE_LABELS = { PaxBrief: 'Pax Brief', SkillTest: 'Skill Test', GroundSyllabus: 'Ground Syllabus', AirSyllabus: 'Air Syllabus', AircraftRef: 'Aircraft Reference', PA28: 'PA28 Cadet' };
 function renderPhaseRow(){
   elPhaseRow.innerHTML = '';
   var heading = HEADINGS.filter(function(h){ return h.key === curHeading; })[0];
@@ -1586,6 +1805,7 @@ function buildAnnunFor(sec){
 
 function renderCard(card){
   var html = '';
+  if(card.groupTitle) html += '<div class="cardTitle'+(card.id.indexOf('pa28emerg.')===0?' emerg':'')+'">'+escapeHtml(card.groupTitle)+'</div>';
   if(card.note) html += '<div class="note">'+escapeHtml(card.note)+'</div>';
   if(card.hasLaw){
     html += '<div class="law" id="lawBadge">LAW &middot; TAP TO VIEW</div>';
@@ -1744,6 +1964,8 @@ function renderCard(card){
     html += renderFuelPlanHtml(card.id);
   } else if(card.type === 'aircraftref'){
     html += renderAircraftRefHtml();
+  } else if(card.type === 'wxcalc'){
+    html += renderWxCalcHtml(card.id);
   } else if(card.type === 'apisettings'){
     html += renderApiSettingsHtml();
   } else if(card.type === 'savedflights'){
@@ -1753,7 +1975,7 @@ function renderCard(card){
   }
 
   elCard.innerHTML = html;
-  elCard.classList.toggle('list-mode', card.type === 'grouplist' || card.type === 'fuelplan' || card.type === 'aircraftref' || card.type === 'apisettings' || card.type === 'savedflights' || card.type === 'atis');
+  elCard.classList.toggle('list-mode', card.type === 'grouplist' || card.type === 'fuelplan' || card.type === 'aircraftref' || card.type === 'wxcalc' || card.type === 'apisettings' || card.type === 'savedflights' || card.type === 'atis');
   requestAnimationFrame(updateScrollHint);
 
   var lawBadge = document.getElementById('lawBadge');
@@ -1819,6 +2041,7 @@ function renderCard(card){
         var i = inp.getAttribute('data-i');
         var key = card.id+'.'+i;
         STATE.values[key] = { val: inp.value };
+        syncDuplicateFromGrKeypad(key, inp.value);
         saveState(); renderResults(); renderCalculations();
         if(inp.value) autoTickRow(parseInt(i,10));
       });
@@ -1831,6 +2054,11 @@ function renderCard(card){
         var n = parseFloat(inp.value);
         v.valFt = isNaN(n) ? '' : (v.unit==='FL' ? n*100 : n);
         STATE.values[key] = v;
+        if(key === 'planning.flightgrp.1'){
+          var wc = STATE.values['weather.wxcalcgrp'] || {};
+          wc.cruise = v.valFt === '' ? '' : String(v.valFt);
+          STATE.values['weather.wxcalcgrp'] = wc;
+        }
         saveState(); renderResults(); renderCalculations();
         var bigVal = document.getElementById('grBigVal'+i);
         if(bigVal) bigVal.textContent = v.valFt==='' ? '\u2014' : fmtVal(parseFloat(v.valFt), v.unit);
@@ -2203,6 +2431,8 @@ function renderCard(card){
     }
   } else if(card.type === 'aircraftref'){
     wireAircraftRef(card);
+  } else if(card.type === 'wxcalc'){
+    wireWxCalc(card);
   } else if(card.type === 'apisettings'){
     wireApiSettings();
   } else if(card.type === 'savedflights'){
@@ -3197,6 +3427,143 @@ function wireAircraftRef(card){
       renderCard(card);
     });
   });
+}
+// Weather Calculations (Advanced) — ported from FlightDeck V2-1's
+// Weather tab, minus anything that needs a live fetch: no METAR/TAF
+// pull, no auto QNH-from-fetch. Everything here is entered by hand and
+// the drift/ISA/wind-component figures are computed live from it.
+var WX_ISA_BASE = { Surf:15, W1k:13, W2k:11, W5k:5, W10k:-5 };
+var WX_LEVEL_LABELS = { Surf:'Surface', W1k:"1000'", W2k:"2000'", W5k:"5000'", W10k:"10,000'" };
+function wxParseWind(w){
+  if(!w) return null;
+  var m = String(w).trim().match(/^(\d{1,3})\/(\d{1,2})(?:G(\d{1,2}))?$/);
+  if(!m) return null;
+  return { dir: parseInt(m[1],10), spd: parseInt(m[2],10) };
+}
+function wxRwyWind(rwyNum, windDir, windSpd){
+  var r = parseFloat(rwyNum)*10;
+  var d = parseFloat(windDir);
+  var s = parseFloat(windSpd);
+  if(isNaN(r)||isNaN(d)||isNaN(s)) return null;
+  var angle = (d - r) * Math.PI / 180;
+  var hw = s * Math.cos(angle);
+  var xw = s * Math.sin(angle);
+  return {
+    hwAbs: Math.round(Math.abs(hw)), hwLabel: hw >= 0 ? 'HW' : 'TW',
+    xwAbs: Math.round(Math.abs(xw)), xwLabel: xw >= 0 ? 'R' : 'L'
+  };
+}
+function renderWxCalcHtml(cardId){
+  var v = STATE.values[cardId] || {};
+  function fld(key, label, ph, width){
+    return '<div class="fpField" style="flex:0 0 '+(width||'auto')+'"><label>'+label+'</label>'+
+      '<input type="text" class="wxCalcFld" data-k="'+key+'" placeholder="'+(ph||'')+'" value="'+escapeHtml(v[key]||'')+'"/></div>';
+  }
+  var html = '<div style="width:100%">';
+  html += '<div class="fpBlock" style="border-color:var(--sky);width:100%"><div class="fpBlockTitle" style="color:var(--sky)">Planning</div>'+
+    '<div class="fpFieldsRow" style="margin-top:8px">'+fld('tas','TAS (kt)','90','90px')+'</div>'+
+  '</div>';
+  html += '<div class="fpBlock violet" style="margin-top:12px;width:100%"><div class="fpBlockTitle">Wind &amp; Temperature</div>';
+  ['Surf','W1k','W2k','W5k','W10k'].forEach(function(k){
+    html += '<div class="fpFieldsRow" style="margin-top:8px;align-items:flex-end">'+
+      '<div class="fpField" style="flex:0 0 64px"><label>&nbsp;</label><div style="font-family:\'JetBrains Mono\',monospace;font-weight:800;font-size:12px;color:var(--text);padding:9px 0">'+WX_LEVEL_LABELS[k]+'</div></div>'+
+      fld('wind'+k, 'Wind (ddd/ss)', 'e.g. 250/12')+
+      fld('temp'+k, 'Temp (\u00b0C)', 'e.g. -5')+
+    '</div>';
+  });
+  html += '</div>';
+  // Winds Aloft (auto) — drift, temp, ISA delta
+  html += '<div class="fpBlock" style="border-color:var(--violet);margin-top:12px;width:100%"><div class="fpBlockTitle" style="color:var(--violet)">Winds Aloft (auto)</div>'+
+    '<div style="display:grid;grid-template-columns:74px 1fr 1fr 1fr;gap:4px 8px;font-family:\'JetBrains Mono\',monospace;font-size:11px;margin-top:8px">'+
+      '<div style="color:var(--muted);font-weight:700">Level</div>'+
+      '<div style="color:var(--muted);font-weight:700;text-align:right">Drift</div>'+
+      '<div style="color:var(--muted);font-weight:700;text-align:right">Temp</div>'+
+      '<div style="color:var(--muted);font-weight:700;text-align:right">ISA &Delta;</div>';
+  ['Surf','W1k','W2k','W5k','W10k'].forEach(function(k){
+    html += '<div style="font-weight:700;color:var(--text)">'+WX_LEVEL_LABELS[k]+'</div>'+
+      '<div id="wxDrift'+k+'" style="color:var(--violet);text-align:right;font-weight:800">--</div>'+
+      '<div id="wxTempDisp'+k+'" style="color:var(--sky);text-align:right;font-weight:800">--</div>'+
+      '<div id="wxIsa'+k+'" style="color:var(--amber);text-align:right;font-weight:800">--</div>';
+  });
+  html += '</div></div>';
+  // Runways
+  html += '<div class="fpBlock" style="margin-top:12px;width:100%"><div class="fpBlockTitle">Runways (01&ndash;36)</div>'+
+    '<div class="fpFieldsRow" style="margin-top:8px">'+fld('rwy1','Runway 1','09','70px')+fld('rwy2','Runway 2','27','70px')+'</div>'+
+    '<div class="fpFieldsRow" style="margin-top:8px">'+fld('rwy3','Runway 3','','70px')+fld('rwy4','Runway 4','','70px')+'</div>'+
+  '</div>';
+  // Wind Components (auto)
+  html += '<div class="fpBlock" style="border-color:var(--violet);margin-top:12px;width:100%"><div class="fpBlockTitle" style="color:var(--violet)">Wind Components (auto, from Surface wind)</div>'+
+    '<div id="wxComponents" style="margin-top:8px;display:flex;flex-direction:column;gap:6px"></div>'+
+  '</div>';
+  // Weather Calculations
+  html += '<div class="fpBlock amber" style="margin-top:12px;width:100%"><div class="fpBlockTitle">Weather Calculations</div>'+
+    '<div class="fpFieldsRow" style="margin-top:8px">'+fld('cruise','Planned cruise (ft)','','90px')+fld('fl','Freezing level (ft)','','90px')+'</div>'+
+    '<div id="wxCruiseFlDelta" style="margin-top:8px;padding:6px 10px;background:rgba(180,83,9,.08);border:1px solid rgba(180,83,9,.25);border-radius:6px;font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--amber);display:flex;justify-content:space-between"><span>Cruise &minus; Freezing Level</span><span id="wxCruiseFlDeltaVal" style="font-weight:800">--</span></div>'+
+    '<div class="fpFieldsRow" style="margin-top:8px">'+fld('cbase','Cloud base (ft)','','90px')+fld('ctop','Cloud top (ft)','','90px')+'</div>'+
+    '<div class="fpFieldsRow" style="margin-top:8px">'+fld('msabuf','MSA-freeze buffer (ft)','','90px')+'</div>'+
+    '<div class="fpFieldsRow" style="margin-top:8px">'+fld('da','Density Altitude (ft)','','90px')+fld('pa','Pressure Altitude (ft)','','90px')+'</div>'+
+  '</div>';
+  html += '</div>';
+  return html;
+}
+function updateWxCalcAuto(cardId){
+  var v = STATE.values[cardId] || {};
+  var tas = parseFloat(v.tas);
+  ['Surf','W1k','W2k','W5k','W10k'].forEach(function(k){
+    var w = wxParseWind(v['wind'+k]);
+    var driftEl = document.getElementById('wxDrift'+k);
+    if(driftEl) driftEl.textContent = (w && !isNaN(tas) && tas>0) ? ((w.spd/tas)*60).toFixed(1)+'\u00b0' : '--';
+    var t = v['temp'+k];
+    var tn = (t===undefined||t==='') ? NaN : parseFloat(t);
+    var tempEl = document.getElementById('wxTempDisp'+k);
+    if(tempEl) tempEl.textContent = isNaN(tn) ? '--' : (tn>0?'+':'')+tn+'\u00b0C';
+    var isaEl = document.getElementById('wxIsa'+k);
+    if(isaEl){
+      var dev = isNaN(tn) ? null : (tn - WX_ISA_BASE[k]);
+      isaEl.textContent = dev===null ? '--' : (dev>0?'+':'')+dev.toFixed(0)+'\u00b0';
+    }
+  });
+  var comp = document.getElementById('wxComponents');
+  if(comp){
+    var surfWind = wxParseWind(v.windSurf);
+    var rows = [];
+    ['rwy1','rwy2','rwy3','rwy4'].forEach(function(rk){
+      var rwy = v[rk];
+      if(!rwy) return;
+      if(!surfWind){ rows.push('<div class="fpBlockNote">RW'+escapeHtml(rwy)+': enter Surface wind to compute</div>'); return; }
+      var c = wxRwyWind(rwy, surfWind.dir, surfWind.spd);
+      if(!c) return;
+      rows.push('<div class="legs"><span>RW'+escapeHtml(rwy)+'</span><span><b>'+c.hwAbs+'kt '+c.hwLabel+'</b> &middot; <b>'+c.xwAbs+'kt X'+c.xwLabel+'</b></span></div>');
+    });
+    comp.innerHTML = rows.length ? rows.join('') : '<div class="fpBlockNote">Enter a runway and Surface wind to see components.</div>';
+  }
+  var cruise = parseFloat(v.cruise), fl = parseFloat(v.fl);
+  var deltaEl = document.getElementById('wxCruiseFlDeltaVal');
+  if(deltaEl) deltaEl.textContent = (!isNaN(cruise) && !isNaN(fl)) ? (cruise-fl>=0?'+':'')+(cruise-fl)+' ft' : '--';
+}
+function wireWxCalc(card){
+  var cardId = card.id;
+  document.querySelectorAll('.wxCalcFld').forEach(function(inp){
+    inp.addEventListener('input', function(){
+      var field = inp.getAttribute('data-k');
+      var v = STATE.values[cardId] || {};
+      v[field] = inp.value;
+      STATE.values[cardId] = v;
+      syncDuplicateFromWxCalc(field, inp.value);
+      saveState();
+      updateWxCalcAuto(cardId);
+      if(inp.value) autoTickCardById(cardId);
+    });
+  });
+  updateWxCalcAuto(cardId);
+}
+function autoTickCardById(cardId){
+  if(STATE.checked[cardId] !== 'go'){
+    STATE.checked[cardId] = 'go'; saveState();
+    buildAnnunFor(curSection());
+    var st = sectionTotals(curSection());
+    elDoneCount.textContent = st.done;
+  }
 }
 function renderFuelPlanHtml(cardId){
   var f = STATE.fuel, u = f.unit, c = fuelCalc();
