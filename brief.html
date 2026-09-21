@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Briefing v11 — Pre-Flight Planning</title>
+<title>CheckDeck Briefing v12 — Pre-Flight Planning</title>
 <link rel="manifest" href="briefing-manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -59,11 +59,12 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .refText .refP.l2{ margin-left:1.6em; }
 .refText .refP.l3{ margin-left:3.4em; }
 .refText .refP.l3 .refN{ min-width:1em; }
+.refText .refSH{ margin:16px 0 8px; font-weight:800; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--sky); }
 .refText .refGap{ margin-top:14px; font-weight:700; }
 .headingSub{ padding:5px 12px; background:var(--surface); border-bottom:1px solid var(--border); font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:.02em; line-height:1.35; color:var(--muted); }
 .headingBtn:last-child{ border-right:none; }
 .headingBtn.on{ background:var(--sky); color:#fff; }
-@media (max-width:430px){ .headingBtn{ font-size:9px; letter-spacing:0; } .notesBtnHeading{ flex-basis:33px; font-size:14px; } .resetBtnHeading{ font-size:16px !important; } }
+@media (max-width:430px){ .headingBtn{ font-size:8.5px; letter-spacing:0; flex:1 1 auto; padding:0 2px; } .notesBtnHeading{ flex-basis:33px; font-size:14px; } .resetBtnHeading{ font-size:16px !important; } }
 .phaseRow{ display:flex; gap:6px; height:38px; overflow-x:auto; padding:0 10px; align-items:center; border-bottom:1px solid var(--border); }
 .phaseBtn{ flex:0 0 auto; position:relative; isolation:isolate; overflow:hidden; padding:6px 13px; border:2px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; letter-spacing:.04em; white-space:nowrap; cursor:pointer; }
 .phaseBtn.on, .sectionBtn.on{ border-color:var(--sky); box-shadow:0 0 0 2px rgba(3,105,161,.35); }
@@ -446,7 +447,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v11</div>
+  <div id="versionBadge">v12</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="headingSub" id="headingSub" style="display:none"></div>
@@ -1340,6 +1341,137 @@ var CHECKLIST_DATA = [
       "Complete the appropriate form to notify the CAA of the revalidation of the class rating"
     ] }
   ]},
+  /* ---- Common GA emergencies (UK) — AAIB / CAA ---- */
+  { phase:'EmOverview', id:'emov', title:'AAIB', items: [
+    { id:'emovtxt', text:'AAIB', type:'reftext', refHtml:"<div class=\"refH\">What UK AAIB reports show</div><div class=\"refP l0\"><span>A briefing aid built from AAIB and CAA material. The aircraft POH/AFM and your operator’s checklists always take precedence. PA28 Cadet emergency checklists are in Reference → PA28 Cadet → Emergency.</span></div><div class=\"refSH\">The numbers</div><div class=\"refP l1\"><span class=\"refN\">•</span><span>2025 (AAIB Annual Safety Review, published 4 June 2026): 783 occurrence notifications; 12 fatal accidents in the UK with 18 deaths, one of them a commercial air transport accident.</span></div><div class=\"refP l1\"><span class=\"refN\">•</span><span>2024: 10 fatal accidents and 11 deaths, all in general aviation — eight light aircraft and two gliders.</span></div><div class=\"refP l1\"><span class=\"refN\">•</span><span>Loss of control in flight has been the prevalent cause of fatal accidents. In the 2021 review most involved loss of control at low speed close to the ground, or inadvertent entry into cloud by pilots without an IMC rating.</span></div><div class=\"refP l1\"><span class=\"refN\">•</span><span>CAA Annual Safety Review 2024 (CAP 3146): reportable GA accidents and serious incidents divide into pilot performance (insufficient preparation, poor handling in critical phases) and technical malfunctions such as engine failure.</span></div><div class=\"refSH\">Recent AAIB cases behind this tab</div><div class=\"refP l1\"><span class=\"refN\">•</span><span>G-BVNS, Piper PA-28-181, Prestwick, 23 Apr 2024 — power loss on right base; report considers carburettor icing and carb heat use.</span></div><div class=\"refP l1\"><span class=\"refN\">•</span><span>G-BBSA, Grumman AA-5, Teesside, 25 Sep 2021 — partial power loss just after take-off; turnback attempted; stalled in the turn.</span></div><div class=\"refP l1\"><span class=\"refN\">•</span><span>G-RGSK, Cirrus SR22T, Duxford, 26 Mar 2024 — bounced landing, go-around; stall warning, uncontrolled yaw and roll left; struck the ground.</span></div><div class=\"refP l1\"><span class=\"refN\">•</span><span>N761JU, Cessna T210M, Leeds East, 11 Apr 2024 — take-off attempted with close to full nose-down trim; possible autopilot trim fault.</span></div><div class=\"refP l1\"><span class=\"refN\">•</span><span>G-BMSB, Spitfire IXT, 3 May 2025 — fuel-related power loss; controlled wheels-up forced landing.</span></div><div class=\"refSH\">Where to read more</div><div class=\"refP l1\"><span class=\"refN\">•</span><span>AAIB Annual Safety Review 2025 and the individual AAIB reports and bulletins (gov.uk/aaib-reports).</span></div><div class=\"refP l1\"><span class=\"refN\">•</span><span>CAA Safety Sense Leaflets: piston engine icing (SSL 14), VFR flight into IMC (SSL 33, CAP 2562), carbon monoxide safety, fuel handling.</span></div><div class=\"refP l1\"><span class=\"refN\">•</span><span>CAA Skywise alerts — the CAA has committed to publish GA autopilot guidance following AAIB Safety Recommendation 2025-009.</span></div>" }
+  ]},
+  { phase:"EmEngine", id:"empower", title:"Power loss", items: [
+    { id:"emcruise", text:"Engine failure / power loss in flight", groupTitle:"Engine failure / power loss in flight", type:'group', note:"AAIB G-BMSB (Spitfire IXT, 3 May 2025): fuel-related power loss — stable glide, passenger briefed, controlled wheels-up field landing", children:[
+      "Aviate first — trim for best glide speed (POH) before working the problem",
+      "Choose a landing field early — into wind, long, clear of obstacles — and commit to it",
+      "Run the POH engine failure checks: carb heat, fuel selector and pump, mixture, magnetos, primer, temps & pressures",
+      "Fuel smell, vibration or roughness before the failure is a serious warning — do not ignore it",
+      "MAYDAY on the frequency in use or 121.5 and squawk 7700, time permitting",
+      "Brief passengers — harnesses tight, doors unlatched before touchdown",
+      "Forced landing checks per POH: fuel off, mixture idle cut-off, magnetos off, master off"
+    ] },
+    { id:"emtakeoff", text:"Power loss after take-off", groupTitle:"Power loss after take-off", type:'group', note:"AAIB G-BBSA (Grumman AA-5, Teesside, 25 Sep 2021): partial power loss just after take-off; turnback attempted; the aircraft stalled in the turn", children:[
+      "Brief before every take-off — the height below which you will not turn back; below it, land ahead",
+      "Nose down immediately — flying speed comes before everything else",
+      "Do not turn back low and slow — banking raises the stall speed",
+      "Choose a landing area ahead, or a small angle either side of the nose",
+      "A partial power loss is harder than a total one — decide early whether the power is usable",
+      "Practise partial power loss with an instructor (AAIB Safety Recommendation 2022-005)",
+      "Carb heat, fuel and mixture only if height allows — never at the expense of control"
+    ] }
+  ]},
+  { phase:"EmEngine", id:"emicing", title:"Icing & Fuel", items: [
+    { id:"emcarb", text:"Carburettor icing", groupTitle:"Carburettor icing", type:'group', note:"AAIB G-BVNS (PA-28-181, Prestwick, 23 Apr 2024): power loss on right base; the report considers carb icing and the use of carb heat", children:[
+      "Check the CAA piston engine icing risk chart (Safety Sense Leaflet 14) — icing can form in warm, humid air, not just in cold weather",
+      "Power check: carb heat HOT — positive RPM drop; COLD — RPM restored",
+      "Apply carb heat before reducing power for the descent, and on the pre-landing checks",
+      "Symptoms: RPM drop, rough running, loss of power — apply full carb heat and leave it on; expect roughness before it improves",
+      "Keep carb heat hot in a glide to a forced landing",
+      "The AAIB report also highlights revalidation — use the refresher flight to review icing recognition"
+    ] },
+    { id:"emfuel", text:"Fuel starvation & exhaustion", groupTitle:"Fuel starvation & exhaustion", type:'group', note:"Starvation: fuel on board but not reaching the engine. Exhaustion: no usable fuel left", children:[
+      "Plan fuel with reserves — know the burn rate and check it in flight against time and tank",
+      "Pre-flight: visual check of contents, drain every sample point for water, sediment and colour, caps secure",
+      "Manage tanks — change at planned intervals and keep a log; know the selector positions",
+      "Fuel pump on for take-off, below 1000 ft AGL and for landing (per POH)",
+      "Power loss with fuel on board: change tank, pump on, mixture rich, carb heat",
+      "Divert early and land with your reserve intact — do not stretch it"
+    ] }
+  ]},
+  { phase:"EmControl", id:"emloc", title:"Stall & Control", items: [
+    { id:"emloc1", text:"Loss of control — stall", groupTitle:"Loss of control — stall", type:'group', note:"AAIB: loss of control is the prevalent cause of fatal UK GA accidents — often at low speed close to the ground", children:[
+      "Stall warning or buffet: nose down first, then power — reduce the angle of attack",
+      "Keep the ball centred — use rudder to stop yaw, especially at high power and low speed",
+      "No steep turns at low height and low speed — base to final and go-around turns are the trap",
+      "Fly accurate approach speeds; go around early rather than salvage a poor approach",
+      "Stalls in different configurations and at different flight stages — practise them (GM2 FCL.740.A)",
+      "Pre-stall checks (HASELL) done — recover by 2500 ft AGL"
+    ] },
+    { id:"embounce", text:"Bounced landing & go-around", groupTitle:"Bounced landing & go-around", type:'group', note:"AAIB G-RGSK (Cirrus SR22T, Duxford, 26 Mar 2024): bounce on a touch-and-go; full-power go-around; nose raised, stall warning, uncontrolled yaw and roll left; the aircraft struck the ground", children:[
+      "Brief the go-around before every landing — power, attitude, configuration",
+      "Bounce: small — hold attitude and add power to cushion; large or uncontrolled — go around at once",
+      "Go-around: apply power smoothly and control the yaw with rudder as the power comes in",
+      "Hold a safe pitch attitude — do not over-rotate; the AAIB found the aircraft approached the stall as the nose was raised",
+      "Expect a large trim change — retrim, keep the wings level, and no turns until speed and height are safe",
+      "Stall warning during the go-around: lower the nose, wings level, ball centred"
+    ] },
+    { id:"emtrim", text:"Trim runaway & autopilot failure", groupTitle:"Trim runaway & autopilot failure", type:'group', note:"AAIB N761JU (Cessna T210M, Leeds East, 11 Apr 2024): take-off attempted with close to full nose-down trim; possible autopilot trim fault; no autopilot abnormal procedures in the POH. AAIB Safety Recommendation 2025-009: CAA to publish GA autopilot guidance", children:[
+      "Before take-off: look at the trim indicator and set it for take-off — a visual check, every time",
+      "Autopilot: know how to disconnect it (yoke switch, circuit breaker, master) and test it pre-flight per the POH",
+      "Trim runaway: disconnect the autopilot and trim system, hold the aircraft with the controls, retrim manually",
+      "Expect high control forces — fly the aeroplane before looking for the cause",
+      "Know the autopilot failure actions even if the POH has none — check the CAA guidance (Skywise)"
+    ] }
+  ]},
+  { phase:"EmControl", id:"emimc", title:"IMC", items: [
+    { id:"emimc1", text:"Inadvertent IMC & spatial disorientation", groupTitle:"Inadvertent IMC & spatial disorientation", type:'group', note:"CAA Safety Sense Leaflet 33 (CAP 2562): when an unqualified pilot enters IMC, loss of control or flight into terrain often results", children:[
+      "Plan to avoid it — check weather trends and cloud base over high ground, set personal minima, agree a decision point and an escape route",
+      "Turn back early while visual references remain — do not press on into deteriorating weather",
+      "If cloud is entered: on to instruments at once — wings level, ball centred, hold altitude",
+      "Standard-rate 180° turn on instruments to regain VMC — practise it (GM2 FCL.740.A)",
+      "Trust the instruments — the senses give false cues (the leans, graveyard spiral)",
+      "Tell ATC early — request assistance; MAYDAY and squawk 7700 if needed"
+    ] }
+  ]},
+  { phase:"EmSystems", id:"emsys", title:"Systems", items: [
+    { id:"emelec", text:"Electrical & radio failure", groupTitle:"Electrical & radio failure", type:'group', note:"PA28 Cadet checklist: Reference → PA28 Cadet → Emergency → Electrical Overload", children:[
+      "Recognise: low volts or ALT light, ammeter zero, dimming lights, avionics dropping out",
+      "Follow the POH electrical checks — check the alternator switch and circuit breaker",
+      "Shed non-essential electrical load and land as soon as practicable — battery duration is limited (about 30 minutes at minimum load on the PA28 Cadet)",
+      "Radio failure: check the basics — volume, headset, frequency — then squawk 7600 and transmit blind",
+      "Know which flight instruments and nav aids depend on electrical power; keep paper charts and a handheld radio or phone as backup",
+      "Stay VFR, keep out of controlled airspace where possible, land at the nearest suitable aerodrome"
+    ] },
+    { id:"emfire", text:"Fire & smoke", groupTitle:"Fire & smoke", type:'group', note:"PA28 Cadet checklist: Reference → PA28 Cadet → Emergency", children:[
+      "Know where the fire extinguisher is and how to use it — it is part of the pre-flight checks",
+      "Engine fire on start: keep cranking to draw the flames in; if the engine will not start — mixture idle cut-off, throttle full open, fuel off, magnetos off, master off, evacuate with the extinguisher",
+      "Engine fire in flight: mixture idle cut-off, fuel off, master off, cabin heat off, then forced landing (POH)",
+      "Cabin or electrical fire: master off, vents closed, extinguisher, then ventilate the cabin (POH)",
+      "Land as soon as possible — MAYDAY and squawk 7700, time permitting"
+    ] },
+    { id:"emco", text:"Carbon monoxide", groupTitle:"Carbon monoxide", type:'group', note:"CAA Safety Sense Leaflet: carbon monoxide safety", children:[
+      "Carry a working CO detector and check it every flight — it is on the PA28 Cadet pre-flight checks",
+      "Symptoms: headache, drowsiness, dizziness, nausea, confusion — do not put them down to tiredness",
+      "Detector alarm or symptoms: cabin heat off, fresh-air vents open, land as soon as possible",
+      "Tell passengers the symptoms before the flight",
+      "Report any exhaust or heater defect — they are the usual source"
+    ] },
+    { id:"emdoor", text:"Door or canopy open in flight", groupTitle:"Door or canopy open in flight", type:'group', note:"Listed in GM2 FCL.740.A as a scenario to practise", children:[
+      "Prevent it — door and baggage door checked closed and latched before starting",
+      "Fly the aeroplane first — trim, maintain speed and control; expect noise and some buffet",
+      "Do not try to close it while flying",
+      "Keep everyone seated with harnesses tight — nobody leans out",
+      "Land as soon as practicable — brief passengers and tell ATC"
+    ] }
+  ]},
+  { phase:"EmOther", id:"emother", title:"Other", items: [
+    { id:"emlost", text:"Lost & airspace infringement", groupTitle:"Lost & airspace infringement", type:'group', note:"GM2 FCL.740.A: discuss actions if lost or if the moving map fails; airspace infringement — the ‘Take 2 initiative’", children:[
+      "Use the CAA ‘Take 2’ initiative to reduce airspace infringements",
+      "Check the DI against the compass, time since the last fix, groundspeed and big features; use the moving map",
+      "Ask for help early — call ATC (LARS or 121.5) for a position fix or vectors",
+      "Know your endurance before it matters",
+      "If you have infringed: comply with ATC instructions, then report the occurrence afterwards"
+    ] },
+    { id:"emprec", text:"Precautionary landing", groupTitle:"Precautionary landing", type:'group', note:"Listed in GM2 FCL.740.A as a scenario to practise", children:[
+      "Decide early — before fuel, daylight or weather remove your options",
+      "Choose the best field: size, surface, slope, obstacles, wind, nearest help",
+      "Inspect it from a safe height and speed — look for wires, livestock and furrows",
+      "Configure, brief passengers, do the landing checks and land into wind",
+      "After landing: shut down and secure the aircraft, and tell someone"
+    ] },
+    { id:"emmid", text:"Mid-air collision avoidance", groupTitle:"Mid-air collision avoidance", type:'group', note:"AAIB 2023 review: a fatal glider mid-air collision — the first for nine years", children:[
+      "Lookout is a full-time job — scan systematically, especially near aerodromes, gliding sites and in the circuit",
+      "Electronic conspicuity helps but does not replace lookout (GM2 FCL.740.A)",
+      "Join the circuit as published and listen out for other traffic",
+      "Clearing turns before manoeuvres",
+      "Note gliding sites on the chart and plan to avoid them"
+    ] }
+  ]},
   { phase:'AircraftRef', id:'aircraftref', title:'Aircraft Reference', items: [
     { id:'aircraftrefgrp', text:'Aircraft Reference', type:'aircraftref' }
   ]},
@@ -1348,7 +1480,7 @@ var CHECKLIST_DATA = [
 /* ============================================================
    FLATTEN into one card per checkable thing
    ============================================================ */
-var PHASES = ['Planning','Weather','Navigation','AircraftRef','PA28','RefGround','RefDeparture','RefEnroute','RefCircuit','RefDebrief','SkillTest','GroundSyllabus','AirSyllabus'];
+var PHASES = ['Planning','Weather','Navigation','AircraftRef','PA28','RefGround','RefDeparture','RefEnroute','RefCircuit','RefDebrief','SkillTest','GroundSyllabus','AirSyllabus','EmOverview','EmEngine','EmControl','EmSystems','EmOther'];
 // Four headings — everything here is pre-flight planning, so there's no
 // Airbourne/Post Flight distinction the way the Flight app needs.
 // Order follows an actual prep flow: are you legal and current (Planning)
@@ -1360,7 +1492,8 @@ var HEADINGS = [
   { key:'Briefing', label:'BRIEFING', phases:['Planning','Weather','Navigation'] },
   { key:'ReferenceH', label:'REFERENCE', phases:['AircraftRef','PA28'] },
   { key:'RefresherH', label:'REFRESHER', sub:'GM2 FCL.740.A Revalidation of class and type ratings \u2013 aeroplanes', phases:['RefGround','RefDeparture','RefEnroute','RefCircuit','RefDebrief'] },
-  { key:'ReadinessH', label:'READINESS', phases:['SkillTest','GroundSyllabus','AirSyllabus'] }
+  { key:'ReadinessH', label:'READINESS', phases:['SkillTest','GroundSyllabus','AirSyllabus'] },
+  { key:'EmergH', label:'EMERGENCIES', sub:'Common GA emergencies \u2014 UK \u00b7 AAIB reports & CAA Safety Sense', phases:['EmOverview','EmEngine','EmControl','EmSystems','EmOther'] }
 ];
 var curHeading = 'Briefing';
 var curMode = 'card';
@@ -1835,7 +1968,7 @@ function renderHeadingRow(){
 // Only needed where the internal phase key isn't already good display
 // text (e.g. camelCase used as a plain identifier) — anything absent here
 // just falls back to showing its own key.
-var PHASE_LABELS = { SkillTest: 'Skill Test', GroundSyllabus: 'Ground Syllabus', AirSyllabus: 'Air Syllabus', AircraftRef: 'Aircraft Reference', PA28: 'PA28 Cadet', RefGround: 'Ground', RefDeparture: 'Departure', RefEnroute: 'En Route', RefCircuit: 'Circuit', RefDebrief: 'Debrief' };
+var PHASE_LABELS = { SkillTest: 'Skill Test', GroundSyllabus: 'Ground Syllabus', AirSyllabus: 'Air Syllabus', AircraftRef: 'Aircraft Reference', PA28: 'PA28 Cadet', EmOverview: 'AAIB', EmEngine: 'Engine', EmControl: 'Control', EmSystems: 'Systems', EmOther: 'Other', RefGround: 'Ground', RefDeparture: 'Departure', RefEnroute: 'En Route', RefCircuit: 'Circuit', RefDebrief: 'Debrief' };
 function renderPhaseRow(){
   elPhaseRow.innerHTML = '';
   var heading = HEADINGS.filter(function(h){ return h.key === curHeading; })[0];
