@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v45 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v51 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -42,6 +42,12 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .countdownRow{ display:flex; gap:14px; justify-content:center; align-items:center; height:24px; background:var(--card); font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; color:var(--sky); border-bottom:1px solid var(--border); }
 .countdownRow .cdT{ color:var(--em); margin-left:3px; }
 .countdownRow .cdT.overdue{ color:var(--rose); }
+.countdownRow .cdT.air{ color:var(--sky); }
+.countdownRow .cdT.block{ color:var(--violet); }
+.countdownRow .cdT.etob{ color:var(--amber); }
+.countdownRow .cdT.endurance{ color:var(--em); }
+.countdownRow .cdT.slot{ color:var(--text); }
+.countdownRow .cdT.slot.overdue{ color:var(--rose); }
 .headingRow{ display:flex; height:42px; border-bottom:1px solid var(--border); }
 .headingBtn{ flex:1; min-width:0; border:none; border-right:1px solid var(--border); background:var(--surface); color:var(--text); font-family:'Syne',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; padding:0 2px; }
 .slotBar{ width:100%; height:14px; background:var(--border); overflow:hidden; }
@@ -390,6 +396,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .timesTable tr:last-child td{ border-bottom:none; }
 .timesTable .ttLabel{ font-weight:800; color:#0f172a; text-transform:uppercase; font-size:11px; letter-spacing:.03em; }
 .timesTable .ttTotal{ font-weight:800; color:#047857; }
+.timesTable .ttNeg{ font-weight:800; color:#be123c; }
 .timesTable .ttPending{ color:#94a3b8; font-style:italic; font-weight:600; }
 .resWrap{ max-width:720px; margin:0 auto; padding:18px 16px 60px; }
 .resHead{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
@@ -436,7 +443,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v45</div>
+  <div id="versionBadge">v51</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -1034,6 +1041,24 @@ var CHECKLIST_DATA = [
   { phase:'PreFlight', id:'imsafe', title:'I\'M SAFE', items: [
     { id:'1q', text:'I\'M SAFE self-assessment', type:'group', hasLaw:true, children:['Illness','Medication','Stress','Alcohol','Fatigue','Eating/Emotion'] }
   ]},
+  { phase:'PreFlight', id:'documents', title:'Documents Required', items: [
+    { id:'1k', text:'Documents to be carried', type:'group', hasLaw:true, lawKey:'1k', children:[
+      'Aircraft Flight Manual (AFM) or equivalent',
+      'Certificate of Registration (original)',
+      'Certificate of Airworthiness (original)',
+      'Noise certificate',
+      'List of specific approvals, if applicable',
+      'Aircraft radio licence, if applicable',
+      'Third-party liability insurance certificate',
+      'Journey log, or equivalent',
+      'Details of the filed ATS flight plan, if applicable',
+      'Current and suitable aeronautical charts',
+      'Procedures and visual signals for intercepting/intercepted aircraft',
+      'Search and rescue service information',
+      'Each crew member\'s licence, ratings, personal logbook and medical certificate',
+      {text:'International flights — passport, visas, GAR notification, customs/immigration', hasLaw:true, lawKey:'1g'}
+    ] }
+  ]},
   { phase:'PreFlight', id:'paxbrief', title:'Pax Brief', items: [
     { id:'paxbriefgrp', text:'Pax Brief', type:'group', children:[
       'Seatbelts/harness — how to fasten and release',
@@ -1044,15 +1069,14 @@ var CHECKLIST_DATA = [
       'Do not touch controls, switches, or levers',
       'Emergency exits and how to use them',
       'Brace position',
+      'Oxygen — location and use (if applicable)',
       'Fire extinguisher location',
       'Life jackets — location and use (if applicable)',
+      'Dinghy — location and use (if applicable)',
       'What to expect — noise, turbulence, manoeuvres',
       'Sterile flight deck — no unnecessary talk below 1,000ft or during critical phases',
       'Any questions'
     ] }
-  ]},
-  { phase:'Ground', id:'crewpax', title:'Crew/Pax Brief', items: [
-    { id:'2x', text:'Crew/Pax Brief', type:'group', children:['Exits','Belts','Oxygen','Life jackets','Dinghy','Emergency actions'] }
   ]},
   { phase:'Ground', id:'start', title:'Start', items: [
     { id:'startgrp', text:'Start', type:'group', children:[
@@ -2778,7 +2802,21 @@ function renderAtisHtml(){
   function dispVis(v){ return v ? v+' km' : '--'; }
   function dispQnh(v){ return v ? v+' hPa' : '--'; }
   function dispTempDew(v){ return v ? v.replace(/M/g,'-')+' \u00b0C' : '--'; }
-  var html = '<div class="fpBlock" style="border-color:var(--sky);width:100%"><div class="fpBlockTitle" style="color:var(--sky)">Current ATIS Entry</div>'+
+  var html = '';
+  if(!STATE.atisEntries.length){
+    html += '<div class="manageCodesEmpty">No ATIS entries submitted yet.</div>';
+  } else {
+    html += '<div class="resHead" style="margin:0 0 8px"><h2 style="font-size:13px">Submitted ATIS</h2></div>';
+    html += STATE.atisEntries.map(function(e, idx){
+      return '<div class="savedFlightItem">'+
+        '<div class="savedFlightName" style="font-size:12px;line-height:1.5">'+escapeHtml(atisEntryString(e))+'</div>'+
+        (e.notes ? '<div class="savedFlightSub">'+escapeHtml(e.notes)+'</div>' : '')+
+        '<button type="button" class="atisDelBtn" data-idx="'+idx+'" style="margin-top:8px;width:100%;border:1px solid var(--rose);background:var(--surface);color:var(--rose);border-radius:7px;padding:7px 0;font-family:\'JetBrains Mono\',monospace;font-weight:800;font-size:11.5px;cursor:pointer">Delete</button>'+
+      '</div>';
+    }).join('');
+    html += '<div style="height:16px"></div>';
+  }
+  html += '<div class="fpBlock" style="border-color:var(--sky);width:100%"><div class="fpBlockTitle" style="color:var(--sky)">Current ATIS Entry</div>'+
     '<div class="fdGrid" style="margin-top:8px">'+
       '<div class="fdField"><label>ICAO</label><input type="text" id="atisIcao" placeholder="EGKB" maxlength="4" value="'+escapeHtml(d.icao||'')+'" style="text-transform:uppercase"/></div>'+
       '<div class="fdField"><label>Info</label><button type="button" class="cloudPickBtn" id="atisInfoBtn">'+(d.info?escapeHtml(d.info):'Tap to set')+'</button></div>'+
@@ -2810,20 +2848,6 @@ function renderAtisHtml(){
       '<button type="button" id="atisClearBtn" class="savedFlightDelBtn" style="flex:0 0 auto;padding:10px 16px">Clear</button>'+
     '</div>'+
   '</div>';
-  html += '<div style="width:100%;margin-top:16px">';
-  if(!STATE.atisEntries.length){
-    html += '<div class="manageCodesEmpty">No ATIS entries submitted yet.</div>';
-  } else {
-    html += '<div class="resHead" style="margin:0 0 8px"><h2 style="font-size:13px">Submitted ATIS</h2></div>';
-    html += STATE.atisEntries.map(function(e, idx){
-      return '<div class="savedFlightItem">'+
-        '<div class="savedFlightName" style="font-size:12px;line-height:1.5">'+escapeHtml(atisEntryString(e))+'</div>'+
-        (e.notes ? '<div class="savedFlightSub">'+escapeHtml(e.notes)+'</div>' : '')+
-        '<button type="button" class="atisDelBtn" data-idx="'+idx+'" style="margin-top:8px;width:100%;border:1px solid var(--rose);background:var(--surface);color:var(--rose);border-radius:7px;padding:7px 0;font-family:\'JetBrains Mono\',monospace;font-weight:800;font-size:11.5px;cursor:pointer">Delete</button>'+
-      '</div>';
-    }).join('');
-  }
-  html += '</div>';
   return html;
 }
 // Time entry as a 4-digit calculator keypad — auto-inserts the colon as
@@ -4505,7 +4529,7 @@ function resetAllData(){
 // they are. The one thing it doesn't just delete: End Tacho/Hobbs
 // becomes the new Start Tacho/Hobbs, since those genuinely are
 // continuous from one leg to the next.
-var AIRBOURNE_CARD_PREFIXES = ['crewpax.2x','atis.atisgrp','start.startgrp','offblockspretakeoff.otpgrp','airborne.airbornegrp'];
+var AIRBOURNE_CARD_PREFIXES = ['atis.atisgrp','start.startgrp','offblockspretakeoff.otpgrp','airborne.airbornegrp'];
 function isAirbourneCardKey(key){
   return AIRBOURNE_CARD_PREFIXES.some(function(p){ return key === p || key.indexOf(p+'.') === 0; });
 }
@@ -5145,8 +5169,29 @@ function updateCountdown(){
   if(!row) return;
   var parts = [];
   var etob = STATE.global.etob, ctot = STATE.global.ctot;
+  var offBlocks = STATE.values['offblockspretakeoff.otpgrp.0'];
+  var onBlocks = STATE.values['airborne.airbornegrp.2'];
   var takeoff = STATE.values['airborne.airbornegrp.0'];
   var landing = STATE.values['airborne.airbornegrp.1'];
+  // Block Time — same live-count-up-then-freeze pattern as Air Time
+  // below, just anchored on Off Blocks/On Blocks instead of Take
+  // Off/Landing, and shown first since it starts before Air Time does.
+  if(offBlocks){
+    var bp = offBlocks.split(':');
+    var bh = parseInt(bp[0],10), bm = parseInt(bp[1],10);
+    if(!isNaN(bh) && !isNaN(bm)){
+      if(onBlocks){
+        var bt = timeDiffCalc(offBlocks, onBlocks);
+        parts.push('BLOCK TIME <span class="cdT block">'+(bt===null?'--':secsToHMS(bt*3600))+'</span>');
+      } else {
+        var nowB = new Date();
+        var offBlocksDate = new Date(Date.UTC(nowB.getUTCFullYear(), nowB.getUTCMonth(), nowB.getUTCDate(), bh, bm, 0));
+        var elapsedBMs = nowB.getTime() - offBlocksDate.getTime();
+        if(elapsedBMs < 0) elapsedBMs += 24*3600*1000;
+        parts.push('BLOCK TIME <span class="cdT block" id="blockTimeCountUp" data-ts="'+offBlocksDate.getTime()+'">'+secsToHMS(elapsedBMs/1000)+'</span>');
+      }
+    }
+  }
   // Take Off is the trigger, full stop — not gated on ETOB/CTOT existing
   // or having expired, since once you're actually airborne, watching a
   // pre-departure target time stops being the useful thing to show.
@@ -5161,13 +5206,13 @@ function updateCountdown(){
         // the flight time" means: one calculation, never two that could
         // quietly disagree.
         var at = timeDiffCalc(takeoff, landing);
-        parts.push('AIR TIME <span class="cdT">'+(at===null?'--':secsToHMS(at*3600))+'</span>');
+        parts.push('AIR TIME <span class="cdT air">'+(at===null?'--':secsToHMS(at*3600))+'</span>');
       } else {
         var now = new Date();
         var takeoffDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), th, tm, 0));
         var elapsedMs = now.getTime() - takeoffDate.getTime();
         if(elapsedMs < 0) elapsedMs += 24*3600*1000;
-        parts.push('AIR TIME <span class="cdT" id="airTimeCountUp" data-ts="'+takeoffDate.getTime()+'">'+secsToHMS(elapsedMs/1000)+'</span>');
+        parts.push('AIR TIME <span class="cdT air" id="airTimeCountUp" data-ts="'+takeoffDate.getTime()+'">'+secsToHMS(elapsedMs/1000)+'</span>');
       }
     }
   } else if(etob || ctot){
@@ -5178,7 +5223,7 @@ function updateCountdown(){
       // other — once a target expires it's just removed from the bar
       // rather than lingering in a red "overdue" state.
       if(cd && cd.overdue) return;
-      parts.push(pair[0]+' '+pair[1]+' UTC <span class="cdT">'+(cd?cd.label:'--')+'</span>');
+      parts.push(pair[0]+' '+pair[1]+' UTC <span class="cdT etob">'+(cd?cd.label:'--')+'</span>');
     });
   }
   // Per-tank endurance remaining, once there's actually a tank log to
@@ -5194,7 +5239,7 @@ function updateCountdown(){
       if(m===60){ h+=1; m=0; }
       return (neg?'-':'')+(h<10?'0':'')+h+':'+(m<10?'0':'')+m;
     }
-    parts.push('<span class="cdT">L'+padHM(ts.L.end)+' R'+padHM(ts.R.end)+'</span>');
+    parts.push('<span class="cdT endurance">L'+padHM(ts.L.end)+' R'+padHM(ts.R.end)+'</span>');
   }
   // Slot time shows right alongside whatever else is up here (Air Time
   // or ETOB/CTOT) rather than down by the fuel log — one place to glance
@@ -5202,7 +5247,7 @@ function updateCountdown(){
   var slotInfo = slotProgressInfo();
   updateHeadingRowProgress(slotInfo);
   if(slotInfo){
-    parts.push('SLOT <span class="cdT'+(slotInfo.overdue?' overdue':'')+'">'+slotInfo.label+'</span>');
+    parts.push('SLOT <span class="cdT slot'+(slotInfo.overdue?' overdue':'')+'">'+slotInfo.label+'</span>');
   }
   if(!parts.length){ row.style.display = 'none'; syncHeaderOffset(); return; }
   row.innerHTML = parts.join(' &nbsp;&middot;&nbsp; ');
@@ -5232,7 +5277,7 @@ setInterval(function(){ if(!liveUpdatesPaused) updateCountdown(); }, 1000);
 setInterval(function(){
   if(liveUpdatesPaused) return;
   updateEnduranceLive();
-  ['tankLiveSecs','tankLiveSecsTop','tankSinceChangeTop','airTimeCountUp'].forEach(function(id){
+  ['tankLiveSecs','tankLiveSecsTop','tankSinceChangeTop','airTimeCountUp','blockTimeCountUp'].forEach(function(id){
     var el = document.getElementById(id);
     if(!el) return;
     var base = parseFloat(el.getAttribute('data-base')) || 0;
@@ -5292,27 +5337,22 @@ function renderCalculations(){
 
   var fc = fuelCalc();
   if(fc.fob !== null || fc.total > 0){
-    var ftc = fuelTimesCalc(fc);
-    var actualLanding = parseFloat(STATE.fuel.actualLanding);
-    var landingVariance = (!isNaN(actualLanding) && ftc.val!==null) ? actualLanding - ftc.val : null;
-    html += '<div class="calcCard"><div class="ck">Fuel Plan</div>'+
-      '<div class="legs"><span>Total FOB <b>'+fmtFuel(fc.fob)+'</b></span><span>Required <b>'+fmtFuel(fc.total)+'</b></span></div>'+
-      '<div class="cv" style="color:'+(fc.surplus===null?'#94a3b8':(fc.surplus<0?'#be123c':'#047857'))+'">'+
-        (fc.surplus===null?'\u2014':(fc.surplus<0?'\u2212':'+')+fmtFuel(Math.abs(fc.surplus)))+
-        ' <small>surplus/deficit</small></div>'+
-      '<div class="legs" style="margin-top:10px"><span>Endurance (Total FOB) <b>'+decToHM(fc.endurance)+' hrs</b></span><span>Endurance Required <b>'+decToHM(fc.enduranceReq)+' hrs</b></span></div>'+
-      '<div class="cv" style="font-size:16px;color:'+(fc.surplusEnd===null?'#94a3b8':(fc.surplusEnd<0?'#be123c':'#047857'))+'">'+
-        (fc.surplusEnd===null?'\u2014':(fc.surplusEnd<0?'\u2212':'+')+decToHM(Math.abs(fc.surplusEnd))+' hrs')+
-        ' <small>surplus endurance</small></div>'+
-      '<div class="resHead" style="margin:10px 0 4px"><h2 style="font-size:12px">Breakdown</h2></div>'+
-      '<div class="legs"><span>Taxi <b>'+fmtFuel(fc.taxi)+'</b></span><span>Trip <b>'+fmtFuel(fc.trip)+'</b></span></div>'+
-      '<div class="legs" style="margin-top:6px"><span>Contingency ('+fc.contPct+'%) <b>'+fmtFuel(fc.cont)+'</b></span><span>Alternate <b>'+fmtFuel(fc.alt)+'</b></span></div>'+
-      '<div class="legs" style="margin-top:6px"><span>Final Reserve <b>'+fmtFuel(fc.final_)+'</b></span><span>Extra <b>'+fmtFuel(fc.extra)+'</b></span></div>'+
-      '<div class="resHead" style="margin:10px 0 4px"><h2 style="font-size:12px">Landing Fuel</h2></div>'+
-      '<div class="legs"><span>Expected (planned trip) <b>'+fmtFuel(fc.expLanding)+'</b></span><span>Expected (actual air time) <b>'+fmtFuel(ftc.val)+'</b></span></div>'+
-      (!isNaN(actualLanding) ? '<div class="legs" style="margin-top:6px"><span>Actual (entered) <b>'+fmtFuel(actualLanding)+'</b></span><span>Variance <b style="color:'+(landingVariance===null?'inherit':(landingVariance<0?'#be123c':'#047857'))+'">'+fmtFuelSigned(landingVariance)+'</b></span></div>' : '')+
-      ((STATE.fuel.oilLevel || STATE.fuel.oilAdded) ? '<div class="resHead" style="margin:10px 0 4px"><h2 style="font-size:12px">Oil</h2></div><div class="legs"><span>Level <b>'+(STATE.fuel.oilLevel||'\u2014')+' qts</b></span><span>Added <b>'+(STATE.fuel.oilAdded||'\u2014')+' qts</b></span></div>' : '')+
-    '</div>';
+    var offBlocksV = STATE.values['offblockspretakeoff.otpgrp.0'];
+    var onBlocksV = STATE.values['airborne.airbornegrp.2'];
+    var blockHrs = offBlocksV ? timeDiffCalc(offBlocksV, onBlocksV || nowUTCStrSecs().slice(0,5)) : null;
+    var used = (blockHrs!==null && fc.burn>0) ? blockHrs*fc.burn : null;
+    var left = (used!==null && fc.fob!==null) ? fc.fob - used : null;
+    html += '<div class="calcCard"><div class="ck">Fuel Plan</div>';
+    if(used===null || fc.fob===null){
+      html += '<div class="grNote" style="padding:8px 2px">Needs Off Blocks time, burn rate, and initial fuel to calculate.</div>';
+    } else {
+      html += '<div class="legs"><span>Total FOB <b>'+fmtFuel(fc.fob)+'</b></span><span>Block Time <b>'+decToHM(blockHrs)+' hrs</b></span></div>'+
+        '<div class="legs" style="margin-top:12px"><span>Used <b>'+fmtFuel(used)+'</b></span><span>Left <b style="color:'+(left<0?'#be123c':'#047857')+'">'+fmtFuel(left)+'</b></span></div>'+
+        '<div class="cv" style="color:'+(left===null?'#94a3b8':(left<0?'#be123c':'#047857'))+'">'+
+          (left===null?'\u2014':fmtFuel(left))+
+          ' <small>left, based on original plan &amp; block time</small></div>';
+    }
+    html += '</div>';
   }
 
   if(STATE.tankLog.length){
