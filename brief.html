@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Briefing v2 — Pre-Flight Planning</title>
+<title>CheckDeck Briefing v9 — Pre-Flight Planning</title>
 <link rel="manifest" href="briefing-manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -43,13 +43,23 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .countdownRow .cdT{ color:var(--em); margin-left:3px; }
 .countdownRow .cdT.overdue{ color:var(--rose); }
 .headingRow{ display:flex; height:42px; border-bottom:1px solid var(--border); }
-.headingBtn{ flex:1; min-width:0; border:none; border-right:1px solid var(--border); background:var(--surface); color:var(--text); font-family:'Syne',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; padding:0 2px; }
+.headingBtn{ flex:1; min-width:0; border:none; border-right:1px solid var(--border); background:var(--surface); color:var(--text); font-family:'Syne',sans-serif; font-weight:700; font-size:11px; letter-spacing:.02em; text-transform:uppercase; cursor:pointer; padding:0 2px; }
 .slotBar{ width:100%; height:14px; background:var(--border); overflow:hidden; }
 .slotBarFill{ height:100%; width:0%; background:var(--em); transition:width 1s linear, background 0.4s; }
 .slotBarFill.amber{ background:var(--amber); }
 .slotBarFill.overdue{ background:var(--rose); }
 .notesBtnHeading{ flex:0 0 42px; border:none; border-right:1px solid var(--border); background:rgba(109,40,217,.06); color:var(--violet); font-size:15px; cursor:pointer; }
 .tasksBtnHeading{ border-right:none; border-left:1px solid var(--border); background:rgba(3,105,161,.06); color:var(--sky); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; }
+.refText{ width:100%; text-align:left; font-size:13.5px; line-height:1.55; color:var(--text); }
+.refText .refH{ font-weight:800; margin:0 0 12px; }
+.refText .refP{ display:flex; gap:8px; margin:0 0 9px; }
+.refText .refN{ flex:0 0 auto; min-width:2.2em; font-weight:800; color:var(--sky); }
+.refText .refP.l0{ display:block; }
+.refText .refP.l2{ margin-left:1.6em; }
+.refText .refP.l3{ margin-left:3.4em; }
+.refText .refP.l3 .refN{ min-width:1em; }
+.refText .refGap{ margin-top:14px; font-weight:700; }
+.headingSub{ padding:5px 12px; background:var(--surface); border-bottom:1px solid var(--border); font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:.02em; line-height:1.35; color:var(--muted); }
 .headingBtn:last-child{ border-right:none; }
 .headingBtn.on{ background:var(--sky); color:#fff; }
 .phaseRow{ display:flex; gap:6px; height:38px; overflow-x:auto; padding:0 10px; align-items:center; border-bottom:1px solid var(--border); }
@@ -435,9 +445,10 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v2</div>
+  <div id="versionBadge">v9</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
+  <div class="headingSub" id="headingSub" style="display:none"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
   <div class="tankBar" id="tankBarHeader" style="display:none"></div>
   <div class="phaseRow" id="phaseRow"></div>
@@ -710,7 +721,6 @@ var CHECKLIST_DATA = [
     ] }
   ]},
   { phase:'Planning', id:'administration', title:'Administration', items: [
-    { id:'1pc', text:'Personal Currency', type:'group', children:['Pilot licence and IR rating current','Logbook up to date','Medical certificate valid','Glasses/sunglasses'] },
     { id:'1td', text:'Travel Documents', type:'group', children:['Photo ID carried','Correct Passport(s)', {text:'GAR / GENDEC submitted', hasLaw:true, lawKey:'1g'}, 'Customs/immigration informed'] },
     { id:'1admin', text:'Admin: Charts, Flight Plan & Tech Log', shortTitle:'Admin', type:'group', children:[
       {text:'Charts, Electrics, AIP and AIRAC cycle current', hasLaw:true, lawKey:'1l'},
@@ -723,12 +733,6 @@ var CHECKLIST_DATA = [
     { id:'1k', text:'Documents to be carried (NCO.GEN.135)', shortTitle:'Docs to be carried', type:'group', hasLaw:true, children:['AFM (or equivalent)','Certificate of Registration (original)','Certificate of Airworthiness (original) & ARC','Noise certificate (if applicable)','List of specific approvals (if applicable)','Aircraft radio licence (if applicable)','Third-party liability insurance certificate(s)','Journey log (or equivalent)','Details of filed ATS flight plan (if applicable)','Current & suitable aeronautical charts (route + diversions)','Interception procedures & visual signals','MEL or CDL (if applicable)','Any other documentation pertinent / required by States'] },
     { id:'1n', text:'Destination', type:'group', children:['Fees','Fuel availability','PPR','Slots','Opening hours','Phone/Email details'] },
     { id:'1p', text:'No-go review', type:'group', children:['Weather','Recency','Aircraft equipment','Day/night','Complexity','Endurance','Personal limits','External pressure'], note:'Traffic-light check — e.g. cloud base <600ft is a no-fly threshold; consider whether a check flight/safety pilot is needed.' },
-    { id:'1q', text:'I\'M SAFE self-assessment', type:'group', hasLaw:true, children:['Illness','Medication','Stress','Alcohol','Fatigue','Eating/Emotion'] },
-    { id:'1r', text:'Personal equipment checked', type:'group', children:['Batteries','Cables','Devices/updates','Night flight equipment/torches','Life jacket'] },
-    { id:'1s', text:'Threat & Error Management', type:'group', allowAddItems:true, children:['Terrain','CFIT','MSA','Emergency options'] }
-  ]},
-  { phase:'Planning', id:'notams', title:'NOTAMs', items: [
-    { id:'2b', text:'NOTAMs checked', type:'group', hasLaw:true, children:['Departure','Destination','Alternate','En-route'] }
   ]},
   { phase:'Planning', id:'flight', title:'Flight', items: [
     { id:'flightgrp', text:'Flight', type:'group', children:[
@@ -749,14 +753,6 @@ var CHECKLIST_DATA = [
       {text:'Underload', type:'weight', hasLaw:true, lawKey:'2t'},
       'Performance check: takeoff/landing distance vs. runway available (Hot/High/Heavy/Humid considered)',
       {text:'ETOB / CTOT (UTC)', type:'etobctot'}
-    ] }
-  ]},
-  { phase:'Fuel', id:'fuelplan', title:'Fuel Plan', items: [
-    { id:'fuelplangrp', text:'Fuel Plan', type:'fuelplan' }
-  ]},
-  { phase:'PaxBrief', id:'paxbrief', title:'Pax Brief', items: [
-    { id:'paxbriefgrp', text:'Pax Brief', type:'group', children:[
-      'Content to be added.'
     ] }
   ]},
   { phase:'Weather', id:'sources', title:'Sources', items: [
@@ -1185,6 +1181,164 @@ var CHECKLIST_DATA = [
       'Life jacket — Inflate outside cabin'
     ] }
   ]},
+  /* ---- Refresher (revalidation refresher flight briefing) ---- */
+  { phase:'RefGround', id:'rgreg', title:'FCL.740.A', items: [
+    { id:'rgregtxt', text:'FCL.740.A', type:'reftext', refHtml:"<div class=\"refH\">FCL.740.A Revalidation of class and type ratings — aeroplanes. Revalidation of single-pilot single-engine class ratings.</div><div class=\"refP l1\"><span class=\"refN\">(1)</span><span>Single-engine piston aeroplane class ratings and TMG class ratings. For the revalidation of single-pilot single-engine piston aeroplane class ratings or TMG class ratings, the applicants shall:</span></div><div class=\"refP l2\"><span class=\"refN\">(i)</span><span>within the 3 months preceding the expiry date of the rating, pass a proficiency check in the relevant class in accordance with Appendix 9 to this Part with an examiner; or</span></div><div class=\"refP l2\"><span class=\"refN\">(ii)</span><span>within the validity period of the rating as set out in FCL.740(a), complete 12 hours of flight time in the relevant class, including:</span></div><div class=\"refP l3\"><span class=\"refN\">—</span><span>6 hours during the 12 months preceding the expiry date of the rating,</span></div><div class=\"refP l3\"><span class=\"refN\">—</span><span>6 hours as PIC,</span></div><div class=\"refP l3\"><span class=\"refN\">—</span><span>12 take-offs and 12 landings, and</span></div><div class=\"refP l3\"><span class=\"refN\">—</span><span>refresher training of at least 1 hour of total flight time with a flight instructor (FI) or a class rating instructor (CRI). Applicants shall be exempted from this refresher training if they have passed a class or type rating proficiency check, skill test or assessment of competence in any other class or type of aeroplane.</span></div><div class=\"refP l1\"><span class=\"refN\">(2)</span><span>When applicants hold both a single-engine piston aeroplane-land class rating and a TMG rating, they may complete the requirements of (1) in either class or a combination thereof, and achieve revalidation of both ratings.</span></div><div class=\"refP l1\"><span class=\"refN\">(3)</span><span>Single-pilot single-engine turbo-prop aeroplanes. For revalidation of single‑engine turbo‑prop class ratings applicants shall pass a proficiency check on the relevant class in accordance with Appendix 9 to this Part with an examiner, within the 3 months preceding the expiry date of the rating.</span></div><div class=\"refP l1\"><span class=\"refN\">(4)</span><span>When applicants hold both a single-engine piston aeroplane-land class rating and a single‑engine piston aeroplane-sea class rating, they may complete the requirements of (1)(ii) in either class or a combination thereof, and achieve the fulfilment of these requirements for both ratings. At least 1 hour of required PIC time and 6 of the required 12 take‑offs and landings shall be completed in each class.</span></div><div class=\"refP l0 refGap\"><span>Applicants who fail to achieve a pass in all sections of a proficiency check before the expiry date of a class or type rating shall not exercise the privileges of that rating until a pass in the proficiency check has been achieved.</span></div>" }
+  ]},
+  { phase:"RefGround", id:"rgbrief", title:"Briefing", items: [
+    { id:"rgb", text:"Ground & pre-flight briefing", groupTitle:"Ground & pre-flight briefing", type:'group', children:[
+      "Check the pilot’s licence, medical certificate or declaration, identification and personnel log (book)(s)",
+      "Talk through the revalidation requirements, the purpose of the flight and the standards expected of the pilot",
+      "Select flight exercises, considering previous revalidation flights and the pilot’s experience",
+      "Discuss pilot health before the flight, highlighting I AM SAFE",
+      "Pilot knows where to find aerodrome information, NOTAMs, weather and the airworthiness state of the aircraft",
+      "Pilot uses an approved checklist for the pre-flight inspection",
+      "Pilot has conducted a mass, balance and performance calculation for the intended flight",
+      "Discuss TEM and how it helps manage the flight — ask about potential threats to safety and how they can be mitigated",
+      "Discuss en-route planning and measures to reduce the likelihood of airspace infringements (e.g. the ‘Take 2 initiative’)",
+      "Discuss the pilot’s flight log (paper or VFR moving map device with a flight planning app) and the limitations of both",
+      "Pilot has identified all appropriate radio frequencies and frequency monitoring codes for the flight"
+    ] }
+  ]},
+  { phase:"RefGround", id:"rgmnem", title:"Mnemonics", items: [
+    { id:"rgpave", text:"PAVE", groupTitle:"PAVE", type:'group', note:"Planning mnemonic the pilot can use", children:[
+      "Pilot — relevant experience, fitness to fly (I AM SAFE)",
+      "Aircraft — airworthiness, defects and limitations",
+      "enVironment — weather, aerodrome and terrain",
+      "External pressures — time pressure, delays, weather, passengers"
+    ] },
+    { id:"rgwant", text:"WANT", groupTitle:"WANT", type:'group', children:[
+      "Weather",
+      "Aircraft",
+      "NOTAMs",
+      "Threats"
+    ] },
+    { id:"rgsafe", text:"I AM SAFE", groupTitle:"I AM SAFE", type:'group', children:[
+      "Illness",
+      "Attitude",
+      "Medication",
+      "Stress",
+      "Alcohol",
+      "Fatigue",
+      "Eating"
+    ] }
+  ]},
+  { phase:"RefDeparture", id:"rdep", title:"Departure", items: [
+    { id:"rdepgrp", text:"Departure & leaving the circuit", groupTitle:"Departure & leaving the circuit", type:'group', children:[
+      "Appropriate checklist used for all pre-flight, start-up and pre-departure checks",
+      "Monitor the pilot’s radiotelephony — correct terminology used",
+      "Up-to-date aerodrome chart (if available) and aeronautical chart for the area of the intended flight",
+      "Pilot aware of any potential runway incursion ‘hot spots’ on the aerodrome",
+      "Appropriate clearance received (if applicable) before entering the runway",
+      "Approach checked clear before entering the runway",
+      "Discuss the benefits of a pre-departure and eventualities briefing before the take-off run",
+      "Discuss a potential rejected take-off point on the runway",
+      "Pilot aware of the appropriate take-off speeds, maintains directional control and monitors engine temperatures and pressures at full power",
+      "Good lookout maintained during the take-off climb to circuit height",
+      "Discuss possible landing sites for an engine failure after take-off, and actions for a partial engine failure after take-off"
+    ] }
+  ]},
+  { phase:"RefEnroute", id:"renr", title:"Navigation", items: [
+    { id:"renrgrp", text:"En route & upper air work", groupTitle:"En route & upper air work", type:'group', children:[
+      "Good lookout maintained during en-route navigation, even when using electronic conspicuity",
+      "Discuss radio navigation aids, including VFR moving map devices and the reduction of VORs and NDBs",
+      "Discuss actions for a diversion — worsening weather, closed aerodrome or refused entry into controlled airspace",
+      "Discuss actions if the pilot becomes lost or loses the VFR moving map device",
+      "Discuss frequency monitoring codes and other transponder codes",
+      "Consider basic navigation and map reading practice, some at lower altitudes than the pilot normally flies",
+      "* Failure of moving map"
+    ] }
+  ]},
+  { phase:"RefEnroute", id:"rhand", title:"Handling", items: [
+    { id:"rhandgrp", text:"Handling exercises", groupTitle:"Handling exercises", type:'group', note:"Consider practising", children:[
+      "Steep turns",
+      "Recovery from a spiral dive",
+      "Dive to VNE",
+      "Sideslipping the aeroplane",
+      "Stall recovery in different configurations and at different flight stages",
+      "Practice forced landing",
+      "Managing a partial loss of power",
+      "Managing a loss of electrical power or electrical fire",
+      "Managing a loss of the vacuum system (if applicable)",
+      "Managing an engine fire"
+    ] },
+    { id:"rscen", text:"Other scenarios", groupTitle:"Other scenarios", type:'group', note:"Consider practising", children:[
+      "Fuel leak",
+      "Stuck throttle",
+      "Loss of carburettor heating",
+      "Bird strike",
+      "Aircraft door or panel opening in flight",
+      "Loss of autopilot (if applicable)",
+      "Electric trim runaway (if applicable)",
+      "Communications failure",
+      "Reduction in visibility and lowering cloud base — 180° turn with sole reference to instruments",
+      "Precautionary landing"
+    ] }
+  ]},
+  { phase:"RefCircuit", id:"rcrej", title:"Rejoin", items: [
+    { id:"rcrejgrp", text:"Circuit rejoin", groupTitle:"Circuit rejoin", type:'group', children:[
+      "Monitor the pilot’s radiotelephony on return, in the circuit and during approaches — correct terminology used",
+      "Rejoining the aerodrome circuit at the correct height and in the correct manner?",
+      "Does the aerodrome use the standard overhead join or an alternative?",
+      "What is the published circuit height?",
+      "Likely direction of other traffic joining or in the circuit pattern identified?",
+      "Aware of any noise sensitive areas near to or within the circuit?",
+      "Appropriate pre-landing checks conducted?"
+    ] }
+  ]},
+  { phase:"RefCircuit", id:"rcapp", title:"Approaches", items: [
+    { id:"rcappgrp", text:"Approaches", groupTitle:"Approaches", type:'group', note:"Have the pilot conduct a sample of", children:[
+      "Normal approach, with flap",
+      "Precision (short field) landing",
+      "Flapless approach",
+      "Glide approach",
+      "Approach with other system failures, e.g. radio failure or loss of airspeed indication"
+    ] },
+    { id:"rcgagrp", text:"Go-around & control", groupTitle:"Go-around & control", type:'group', children:[
+      "Pilot conducts a go-around — discuss the departure stall recovery (high nose attitude, full power and low airspeed can be a surprise)",
+      "Consider the options for an engine failure after take-off (EFATO)",
+      "Consider the options for a partial loss of power during the take-off",
+      "Monitor speed and height control, ensuring the aircraft is appropriately trimmed",
+      "Monitor use of approach path indicators (APAPI or PAPI)"
+    ] }
+  ]},
+  { phase:"RefCircuit", id:"rcpark", title:"Shut down", items: [
+    { id:"rcparkgrp", text:"Taxi, shut down & parking", groupTitle:"Taxi, shut down & parking", type:'group', children:[
+      "Taxi back to the parking area and ensure shut-down checks are completed",
+      "Aircraft safely parked and secure",
+      "Appropriate aircraft documentation completed"
+    ] }
+  ]},
+  { phase:"RefDebrief", id:"rdeb", title:"Debrief", items: [
+    { id:"rdebgrp", text:"Debrief approach", groupTitle:"Debrief approach", type:'group', children:[
+      "Debrief the outcome of the flight — it may be easier to address questions while still in the aircraft",
+      "Consult notes first to ensure all elements of the flight are covered — a refresher flight is not a Skill Test or Proficiency Check, but the instructor can recommend further flight training if conduct, behaviours or handling are not to the necessary standard",
+      "Fair and unbiased debrief based on identifiable factual items",
+      "Balance between friendliness and firmness maintained"
+    ] },
+    { id:"rfacgrp", text:"Facilitative questioning", groupTitle:"Facilitative questioning", type:'group', children:[
+      "Start with an introduction",
+      "Avoid dealing with issues chronologically",
+      "Ask at least two open questions per issue",
+      "Get the pilot to do the thinking and talking",
+      "Summarise at the end (it can be useful to get the pilot to summarise)"
+    ] },
+    { id:"rptsgrp", text:"Points to discuss", groupTitle:"Points to discuss", type:'group', children:[
+      "How to recognise, avoid, mitigate or correct typical errors",
+      "Any other points of a less critical nature noted during the flight",
+      "Any advice, guidance or further training that might improve the pilot’s overall competence",
+      "Positive feedback on items and exercises well handled, with examples of good resource management, TEM and decision making"
+    ] }
+  ]},
+  { phase:"RefDebrief", id:"radm", title:"Admin", items: [
+    { id:"radmgrp", text:"Post-flight administration", groupTitle:"Post-flight administration", type:'group', children:[
+      "Pilot enters the flight details in their flying log (book) and the instructor counter-signs the entry",
+      "If appropriate, retrain flight exercises to an appropriate level of competence",
+      "If further flight training is needed, the instructor is not obliged to complete the revalidation of the class rating on the Certificate of Revalidation",
+      "If all revalidation requirements are met and the flying is of an appropriate standard, endorse the Certificate of Revalidation within the licence with the new validity period",
+      "Complete the appropriate form to notify the CAA of the revalidation of the class rating"
+    ] }
+  ]},
   { phase:'AircraftRef', id:'aircraftref', title:'Aircraft Reference', items: [
     { id:'aircraftrefgrp', text:'Aircraft Reference', type:'aircraftref' }
   ]},
@@ -1193,7 +1347,7 @@ var CHECKLIST_DATA = [
 /* ============================================================
    FLATTEN into one card per checkable thing
    ============================================================ */
-var PHASES = ['Planning','Weather','Navigation','PaxBrief','Fuel','AircraftRef','PA28','SkillTest','GroundSyllabus','AirSyllabus'];
+var PHASES = ['Planning','Weather','Navigation','AircraftRef','PA28','RefGround','RefDeparture','RefEnroute','RefCircuit','RefDebrief','SkillTest','GroundSyllabus','AirSyllabus'];
 // Four headings — everything here is pre-flight planning, so there's no
 // Airbourne/Post Flight distinction the way the Flight app needs.
 // Order follows an actual prep flow: are you legal and current (Planning)
@@ -1202,9 +1356,9 @@ var PHASES = ['Planning','Weather','Navigation','PaxBrief','Fuel','AircraftRef',
 // material (aircraft data, training progress) sits after, since neither
 // is something you work through per-flight the way Briefing/Fuel are.
 var HEADINGS = [
-  { key:'Briefing', label:'BRIEFING', phases:['Planning','Weather','Navigation','PaxBrief'] },
-  { key:'FuelH', label:'FUEL', phases:['Fuel'] },
+  { key:'Briefing', label:'BRIEFING', phases:['Planning','Weather','Navigation'] },
   { key:'ReferenceH', label:'REFERENCE', phases:['AircraftRef','PA28'] },
+  { key:'RefresherH', label:'REFRESHER', sub:'GM2 FCL.740.A Revalidation of class and type ratings \u2013 aeroplanes', phases:['RefGround','RefDeparture','RefEnroute','RefCircuit','RefDebrief'] },
   { key:'ReadinessH', label:'READINESS', phases:['SkillTest','GroundSyllabus','AirSyllabus'] }
 ];
 var curHeading = 'Briefing';
@@ -1268,6 +1422,7 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
         if(item.type === 'apisettings'){ card.type = 'apisettings'; }
         if(item.type === 'savedflights'){ card.type = 'savedflights'; }
         if(item.type === 'atis'){ card.type = 'atis'; }
+        if(item.type === 'reftext'){ card.type = 'reftext'; card.refHtml = item.refHtml || ''; if(item.groupTitle) card.groupTitle = item.groupTitle; }
         sec.cards.push(card);
         ALLCARDS[card.id] = card;
       }
@@ -1552,6 +1707,7 @@ function groupTotalCount(card){
   return card.children.length + (STATE.customItems[card.id]||[]).length;
 }
 function cardResolved(card){
+  if(card.type === 'reftext') return true;
   var s = STATE.checked[card.id];
   if(s === 'go' || s === 'na') return true;
   if(card.type === 'hobbstacho'){
@@ -1589,7 +1745,7 @@ function curCard(){ return curSection().cards[curCardIdx]; }
 
 function phaseTotals(phase){
   var total=0, done=0;
-  SECTIONS[phase].forEach(function(s){ s.cards.forEach(function(c){ total++; if(cardResolved(c)) done++; }); });
+  SECTIONS[phase].forEach(function(s){ s.cards.forEach(function(c){ if(c.type === 'reftext') return; total++; if(cardResolved(c)) done++; }); });
   return { total:total, done:done };
 }
 // Next phase in the overall flow (crosses heading boundaries, e.g. the
@@ -1601,8 +1757,8 @@ function nextPhaseKey(phase){
   return PHASES[idx+1];
 }
 function sectionTotals(sec){
-  var total=sec.cards.length, done=0;
-  sec.cards.forEach(function(c){ if(cardResolved(c)) done++; });
+  var total=0, done=0;
+  sec.cards.forEach(function(c){ if(c.type === 'reftext') return; total++; if(cardResolved(c)) done++; });
   return { total:total, done:done };
 }
 
@@ -1652,12 +1808,21 @@ function renderHeadingRow(){
   tasksBtn.title = 'Tasks';
   tasksBtn.addEventListener('click', showTasksModal);
   elHeadingRow.appendChild(tasksBtn);
+  // Optional sub heading under the active main heading (e.g. the regulation
+  // a heading's content comes from). Hidden for headings without one.
+  var curH = HEADINGS.filter(function(h){ return h.key === curHeading; })[0];
+  var elSub = document.getElementById('headingSub');
+  if(elSub){
+    elSub.textContent = (curH && curH.sub) || '';
+    elSub.style.display = (curH && curH.sub) ? '' : 'none';
+  }
   renderTankHeaderBar();
+  syncHeaderOffset();
 }
 // Only needed where the internal phase key isn't already good display
 // text (e.g. camelCase used as a plain identifier) — anything absent here
 // just falls back to showing its own key.
-var PHASE_LABELS = { PaxBrief: 'Pax Brief', SkillTest: 'Skill Test', GroundSyllabus: 'Ground Syllabus', AirSyllabus: 'Air Syllabus', AircraftRef: 'Aircraft Reference', PA28: 'PA28 Cadet' };
+var PHASE_LABELS = { SkillTest: 'Skill Test', GroundSyllabus: 'Ground Syllabus', AirSyllabus: 'Air Syllabus', AircraftRef: 'Aircraft Reference', PA28: 'PA28 Cadet', RefGround: 'Ground', RefDeparture: 'Departure', RefEnroute: 'En Route', RefCircuit: 'Circuit', RefDebrief: 'Debrief' };
 function renderPhaseRow(){
   elPhaseRow.innerHTML = '';
   var heading = HEADINGS.filter(function(h){ return h.key === curHeading; })[0];
@@ -1696,10 +1861,11 @@ function renderSectionRow(){
   elSectionRow.style.display = 'flex';
   sections.forEach(function(sec, i){
     var t = sectionTotals(sec);
-    var complete = t.done === t.total;
+    var noCount = t.total === 0;
+    var complete = !noCount && t.done === t.total;
     var btn = document.createElement('button');
     btn.className = 'sectionBtn' + (i===curSectionIdx && !showingPhaseDone ? ' on' : '') + (complete ? ' done' : '');
-    btn.innerHTML = (complete?'&#10003; ':'')+escapeHtml(sec.title)+' <span class="n">'+t.done+'/'+t.total+'</span>';
+    btn.innerHTML = (complete?'&#10003; ':'')+escapeHtml(sec.title)+(noCount?'':' <span class="n">'+t.done+'/'+t.total+'</span>');
     btn.addEventListener('click', function(){
       curSectionIdx = i; curCardIdx = 0;
       showingSectDone = false; showingPhaseDone = false;
@@ -1972,10 +2138,12 @@ function renderCard(card){
     html += renderSavedFlightsHtml();
   } else if(card.type === 'atis'){
     html += renderAtisHtml();
+  } else if(card.type === 'reftext'){
+    html += '<div class="refText">'+card.refHtml+'</div>';
   }
 
   elCard.innerHTML = html;
-  elCard.classList.toggle('list-mode', card.type === 'grouplist' || card.type === 'fuelplan' || card.type === 'aircraftref' || card.type === 'wxcalc' || card.type === 'apisettings' || card.type === 'savedflights' || card.type === 'atis');
+  elCard.classList.toggle('list-mode', card.type === 'grouplist' || card.type === 'fuelplan' || card.type === 'aircraftref' || card.type === 'wxcalc' || card.type === 'apisettings' || card.type === 'savedflights' || card.type === 'atis' || card.type === 'reftext');
   requestAnimationFrame(updateScrollHint);
 
   var lawBadge = document.getElementById('lawBadge');
