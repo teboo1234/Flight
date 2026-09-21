@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v51 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v52 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -443,7 +443,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v51</div>
+  <div id="versionBadge">v52</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -5402,6 +5402,13 @@ function renderCalculations(){
   // button lets you snapshot it into history on demand too, without
   // clearing anything — useful for logging a leg without losing the
   // in-progress data for whatever comes next.
+  //
+  // Redesigned as a plain list of cards (matching how ATIS entries and
+  // Manage Codes already work) rather than a wide table you had to
+  // scroll sideways to read, with Load and Delete as two separate,
+  // explicit buttons — no more "tap the row and hope you meant to load
+  // it," and, critically, an actual way to remove a single flight
+  // rather than only ever all of them at once.
   html += '<div class="calcCard"><div class="ck">Flight History</div>';
   html += '<button type="button" id="saveToHistoryBtn" style="width:100%;border:1px solid var(--em);background:var(--em);color:#fff;border-radius:8px;padding:11px 0;font-family:\'JetBrains Mono\',monospace;font-weight:800;font-size:13px;cursor:pointer;margin-bottom:12px">+ Save Current Flight to History</button>';
   if(!STATE.flightHistory.length){
@@ -5409,30 +5416,24 @@ function renderCalculations(){
   } else {
     var dirtyNow = hasUnsavedChanges();
     var fdNow = STATE.flightDetails;
-    html += '<div class="grNote" style="padding:0 2px 8px">Tap a flight to load it into the app \u2014 handy for setting several flights up ahead of time, then loading each one when it\'s actually flown.</div>';
-    html += '<div style="overflow-x:auto"><table class="timesTable" style="min-width:640px"><thead><tr>'+
-      '<th>Date</th><th>Student</th><th>Reg</th><th>Off Blocks</th><th>On Blocks</th><th>Block</th><th>Takeoff</th><th>Landing</th><th>Air</th>'+
-      '</tr></thead><tbody>';
     STATE.flightHistory.forEach(function(h, origIdx){ h.__origIdx = origIdx; });
     STATE.flightHistory.slice().reverse().forEach(function(h){
-      // Star sits right by this row's own name — only the row that
+      // Star sits right by this card's own name — only the one that
       // actually matches the flight currently open, and only while it
       // has genuinely diverged from what's saved here.
       var isCurrent = dirtyNow && h.date===fdNow.date && h.registration===fdNow.registration && h.student===fdNow.student;
-      html += '<tr class="historyRow" data-idx="'+h.__origIdx+'" style="cursor:pointer">'+
-        '<td>'+(isCurrent?'<span style="color:var(--amber)">\u2605</span> ':'')+escapeHtml(h.date||'\u2014')+'</td>'+
-        '<td>'+escapeHtml(h.student||'\u2014')+'</td>'+
-        '<td class="ttLabel">'+escapeHtml(h.registration||'\u2014')+'</td>'+
-        '<td>'+(h.offBlocks||'\u2014')+'</td>'+
-        '<td>'+(h.onBlocks||'\u2014')+'</td>'+
-        '<td class="ttTotal">'+(h.blockTime!=null?decToHM(h.blockTime):'\u2014')+'</td>'+
-        '<td>'+(h.takeoff||'\u2014')+'</td>'+
-        '<td>'+(h.landing||'\u2014')+'</td>'+
-        '<td class="ttTotal">'+(h.airTime!=null?decToHM(h.airTime):'\u2014')+'</td>'+
-      '</tr>';
+      var blockStr = h.blockTime!=null ? decToHM(h.blockTime)+' hrs' : '\u2014';
+      var airStr = h.airTime!=null ? decToHM(h.airTime)+' hrs' : '\u2014';
+      html += '<div class="savedFlightItem">'+
+        '<div class="savedFlightName">'+(isCurrent?'<span style="color:var(--amber)">\u2605</span> ':'')+escapeHtml(h.date||'\u2014')+' \u00b7 '+escapeHtml(h.student||'\u2014')+' \u00b7 '+escapeHtml(h.registration||'\u2014')+'</div>'+
+        '<div class="savedFlightSub">Block '+blockStr+' ('+(h.offBlocks||'\u2014')+'\u2013'+(h.onBlocks||'\u2014')+') \u00b7 Air '+airStr+' ('+(h.takeoff||'\u2014')+'\u2013'+(h.landing||'\u2014')+')</div>'+
+        '<div class="savedFlightBtns">'+
+          '<button type="button" class="historyLoadBtn" data-idx="'+h.__origIdx+'" style="border:1px solid var(--sky);background:var(--surface);color:var(--sky)">Load</button>'+
+          '<button type="button" class="savedFlightDelBtn historyDelBtn" data-idx="'+h.__origIdx+'">Delete</button>'+
+        '</div>'+
+      '</div>';
     });
-    html += '</tbody></table></div>';
-    html += '<div class="savedFlightTopBtns" style="margin-top:12px">'+
+    html += '<div class="savedFlightTopBtns" style="margin-top:2px">'+
       '<button type="button" class="printBtn shareBtn" id="exportTimesBtn" style="flex:1;background:#0369a1">Export Times</button>'+
       '<button type="button" class="printBtn shareBtn" id="exportAllHistoryPdfBtn" style="flex:1;background:#047857">Export All PDFs</button>'+
     '</div>'+
@@ -5537,9 +5538,9 @@ function wireFlightDetails(){
     document.getElementById('fdDate').value = iso;
     saveState();
   });
-  document.querySelectorAll('.historyRow').forEach(function(tr){
-    tr.addEventListener('click', function(){
-      var idx = parseInt(tr.getAttribute('data-idx'), 10);
+  document.querySelectorAll('.historyLoadBtn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var idx = parseInt(btn.getAttribute('data-idx'), 10);
       var h = STATE.flightHistory[idx];
       if(!h) return;
       var label = (h.date||'--')+' \u00b7 '+(h.student||'--')+' \u00b7 '+(h.registration||'--');
@@ -5547,6 +5548,22 @@ function wireFlightDetails(){
         ? 'The flight currently open has changes that haven\u2019t been saved \u2014 loading "'+label+'" will discard them. Load anyway?'
         : 'Load "'+label+'"? This replaces everything currently entered in the app with this saved flight.';
       showConfirm(warning, 'Load Flight', function(){ loadFlightFromHistory(idx); });
+    });
+  });
+  document.querySelectorAll('.historyDelBtn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var idx = parseInt(btn.getAttribute('data-idx'), 10);
+      var h = STATE.flightHistory[idx];
+      if(!h) return;
+      var label = (h.date||'--')+' \u00b7 '+(h.student||'--')+' \u00b7 '+(h.registration||'--');
+      // One confirmation, not three — this removes a single flight, not
+      // the whole archive, so it doesn't need Clear History's level of
+      // ceremony, just a genuine "are you sure."
+      showConfirm('Delete "'+label+'" from history? This cannot be undone.', 'Delete Flight', function(){
+        STATE.flightHistory.splice(idx, 1);
+        saveState();
+        renderCalculations();
+      });
     });
   });
   var saveToHistoryBtn = document.getElementById('saveToHistoryBtn');
