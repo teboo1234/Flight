@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v53 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v56 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -443,7 +443,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v53</div>
+  <div id="versionBadge">v56</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -5417,6 +5417,19 @@ function renderCalculations(){
     var dirtyNow = hasUnsavedChanges();
     var fdNow = STATE.flightDetails;
     STATE.flightHistory.forEach(function(h, origIdx){ h.__origIdx = origIdx; });
+    // Numbered by actual chronological order (date, then Off Blocks/Take
+    // Off as a tiebreaker for more than one flight on the same day) —
+    // not by array position, which is really just save order and can
+    // drift out of date order if several flights get set up ahead of
+    // time and saved in a different sequence than they're flown.
+    var chronoOrder = STATE.flightHistory.slice().sort(function(a, b){
+      var ad = a.date || '', bd = b.date || '';
+      if(ad !== bd) return ad < bd ? -1 : 1;
+      var at = a.offBlocks || a.takeoff || '', bt = b.offBlocks || b.takeoff || '';
+      if(at !== bt) return at < bt ? -1 : 1;
+      return a.__origIdx - b.__origIdx;
+    });
+    chronoOrder.forEach(function(h, i){ h.__flightNum = i+1; });
     STATE.flightHistory.slice().reverse().forEach(function(h){
       // Star sits right by this card's own name — only the one that
       // actually matches the flight currently open, and only while it
@@ -5424,9 +5437,24 @@ function renderCalculations(){
       var isCurrent = dirtyNow && h.date===fdNow.date && h.registration===fdNow.registration && h.student===fdNow.student;
       var blockStr = h.blockTime!=null ? decToHM(h.blockTime)+' hrs' : '\u2014';
       var airStr = h.airTime!=null ? decToHM(h.airTime)+' hrs' : '\u2014';
+      // Tacho/Hobbs only exist in the fuller per-flight snapshot (added
+      // later than the plain summary fields) — older entries simply
+      // won't have a second line here.
+      var tachoHobbsLine = '';
+      if(h.full && h.full.values){
+        var tS = (h.full.values['start.startgrp.1']||{}).tacho;
+        var tE = (h.full.values['airborne.airbornegrp.6']||{}).tacho;
+        var hS = (h.full.values['start.startgrp.1']||{}).hobbs;
+        var hE = (h.full.values['airborne.airbornegrp.6']||{}).hobbs;
+        var bits = [];
+        if(tS || tE) bits.push('Tacho '+(tS||'\u2014')+'\u2192'+(tE||'\u2014'));
+        if(hS || hE) bits.push('Hobbs '+(hS||'\u2014')+'\u2192'+(hE||'\u2014'));
+        if(bits.length) tachoHobbsLine = '<div class="savedFlightSub" style="margin-top:-4px">'+bits.join(' \u00b7 ')+'</div>';
+      }
       html += '<div class="savedFlightItem">'+
-        '<div class="savedFlightName">'+(isCurrent?'<span style="color:var(--amber)">\u2605</span> ':'')+escapeHtml(h.date||'\u2014')+' \u00b7 '+escapeHtml(h.student||'\u2014')+' \u00b7 '+escapeHtml(h.registration||'\u2014')+'</div>'+
+        '<div class="savedFlightName"><span style="color:var(--muted);font-weight:700">#'+h.__flightNum+'</span> '+(isCurrent?'<span style="color:var(--amber)">\u2605</span> ':'')+escapeHtml(h.date||'\u2014')+' \u00b7 '+escapeHtml(h.student||'\u2014')+' \u00b7 '+escapeHtml(h.registration||'\u2014')+'</div>'+
         '<div class="savedFlightSub">Block '+blockStr+' ('+(h.offBlocks||'\u2014')+'\u2013'+(h.onBlocks||'\u2014')+') \u00b7 Air '+airStr+' ('+(h.takeoff||'\u2014')+'\u2013'+(h.landing||'\u2014')+')</div>'+
+        tachoHobbsLine+
         '<div class="savedFlightBtns">'+
           '<button type="button" class="historyPreviewBtn" data-idx="'+h.__origIdx+'" style="border:1px solid var(--muted);background:var(--surface);color:var(--muted)">Preview</button>'+
           '<button type="button" class="historyLoadBtn" data-idx="'+h.__origIdx+'" style="border:1px solid var(--sky);background:var(--surface);color:var(--sky)">Load</button>'+
@@ -5546,12 +5574,8 @@ function wireFlightDetails(){
       if(!h) return;
       var label = (h.date||'--')+' \u00b7 '+(h.student||'--')+' \u00b7 '+(h.registration||'--');
       var lines = [
-        'Off Blocks: '+(h.offBlocks||'\u2014'),
-        'Take Off: '+(h.takeoff||'\u2014'),
-        'Landing: '+(h.landing||'\u2014'),
-        'On Blocks: '+(h.onBlocks||'\u2014'),
-        'Block Time: '+(h.blockTime!=null?decToHM(h.blockTime)+' hrs':'\u2014'),
-        'Air Time: '+(h.airTime!=null?decToHM(h.airTime)+' hrs':'\u2014')
+        'Block: '+(h.offBlocks||'\u2014')+' \u2192 '+(h.onBlocks||'\u2014')+'  ('+(h.blockTime!=null?decToHM(h.blockTime)+' hrs':'\u2014')+')',
+        'Air: '+(h.takeoff||'\u2014')+' \u2192 '+(h.landing||'\u2014')+'  ('+(h.airTime!=null?decToHM(h.airTime)+' hrs':'\u2014')+')'
       ];
       // Tacho/Hobbs only exist in the fuller per-flight snapshot (added
       // later than the plain summary fields) — older entries simply
@@ -5561,8 +5585,13 @@ function wireFlightDetails(){
         var tachoEnd = (h.full.values['airborne.airbornegrp.6']||{}).tacho;
         var hobbsStart = (h.full.values['start.startgrp.1']||{}).hobbs;
         var hobbsEnd = (h.full.values['airborne.airbornegrp.6']||{}).hobbs;
-        if(tachoStart || tachoEnd) lines.push('Tacho: '+(tachoStart||'\u2014')+' \u2192 '+(tachoEnd||'\u2014'));
-        if(hobbsStart || hobbsEnd) lines.push('Hobbs: '+(hobbsStart||'\u2014')+' \u2192 '+(hobbsEnd||'\u2014'));
+        function diffStr(s, e){
+          var sn = parseFloat(s), en = parseFloat(e);
+          if(isNaN(sn) || isNaN(en)) return '\u2014';
+          return (en-sn).toFixed(2);
+        }
+        if(tachoStart || tachoEnd) lines.push('Tacho: '+(tachoStart||'\u2014')+' \u2192 '+(tachoEnd||'\u2014')+'  (\u0394 '+diffStr(tachoStart,tachoEnd)+')');
+        if(hobbsStart || hobbsEnd) lines.push('Hobbs: '+(hobbsStart||'\u2014')+' \u2192 '+(hobbsEnd||'\u2014')+'  (\u0394 '+diffStr(hobbsStart,hobbsEnd)+')');
       }
       showConfirm(label+'\n\n'+lines.join('\n'), 'OK', function(){});
     });
