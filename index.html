@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v52 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v53 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -416,7 +416,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
    could leave the prompt visually underneath and unclickable. */
 #promptModal, #codePromptModal{ z-index:200; }
 .confirmBox{ background:#fff; border-radius:16px; padding:24px 22px; max-width:340px; width:100%; box-shadow:0 20px 50px rgba(0,0,0,.3); }
-.confirmMsg{ font-family:'DM Sans',sans-serif; font-size:15px; color:#0f172a; line-height:1.5; margin-bottom:20px; text-align:center; }
+.confirmMsg{ font-family:'DM Sans',sans-serif; font-size:15px; color:#0f172a; line-height:1.5; margin-bottom:20px; text-align:center; white-space:pre-line; }
 .confirmBtns{ display:flex; gap:10px; }
 .confirmBtns button{ flex:1; padding:12px 0; border-radius:10px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:13px; cursor:pointer; }
 .confirmCancel{ border:1.5px solid #cbd5e1; background:#fff; color:#3f4c5e; }
@@ -443,7 +443,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v52</div>
+  <div id="versionBadge">v53</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -5428,6 +5428,7 @@ function renderCalculations(){
         '<div class="savedFlightName">'+(isCurrent?'<span style="color:var(--amber)">\u2605</span> ':'')+escapeHtml(h.date||'\u2014')+' \u00b7 '+escapeHtml(h.student||'\u2014')+' \u00b7 '+escapeHtml(h.registration||'\u2014')+'</div>'+
         '<div class="savedFlightSub">Block '+blockStr+' ('+(h.offBlocks||'\u2014')+'\u2013'+(h.onBlocks||'\u2014')+') \u00b7 Air '+airStr+' ('+(h.takeoff||'\u2014')+'\u2013'+(h.landing||'\u2014')+')</div>'+
         '<div class="savedFlightBtns">'+
+          '<button type="button" class="historyPreviewBtn" data-idx="'+h.__origIdx+'" style="border:1px solid var(--muted);background:var(--surface);color:var(--muted)">Preview</button>'+
           '<button type="button" class="historyLoadBtn" data-idx="'+h.__origIdx+'" style="border:1px solid var(--sky);background:var(--surface);color:var(--sky)">Load</button>'+
           '<button type="button" class="savedFlightDelBtn historyDelBtn" data-idx="'+h.__origIdx+'">Delete</button>'+
         '</div>'+
@@ -5537,6 +5538,34 @@ function wireFlightDetails(){
     STATE.flightDetails.date = iso;
     document.getElementById('fdDate').value = iso;
     saveState();
+  });
+  document.querySelectorAll('.historyPreviewBtn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var idx = parseInt(btn.getAttribute('data-idx'), 10);
+      var h = STATE.flightHistory[idx];
+      if(!h) return;
+      var label = (h.date||'--')+' \u00b7 '+(h.student||'--')+' \u00b7 '+(h.registration||'--');
+      var lines = [
+        'Off Blocks: '+(h.offBlocks||'\u2014'),
+        'Take Off: '+(h.takeoff||'\u2014'),
+        'Landing: '+(h.landing||'\u2014'),
+        'On Blocks: '+(h.onBlocks||'\u2014'),
+        'Block Time: '+(h.blockTime!=null?decToHM(h.blockTime)+' hrs':'\u2014'),
+        'Air Time: '+(h.airTime!=null?decToHM(h.airTime)+' hrs':'\u2014')
+      ];
+      // Tacho/Hobbs only exist in the fuller per-flight snapshot (added
+      // later than the plain summary fields) — older entries simply
+      // won't have them, so this stays quiet rather than showing "--".
+      if(h.full && h.full.values){
+        var tachoStart = (h.full.values['start.startgrp.1']||{}).tacho;
+        var tachoEnd = (h.full.values['airborne.airbornegrp.6']||{}).tacho;
+        var hobbsStart = (h.full.values['start.startgrp.1']||{}).hobbs;
+        var hobbsEnd = (h.full.values['airborne.airbornegrp.6']||{}).hobbs;
+        if(tachoStart || tachoEnd) lines.push('Tacho: '+(tachoStart||'\u2014')+' \u2192 '+(tachoEnd||'\u2014'));
+        if(hobbsStart || hobbsEnd) lines.push('Hobbs: '+(hobbsStart||'\u2014')+' \u2192 '+(hobbsEnd||'\u2014'));
+      }
+      showConfirm(label+'\n\n'+lines.join('\n'), 'OK', function(){});
+    });
   });
   document.querySelectorAll('.historyLoadBtn').forEach(function(btn){
     btn.addEventListener('click', function(){
