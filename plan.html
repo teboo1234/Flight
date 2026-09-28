@@ -781,6 +781,29 @@
     margin-left: 8px;
   }
 
+  .settlement {
+    margin-top: 18px; padding-top: 14px;
+    border-top: 1px dashed #ccc;
+  }
+  .settlement-title {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: #666; margin-bottom: 8px;
+  }
+  .settlement-list { display: flex; flex-direction: column; gap: 6px; }
+  .settlement-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; font-variant-numeric: tabular-nums;
+    padding: 6px 8px; background: #f4f4f4; border-radius: 5px;
+  }
+  .settlement-row .set-from { font-weight: 600; }
+  .settlement-row .set-arrow { color: #888; margin: 0 2px; }
+  .settlement-row .set-to { font-weight: 600; }
+  .settlement-row .set-amt { margin-left: auto; font-weight: 600; color: #000; }
+  .settlement-empty {
+    font-size: 13px; color: #666; font-style: italic;
+  }
+
   /* Budget tab */
   .budget-headers {
     display: grid;
@@ -1149,6 +1172,10 @@
           <span class="val" id="budgetSplit">—</span>
         </div>
         <div class="person-totals" id="budgetPersonTotals"></div>
+        <div class="settlement" id="budgetSettlement" style="display:none;">
+          <div class="settlement-title">Who owes whom to make it fair</div>
+          <div class="settlement-list" id="settlementList"></div>
+        </div>
       </div>
 
       <div class="menu-row">
@@ -1448,10 +1475,33 @@ function sortedTasks() {
 /* Shift every non-primary task EXCEPT `exceptId` by `delta` minutes.
  * Used when a primary's start/end is edited: everything else slides with
  * it so relative spacing is preserved. Other primaries stay anchored. */
-function shiftOthersBy(exceptId, delta) {
+/* Shift only non-primaries in the slots directly adjacent to a moved primary.
+ * A primary bounds two slots — the one before it (ends at the primary's old
+ * start) and the one after it (starts at the primary's old end). Only tasks
+ * whose OLD position fell within one of those two slots get shifted by delta.
+ * This keeps tasks in distant slots (past other primaries) put. */
+function shiftOthersBy(movedPrimary, oldStart, delta) {
   if (!delta) return;
-  for (const t of tasks()) {
-    if (t.id === exceptId || t.primary) continue;
+  const ts = tasks();
+  const oldEnd = oldStart + movedPrimary.duration;
+
+  // Find the primaries immediately before and after the moved primary's
+  // OLD position — those define the slot boundaries we care about.
+  let beforeLo = 0;
+  let afterHi = 1440;
+  for (const p of ts) {
+    if (!p.primary || p.id === movedPrimary.id) continue;
+    const pEnd = p.start + p.duration;
+    if (pEnd <= oldStart && pEnd > beforeLo) beforeLo = pEnd;
+    if (p.start >= oldEnd && p.start < afterHi) afterHi = p.start;
+  }
+
+  for (const t of ts) {
+    if (t.id === movedPrimary.id || t.primary) continue;
+    const tEnd = t.start + t.duration;
+    const inBefore = t.start >= beforeLo && tEnd <= oldStart;
+    const inAfter = t.start >= oldEnd && tEnd <= afterHi;
+    if (!inBefore && !inAfter) continue;
     let s = t.start + delta;
     if (s < 0) s = 0;
     if (s + t.duration > 1440) s = Math.max(0, 1440 - t.duration);
@@ -1831,6 +1881,8 @@ function renderTasks() {
 
     $star.addEventListener('change', e => {
       task.primary = e.target.checked;
+      // A slot's boundaries just changed. Re-cascade non-primaries.
+      cascadeAfterMove(task.id);
       resolveOverlaps(); persistAll(); renderTasks();
     });
 
@@ -1848,7 +1900,6 @@ function renderTasks() {
     $start.addEventListener('focus', () => { startOldStart = task.start; });
     $start.addEventListener('change', e => applyStartChange(e.target.value));
     $start.addEventListener('blur', () => {
-      // Fallback: if change didn't fire, apply current value
       applyStartChange($start.value);
       if (!startPending) { startOldStart = null; return; }
       startPending = false;
@@ -1856,7 +1907,10 @@ function renderTasks() {
       startOldStart = null;
       if (task.primary && oldStart != null) {
         const delta = task.start - oldStart;
-        if (delta !== 0) shiftOthersBy(task.id, delta);
+        if (delta !== 0) shiftOthersBy(task, oldStart, delta);
+      } else {
+        // Non-primary time edit: cascade to shift OTHER non-primaries out of the way
+        cascadeAfterMove(task.id);
       }
       resolveOverlaps(); persistAll(); renderTasks();
     });
@@ -1886,7 +1940,9 @@ function renderTasks() {
         endOldStart = null;
         if (task.primary && oldStart != null) {
           const delta = task.start - oldStart;
-          if (delta !== 0) shiftOthersBy(task.id, delta);
+          if (delta !== 0) shiftOthersBy(task, oldStart, delta);
+        } else {
+          cascadeAfterMove(task.id);
         }
         resolveOverlaps(); persistAll(); renderTasks();
       });
@@ -1900,19 +1956,12 @@ function renderTasks() {
       task.duration = d;
 
       if (task.primary) {
-        // Primary: when duration grows, push immediately-following non-primaries
-        // (cascade stops at next primary). Shrinking moves nothing.
+        // Primary duration grow: push immediately-following non-primaries out of the way.
         if (d > oldDuration) pushLaterTasksFromPrimary(task);
       } else {
-        // Non-primary: if growing causes an overlap, try to find a new slot
-        // for THIS task within its order-preserving bounds. Never reorder.
-        if (d > oldDuration) {
-          const bounds = orderBounds(task);
-          if (bounds.max - bounds.min >= d) {
-            const newStart = findNearestFreeSlot(task, bounds);
-            if (newStart != null) task.start = newStart;
-          }
-        }
+        // Non-primary: task itself stays put (pinned), cascade shifts OTHER
+        // non-primaries in TIME to avoid overlap.
+        cascadeAfterMove(task.id);
       }
       resolveOverlaps();
       persistAll(); renderTasks();
@@ -1942,8 +1991,18 @@ function renderTasks() {
     });
 
     if (canMove) {
-      $up.addEventListener('click', e => { e.preventDefault(); closeAllRowMenus(); moveTaskInList(task.id, -1); });
-      $down.addEventListener('click', e => { e.preventDefault(); closeAllRowMenus(); moveTaskInList(task.id, 1); });
+      $up.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        moveTaskInList(task.id, -1);
+        reopenRowMenuForTask(task.id);
+      });
+      $down.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        moveTaskInList(task.id, 1);
+        reopenRowMenuForTask(task.id);
+      });
     }
 
     $menuBtn.addEventListener('click', e => {
@@ -2005,6 +2064,20 @@ function closeAllRowMenus() {
       menu.style.left = '';
     }
   });
+}
+
+/* After a render, re-open the row menu on the task with the given id (used
+ * by the ▲/▼ buttons so consecutive presses don't require reopening). */
+function reopenRowMenuForTask(taskId) {
+  setTimeout(() => {
+    const li = document.querySelector(`#taskList li[data-id="${taskId}"]`);
+    if (!li) return;
+    const btn = li.querySelector('.row-menu-btn');
+    const menu = li.querySelector('.row-menu');
+    if (!btn || !menu) return;
+    li.classList.add('menu-open');
+    positionRowMenu(btn, menu);
+  }, 0);
 }
 
 /* Global: click outside a row menu closes it. Escape also closes. */
@@ -2069,42 +2142,96 @@ function moveTaskInList(taskId, dir) {
     }
   }
 
-  cascadeAfterMove();
+  cascadeAfterMove(task.id);
   resolveOverlaps();
   persistAll();
   renderTasks();
 }
 
-/* Order-preserving cascade: after a manual move, walk tasks in current
- * sorted order (by start). For any task that overlaps its predecessor,
- * push it forward just enough to touch. Primaries never move; if a
- * non-primary can't be pushed without exceeding day end, it stays and
- * the conflict gets flagged. This preserves the visible order EXACTLY
- * as it is after the move — no task ever swaps position with another. */
-function cascadeAfterMove() {
-  for (let pass = 0; pass < 20; pass++) {
-    const ts = tasks();
-    const sorted = [...ts]
-      .filter(t => t.duration > 0)
-      .sort((a, b) => a.start - b.start);
-    let changed = false;
-    let cursor = 0;
-    for (const t of sorted) {
-      if (t.primary) {
-        // Primaries anchor cursor to their end but never move themselves
-        cursor = Math.max(cursor, t.start + t.duration);
-        continue;
-      }
-      if (t.start < cursor) {
-        const newStart = Math.min(cursor, 1440 - t.duration);
-        if (newStart !== t.start && newStart >= 0) {
-          t.start = newStart;
-          changed = true;
-        }
-      }
-      cursor = Math.max(cursor, t.start + t.duration);
+/* After any manual change (time/duration edit, ▲/▼ move), shift non-primary
+ * TIMES to remove overlaps. Durations never change. Order stays. Primaries
+ * and the optionally-pinned task never move.
+ *
+ * Primaries divide the day into SLOTS. Non-primaries live in the slot that
+ * contains their current start time, and the cascade only shifts them
+ * WITHIN that slot. A non-primary is NEVER pushed into a primary's range. */
+function cascadeAfterMove(pinnedId) {
+  const ts = tasks();
+  const primaries = ts.filter(t => t.primary).sort((a, b) => a.start - b.start);
+
+  // Compute slots: intervals of the day that are NOT occupied by a primary.
+  const slots = [];
+  let cursor = 0;
+  for (const p of primaries) {
+    if (p.start > cursor) slots.push({ start: cursor, end: p.start });
+    cursor = Math.max(cursor, p.start + p.duration);
+  }
+  if (cursor < 1440) slots.push({ start: cursor, end: 1440 });
+  if (slots.length === 0) return; // primaries fill the whole day, nothing to do
+
+  // Assign each non-primary to a slot based on its current start.
+  const nonPrimaries = ts.filter(t => !t.primary && t.duration > 0);
+  const slotTasks = slots.map(() => []);
+  for (const t of nonPrimaries) {
+    let idx = slots.findIndex(s => t.start >= s.start && t.start < s.end);
+    if (idx === -1) {
+      // Task starts inside a primary → snap to the slot immediately after.
+      idx = slots.findIndex(s => s.start >= t.start);
+      if (idx === -1) idx = slots.length - 1;
     }
-    if (!changed) break;
+    slotTasks[idx].push(t);
+  }
+
+  // For each slot, pack its tasks with forward+backward sweeps.
+  for (let s = 0; s < slots.length; s++) {
+    const slot = slots[s];
+    const items = slotTasks[s];
+    if (items.length === 0) continue;
+    items.sort((a, b) =>
+      a.start - b.start || a.duration - b.duration || (a.id < b.id ? -1 : 1)
+    );
+
+    for (let outer = 0; outer < 20; outer++) {
+      let changed = false;
+
+      // Forward: push each item later if it overlaps the previous.
+      let cur = slot.start;
+      for (const t of items) {
+        if (t.id === pinnedId) {
+          cur = Math.max(cur, t.start + t.duration);
+          continue;
+        }
+        if (t.start < cur) {
+          const newStart = Math.min(cur, slot.end - t.duration);
+          if (newStart >= slot.start && newStart !== t.start) {
+            t.start = newStart;
+            changed = true;
+          }
+        }
+        cur = Math.max(cur, t.start + t.duration);
+      }
+
+      // Backward: pull each item earlier if extending past the next.
+      let back = slot.end;
+      for (let i = items.length - 1; i >= 0; i--) {
+        const t = items[i];
+        if (t.id === pinnedId) {
+          back = Math.min(back, t.start);
+          continue;
+        }
+        const tEnd = t.start + t.duration;
+        if (tEnd > back) {
+          const newStart = Math.max(slot.start, back - t.duration);
+          if (newStart !== t.start) {
+            t.start = newStart;
+            changed = true;
+          }
+        }
+        back = Math.min(back, t.start);
+      }
+
+      if (!changed) break;
+    }
   }
 }
 
@@ -2172,6 +2299,7 @@ document.getElementById('btnAdd').addEventListener('click', () => {
   }
   const t = { id: uid(), title: '', link: '', start, duration: 30, primary: false };
   tasks().push(t);
+  cascadeAfterMove(t.id);
   resolveOverlaps(); persistAll(); renderTasks();
   setTimeout(() => {
     const li = document.querySelector(`#taskList li[data-id="${t.id}"]`);
@@ -2194,6 +2322,7 @@ document.getElementById('btnAddStart').addEventListener('click', () => {
   }
   const t = { id: uid(), title: '', link: '', start, duration, primary: false };
   tasks().push(t);
+  cascadeAfterMove(t.id);
   resolveOverlaps(); persistAll(); renderTasks();
   setTimeout(() => {
     const li = document.querySelector(`#taskList li[data-id="${t.id}"]`);
@@ -2216,6 +2345,7 @@ document.getElementById('btnAddEnd').addEventListener('click', () => {
   }
   const t = { id: uid(), title: '', link: '', start, duration, primary: false };
   tasks().push(t);
+  cascadeAfterMove(t.id);
   resolveOverlaps(); persistAll(); renderTasks();
   setTimeout(() => {
     const li = document.querySelector(`#taskList li[data-id="${t.id}"]`);
@@ -2635,6 +2765,73 @@ function renderBudgetTotals() {
       <span class="pt-val">${fmtMoney(v.ex)} ex / ${fmtMoney(v.inc)} inc <span class="pt-detail">· ${v.count}</span></span>
     </div>`;
   }).join('');
+
+  // ---- Settlement: who owes whom ----
+  const setEl = document.getElementById('budgetSettlement');
+  const setListEl = document.getElementById('settlementList');
+  const settlement = computeSettlements();
+  if (settlement.transactions.length === 0 && realPeople.length < 2) {
+    setEl.style.display = 'none';
+  } else {
+    setEl.style.display = 'block';
+    if (settlement.transactions.length === 0) {
+      setListEl.innerHTML = '<div class="settlement-empty">Everyone paid a fair share — no transfers needed.</div>';
+    } else {
+      setListEl.innerHTML = settlement.transactions.map(tx => {
+        const fromColor = personColor(tx.from);
+        const toColor = personColor(tx.to);
+        return `<div class="settlement-row">
+          <span class="set-from" style="color:${fromColor}">${escapeHtml(tx.from)}</span>
+          <span class="set-arrow">→</span>
+          <span class="set-to" style="color:${toColor}">${escapeHtml(tx.to)}</span>
+          <span class="set-amt">${fmtMoney(tx.amount)}</span>
+        </div>`;
+      }).join('');
+    }
+  }
+}
+
+/* Compute settlement transfers to equalise costs across named people.
+ * Only items with a named person are considered — unassigned items are
+ * shown in per-person totals but don't participate in the settlement. */
+function computeSettlements() {
+  const items = budgetItems();
+
+  const paidBy = {};
+  let total = 0;
+  items.forEach(i => {
+    if (i.excluded) return;
+    const name = (i.person || '').trim();
+    if (!name) return; // skip unassigned items for settlement
+    const q = i.qty || 1;
+    const amt = inclFromExcl(i.cost, i.taxRate) * q;
+    total += amt;
+    if (!paidBy[name]) paidBy[name] = 0;
+    paidBy[name] += amt;
+  });
+
+  const named = Object.keys(paidBy);
+  if (named.length < 2) return { total, share: 0, transactions: [] };
+
+  const share = total / named.length;
+  const balances = named.map(name => ({ name, bal: (paidBy[name] || 0) - share }));
+
+  const transactions = [];
+  let safety = 100;
+  while (safety-- > 0) {
+    balances.sort((a, b) => b.bal - a.bal);
+    const creditor = balances[0];
+    const debtor = balances[balances.length - 1];
+    if (!creditor || !debtor || creditor === debtor) break;
+    if (creditor.bal < 0.01 || debtor.bal > -0.01) break;
+    const amount = Math.min(creditor.bal, -debtor.bal);
+    if (amount < 0.01) break;
+    transactions.push({ from: debtor.name, to: creditor.name, amount: Math.round(amount * 100) / 100 });
+    creditor.bal -= amount;
+    debtor.bal += amount;
+  }
+
+  return { total, share, transactions };
 }
 
 document.getElementById('btnAddBudget').addEventListener('click', () => {
@@ -2716,6 +2913,18 @@ function buildBudgetText() {
       lines.push(`  ${name.padEnd(14)}  ${fmtMoney(v.ex).padStart(8)} ex  /  ${fmtMoney(v.inc).padStart(8)} inc · ${v.count}`);
     });
   }
+  const settlement = computeSettlements();
+  if (settlement.transactions.length > 0 || (realPeople.length >= 2)) {
+    lines.push('');
+    lines.push('Who owes whom to make it fair:');
+    if (settlement.transactions.length === 0) {
+      lines.push('  Everyone paid a fair share — no transfers needed.');
+    } else {
+      settlement.transactions.forEach(tx => {
+        lines.push(`  ${tx.from} → ${tx.to}   ${fmtMoney(tx.amount)}`);
+      });
+    }
+  }
   return lines.join('\n');
 }
 
@@ -2774,6 +2983,14 @@ function buildBudgetCsv() {
       const v = byPerson[name];
       rows.push([v.count, '', name, '', '', '', fmtMoney(v.ex), fmtMoney(v.inc)]);
     });
+    const settlement = computeSettlements();
+    if (settlement.transactions.length > 0) {
+      rows.push([]);
+      rows.push(['', 'Who owes whom', 'From', 'To', '', '', 'Amount']);
+      settlement.transactions.forEach(tx => {
+        rows.push(['', '', tx.from, tx.to, '', '', fmtMoney(tx.amount)]);
+      });
+    }
   }
   return rows.map(r => r.map(csvEscape).join(',')).join('\r\n');
 }
