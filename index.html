@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v59 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v60 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -443,7 +443,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v59</div>
+  <div id="versionBadge">v60</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -1121,7 +1121,11 @@ var CHECKLIST_DATA = [
         {text:'Taxi Checks', prompt:true, note:'Complete the paper taxi checklist.'},
         {text:'Power Checks', prompt:true, note:'Complete the paper power checklist.'},
         {text:'Pre-Take Off Checks', prompt:true, note:'Complete the paper pre-take-off checklist.'},
-        {text:'Note Tank', note:'Note which fuel tank is currently selected before departure.'},
+        {text:'Vital Actions', type:'divider'},
+        'Full and Free',
+        'Mags Both',
+        {text:'Fuel — Correct Tank', note:'Note which fuel tank is currently selected before departure.'},
+        'Cockpit Scan',
         'Runway XX Left/Right Circuit','Standard departure?','Wind is.. Weather is..',
         'Problem on the ground or after departure',
         'Initial Altitude/Height restriction and Heading',
