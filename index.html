@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v56 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v59 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -443,7 +443,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v56</div>
+  <div id="versionBadge">v59</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -1232,7 +1232,7 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
 var STORE_KEY = 'checkdeck_state_v1';
 var USG_TO_L = 3.785;
 var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'4520',name:'EGTK VFR Departures'},{code:'7010',name:'EGTK Circuits'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, atisEntries:[], atisDraft:{ icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' }, manualTasks:[], flightHistory:[], lastSavedSnapshot:null, customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
-  fuel:{ unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
+  fuel:{ unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:8, tripMins:'60', contPct:'', alt:4, altMins:'30', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
   tankLog:[], tankSelected:'L',
   flightDetails:{ date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', safetyReport:'', notes:'' } };
 // checked[cardId] = 'go'|'na'; values[cardId] = string/obj; global = shared
@@ -1304,7 +1304,7 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
       STATE.hideCompleted = true;
       STATE.hideCompletedMigratedV2 = true;
     }
-    if(!STATE.fuel) STATE.fuel = { unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
+    if(!STATE.fuel) STATE.fuel = { unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:8, tripMins:'60', contPct:'', alt:4, altMins:'30', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
     // Migration: Initial Fuel used to be one combined figure — anyone
     // with existing data has STATE.fuel.fob but no fobL/fobR yet. Splits
     // it evenly across both tanks rather than losing what they'd
@@ -1330,6 +1330,22 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
       if(STATE.fuel.taxiMins === '' || STATE.fuel.taxiMins === undefined) STATE.fuel.taxiMins = '15';
       if(STATE.fuel.final === '' || STATE.fuel.final === undefined) STATE.fuel.final = 8;
       STATE.fuelDefaultsMigrated = true;
+    }
+    // Second, separate migration flag — Trip and Alternate didn't have
+    // defaults when the block above first ran, so anyone who already
+    // has fuelDefaultsMigrated set would never see these fill in
+    // without a flag of their own.
+    if(!STATE.fuelDefaultsMigratedV2){
+      var migBurn = parseFloat(STATE.fuel.burnRate) || 8;
+      if(STATE.fuel.tripMins === '' || STATE.fuel.tripMins === undefined){
+        STATE.fuel.tripMins = '60';
+        if(STATE.fuel.trip === '' || STATE.fuel.trip === undefined) STATE.fuel.trip = (60/60)*migBurn;
+      }
+      if(STATE.fuel.altMins === '' || STATE.fuel.altMins === undefined){
+        STATE.fuel.altMins = '30';
+        if(STATE.fuel.alt === '' || STATE.fuel.alt === undefined) STATE.fuel.alt = (30/60)*migBurn;
+      }
+      STATE.fuelDefaultsMigratedV2 = true;
     }
     if(!STATE.tankLog) STATE.tankLog = [];
     if(!STATE.tankSelected) STATE.tankSelected = 'L';
@@ -2292,33 +2308,6 @@ function renderCard(card){
         STATE.fuel.actualLanding = isNaN(n) ? '' : (STATE.fuel.unit==='L' ? n/USG_TO_L : n);
         saveState(); renderCard(card); updateFuelSummaryOnly();
       });
-    });
-    var transferLandingBtn = document.getElementById('fpTransferLandingBtn');
-    if(transferLandingBtn) transferLandingBtn.addEventListener('click', function(){
-      // For a second flight in the same aircraft: whatever's left over
-      // from this landing becomes the next flight's starting fuel.
-      // Prefers the actual figure if it's been entered; falls back to
-      // the estimate from actual air time (not the planned-trip figure,
-      // since that ignores anything that actually happened in flight).
-      var actual = parseFloat(STATE.fuel.actualLanding);
-      var c = fuelCalc();
-      var tc = fuelTimesCalc(c);
-      var source = !isNaN(actual) ? actual : tc.val;
-      if(source === null || source === undefined || isNaN(source)) return;
-      // Per-tank remaining (from the Tank Log, if there's enough data to
-      // compute it) is more accurate than an even split — it reflects
-      // whichever tank was actually selected during the flight.
-      var ts = tankFuelStatus();
-      if(ts.L.qty !== null && ts.R.qty !== null){
-        STATE.fuel.fobL = Math.max(0, ts.L.qty);
-        STATE.fuel.fobR = Math.max(0, ts.R.qty);
-      } else {
-        STATE.fuel.fobL = source/2;
-        STATE.fuel.fobR = source/2;
-      }
-      saveState();
-      renderCard(card);
-      updateFuelSummaryOnly();
     });
     var fOilLevelBtn = document.getElementById('fpOilLevel');
     if(fOilLevelBtn) fOilLevelBtn.addEventListener('click', function(){
@@ -3676,9 +3665,20 @@ function renderFuelPlanHtml(cardId){
     '<div class="fpVarianceRow"><span class="fpBlockNote" style="margin:0">Variance vs Expected:</span> <span class="fpBlockVal small '+(variance===null?'':(variance<0?'neg':'pos'))+'" id="fpVariance">'+(variance===null?'\u2014':fmtFuelSigned(variance))+'</span>'+
     (variancePct!==null ? ' <span class="fpBlockNote" style="margin:0" id="fpVariancePct">('+(variance<0?'-':'+')+variancePct+'%)</span>' : '<span id="fpVariancePct"></span>')+
     '</div>'+
-    '<button type="button" id="fpTransferLandingBtn" style="width:100%;margin-top:10px;border:1px solid var(--violet);background:var(--surface);color:var(--violet);border-radius:8px;padding:9px 0;font-family:\'JetBrains Mono\',monospace;font-weight:800;font-size:12px;cursor:pointer">\u2193 Use Landing Fuel as Fuel on Board</button>'+
-    '<div class="fpBlockNote" style="margin-top:4px">'+(!isNaN(actual) ? 'Uses the actual figure above' : (tc.val!==null ? 'No actual entered \u2014 uses the estimated '+fmtFuel(tc.val)+' from air time' : 'Enter an actual, or set Off Blocks/Take Off/Landing times, first'))+'</div>'+
   '</div>';
+  // Expected remaining per tank, straight from the Tank Log — read-only
+  // here (no transfer action anymore: Reset 2nd Flight carries this
+  // forward automatically, so a second, separate button to do the same
+  // thing by hand no longer made sense).
+  if(STATE.tankLog.length){
+    var tankExp = tankFuelStatus();
+    html += '<div class="fpBlock" style="border-color:var(--em)"><div class="fpBlockTitle" style="color:var(--em)">Expected Remaining (Tank Log)</div>'+
+      '<div class="fpFieldsRow" style="margin-top:8px">'+
+        '<div class="fpField"><label>Left</label><div class="fpBlockVal small">'+(tankExp.L.qty!==null?fmtFuel(Math.max(0,tankExp.L.qty)):'\u2014')+'</div></div>'+
+        '<div class="fpField"><label>Right</label><div class="fpBlockVal small">'+(tankExp.R.qty!==null?fmtFuel(Math.max(0,tankExp.R.qty)):'\u2014')+'</div></div>'+
+      '</div>'+
+    '</div>';
+  }
   html += '<div class="fpFieldsRow" style="margin-top:14px">'+
     '<div class="fpField"><label>Oil Level (qts)</label><button type="button" class="fpFieldBtn" id="fpOilLevel">'+(f.oilLevel||'0')+'</button></div>'+
     '<div class="fpField"><label>Oil Added (qts)</label><button type="button" class="fpFieldBtn" id="fpOilAdded">'+(f.oilAdded||'0')+'</button></div>'+
@@ -3860,15 +3860,17 @@ function renderFlightHistoryContent(doc, scale){
   var y = 15;
   var rowH = 6 * scale;
   var cols = [
-    {k:'date', label:'Date', w:20},
-    {k:'student', label:'Student', w:26},
-    {k:'registration', label:'Reg', w:20},
-    {k:'offBlocks', label:'Off Bl', w:15},
-    {k:'onBlocks', label:'On Bl', w:15},
-    {k:'blockTime', label:'Block', w:15},
-    {k:'takeoff', label:'T/O', w:15},
-    {k:'landing', label:'Land', w:15},
-    {k:'airTime', label:'Air', w:15}
+    {k:'date', label:'Date', w:18},
+    {k:'student', label:'Student', w:22},
+    {k:'registration', label:'Reg', w:16},
+    {k:'offBlocks', label:'Off Bl', w:12},
+    {k:'onBlocks', label:'On Bl', w:12},
+    {k:'blockTime', label:'Block', w:20},
+    {k:'takeoff', label:'T/O', w:12},
+    {k:'landing', label:'Land', w:12},
+    {k:'airTime', label:'Air', w:20},
+    {k:'tachoTime', label:'Tacho', w:18},
+    {k:'hobbsTime', label:'Hobbs', w:18}
   ];
   function drawHeader(){
     doc.setFont(undefined, 'bold'); doc.setFontSize(10*scale);
@@ -3886,15 +3888,29 @@ function renderFlightHistoryContent(doc, scale){
   drawHeader();
   STATE.flightHistory.forEach(function(h){
     var x = marginX;
+    // Tacho/Hobbs readings only exist in the fuller per-flight snapshot
+    // (added later than the plain summary fields) — older entries just
+    // show '--' here, same as any other missing figure.
+    var tachoDur = null, hobbsDur = null;
+    if(h.full && h.full.values){
+      var tS = (h.full.values['start.startgrp.1']||{}).tacho;
+      var tE = (h.full.values['airborne.airbornegrp.6']||{}).tacho;
+      var hS = (h.full.values['start.startgrp.1']||{}).hobbs;
+      var hE = (h.full.values['airborne.airbornegrp.6']||{}).hobbs;
+      tachoDur = (tS && tE) ? Math.round((parseFloat(tE)-parseFloat(tS))*10)/10 : null;
+      hobbsDur = (hS && hE) ? Math.round((parseFloat(hE)-parseFloat(hS))*10)/10 : null;
+    }
     var vals = {
       date: h.date||'--', student: h.student||'--', registration: h.registration||'--',
       offBlocks: h.offBlocks||'--', onBlocks: h.onBlocks||'--',
-      blockTime: h.blockTime!=null?decToHM(h.blockTime):'--',
+      blockTime: h.blockTime!=null?(decToHM(h.blockTime)+' '+h.blockTime.toFixed(1)):'--',
       takeoff: h.takeoff||'--', landing: h.landing||'--',
-      airTime: h.airTime!=null?decToHM(h.airTime):'--'
+      airTime: h.airTime!=null?(decToHM(h.airTime)+' '+h.airTime.toFixed(1)):'--',
+      tachoTime: tachoDur!=null?(decToHM(tachoDur)+' '+tachoDur.toFixed(1)):'--',
+      hobbsTime: hobbsDur!=null?(decToHM(hobbsDur)+' '+hobbsDur.toFixed(1)):'--'
     };
     cols.forEach(function(c){
-      var text = String(vals[c.k]).substring(0, 12);
+      var text = String(vals[c.k]).substring(0, 14);
       doc.text(text, x, y);
       x += c.w*scale;
     });
@@ -4490,13 +4506,51 @@ function loadFlightFromHistory(idx){
   updateCountdown();
   renderTankHeaderBar();
 }
+// For a second flight in the same aircraft: whatever's left over from
+// this landing becomes the next flight's starting fuel. Prefers the
+// actual figure if it's been entered; falls back to the estimate from
+// actual air time (not the planned-trip figure, since that ignores
+// anything that actually happened in flight). Shared by the Fuel tab's
+// own transfer button and by Reset 2nd Flight, so the two can't drift
+// out of sync with each other. Returns true if it actually set
+// anything (there was fuel data to work from), false otherwise.
+function applyLandingFuelToFob(){
+  var actual = parseFloat(STATE.fuel.actualLanding);
+  var c = fuelCalc();
+  var tc = fuelTimesCalc(c);
+  var source = !isNaN(actual) ? actual : tc.val;
+  if(source === null || source === undefined || isNaN(source)) return false;
+  // Per-tank remaining (from the Tank Log, if there's actually a log to
+  // work from) decides how the total splits between L and R, reflecting
+  // whichever tank was actually selected — but the total itself is
+  // always the chosen source above (actual if entered, else estimate),
+  // scaled to match, rather than the tank-log's own raw burn-calculated
+  // figures. Without this scaling, an actual dipped landing figure
+  // would get silently overridden by pure burn-rate math the moment
+  // there's any tank log at all, and an empty tank log (very common —
+  // plenty of aircraft never get their tank switches logged) would
+  // fall through to "unchanged from before" rather than "split the
+  // source evenly," since tankFuelStatus() still returns non-null
+  // figures with zero hours logged on either tank.
+  var ts = STATE.tankLog.length ? tankFuelStatus() : null;
+  var calcTotal = ts ? (Math.max(0,ts.L.qty||0) + Math.max(0,ts.R.qty||0)) : 0;
+  if(ts && calcTotal > 0){
+    var scale = source / calcTotal;
+    STATE.fuel.fobL = Math.max(0, ts.L.qty) * scale;
+    STATE.fuel.fobR = Math.max(0, ts.R.qty) * scale;
+  } else {
+    STATE.fuel.fobL = source/2;
+    STATE.fuel.fobR = source/2;
+  }
+  return true;
+}
 function resetAllData(){
   archiveCurrentFlightToHistory();
   STATE.checked = {};
   STATE.values = {};
   STATE.global = { etob:'', ctot:'', transponderCode:'' };
   STATE.customItems = {};
-  STATE.fuel = { unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:'', tripMins:'', contPct:'', alt:'', altMins:'', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
+  STATE.fuel = { unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:8, tripMins:'60', contPct:'', alt:4, altMins:'30', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
   STATE.tankLog = [];
   STATE.tankSelected = 'L';
   STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', safetyReport:'', notes:'' };
@@ -4541,6 +4595,12 @@ function resetSecondFlight(){
   // alone below) and would otherwise collapse into a single overwritten
   // record instead of two.
   archiveCurrentFlightToHistory(true);
+  // Carries the landing fuel forward as the next leg's starting fuel —
+  // same rule as the Fuel tab's own button (actual figure if entered,
+  // otherwise the estimate from actual air time), computed now because
+  // the Off Blocks/Takeoff/Landing/Tank Log data it depends on is about
+  // to be cleared below.
+  applyLandingFuelToFob();
   var prevEnd = STATE.values['airborne.airbornegrp.6'] || {};
   Object.keys(STATE.checked).forEach(function(k){ if(isAirbourneCardKey(k)) delete STATE.checked[k]; });
   Object.keys(STATE.values).forEach(function(k){ if(isAirbourneCardKey(k)) delete STATE.values[k]; });
@@ -5342,6 +5402,11 @@ function renderCalculations(){
     var blockHrs = offBlocksV ? timeDiffCalc(offBlocksV, onBlocksV || nowUTCStrSecs().slice(0,5)) : null;
     var used = (blockHrs!==null && fc.burn>0) ? blockHrs*fc.burn : null;
     var left = (used!==null && fc.fob!==null) ? fc.fob - used : null;
+    // Planned expected use — Taxi + Trip only (not contingency/alternate/
+    // final/extra, which are reserves you'd only dip into, not fuel
+    // you'd expect to have actually burned) — shown alongside the
+    // actual Used/Left above for comparison, not in place of it.
+    var expectedUse = fc.taxi + fc.trip;
     html += '<div class="calcCard"><div class="ck">Fuel Plan</div>';
     if(used===null || fc.fob===null){
       html += '<div class="grNote" style="padding:8px 2px">Needs Off Blocks time, burn rate, and initial fuel to calculate.</div>';
@@ -5350,7 +5415,13 @@ function renderCalculations(){
         '<div class="legs" style="margin-top:12px"><span>Used <b>'+fmtFuel(used)+'</b></span><span>Left <b style="color:'+(left<0?'#be123c':'#047857')+'">'+fmtFuel(left)+'</b></span></div>'+
         '<div class="cv" style="color:'+(left===null?'#94a3b8':(left<0?'#be123c':'#047857'))+'">'+
           (left===null?'\u2014':fmtFuel(left))+
-          ' <small>left, based on original plan &amp; block time</small></div>';
+          ' <small>left, based on original plan &amp; block time</small></div>'+
+        '<div class="legs" style="margin-top:12px"><span>Expected Use (Taxi+Trip) <b>'+fmtFuel(expectedUse)+'</b></span></div>';
+    }
+    if(STATE.tankLog.length){
+      var tankExpPF = tankFuelStatus();
+      html += '<div class="resHead" style="margin:14px 0 4px"><h2 style="font-size:12px">Expected Remaining (Tank Log)</h2></div>'+
+        '<div class="legs"><span>Left <b>'+(tankExpPF.L.qty!==null?fmtFuel(Math.max(0,tankExpPF.L.qty)):'\u2014')+'</b></span><span>Right <b>'+(tankExpPF.R.qty!==null?fmtFuel(Math.max(0,tankExpPF.R.qty)):'\u2014')+'</b></span></div>';
     }
     html += '</div>';
   }
@@ -5435,8 +5506,11 @@ function renderCalculations(){
       // actually matches the flight currently open, and only while it
       // has genuinely diverged from what's saved here.
       var isCurrent = dirtyNow && h.date===fdNow.date && h.registration===fdNow.registration && h.student===fdNow.student;
-      var blockStr = h.blockTime!=null ? decToHM(h.blockTime)+' hrs' : '\u2014';
-      var airStr = h.airTime!=null ? decToHM(h.airTime)+' hrs' : '\u2014';
+      // Each duration is shown as both H:MM and decimal hours (e.g.
+      // "1:30 hrs (1.5)") — decimal is what goes in a logbook's hours
+      // column, H:MM is what's easier to sanity-check at a glance.
+      var blockStr = h.blockTime!=null ? decToHM(h.blockTime)+' hrs ('+h.blockTime.toFixed(1)+')' : '\u2014';
+      var airStr = h.airTime!=null ? decToHM(h.airTime)+' hrs ('+h.airTime.toFixed(1)+')' : '\u2014';
       // Tacho/Hobbs only exist in the fuller per-flight snapshot (added
       // later than the plain summary fields) — older entries simply
       // won't have a second line here.
@@ -5446,9 +5520,11 @@ function renderCalculations(){
         var tE = (h.full.values['airborne.airbornegrp.6']||{}).tacho;
         var hS = (h.full.values['start.startgrp.1']||{}).hobbs;
         var hE = (h.full.values['airborne.airbornegrp.6']||{}).hobbs;
+        var tachoDur = (tS && tE) ? Math.round((parseFloat(tE)-parseFloat(tS))*10)/10 : null;
+        var hobbsDur = (hS && hE) ? Math.round((parseFloat(hE)-parseFloat(hS))*10)/10 : null;
         var bits = [];
-        if(tS || tE) bits.push('Tacho '+(tS||'\u2014')+'\u2192'+(tE||'\u2014'));
-        if(hS || hE) bits.push('Hobbs '+(hS||'\u2014')+'\u2192'+(hE||'\u2014'));
+        if(tS || tE) bits.push('Tacho '+(tS||'\u2014')+'\u2192'+(tE||'\u2014')+(tachoDur!=null?' = '+decToHM(tachoDur)+' hrs ('+tachoDur.toFixed(1)+')':''));
+        if(hS || hE) bits.push('Hobbs '+(hS||'\u2014')+'\u2192'+(hE||'\u2014')+(hobbsDur!=null?' = '+decToHM(hobbsDur)+' hrs ('+hobbsDur.toFixed(1)+')':''));
         if(bits.length) tachoHobbsLine = '<div class="savedFlightSub" style="margin-top:-4px">'+bits.join(' \u00b7 ')+'</div>';
       }
       html += '<div class="savedFlightItem">'+
