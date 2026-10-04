@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v60 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v61 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -443,7 +443,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v60</div>
+  <div id="versionBadge">v61</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -1238,6 +1238,7 @@ var USG_TO_L = 3.785;
 var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'4520',name:'EGTK VFR Departures'},{code:'7010',name:'EGTK Circuits'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, atisEntries:[], atisDraft:{ icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' }, manualTasks:[], flightHistory:[], lastSavedSnapshot:null, customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
   fuel:{ unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:8, tripMins:'60', contPct:'', alt:4, altMins:'30', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
   tankLog:[], tankSelected:'L',
+  fuelTimerPaused:false, fuelTimerPausedSecs:0, fuelTimerPauseStartedAt:null,
   flightDetails:{ date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', safetyReport:'', notes:'' } };
 // checked[cardId] = 'go'|'na'; values[cardId] = string/obj; global = shared
 // fields synced across every place they appear (ETOB/CTOT); codes = the
@@ -1352,6 +1353,9 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
       STATE.fuelDefaultsMigratedV2 = true;
     }
     if(!STATE.tankLog) STATE.tankLog = [];
+    if(STATE.fuelTimerPaused === undefined) STATE.fuelTimerPaused = false;
+    if(STATE.fuelTimerPausedSecs === undefined) STATE.fuelTimerPausedSecs = 0;
+    if(STATE.fuelTimerPauseStartedAt === undefined) STATE.fuelTimerPauseStartedAt = null;
     if(!STATE.tankSelected) STATE.tankSelected = 'L';
     // Migration: Personal Currency, I'M SAFE, and Personal Equipment used
     // to be three separate sections (personalcurrency/imsafe/personalequip)
@@ -2683,7 +2687,7 @@ function renderTankHeaderBar(){
     var noFuelData = status.fob===null || status.burn<=0;
     var isLiveTank = liveTicking && activeTank === t;
     var loggedHtml = isLiveTank
-      ? '<span id="tankLiveSecs" data-base="'+liveSecsBase+'" data-ts="'+log[log.length-1].ts+'">'+secsToHMS(liveSecsBase + (Date.now()-log[log.length-1].ts)/1000)+'</span>'
+      ? '<span id="tankLiveSecs" data-base="'+liveSecsBase+'" data-ts="'+log[log.length-1].ts+'" data-fueltimer="1">'+secsToHMS(liveSecsBase + (effectiveNowMs()-log[log.length-1].ts)/1000)+'</span>'
       : secsToHMS(s.hrs*3600);
     if(noFuelData){
       return '<span class="tankStatLetter">'+t+'</span> logged '+loggedHtml+' <span class="tankStatDim">\u00b7 set Fuel Plan for qty/endurance</span>';
@@ -2691,8 +2695,8 @@ function renderTankHeaderBar(){
     return '<span class="tankStatLetter">'+t+'</span> '+fmtFuel(s.qty)+' \u00b7 '+decToHM(s.end)+' left \u00b7 logged '+loggedHtml;
   }
   el.innerHTML =
-    (liveTicking ? '<div class="tankLiveTop">TANK '+activeTank+' &#9201; <span id="tankLiveSecsTop" data-base="'+liveSecsBase+'" data-ts="'+log[log.length-1].ts+'">'+secsToHMS(liveSecsBase + (Date.now()-log[log.length-1].ts)/1000)+'</span>'+
-      '<span class="tankSinceChange">since switch <span id="tankSinceChangeTop" data-ts="'+log[log.length-1].ts+'">'+secsToHMS((Date.now()-log[log.length-1].ts)/1000)+'</span></span>'+
+    (liveTicking ? '<div class="tankLiveTop">TANK '+activeTank+' &#9201; <span id="tankLiveSecsTop" data-base="'+liveSecsBase+'" data-ts="'+log[log.length-1].ts+'" data-fueltimer="1">'+secsToHMS(liveSecsBase + (effectiveNowMs()-log[log.length-1].ts)/1000)+'</span>'+
+      '<span class="tankSinceChange">since switch <span id="tankSinceChangeTop" data-ts="'+log[log.length-1].ts+'" data-fueltimer="1">'+secsToHMS((effectiveNowMs()-log[log.length-1].ts)/1000)+'</span>'+(STATE.fuelTimerPaused?' \u2014 PAUSED':'')+'</span>'+
     '</div>' : '')+
     '<div class="tankBarRow">'+
       '<span class="tankBarLbl">&#9981;</span>'+
@@ -4557,6 +4561,9 @@ function resetAllData(){
   STATE.fuel = { unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:8, tripMins:'60', contPct:'', alt:4, altMins:'30', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
   STATE.tankLog = [];
   STATE.tankSelected = 'L';
+  STATE.fuelTimerPaused = false;
+  STATE.fuelTimerPausedSecs = 0;
+  STATE.fuelTimerPauseStartedAt = null;
   STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', safetyReport:'', notes:'' };
   STATE.atisEntries = [];
   STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
@@ -4617,6 +4624,9 @@ function resetSecondFlight(){
   STATE.global.ctot = '';
   STATE.tankLog = [];
   STATE.tankSelected = 'L';
+  STATE.fuelTimerPaused = false;
+  STATE.fuelTimerPausedSecs = 0;
+  STATE.fuelTimerPauseStartedAt = null;
   STATE.atisEntries = [];
   STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
   if(prevEnd.tacho || prevEnd.hobbs){
@@ -5112,6 +5122,46 @@ function nowUTCStrSecs(){
   var d = new Date();
   return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2)+':'+('0'+d.getUTCSeconds()).slice(-2);
 }
+// Fuel timer pause — lets a ground hold or shutdown mid-flight (before
+// Landing is captured) be excluded from the fuel-burn clock, so the
+// Tank Log's elapsed-time and Endurance Remaining figures reflect actual
+// flying time rather than real wall-clock time. Accumulates completed
+// pauses in fuelTimerPausedSecs and, while currently paused, adds the
+// ongoing pause's own duration on top — so effectiveNowMs() stays frozen
+// at the moment the pause started for as long as it's paused, then
+// resumes counting forward (continuous from the frozen point) once
+// un-paused.
+function fuelTimerPausedSecsNow(){
+  var total = STATE.fuelTimerPausedSecs || 0;
+  if(STATE.fuelTimerPaused && STATE.fuelTimerPauseStartedAt){
+    total += (Date.now() - STATE.fuelTimerPauseStartedAt)/1000;
+  }
+  return total;
+}
+function effectiveNowMs(){
+  return Date.now() - fuelTimerPausedSecsNow()*1000;
+}
+function effectiveNowUTCStrSecs(){
+  var d = new Date(effectiveNowMs());
+  return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2)+':'+('0'+d.getUTCSeconds()).slice(-2);
+}
+function toggleFuelTimerPause(){
+  if(STATE.fuelTimerPaused){
+    // Resume — fold the just-finished pause into the running total.
+    if(STATE.fuelTimerPauseStartedAt){
+      STATE.fuelTimerPausedSecs = (STATE.fuelTimerPausedSecs||0) + (Date.now()-STATE.fuelTimerPauseStartedAt)/1000;
+    }
+    STATE.fuelTimerPaused = false;
+    STATE.fuelTimerPauseStartedAt = null;
+  } else {
+    STATE.fuelTimerPaused = true;
+    STATE.fuelTimerPauseStartedAt = Date.now();
+  }
+  saveState();
+  renderCalculations();
+  renderTankHeaderBar();
+  updateCountdown();
+}
 // Per-tank fuel/endurance remaining — Initial Fuel is now entered
 // separately per tank (not assumed to be an even split of the total),
 // so this starts from each tank's own actual figure. Uplifted fuel has
@@ -5121,7 +5171,7 @@ function nowUTCStrSecs(){
 function tankFuelStatus(){
   var c = fuelCalc();
   var landing = STATE.values['airborne.airbornegrp.1'];
-  var endTime = landing || nowUTCStrSecs();
+  var endTime = landing || effectiveNowUTCStrSecs();
   var totals = tankTimeSegments(STATE.tankLog, endTime);
   var halfUplifted = c.uplifted/2;
   var startL = c.fob===null ? null : c.fobL + halfUplifted;
@@ -5347,7 +5397,12 @@ setInterval(function(){
     var base = parseFloat(el.getAttribute('data-base')) || 0;
     var ts = parseFloat(el.getAttribute('data-ts'));
     if(isNaN(ts)) return;
-    el.textContent = secsToHMS(base + (Date.now()-ts)/1000);
+    // Fuel-timer-tagged displays (the Tank Bar's live seconds-since-switch)
+    // freeze in step with the fuel-burn calc while the fuel timer is
+    // paused, rather than carrying on against real wall-clock time while
+    // the figures they sit next to have stopped moving.
+    var nowMs = el.getAttribute('data-fueltimer') ? effectiveNowMs() : Date.now();
+    el.textContent = secsToHMS(base + (nowMs-ts)/1000);
   });
 }, 1000);
 
@@ -5433,7 +5488,14 @@ function renderCalculations(){
   if(STATE.tankLog.length){
     var ts = tankFuelStatus();
     html += '<div class="calcCard"><div class="ck">Tank Log</div>'+
-      '<div class="legs"><span>Time on L <b>'+secsToHMS(ts.L.hrs*3600)+'</b></span><span>Time on R <b>'+secsToHMS(ts.R.hrs*3600)+'</b></span></div>';
+      '<div class="legs"><span>Time on L <b>'+secsToHMS(ts.L.hrs*3600)+'</b></span><span>Time on R <b>'+secsToHMS(ts.R.hrs*3600)+'</b></span></div>'+
+      // Pauses the fuel-burn clock (Time on L/R, fuel remaining, Endurance
+      // Remaining) while Landing hasn't been captured yet — for a ground
+      // hold or shutdown mid-flight that shouldn't count against fuel
+      // burned. Has no effect once Landing is set, since the clock stops
+      // on its own at that point anyway.
+      '<button type="button" id="fuelTimerPauseBtn" style="width:100%;margin-top:10px;border:1px solid '+(STATE.fuelTimerPaused?'#b45309':'var(--muted)')+';background:'+(STATE.fuelTimerPaused?'#b45309':'var(--surface)')+';color:'+(STATE.fuelTimerPaused?'#fff':'var(--muted)')+';border-radius:8px;padding:9px 0;font-family:\'JetBrains Mono\',monospace;font-weight:800;font-size:12px;cursor:pointer">'+(STATE.fuelTimerPaused?'\u25b6 Resume Fuel Timer':'\u23f8 Pause Fuel Timer')+'</button>'+
+      (STATE.fuelTimerPaused?'<div class="grNote" style="padding:6px 2px 0;color:#b45309">Fuel timer paused \u2014 Time on L/R and fuel-remaining figures are frozen until resumed.</div>':'');
     if(ts.fob!==null && ts.burn>0){
       html += '<div class="legs" style="margin-top:6px"><span>L remaining <b>'+fmtFuel(ts.L.qty)+'</b></span><span>R remaining <b>'+fmtFuel(ts.R.qty)+'</b></span></div>';
       var shutdownV = STATE.values['airborne.airbornegrp.10'];
@@ -5647,6 +5709,8 @@ function wireFlightDetails(){
     document.getElementById('fdDate').value = iso;
     saveState();
   });
+  var fuelTimerPauseBtn = document.getElementById('fuelTimerPauseBtn');
+  if(fuelTimerPauseBtn) fuelTimerPauseBtn.addEventListener('click', toggleFuelTimerPause);
   document.querySelectorAll('.historyPreviewBtn').forEach(function(btn){
     btn.addEventListener('click', function(){
       var idx = parseInt(btn.getAttribute('data-idx'), 10);
