@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v61 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v66 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -443,7 +443,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v61</div>
+  <div id="versionBadge">v66</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -1131,8 +1131,8 @@ var CHECKLIST_DATA = [
         'Initial Altitude/Height restriction and Heading',
         'Wind | CAS | Noise Abatement | Wake | Threats',
         {text:'IFR Departure Brief', note:'Review clearance, initial routing/altitude, and lost-comms procedure before taxi.'},
-        {text:'Line up check', note:'Mnemonic — expansion pending.'},
-        {text:'SPLIITTT', note:'Mnemonic — expansion pending.'}
+        {text:'RSPLIITTT', note:'Runway | Strobes | Pitot | Light | Instruments | Ice | Time | Transponder | Threats'},
+        {text:'Line up check', note:'Align DI | Compass | Runway. Feet to floor.'}
       ] }
   ]},
   { phase:'Airborne', id:'airborne', title:'Airborne', items: [
@@ -1234,12 +1234,22 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
    STATE
    ============================================================ */
 var STORE_KEY = 'checkdeck_state_v1';
+// Builds a Flight Detail string from the retired Departure / Destination /
+// Land Away fields (used for old saved state and old history snapshots).
+function legacyFlightDetail(fd){
+  var parts = [];
+  var dep = fd.departure || '', dest = fd.destination || '';
+  if(dep || dest) parts.push(dep && dest ? dep+' \u2192 '+dest : (dep || dest));
+  if(fd.landAway && fd.landAway !== true) parts.push('Land away '+fd.landAway);
+  else if(fd.landAway === true) parts.push('Land away');
+  return parts.join(', ');
+}
 var USG_TO_L = 3.785;
 var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'4520',name:'EGTK VFR Departures'},{code:'7010',name:'EGTK Circuits'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, atisEntries:[], atisDraft:{ icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' }, manualTasks:[], flightHistory:[], lastSavedSnapshot:null, customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
   fuel:{ unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:8, tripMins:'60', contPct:'', alt:4, altMins:'30', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
   tankLog:[], tankSelected:'L',
   fuelTimerPaused:false, fuelTimerPausedSecs:0, fuelTimerPauseStartedAt:null,
-  flightDetails:{ date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', safetyReport:'', notes:'' } };
+  flightDetails:{ date:'', slotFrom:'', slotTo:'', registration:'', student:'', flightDetail:'', defects:'', safetyReport:'', notes:'' } };
 // checked[cardId] = 'go'|'na'; values[cardId] = string/obj; global = shared
 // fields synced across every place they appear (ETOB/CTOT); codes = the
 // user-editable transponder code list currently in use; codePresets =
@@ -1280,9 +1290,13 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     if(!STATE.atisDraft) STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
     if(!STATE.manualTasks) STATE.manualTasks = [];
     if(!STATE.flightHistory) STATE.flightHistory = [];
-    if(!STATE.flightDetails) STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', safetyReport:'', notes:'' };
-    if(STATE.flightDetails.landAway === undefined || STATE.flightDetails.landAway === false) STATE.flightDetails.landAway = '';
-    if(STATE.flightDetails.landAway === true) STATE.flightDetails.landAway = 'Yes';
+    if(!STATE.flightDetails) STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', flightDetail:'', defects:'', safetyReport:'', notes:'' };
+    // Departure / Destination / Land Away were replaced by one free-text
+    // Flight Detail — fold anything already entered into it once.
+    if(STATE.flightDetails.flightDetail === undefined){
+      STATE.flightDetails.flightDetail = legacyFlightDetail(STATE.flightDetails);
+    }
+    delete STATE.flightDetails.departure; delete STATE.flightDetails.destination; delete STATE.flightDetails.landAway;
     // Migrate anyone with the old plain-string codes list (from before names
     // were added) into the {code,name} shape, keeping their saved codes.
     // (Independent of the landAway migration above — these two used to be
@@ -3845,10 +3859,42 @@ document.getElementById('phaseReview').addEventListener('click', function(){
 // flight. Deliberately keeps app-level preferences intact: Hide Completed
 // and the user's added transponder codes aren't "entered values" for a
 // specific flight, they're settings that should carry over.
+// Shared by every file export: YYMMDD-Flights, or YYMMDD-YYMMDD-Flights
+// when the flights span more than one date (earliest-latest). Dates come
+// from Flight History; with none dated, falls back to the live flight's
+// date, then today.
+// Flight History in true flight order (date, then Off Blocks/Take Off as
+// a tiebreaker for same-day flights) — NOT save order, which drifts when
+// flights are set up or saved out of sequence. Every place history is
+// listed or exported goes through this, so they always agree. Also stamps
+// each entry with __origIdx (its real array position, for Load/Delete)
+// and __flightNum (its # in the list).
+function chronologicalHistory(){
+  STATE.flightHistory.forEach(function(h, i){ h.__origIdx = i; });
+  var sorted = STATE.flightHistory.slice().sort(function(a, b){
+    var ad = a.date || '', bd = b.date || '';
+    if(ad !== bd) return ad < bd ? -1 : 1;
+    var at = a.offBlocks || a.takeoff || '', bt = b.offBlocks || b.takeoff || '';
+    if(at !== bt) return at < bt ? -1 : 1;
+    return a.__origIdx - b.__origIdx;
+  });
+  sorted.forEach(function(h, i){ h.__flightNum = i+1; });
+  return sorted;
+}
+function exportBaseName(){
+  var ds = STATE.flightHistory.map(function(h){ return h.date; }).filter(function(d){ return /^\d{4}-\d{2}-\d{2}$/.test(d||''); });
+  if(!ds.length && /^\d{4}-\d{2}-\d{2}$/.test(STATE.flightDetails.date||'')) ds = [STATE.flightDetails.date];
+  if(!ds.length){
+    var t = new Date();
+    ds = [t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2)];
+  }
+  ds.sort();
+  function yymmdd(d){ return d.slice(2,4)+d.slice(5,7)+d.slice(8,10); }
+  var first = yymmdd(ds[0]), last = yymmdd(ds[ds.length-1]);
+  return (first===last ? first : first+'-'+last)+'-Flights';
+}
 function flightHistoryPdfFilename(){
-  var d = new Date();
-  var iso = d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
-  return 'Flight History '+iso+'.pdf';
+  return exportBaseName()+'.pdf';
 }
 // Same measure-then-scale approach as the Post Flight PDF — however many
 // flights are in history, they all need to fit on this one page, so the
@@ -3894,7 +3940,7 @@ function renderFlightHistoryContent(doc, scale){
   doc.text('Flight History', marginX, y);
   y += 8*scale;
   drawHeader();
-  STATE.flightHistory.forEach(function(h){
+  chronologicalHistory().forEach(function(h){
     var x = marginX;
     // Tacho/Hobbs readings only exist in the fuller per-flight snapshot
     // (added later than the plain summary fields) — older entries just
@@ -3969,7 +4015,7 @@ function buildFlightHistoryFullPdf(){
   var pageHeight = doc.internal.pageSize.getHeight();
   var usableHeight = pageHeight - 12;
   var first = true;
-  STATE.flightHistory.forEach(function(h){
+  chronologicalHistory().forEach(function(h){
     if(!first) doc.addPage();
     first = false;
     if(!h.full){
@@ -4013,9 +4059,7 @@ function buildFlightHistoryFullPdf(){
   return doc;
 }
 function flightHistoryFullPdfFilename(){
-  var d = new Date();
-  var iso = d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
-  return 'Flight History Full '+iso+'.pdf';
+  return exportBaseName()+'.pdf';
 }
 function shareFlightHistoryFullPdf(){
   var doc = buildFlightHistoryFullPdf();
@@ -4052,10 +4096,7 @@ function buildAllDataExport(){
   };
 }
 function allDataExportFilename(){
-  var d = new Date();
-  var iso = d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
-  var hm = ('0'+d.getHours()).slice(-2)+('0'+d.getMinutes()).slice(-2);
-  return 'CheckDeck Sync '+iso+' '+hm+'.json';
+  return exportBaseName()+'.json';
 }
 function shareAllDataExport(){
   var filename = allDataExportFilename();
@@ -4246,9 +4287,7 @@ function renderPostFlightContent(doc, scale){
   row('Date', fd.date);
   row('Registration', fd.registration);
   row('Student', fd.student);
-  row('Departure', fd.departure);
-  row('Destination', fd.destination);
-  row('Land Away', fd.landAway);
+  row('Flight Detail', fd.flightDetail !== undefined ? fd.flightDetail : legacyFlightDetail(fd));
   row('Slot', (fd.slotFrom||'--')+' - '+(fd.slotTo||'--')+' UTC');
   spacer();
 
@@ -4497,7 +4536,7 @@ function loadFlightFromHistory(idx){
     STATE.global = { etob:'', ctot:'', transponderCode:'' };
     STATE.tankLog = [];
     STATE.atisEntries = [];
-    STATE.flightDetails = { date:h.date||'', slotFrom:'', slotTo:'', registration:h.registration||'', student:h.student||'', departure:'', destination:'', landAway:'', defects:'', safetyReport:'', notes:'' };
+    STATE.flightDetails = { date:h.date||'', slotFrom:'', slotTo:'', registration:h.registration||'', student:h.student||'', flightDetail:'', defects:'', safetyReport:'', notes:'' };
   }
   STATE.customItems = {};
   STATE.manualTasks = [];
@@ -4564,7 +4603,7 @@ function resetAllData(){
   STATE.fuelTimerPaused = false;
   STATE.fuelTimerPausedSecs = 0;
   STATE.fuelTimerPauseStartedAt = null;
-  STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', departure:'', destination:'', landAway:'', defects:'', safetyReport:'', notes:'' };
+  STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', flightDetail:'', defects:'', safetyReport:'', notes:'' };
   STATE.atisEntries = [];
   STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
   STATE.manualTasks = [];
@@ -5440,9 +5479,7 @@ function renderCalculations(){
       '<div class="fdField"><label>Slot To (UTC)</label><button type="button" class="fpFieldBtn" id="fdSlotTo" style="text-align:left">'+(fd.slotTo?escapeHtml(fd.slotTo):'Tap to set')+'</button></div>'+
       '<div class="fdField"><label>Registration</label><input type="text" id="fdReg" placeholder="G-XXXX" value="'+escapeHtml(fd.registration||'')+'" style="text-transform:uppercase"/></div>'+
       '<div class="fdField"><label>Student</label><input type="text" id="fdStudent" value="'+escapeHtml(fd.student||'')+'"/></div>'+
-      '<div class="fdField"><label>Departure</label><input type="text" id="fdDeparture" placeholder="ICAO" value="'+escapeHtml(fd.departure||'')+'"/></div>'+
-      '<div class="fdField"><label>Destination</label><input type="text" id="fdDestination" placeholder="ICAO" value="'+escapeHtml(fd.destination||'')+'"/></div>'+
-      '<div class="fdField"><label>Land Away</label><input type="text" id="fdLandAway" placeholder="e.g. EGTK" value="'+escapeHtml(fd.landAway||'')+'"/></div>'+
+      '<div class="fdField" style="grid-column:1/-1"><label>Flight Detail</label><input type="text" id="fdFlightDetail" placeholder="e.g. Circuits, Nav to EGSS" value="'+escapeHtml(fd.flightDetail !== undefined ? fd.flightDetail : legacyFlightDetail(fd))+'"/></div>'+
     '</div>'+
   '</div>';
   html += '<div class="calcCard"><div class="ck">Times</div>'+
@@ -5553,21 +5590,8 @@ function renderCalculations(){
   } else {
     var dirtyNow = hasUnsavedChanges();
     var fdNow = STATE.flightDetails;
-    STATE.flightHistory.forEach(function(h, origIdx){ h.__origIdx = origIdx; });
-    // Numbered by actual chronological order (date, then Off Blocks/Take
-    // Off as a tiebreaker for more than one flight on the same day) —
-    // not by array position, which is really just save order and can
-    // drift out of date order if several flights get set up ahead of
-    // time and saved in a different sequence than they're flown.
-    var chronoOrder = STATE.flightHistory.slice().sort(function(a, b){
-      var ad = a.date || '', bd = b.date || '';
-      if(ad !== bd) return ad < bd ? -1 : 1;
-      var at = a.offBlocks || a.takeoff || '', bt = b.offBlocks || b.takeoff || '';
-      if(at !== bt) return at < bt ? -1 : 1;
-      return a.__origIdx - b.__origIdx;
-    });
-    chronoOrder.forEach(function(h, i){ h.__flightNum = i+1; });
-    STATE.flightHistory.slice().reverse().forEach(function(h){
+    // Always shown in flight order, #1 first — same order as the exports.
+    chronologicalHistory().forEach(function(h){
       // Star sits right by this card's own name — only the one that
       // actually matches the flight currently open, and only while it
       // has genuinely diverged from what's saved here.
@@ -5694,9 +5718,7 @@ function wireFlightDetails(){
   });
   bind('fdReg', 'registration', function(v){ return v.toUpperCase(); });
   bind('fdStudent', 'student', titleCaseStr);
-  bind('fdDeparture', 'departure', function(v){ return v.toUpperCase(); });
-  bind('fdDestination', 'destination', function(v){ return v.toUpperCase(); });
-  bind('fdLandAway', 'landAway', function(v){ return v.toUpperCase(); });
+  bind('fdFlightDetail', 'flightDetail', sentenceCaseStr);
   bind('fdDefects', 'defects', sentenceCaseStr);
   bind('fdSafetyReport', 'safetyReport', sentenceCaseStr);
   bind('fdNotes', 'notes', sentenceCaseStr);
