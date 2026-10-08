@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v72 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v73 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -448,7 +448,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v72</div>
+  <div id="versionBadge">v73</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -2176,7 +2176,13 @@ function renderCard(card){
         var i = b.getAttribute('data-i');
         var key = card.id+'.'+i;
         var childText = card.children[i] && card.children[i].text;
-        STATE.values[key] = stampTimeFor(childText);
+        // Time is captured at the moment of the tap (so a slow confirm
+        // doesn't shift it) and only recorded once confirmed.
+        var stamp = stampTimeFor(childText);
+        var prevStamp = STATE.values[key];
+        showConfirm(prevStamp ? childText+' is already '+prevStamp+' UTC. Replace it with '+stamp+' UTC?' : 'Record '+childText+' at '+stamp+' UTC?',
+          prevStamp ? 'Replace' : 'Record', function(){
+        STATE.values[key] = stamp;
         saveState();
         renderCard(card);
         buildAnnunFor(curSection());
@@ -2205,6 +2211,7 @@ function renderCard(card){
         } else if(cardResolved(card)){
           setTimeout(function(){ advanceAfterAction(); }, 400);
         }
+        });
       });
     });
     elCard.querySelectorAll('.grEditTimeBtn').forEach(function(b){
@@ -2448,13 +2455,18 @@ function renderCard(card){
     });
   } else if(card.type === 'timenow'){
     document.getElementById('nowBtn').addEventListener('click', function(){
-      STATE.values[card.id] = stampTimeFor(card.text);
-      saveState();
-      renderCard(card); buildAnnunFor(curSection()); renderResults(); renderCalculations();
-      // advanceAfterAction (not nextCard) — it correctly falls through to
-      // section-complete for a single-card section instead of wrapping
-      // curCardIdx back onto the same card and looping forever.
-      setTimeout(advanceAfterAction, 500);
+      var stamp = stampTimeFor(card.text);
+      var prevStamp = STATE.values[card.id];
+      showConfirm(prevStamp ? card.text+' is already '+prevStamp+' UTC. Replace it with '+stamp+' UTC?' : 'Record '+card.text+' at '+stamp+' UTC?',
+        prevStamp ? 'Replace' : 'Record', function(){
+        STATE.values[card.id] = stamp;
+        saveState();
+        renderCard(card); buildAnnunFor(curSection()); renderResults(); renderCalculations();
+        // advanceAfterAction (not nextCard) — it correctly falls through to
+        // section-complete for a single-card section instead of wrapping
+        // curCardIdx back onto the same card and looping forever.
+        setTimeout(advanceAfterAction, 500);
+      });
     });
   }
 }
