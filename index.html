@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v66 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v67 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -443,7 +443,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v66</div>
+  <div id="versionBadge">v67</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -4315,7 +4315,7 @@ function renderPostFlightContent(doc, scale){
     doc.setFont(undefined,'normal');
     doc.text(fromV||'--', colX[1], y);
     doc.text(toV||'--', colX[2], y);
-    doc.text(val===null?'Pending':decToHM(val), colX[3], y);
+    doc.text(val===null?'Pending':hmDec(val), colX[3], y);
     y += lineH;
   }
   timeRowPdf('Block', chocksOff?chocksOff+' UTC':null, chocksOn?chocksOn+' UTC':null, blockTime);
@@ -5116,7 +5116,11 @@ function timeDiffCalc(s,e){
   if(sh===null||eh===null) return null;
   var d = eh-sh;
   if(d<0) d+=24; // crossed midnight
-  return Math.round(d*10)/10;
+  // Nearest 0.1 hr (6 min), done in whole seconds so a .x5 boundary can't
+  // land the wrong way from floating-point error (e.g. 9 min = 0.15 hr
+  // must round up to 0.2, half-up).
+  var secs = Math.round(d*3600);
+  return Math.floor(secs/360 + 0.5)/10;
 }
 // Fuel tank log — given a chronological list of {tank:'L'|'R', time:'HH:MM'}
 // switch events plus an end-of-window time (landing time if set, else "now"
@@ -5235,6 +5239,13 @@ function enduranceRemainingCalc(){
   var totalRemaining = ts.L.qty + ts.R.qty;
   var totalHrsLogged = ts.L.hrs + ts.R.hrs;
   return { val: totalRemaining/ts.burn, elapsed: totalHrsLogged, elapsedSecs: totalHrsLogged*3600, fuelRemaining: totalRemaining };
+}
+// "1:36 hrs (1.6)" — used in the History preview.
+function hmHrs(d){ return decToHM(d)+' hrs ('+d.toFixed(1)+')'; }
+// "1:36 (1.6)" — H:MM plus decimal hours.
+function hmDec(d){
+  if(d===null||d===undefined||isNaN(d)) return '--';
+  return decToHM(d)+' ('+d.toFixed(1)+')';
 }
 function decToHM(d){
   if(d===null||d===undefined||isNaN(d)) return '--';
@@ -5466,7 +5477,7 @@ function renderCalculations(){
       '<td class="ttLabel">'+label+'</td>'+
       '<td>'+(fromV||'\u2014')+'</td>'+
       '<td>'+(toV||'\u2014')+'</td>'+
-      '<td class="'+(pending?'ttPending':'ttTotal')+'">'+(pending?'Awaiting both':decToHM(val))+'</td>'+
+      '<td class="'+(pending?'ttPending':'ttTotal')+'">'+(pending?'Awaiting both':hmDec(val))+'</td>'+
     '</tr>';
   }
 
@@ -5740,8 +5751,8 @@ function wireFlightDetails(){
       if(!h) return;
       var label = (h.date||'--')+' \u00b7 '+(h.student||'--')+' \u00b7 '+(h.registration||'--');
       var lines = [
-        'Block: '+(h.offBlocks||'\u2014')+' \u2192 '+(h.onBlocks||'\u2014')+'  ('+(h.blockTime!=null?decToHM(h.blockTime)+' hrs':'\u2014')+')',
-        'Air: '+(h.takeoff||'\u2014')+' \u2192 '+(h.landing||'\u2014')+'  ('+(h.airTime!=null?decToHM(h.airTime)+' hrs':'\u2014')+')'
+        'Block: '+(h.offBlocks||'\u2014')+' \u2192 '+(h.onBlocks||'\u2014')+'  \u00b7  '+(h.blockTime!=null?hmHrs(h.blockTime):'\u2014'),
+        'Air: '+(h.takeoff||'\u2014')+' \u2192 '+(h.landing||'\u2014')+'  \u00b7  '+(h.airTime!=null?hmHrs(h.airTime):'\u2014')
       ];
       // Tacho/Hobbs only exist in the fuller per-flight snapshot (added
       // later than the plain summary fields) — older entries simply
@@ -5754,10 +5765,10 @@ function wireFlightDetails(){
         function diffStr(s, e){
           var sn = parseFloat(s), en = parseFloat(e);
           if(isNaN(sn) || isNaN(en)) return '\u2014';
-          return (en-sn).toFixed(2);
+          return hmHrs(Math.round((en-sn)*10)/10);
         }
-        if(tachoStart || tachoEnd) lines.push('Tacho: '+(tachoStart||'\u2014')+' \u2192 '+(tachoEnd||'\u2014')+'  (\u0394 '+diffStr(tachoStart,tachoEnd)+')');
-        if(hobbsStart || hobbsEnd) lines.push('Hobbs: '+(hobbsStart||'\u2014')+' \u2192 '+(hobbsEnd||'\u2014')+'  (\u0394 '+diffStr(hobbsStart,hobbsEnd)+')');
+        if(tachoStart || tachoEnd) lines.push('Tacho: '+(tachoStart||'\u2014')+' \u2192 '+(tachoEnd||'\u2014')+'  \u00b7  '+diffStr(tachoStart,tachoEnd));
+        if(hobbsStart || hobbsEnd) lines.push('Hobbs: '+(hobbsStart||'\u2014')+' \u2192 '+(hobbsEnd||'\u2014')+'  \u00b7  '+diffStr(hobbsStart,hobbsEnd));
       }
       showConfirm(label+'\n\n'+lines.join('\n'), 'OK', function(){});
     });
