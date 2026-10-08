@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v70 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v72 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -448,7 +448,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v70</div>
+  <div id="versionBadge">v72</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -1241,6 +1241,12 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
 var STORE_KEY = 'checkdeck_state_v1';
 // Builds a Flight Detail string from the retired Departure / Destination /
 // Land Away fields (used for old saved state and old history snapshots).
+// Every Flight History entry has its own id, and the live flight remembers
+// which entry (if any) it came from / was last saved to
+// (STATE.currentHistoryId). Save Current updates THAT entry only — it never
+// guesses by date/registration/student, which wrongly matched a different
+// leg of the same day.
+function newHistoryId(){ return 'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function legacyFlightDetail(fd){
   var parts = [];
   var dep = fd.departure || '', dest = fd.destination || '';
@@ -1252,7 +1258,7 @@ function legacyFlightDetail(fd){
 var USG_TO_L = 3.785;
 var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'4520',name:'EGTK VFR Departures'},{code:'7010',name:'EGTK Circuits'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, atisEntries:[], atisDraft:{ icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' }, manualTasks:[], flightHistory:[], lastSavedSnapshot:null, customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
   fuel:{ unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:8, tripMins:'60', contPct:'', alt:4, altMins:'30', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
-  tankLog:[], tankSelected:'L',
+  tankLog:[], tankSelected:'L', currentHistoryId:null,
   fuelTimerPaused:false, fuelTimerPausedSecs:0, fuelTimerPauseStartedAt:null,
   flightDetails:{ date:'', slotFrom:'', slotTo:'', registration:'', student:'', flightDetail:'', defects:'', safetyReport:'', notes:'' } };
 // checked[cardId] = 'go'|'na'; values[cardId] = string/obj; global = shared
@@ -1295,6 +1301,19 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     if(!STATE.atisDraft) STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
     if(!STATE.manualTasks) STATE.manualTasks = [];
     if(!STATE.flightHistory) STATE.flightHistory = [];
+    STATE.flightHistory.forEach(function(h){ if(!h.id) h.id = newHistoryId(); });
+    if(STATE.currentHistoryId === undefined){
+      // One-time: link the live flight to the entry it was last saved as
+      // (the old date+reg+student match), if it had been saved.
+      STATE.currentHistoryId = null;
+      var fdm = STATE.flightDetails || {};
+      if(STATE.lastSavedSnapshot){
+        for(var hi = STATE.flightHistory.length-1; hi >= 0; hi--){
+          var hh = STATE.flightHistory[hi];
+          if(hh.date === fdm.date && hh.registration === fdm.registration && hh.student === fdm.student){ STATE.currentHistoryId = hh.id; break; }
+        }
+      }
+    }
     if(!STATE.flightDetails) STATE.flightDetails = { date:'', slotFrom:'', slotTo:'', registration:'', student:'', flightDetail:'', defects:'', safetyReport:'', notes:'' };
     // Departure / Destination / Land Away were replaced by one free-text
     // Flight Detail — fold anything already entered into it once.
@@ -2157,7 +2176,7 @@ function renderCard(card){
         var i = b.getAttribute('data-i');
         var key = card.id+'.'+i;
         var childText = card.children[i] && card.children[i].text;
-        STATE.values[key] = nowUTCStr();
+        STATE.values[key] = stampTimeFor(childText);
         saveState();
         renderCard(card);
         buildAnnunFor(curSection());
@@ -2429,7 +2448,7 @@ function renderCard(card){
     });
   } else if(card.type === 'timenow'){
     document.getElementById('nowBtn').addEventListener('click', function(){
-      STATE.values[card.id] = nowUTCStr();
+      STATE.values[card.id] = stampTimeFor(card.text);
       saveState();
       renderCard(card); buildAnnunFor(curSection()); renderResults(); renderCalculations();
       // advanceAfterAction (not nextCard) — it correctly falls through to
@@ -4166,10 +4185,14 @@ function mergeFlightHistory(imported){
     var matchIdx = -1;
     for(var i=0;i<STATE.flightHistory.length;i++){
       var h = STATE.flightHistory[i];
-      if(h.date===incoming.date && h.registration===incoming.registration && h.student===incoming.student){
-        matchIdx = i; break;
-      }
+      // By id when the file has one. Files from before ids existed fall
+      // back to date + reg + student + Off Blocks, so two legs on the same
+      // day are no longer mistaken for one flight.
+      var same = incoming.id ? (h.id === incoming.id)
+        : (h.date===incoming.date && h.registration===incoming.registration && h.student===incoming.student && (h.offBlocks||'')===(incoming.offBlocks||''));
+      if(same){ matchIdx = i; break; }
     }
+    if(!incoming.id){ incoming.id = matchIdx >= 0 ? STATE.flightHistory[matchIdx].id : newHistoryId(); }
     if(matchIdx === -1){
       STATE.flightHistory.push(incoming);
       added++;
@@ -4530,19 +4553,21 @@ function archiveCurrentFlightToHistory(forceNew){
       atisEntries: JSON.parse(JSON.stringify(STATE.atisEntries))
     }
   };
+  // Update only the entry this live flight is linked to; otherwise it's a
+  // new flight and gets its own new entry. Other entries are never touched.
   var matchIdx = -1;
-  if(!forceNew){
-    for(var i = STATE.flightHistory.length - 1; i >= 0; i--){
-      var h = STATE.flightHistory[i];
-      if(h.date === fd.date && h.registration === fd.registration && h.student === fd.student){
-        matchIdx = i; break;
-      }
+  if(!forceNew && STATE.currentHistoryId){
+    for(var i = 0; i < STATE.flightHistory.length; i++){
+      if(STATE.flightHistory[i].id === STATE.currentHistoryId){ matchIdx = i; break; }
     }
   }
   if(matchIdx >= 0){
+    entry.id = STATE.currentHistoryId;
     STATE.flightHistory[matchIdx] = entry;
   } else {
+    entry.id = newHistoryId();
     STATE.flightHistory.push(entry);
+    STATE.currentHistoryId = entry.id;
   }
   // Remember exactly what the whole flight looked like at the moment of
   // this save, so hasUnsavedChanges() can tell — live, as things change
@@ -4587,7 +4612,10 @@ function loadFlightFromHistory(idx){
   STATE.tankSelected = 'L';
   STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
   // The just-loaded flight now matches what's archived for it by
-  // definition, so there's nothing "unsaved" about it yet.
+  // definition, so there's nothing "unsaved" about it yet — and Save
+  // Current will update this entry (and only this one).
+  if(!h.id) h.id = newHistoryId();
+  STATE.currentHistoryId = h.id;
   STATE.lastSavedSnapshot = currentFlightSnapshotStr();
   saveState();
   showingSectDone = false; showingPhaseDone = false;
@@ -4644,6 +4672,7 @@ function resetAllData(){
   STATE.fuel = { unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:8, tripMins:'60', contPct:'', alt:4, altMins:'30', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
   STATE.tankLog = [];
   STATE.tankSelected = 'L';
+  STATE.currentHistoryId = null;
   STATE.fuelTimerPaused = false;
   STATE.fuelTimerPausedSecs = 0;
   STATE.fuelTimerPauseStartedAt = null;
@@ -4688,7 +4717,7 @@ function resetSecondFlight(){
   // date/registration/student (Flight Details is deliberately left
   // alone below) and would otherwise collapse into a single overwritten
   // record instead of two.
-  archiveCurrentFlightToHistory(true);
+  archiveCurrentFlightToHistory();
   // Carries the landing fuel forward as the next leg's starting fuel —
   // same rule as the Fuel tab's own button (actual figure if entered,
   // otherwise the estimate from actual air time), computed now because
@@ -4707,6 +4736,9 @@ function resetSecondFlight(){
   STATE.global.ctot = '';
   STATE.tankLog = [];
   STATE.tankSelected = 'L';
+  // Leg 2 is a new flight: unlink from leg 1's history entry so Save
+  // Current creates a separate entry and never touches leg 1.
+  STATE.currentHistoryId = null;
   STATE.fuelTimerPaused = false;
   STATE.fuelTimerPausedSecs = 0;
   STATE.fuelTimerPauseStartedAt = null;
@@ -5197,6 +5229,15 @@ function tankTimeSegments(log, endTimeStr){
   }
   return totals;
 }
+// Off Blocks / On Blocks are logged in tenths of an hour (6 min), so those
+// two stamps snap to the nearest 6 minutes. Take Off and Landing stay exact.
+function stampTimeFor(label){
+  if(label !== 'Off Blocks' && label !== 'On Blocks') return nowUTCStr();
+  var d = new Date();
+  var m = d.getUTCHours()*60 + d.getUTCMinutes() + d.getUTCSeconds()/60;
+  m = (Math.round(m/6)*6) % 1440;
+  return ('0'+Math.floor(m/60)).slice(-2)+':'+('0'+(m%60)).slice(-2);
+}
 function nowUTCStr(){
   var d = new Date();
   return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2);
@@ -5395,7 +5436,7 @@ function updateCountdown(){
         var nowB = new Date();
         var offBlocksDate = new Date(Date.UTC(nowB.getUTCFullYear(), nowB.getUTCMonth(), nowB.getUTCDate(), bh, bm, 0));
         var elapsedBMs = nowB.getTime() - offBlocksDate.getTime();
-        if(elapsedBMs < 0) elapsedBMs += 24*3600*1000;
+        if(elapsedBMs < 0) elapsedBMs += (elapsedBMs > -10*60*1000) ? -elapsedBMs : 24*3600*1000;
         parts.push('BLOCK TIME <span class="cdT block" id="blockTimeCountUp" data-ts="'+offBlocksDate.getTime()+'">'+secsToHMS(elapsedBMs/1000)+'</span>');
       }
     }
@@ -5496,7 +5537,10 @@ setInterval(function(){
     // paused, rather than carrying on against real wall-clock time while
     // the figures they sit next to have stopped moving.
     var nowMs = el.getAttribute('data-fueltimer') ? effectiveNowMs() : Date.now();
-    el.textContent = secsToHMS(base + (nowMs-ts)/1000);
+    var shown = base + (nowMs-ts)/1000;
+    // Off Blocks can be rounded up to a few minutes ahead of now.
+    if(id === 'blockTimeCountUp' && shown < 0 && shown > -600) shown = 0;
+    el.textContent = secsToHMS(shown);
   });
 }, 1000);
 
@@ -5645,6 +5689,9 @@ function renderCalculations(){
   // rather than only ever all of them at once.
   html += '<div class="calcCard"><div class="ck">Flight History</div>';
   html += '<button type="button" id="saveToHistoryBtn" style="width:100%;border:1px solid var(--em);background:var(--em);color:#fff;border-radius:8px;padding:11px 0;font-family:\'JetBrains Mono\',monospace;font-weight:800;font-size:13px;cursor:pointer;margin-bottom:12px">+ Save Current Flight to History</button>';
+  if(hasUnsavedChanges() && !STATE.flightHistory.some(function(h){ return h.id === STATE.currentHistoryId; })){
+    html += '<div class="grNote" style="margin:-6px 0 10px;color:var(--amber);font-weight:700">\u2605 Current flight not saved yet</div>';
+  }
   if(!STATE.flightHistory.length){
     html += '<div class="grNote" style="padding:8px 2px">No flights archived yet.</div>';
   } else {
@@ -5655,7 +5702,7 @@ function renderCalculations(){
       // Star sits right by this card's own name — only the one that
       // actually matches the flight currently open, and only while it
       // has genuinely diverged from what's saved here.
-      var isCurrent = dirtyNow && h.date===fdNow.date && h.registration===fdNow.registration && h.student===fdNow.student;
+      var isCurrent = dirtyNow && h.id === STATE.currentHistoryId;
       // Each duration is shown as both H:MM and decimal hours (e.g.
       // "1:30 hrs (1.5)") — decimal is what goes in a logbook's hours
       // column, H:MM is what's easier to sanity-check at a glance.
@@ -5844,6 +5891,7 @@ function wireFlightDetails(){
       // the whole archive, so it doesn't need Clear History's level of
       // ceremony, just a genuine "are you sure."
       showConfirm('Delete "'+label+'" from history? This cannot be undone.', 'Delete Flight', function(){
+        if(STATE.currentHistoryId && STATE.flightHistory[idx].id === STATE.currentHistoryId) STATE.currentHistoryId = null;
         STATE.flightHistory.splice(idx, 1);
         saveState();
         renderCalculations();
@@ -5903,6 +5951,7 @@ function wireFlightDetails(){
       showConfirm('Are you sure? Every archived flight will be permanently deleted. (2 of 3)', 'Continue', function(){
         showConfirm('Last chance — this really cannot be undone. Delete all flight history now? (3 of 3)', 'Delete All History', function(){
           STATE.flightHistory = [];
+          STATE.currentHistoryId = null;
           saveState();
           renderCalculations();
         });
