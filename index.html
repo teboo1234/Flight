@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v67 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v70 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -188,10 +188,15 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .tankStatRow{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .tankStatLetter{ display:inline-block; width:12px; font-weight:800; color:var(--text); }
 .tankStatDim{ font-style:italic; opacity:.8; }
-.enduranceBar{ width:100%; background:rgba(3,105,161,.05); border:1px solid rgba(3,105,161,.25); border-radius:10px; padding:12px 14px; margin-bottom:14px; }
-.enduranceLbl{ font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--sky); }
-.enduranceVal{ font-family:'Syne',sans-serif; font-weight:700; font-size:26px; color:var(--sky); margin-top:2px; }
-.enduranceSub{ font-size:11px; color:var(--muted); margin-top:2px; }
+.enduranceBar{ width:100%; flex-shrink:0; display:flex; align-items:baseline; gap:8px; white-space:nowrap; overflow:hidden; background:rgba(3,105,161,.05); border:1px solid rgba(3,105,161,.25); border-radius:8px; padding:5px 10px; margin-bottom:8px; }
+.enduranceLbl{ font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--sky); flex-shrink:0; }
+.enduranceVal{ font-family:'Syne',sans-serif; font-weight:700; font-size:16px; color:var(--sky); flex-shrink:0; }
+.enduranceSub{ font-size:10px; color:var(--muted); min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.clrBox{ margin-bottom:10px; flex-shrink:0; }
+.clrHead{ display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+.clrHead label{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.clrQnhBtn{ border:1px solid var(--sky); background:var(--surface); color:var(--sky); border-radius:6px; padding:3px 8px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11px; cursor:pointer; }
+.clrBox textarea{ width:100%; box-sizing:border-box; }
 
 /* ===== Fuel Plan (brought over from FlightDeck) ===== */
 .fuelUnitToggle{ display:inline-flex; flex-shrink:0; margin-bottom:14px; border-radius:8px; overflow:hidden; border:1px solid var(--border); }
@@ -443,7 +448,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v67</div>
+  <div id="versionBadge">v70</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -1789,6 +1794,7 @@ function renderCard(card){
   } else if(card.type === 'grouplist'){
     if(card.id === 'airborne.airbornegrp'){
       html += renderEnduranceBarHtml();
+      html += renderClearancesHtml();
     }
     var doneN = groupChildDone(card);
     var totalN = groupTotalCount(card);
@@ -1942,6 +1948,7 @@ function renderCard(card){
         document.getElementById('grLaw'+b.getAttribute('data-i')).classList.toggle('open');
       });
     });
+    wireClearances();
     var hideBtn = document.getElementById('hideCompletedBtn');
     if(hideBtn) hideBtn.addEventListener('click', function(){
       STATE.hideCompleted = !STATE.hideCompleted;
@@ -2537,12 +2544,43 @@ function fuelLevelClass(val, finalReserve){
   if(val >= 0) return 'warn';
   return 'neg';
 }
+// Airborne Clearances — free bullet notes on the Airbourne tab. The first
+// bullet is seeded once with the QNH from the most recent submitted ATIS
+// (or the ATIS being filled in); "+ QNH" appends the latest again later.
+var CLR_KEY = 'airborne.airbornegrp.clr';
+function latestAtisQnh(){
+  for(var i = STATE.atisEntries.length-1; i >= 0; i--){ if(STATE.atisEntries[i].qnh) return STATE.atisEntries[i].qnh; }
+  return STATE.atisDraft.qnh || '';
+}
+function renderClearancesHtml(){
+  var v = STATE.values[CLR_KEY];
+  var q = latestAtisQnh();
+  if(v === undefined && q){ v = '\u2022 QNH '+q; STATE.values[CLR_KEY] = v; saveState(); }
+  return '<div class="clrBox"><div class="clrHead"><label>Airborne Clearances</label>'+
+    '<button type="button" class="clrQnhBtn" id="clrQnhBtn">+ QNH</button></div>'+
+    '<textarea id="clrText" rows="3" placeholder="\u2022 Clearances\u2026" autocomplete="off" autocorrect="off" spellcheck="false">'+escapeHtml(v||'')+'</textarea></div>';
+}
+function wireClearances(){
+  var ta = document.getElementById('clrText');
+  if(!ta) return;
+  ta.addEventListener('input', function(){ STATE.values[CLR_KEY] = ta.value; saveState(); });
+  wireBulletTextarea(ta, function(val){ STATE.values[CLR_KEY] = val; saveState(); });
+  var btn = document.getElementById('clrQnhBtn');
+  if(btn) btn.addEventListener('click', function(){
+    var q = latestAtisQnh();
+    if(!q){ showConfirm('No QNH on the ATIS yet \u2014 enter one on the ATIS tab first.', 'OK', function(){}); return; }
+    var cur = ta.value.replace(/\s+$/,'');
+    var line = '\u2022 QNH '+q;
+    ta.value = (cur && cur !== '\u2022' ? cur+'\n' : '')+line;
+    STATE.values[CLR_KEY] = ta.value; saveState();
+  });
+}
 function renderEnduranceBarHtml(){
   var er = enduranceRemainingCalc();
   return '<div class="enduranceBar">'+
-    '<div class="enduranceLbl">Endurance Remaining</div>'+
+    '<div class="enduranceLbl">Endurance</div>'+
     '<div class="enduranceVal" id="enduranceVal">'+(er.val===null ? '\u2014' : (er.val<0?'\u2212':'')+secsToHMS(Math.abs(er.val)*3600))+'</div>'+
-    '<div class="enduranceSub" id="enduranceSub">'+(er.val===null ? 'Set Take Off time and the Fuel Plan (burn rate + FOB) to see this.' : 'Elapsed <span id="enduranceElapsed">'+secsToHMS(er.elapsedSecs)+'</span> since Take Off \u00b7 Fuel remaining '+fmtFuel(er.fuelRemaining))+'</div>'+
+    '<div class="enduranceSub" id="enduranceSub">'+(er.val===null ? 'Needs Take Off + Fuel Plan' : '\u23f1 <span id="enduranceElapsed">'+secsToHMS(er.elapsedSecs)+'</span> \u00b7 '+fmtFuel(er.fuelRemaining))+'</div>'+
   '</div>';
 }
 // Compact, single-line Tank Log bar — lives in the persistent header, right
@@ -4378,6 +4416,12 @@ function renderPostFlightContent(doc, scale){
     });
   }
 
+  if((STATE.values[CLR_KEY]||'').replace(/[\s\u2022]/g,'')){
+    heading('Airborne Clearances');
+    paragraph(STATE.values[CLR_KEY]);
+    spacer();
+  }
+
   heading('Debrief');
   subheading('Defects');
   paragraph(fd.defects);
@@ -5429,7 +5473,7 @@ function updateEnduranceLive(){
   var er = enduranceRemainingCalc();
   valEl.textContent = er.val===null ? '\u2014' : (er.val<0?'\u2212':'')+secsToHMS(Math.abs(er.val)*3600);
   var subEl = document.getElementById('enduranceSub');
-  if(subEl) subEl.innerHTML = er.val===null ? 'Set Take Off time and the Fuel Plan (burn rate + FOB) to see this.' : 'Elapsed <span id="enduranceElapsed">'+secsToHMS(er.elapsedSecs)+'</span> since Take Off \u00b7 Fuel remaining '+fmtFuel(er.fuelRemaining);
+  if(subEl) subEl.innerHTML = er.val===null ? 'Needs Take Off + Fuel Plan' : '\u23f1 <span id="enduranceElapsed">'+secsToHMS(er.elapsedSecs)+'</span> \u00b7 '+fmtFuel(er.fuelRemaining);
 }
 // Session-only (not persisted) — a pause deliberately resets on reload
 // rather than silently freezing a future session's live figures.
@@ -5560,6 +5604,11 @@ function renderCalculations(){
       html += '<div class="resRow"><span class="rt">Tank '+entry.tank+'</span><span class="rv go">'+entry.time+' UTC</span></div>';
     });
     html += '</div>';
+  }
+
+  if((STATE.values[CLR_KEY]||'').replace(/[\s\u2022]/g,'')){
+    html += '<div class="calcCard"><div class="ck">Airborne Clearances</div>'+
+      '<div class="grNote" style="white-space:pre-line;font-size:12px;color:var(--ink)">'+escapeHtml(STATE.values[CLR_KEY])+'</div></div>';
   }
 
   if(STATE.atisEntries.length){
