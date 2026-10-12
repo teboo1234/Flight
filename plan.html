@@ -510,6 +510,19 @@
   }
   .title-input:focus { border-bottom-color: #000; }
   .title-input::placeholder { color: #aaa; font-weight: 400; }
+  .title-cell {
+    display: flex; align-items: baseline; gap: 6px;
+    min-width: 0; width: 100%;
+  }
+  .title-cell .title-input { flex: 1; min-width: 0; }
+  .t-begin {
+    font-size: 11px; color: #888;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  ul.tasks li.primary .t-begin { color: #c41e1e; opacity: 0.7; }
+  ul.tasks li.travel .t-begin { color: #1a5fb4; opacity: 0.75; }
+  ul.tasks li.wiggle .t-begin { color: #7e3ec1; opacity: 0.75; }
 
   .x-btn {
     background: none; border: none; cursor: pointer;
@@ -1815,7 +1828,10 @@ function renderTasks() {
         ? '<span class="t-input t-end-empty" style="width:60px"></span>'
         : `<input type="time" class="t-input t-end" value="${minToClock(endMin)}">`}
       <input type="text" class="dur-input" value="${minToHumanDur(task.duration)}">
-      <input type="text" class="title-input" value="${escapeHtml(task.title)}" placeholder="Task">
+      <span class="title-cell">
+        <input type="text" class="title-input" value="${escapeHtml(task.title)}" placeholder="Task">
+        <span class="t-begin">(${minToClock(task.start)})</span>
+      </span>
       ${task.hasConflict ? '<span class="conflict-flag" title="Scheduling conflict">⚠</span>' : ''}
       <button type="button" class="row-menu-btn" aria-label="More actions" title="More">⋯</button>
       <div class="row-menu" role="menu">
