@@ -262,8 +262,8 @@ input,select{ font-family:'JetBrains Mono',monospace; }
    Pre-Take-Off checklist"), not a digital item to just tick off casually.
    Bold, brighter, with a left accent so it reads as a distinct category
    at a glance among the regular tick items. */
-.groupRow.flashRed{ border-color:#dc2626; animation:flashRedRow 1s ease-in-out infinite; }
-@keyframes flashRedRow{ 0%,100%{ background:rgba(220,38,38,.08);} 50%{ background:rgba(220,38,38,.38);} }
+.groupRow.flashRed{ border:2px solid #dc2626; padding:10px 11px; animation:flashRedRow 1s ease-in-out infinite; }
+@keyframes flashRedRow{ 0%,100%{ background:rgba(220,38,38,.08);} 50%{ background:rgba(220,38,38,.5);} }
 .groupRow.promptRow{ background:rgba(180,83,9,.06); border-color:rgba(180,83,9,.3); border-left:3px solid var(--amber); }
 .grTop{ display:flex; align-items:center; gap:10px; }
 .grLabel{ flex:1; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; color:var(--text); line-height:1.4; }
@@ -1859,9 +1859,9 @@ function renderCard(card){
       } else {
         rightControl = '';
       }
-      // Flash red from Take Off until Landing while this check is still
+      // Flash red from Take Off until On Blocks while this check is still
       // un-ticked (RSPLIITTT, Line up check, BUFF check).
-      var flashNow = child.flashRed && !s && STATE.values['airborne.airbornegrp.0'] && !STATE.values['airborne.airbornegrp.1'];
+      var flashNow = child.flashRed && !s && STATE.values['airborne.airbornegrp.0'] && !STATE.values['airborne.airbornegrp.2'];
       html += '<div class="groupRow'+(child.prompt?' promptRow':'')+(flashNow?' flashRed':'')+'">'+
         '<div class="grTop">'+
           '<span class="grLabel'+(child.prompt?' prompt':'')+'">'+(child.prompt?'&#128203; ':'')+escapeHtml(child.text)+(child.hasLaw ? ' <span class="grLaw" data-i="'+i+'">LAW</span>' : '')+'</span>'+
