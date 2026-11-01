@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v73 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v84 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -450,7 +450,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v73</div>
+  <div id="versionBadge">v84</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -1861,7 +1861,7 @@ function renderCard(card){
       }
       // Flash red from Take Off until On Blocks while this check is still
       // un-ticked (RSPLIITTT, Line up check, BUFF check).
-      var flashNow = child.flashRed && !s && STATE.values['airborne.airbornegrp.0'] && !STATE.values['airborne.airbornegrp.2'];
+      var flashNow = child.flashRed && !s && (STATE.values['airborne.airbornegrp.flash'] || (STATE.values['airborne.airbornegrp.0'] && !STATE.values['airborne.airbornegrp.2']));
       html += '<div class="groupRow'+(child.prompt?' promptRow':'')+(flashNow?' flashRed':'')+'">'+
         '<div class="grTop">'+
           '<span class="grLabel'+(child.prompt?' prompt':'')+'">'+(child.prompt?'&#128203; ':'')+escapeHtml(child.text)+(child.hasLaw ? ' <span class="grLaw" data-i="'+i+'">LAW</span>' : '')+'</span>'+
@@ -2195,6 +2195,10 @@ function renderCard(card){
         showConfirm(prevStamp ? childText+' is already '+prevStamp+' UTC. Replace it with '+stamp+' UTC?' : 'Record '+childText+' at '+stamp+' UTC?',
           prevStamp ? 'Replace' : 'Record', function(){
         STATE.values[key] = stamp;
+        // Pressing Take Off arms the red flash on BUFF / RSPLIITTT / Line up
+        // until each is ticked (cleared with the rest of the Airborne keys
+        // by Reset 2nd Flight).
+        if(childText === 'Take Off') STATE.values['airborne.airbornegrp.flash'] = 1;
         saveState();
         renderCard(card);
         buildAnnunFor(curSection());
@@ -5716,6 +5720,15 @@ function renderCalculations(){
   if(hasUnsavedChanges() && !STATE.flightHistory.some(function(h){ return h.id === STATE.currentHistoryId; })){
     html += '<div class="grNote" style="margin:-6px 0 10px;color:var(--amber);font-weight:700">\u2605 Current flight not saved yet</div>';
   }
+  // Manual link: choose which History entry the live flight is tied to.
+  var linkedH = null;
+  chronologicalHistory().forEach(function(h){ if(STATE.currentHistoryId && h.id === STATE.currentHistoryId) linkedH = h; });
+  if(STATE.flightHistory.length){
+    html += '<div class="grNote" style="margin:-4px 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
+      '<span>'+(linkedH ? '\uD83D\uDD17 Linked to flight #'+linkedH.__flightNum : 'Not linked to a History entry')+'</span>'+
+      '<button type="button" id="linkHistoryBtn" style="border:1px solid var(--border);background:var(--surface);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer">'+(linkedH?'Change link':'Link to entry')+'</button>'+
+      '</div>';
+  }
   if(!STATE.flightHistory.length){
     html += '<div class="grNote" style="padding:8px 2px">No flights archived yet.</div>';
   } else {
@@ -5944,6 +5957,29 @@ function wireFlightDetails(){
         if(stillThere) stillThere.textContent = original;
       }, 1600);
     }
+  });
+  var linkHistoryBtn = document.getElementById('linkHistoryBtn');
+  if(linkHistoryBtn) linkHistoryBtn.addEventListener('click', function(){
+    showPrompt('Enter the flight number (#) from the list below, or an entry ID, to link the current flight to. Save Current will then update that entry. Leave blank to unlink (next save creates a new entry).', '', function(v){
+      v = (v||'').trim();
+      if(!v){
+        STATE.currentHistoryId = null; saveState(); renderCalculations(); return;
+      }
+      var list = chronologicalHistory(), target = null;
+      var n = v.replace(/^#/, '');
+      if(/^\d+$/.test(n)){
+        list.forEach(function(h){ if(h.__flightNum === parseInt(n, 10)) target = h; });
+      }
+      if(!target) list.forEach(function(h){ if(h.id === v) target = h; });
+      if(!target){
+        showConfirm('No History entry matches "'+v+'".', 'OK', function(){});
+        return;
+      }
+      var desc = '#'+target.__flightNum+' ('+[target.date, target.registration, target.student].filter(Boolean).join(' \u00b7 ')+')';
+      showConfirm('Link the current flight to '+desc+'? Save Current will overwrite that entry.', 'Link', function(){
+        STATE.currentHistoryId = target.id; saveState(); renderCalculations();
+      });
+    });
   });
   var exportTimesBtn = document.getElementById('exportTimesBtn');
   if(exportTimesBtn) exportTimesBtn.addEventListener('click', function(){ shareFlightHistoryPdf(); });
