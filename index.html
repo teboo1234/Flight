@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v85 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v90 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -55,8 +55,11 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .slotBarFill.amber{ background:var(--amber); }
 .slotBarFill.overdue{ background:var(--rose); }
 .notesBtnHeading{ flex:0 0 42px; border:none; border-right:1px solid var(--border); background:rgba(109,40,217,.06); color:var(--violet); font-size:15px; cursor:pointer; }
+.quickFieldBtn{ flex:0 0 28px !important; padding:0; font-size:14px; }
 .tasksBtnHeading{ border-right:none; border-left:1px solid var(--border); background:rgba(3,105,161,.06); color:var(--sky); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; }
 .headingBtn:last-child{ border-right:none; }
+.headingBtn{ font-size:11.5px; letter-spacing:.02em; }
+@media (max-width:360px){ .headingBtn{ font-size:7.5px; letter-spacing:0; } .notesBtnHeading:not(.quickFieldBtn){ flex-basis:34px; } }
 .headingBtn.on{ background:var(--sky); color:#fff; }
 .headingBtn.complete{ background:var(--em); color:#fff; }
 .headingBtn.complete.on{ background:var(--em); color:#fff; box-shadow:inset 0 -3px 0 var(--sky); }
@@ -283,6 +286,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .grBtn.go.on{ background:var(--em); color:#fff; }
 .grBtn.na{ color:var(--amber); border-color:var(--amber); }
 .grBtn.na.on{ background:var(--amber); color:#fff; }
+.customDel{ border:1px solid #dc2626; background:transparent; border-radius:7px; padding:7px 9px; font-size:13px; cursor:pointer; color:#dc2626; }
 .grNowBtn{ flex-shrink:0; border:1px solid rgba(3,105,161,.35); background:rgba(14,165,233,.1); color:var(--sky); border-radius:7px; padding:7px 12px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; cursor:pointer; white-space:nowrap; }
 .grTimeBtns{ display:flex; gap:5px; align-items:center; flex-shrink:0; }
 .grEditTimeBtn{ flex-shrink:0; border:1px solid var(--border); background:var(--surface); color:var(--muted); border-radius:7px; width:30px; height:30px; font-size:13px; cursor:pointer; }
@@ -457,7 +461,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v85</div>
+  <div id="versionBadge">v90</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -549,6 +553,16 @@ input,select{ font-family:'JetBrains Mono',monospace; }
     <textarea id="notesModalText" class="promptInput" rows="6" placeholder="Quick note&hellip;" autocomplete="off" autocorrect="off" style="text-align:left;font-size:16px;height:auto;font-family:'DM Sans',sans-serif"></textarea>
     <div class="confirmBtns">
       <button type="button" id="notesModalCloseBtn" class="confirmOk" style="background:#0369a1;flex:1">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="studentsModal" class="confirmModal" style="display:none">
+  <div class="confirmBox">
+    <div class="confirmMsg">Students</div>
+    <div id="studentsModalList" class="manageCodesList" style="max-height:50vh;overflow-y:auto"></div>
+    <div class="confirmBtns">
+      <button type="button" id="studentsModalCloseBtn" class="confirmOk" style="background:#0369a1;flex:1">Done</button>
     </div>
   </div>
 </div>
@@ -1316,6 +1330,17 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     if(!STATE.atisDraft) STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
     if(!STATE.manualTasks) STATE.manualTasks = [];
     if(!STATE.flightHistory) STATE.flightHistory = [];
+    // Student book: names flown with + their open tasks, kept separately from
+    // Flight History so it survives history being deleted. Seeded once from
+    // the students already in History.
+    if(!STATE.students) STATE.students = [];
+    if(!STATE.studentsSeeded){
+      STATE.flightHistory.forEach(function(h){
+        var n = (h.student||'').trim();
+        if(n && !STATE.students.some(function(r){ return r.name.toLowerCase() === n.toLowerCase(); })) STATE.students.push({ name:n, tasks:[] });
+      });
+      STATE.studentsSeeded = true;
+    }
     STATE.flightHistory.forEach(function(h){ if(!h.id) h.id = newHistoryId(); });
     if(STATE.currentHistoryId === undefined){
       // One-time: link the live flight to the entry it was last saved as
@@ -1579,6 +1604,16 @@ function renderHeadingRow(){
   notesBtn.title = 'Notes';
   notesBtn.addEventListener('click', showNotesModal);
   elHeadingRow.appendChild(notesBtn);
+  // Defects and Safety Report: same quick-popup idea as Notes, so they can
+  // be jotted down mid-flight rather than waiting for Post Flight.
+  [['defects','\u26a0','Defects','Defect\u2026'],['safetyReport','\u2691','Safety Report','Safety report\u2026']].forEach(function(f){
+    var b = document.createElement('button');
+    b.className = 'notesBtnHeading quickFieldBtn';
+    b.innerHTML = f[1]+(STATE.flightDetails[f[0]]?' \u2022':'');
+    b.title = f[2];
+    b.addEventListener('click', function(){ showFieldModal(f[0], f[2], f[3]); });
+    elHeadingRow.appendChild(b);
+  });
   HEADINGS.forEach(function(h){
     var btn = document.createElement('button');
     btn.className = 'headingBtn' + (h.key===curHeading?' on':'') + (headingComplete(h)?' complete':'');
@@ -1936,6 +1971,7 @@ function renderCard(card){
             '<div class="grBtns">'+
               '<button class="grBtn go'+(cs==='go'?' on':'')+'" data-ci="'+ci+'" data-m="go">&#10003;</button>'+
               '<button class="grBtn na'+(cs==='na'?' on':'')+'" data-ci="'+ci+'" data-m="na">N/A</button>'+
+              '<button class="customDel" data-ci="'+ci+'" title="Delete this item">&#128465;</button>'+
             '</div>'+
           '</div>'+
         '</div>';
@@ -2259,7 +2295,30 @@ function renderCard(card){
       });
     });
     if(card.allowAddItems){
-      elCard.querySelectorAll('.grBtn[data-ci]').forEach(function(b){
+      elCard.querySelectorAll('.customDel').forEach(function(b){
+        b.addEventListener('click', function(ev){
+          ev.stopPropagation();
+          var ci = parseInt(b.getAttribute('data-ci'), 10);
+          var list = STATE.customItems[card.id] || [];
+          showConfirm('Delete "'+list[ci]+'" from this list permanently?', 'Delete', function(){
+            list.splice(ci, 1);
+            // Shift the per-item tick states down so they stay with their items.
+            var n = list.length + 1;
+            for(var k = ci; k < n; k++){
+              var nextKey = card.id+'.custom.'+(k+1), thisKey = card.id+'.custom.'+k;
+              if(STATE.checked[nextKey]) STATE.checked[thisKey] = STATE.checked[nextKey]; else delete STATE.checked[thisKey];
+            }
+            delete STATE.checked[card.id+'.custom.'+n];
+            delete STATE.checked[card.id+'.custom.'+(n-1)] ;
+            if(list.length === 0) delete STATE.customItems[card.id];
+            saveState(); renderCard(card);
+            buildAnnunFor(curSection());
+            elDoneCount.textContent = sectionTotals(curSection()).done;
+            renderResults(); renderCalculations();
+          });
+        });
+      });
+      elCard.querySelectorAll('.grBtn[data-ci]:not(.customDel)').forEach(function(b){
         b.addEventListener('click', function(){
           var ci = b.getAttribute('data-ci'), m = b.getAttribute('data-m');
           var key = card.id+'.custom.'+ci;
@@ -2746,16 +2805,20 @@ function wireBulletTextarea(el, onChange){
     }
   };
 }
-function showNotesModal(){
+function showNotesModal(){ showFieldModal('notes', 'Notes', 'Quick note\u2026'); }
+// One popup for any free-text Flight Details field (notes / defects / safetyReport).
+function showFieldModal(field, title, placeholder){
   var modal = document.getElementById('notesModal');
   var ta = document.getElementById('notesModalText');
-  ta.value = STATE.flightDetails.notes || '';
+  modal.querySelector('.confirmMsg').textContent = title;
+  ta.placeholder = placeholder;
+  ta.value = STATE.flightDetails[field] || '';
   modal.style.display = 'flex';
   setTimeout(function(){ ta.focus(); }, 50);
   ta.oninput = function(){
     var raw = ta.value;
     var formatted = sentenceCaseStr(raw);
-    STATE.flightDetails.notes = formatted;
+    STATE.flightDetails[field] = formatted;
     if(formatted !== raw){
       var pos = ta.selectionStart;
       ta.value = formatted;
@@ -2764,7 +2827,7 @@ function showNotesModal(){
     saveState();
   };
   wireBulletTextarea(ta, function(v){
-    STATE.flightDetails.notes = sentenceCaseStr(v);
+    STATE.flightDetails[field] = sentenceCaseStr(v);
     saveState();
   });
   document.getElementById('notesModalCloseBtn').onclick = function(){
@@ -2780,6 +2843,7 @@ function addManualTask(text){
   text = (text||'').trim();
   if(!text) return;
   STATE.manualTasks.push({ text:text, done:false });
+  syncStudentTasks(STATE.flightDetails.student);
   saveState();
 }
 function renderTasksModalList(){
@@ -2800,6 +2864,7 @@ function renderTasksModalList(){
   listEl.querySelectorAll('.taskCheckbox').forEach(function(cb){
     cb.addEventListener('change', function(){
       STATE.manualTasks[parseInt(cb.getAttribute('data-idx'),10)].done = cb.checked;
+      syncStudentTasks(STATE.flightDetails.student);
       saveState();
       renderTasksModalList();
       renderHeadingRow();
@@ -2808,11 +2873,57 @@ function renderTasksModalList(){
   listEl.querySelectorAll('.taskDelBtn').forEach(function(b){
     b.addEventListener('click', function(){
       STATE.manualTasks.splice(parseInt(b.getAttribute('data-idx'),10), 1);
+      syncStudentTasks(STATE.flightDetails.student);
       saveState();
       renderTasksModalList();
       renderHeadingRow();
     });
   });
+}
+function showStudentsModal(){
+  var modal = document.getElementById('studentsModal');
+  function renderList(){
+    var listEl = document.getElementById('studentsModalList');
+    if(!STATE.students.length){ listEl.innerHTML = '<div class="manageCodesEmpty">No students yet. Names are added as you enter them.</div>'; return; }
+    listEl.innerHTML = STATE.students.map(function(r, idx){
+      var n = (r.tasks||[]).length;
+      return '<div class="manageCodeItem" style="align-items:flex-start">'+
+        '<span class="manageCodeText">'+escapeHtml(r.name)+'<small>'+(n ? n+' open task'+(n===1?'':'s')+': '+escapeHtml(r.tasks.join('; ')) : 'No open tasks')+'</small></span>'+
+        '<button type="button" class="manageCodeDelBtn stuRenBtn" data-idx="'+idx+'" style="color:var(--sky);border-color:var(--sky)">Rename</button>'+
+        '<button type="button" class="manageCodeDelBtn stuDelBtn" data-idx="'+idx+'">Delete</button>'+
+      '</div>';
+    }).join('');
+    listEl.querySelectorAll('.stuRenBtn').forEach(function(b){
+      b.addEventListener('click', function(){
+        var r = STATE.students[parseInt(b.getAttribute('data-idx'),10)];
+        showPrompt('Rename student:', r.name, function(v){
+          v = (v||'').trim(); if(!v || v === r.name) return;
+          var other = findStudent(v);
+          var old = r.name;
+          if(other && other !== r){                       // merge into the existing record
+            (r.tasks||[]).forEach(function(t){ if(other.tasks.indexOf(t) === -1) other.tasks.push(t); });
+            STATE.students.splice(STATE.students.indexOf(r), 1);
+            v = other.name;
+          } else { r.name = v; STATE.students.sort(function(a,b2){ return a.name.localeCompare(b2.name); }); }
+          if(studentKey(STATE.flightDetails.student) === studentKey(old)) STATE.flightDetails.student = v;
+          if(studentKey(STATE.activeStudent) === studentKey(old)) STATE.activeStudent = v;
+          saveState(); renderList(); renderCalculations();
+        }, true);
+      });
+    });
+    listEl.querySelectorAll('.stuDelBtn').forEach(function(b){
+      b.addEventListener('click', function(){
+        var r = STATE.students[parseInt(b.getAttribute('data-idx'),10)];
+        showConfirm('Delete "'+r.name+'" and their saved tasks from the student list? Flight History is not affected.', 'Delete', function(){
+          STATE.students.splice(STATE.students.indexOf(r), 1);
+          saveState(); renderList(); renderCalculations();
+        });
+      });
+    });
+  }
+  renderList();
+  modal.style.display = 'flex';
+  document.getElementById('studentsModalCloseBtn').onclick = function(){ modal.style.display = 'none'; renderCalculations(); };
 }
 function showTasksModal(){
   var modal = document.getElementById('tasksModal');
@@ -4254,6 +4365,7 @@ function buildAllDataExport(){
     flightHistory: STATE.flightHistory,
     codes: STATE.codes,
     codePresets: STATE.codePresets,
+    students: STATE.students,
     currentFlight: {
       checked: STATE.checked, values: STATE.values, global: STATE.global,
       fuel: STATE.fuel, tankLog: STATE.tankLog, flightDetails: STATE.flightDetails,
@@ -4349,6 +4461,13 @@ function importAllDataFromJson(text){
   }
   var histResult = mergeFlightHistory(data.flightHistory);
   var codeResult = mergeCodesAndPresets(data.codes, data.codePresets);
+  if(Array.isArray(data.students)){
+    data.students.forEach(function(inc){
+      if(!inc || !inc.name) return;
+      var r = ensureStudent(inc.name);
+      (inc.tasks||[]).forEach(function(t){ if(r.tasks.indexOf(t) === -1) r.tasks.push(t); });
+    });
+  }
   saveState();
   renderCalculations();
   var summaryParts = [];
@@ -4634,9 +4753,58 @@ function hasUnsavedChanges(){
 // leaves Flight Details untouched between legs), so matching on those
 // three fields the normal way would make leg 2's archive overwrite
 // leg 1's instead of recording both.
+// ---- Student book ------------------------------------------------------
+function studentKey(n){ return (n||'').trim().toLowerCase(); }
+function findStudent(name){
+  var k = studentKey(name); if(!k) return null;
+  for(var i = 0; i < STATE.students.length; i++){ if(studentKey(STATE.students[i].name) === k) return STATE.students[i]; }
+  return null;
+}
+function ensureStudent(name){
+  name = (name||'').trim(); if(!name) return null;
+  var r = findStudent(name);
+  if(!r){ r = { name:name, tasks:[] }; STATE.students.push(r); STATE.students.sort(function(a,b){ return a.name.localeCompare(b.name); }); }
+  return r;
+}
+// Store the live flight's open tasks on the student's record (ticked or
+// deleted tasks drop off it). Only updates an existing record.
+function syncStudentTasks(name){
+  var r = findStudent(name); if(!r) return;
+  r.tasks = STATE.manualTasks.filter(function(t){ return !t.done; }).map(function(t){ return t.text; });
+}
+function studentTasksAsTasks(r){ return (r && r.tasks || []).map(function(t){ return { text:t, done:false }; }); }
+// The Student field has been set/changed on the live flight.
+function switchStudent(newName){
+  var prev = STATE.activeStudent || '';
+  if(prev && studentKey(prev) !== studentKey(newName)){
+    syncStudentTasks(prev);
+    STATE.manualTasks = STATE.manualTasks.filter(function(t){ return t.done; });
+  }
+  var r = ensureStudent(newName);
+  STATE.activeStudent = r ? r.name : '';
+  if(r){
+    mergeTasks(STATE.manualTasks, studentTasksAsTasks(r));
+    syncStudentTasks(r.name);
+  }
+  saveState();
+}
+// Unticked tasks move on to the next flight only when it is flown with the
+// same student (case-insensitive, non-empty); ticked ones stay behind.
+function carriedTasks(fromStudent, toStudent, tasks){
+  var a = (fromStudent||'').trim().toLowerCase(), b = (toStudent||'').trim().toLowerCase();
+  if(!a || a !== b) return [];
+  return (tasks||[]).filter(function(t){ return !t.done; }).map(function(t){ return { text:t.text, done:false }; });
+}
+function mergeTasks(base, extra){
+  var seen = {};
+  base.forEach(function(t){ seen[(t.text||'').trim().toLowerCase()] = true; });
+  extra.forEach(function(t){ var k = (t.text||'').trim().toLowerCase(); if(!seen[k]){ seen[k] = true; base.push(t); } });
+  return base;
+}
 function archiveCurrentFlightToHistory(forceNew){
   var fd = STATE.flightDetails;
   if(!fd.date && !fd.registration && !fd.student) return;
+  ensureStudent(fd.student);
   var offBlocks = STATE.values['offblockspretakeoff.otpgrp.0'] || '';
   var takeoff = STATE.values['airborne.airbornegrp.0'] || '';
   var landing = STATE.values['airborne.airbornegrp.1'] || '';
@@ -4659,7 +4827,8 @@ function archiveCurrentFlightToHistory(forceNew){
       fuel: JSON.parse(JSON.stringify(STATE.fuel)),
       tankLog: JSON.parse(JSON.stringify(STATE.tankLog)),
       flightDetails: JSON.parse(JSON.stringify(STATE.flightDetails)),
-      atisEntries: JSON.parse(JSON.stringify(STATE.atisEntries))
+      atisEntries: JSON.parse(JSON.stringify(STATE.atisEntries)),
+      manualTasks: JSON.parse(JSON.stringify(STATE.manualTasks || []))
     }
   };
   // Update only the entry this live flight is linked to; otherwise it's a
@@ -4701,7 +4870,10 @@ function loadFlightFromHistory(idx){
     STATE.tankLog = JSON.parse(JSON.stringify(h.full.tankLog));
     STATE.flightDetails = JSON.parse(JSON.stringify(h.full.flightDetails));
     STATE.atisEntries = JSON.parse(JSON.stringify(h.full.atisEntries));
+    // Tasks belong to the flight they were made on.
+    STATE.manualTasks = JSON.parse(JSON.stringify(h.full.manualTasks || []));
   } else {
+    STATE.manualTasks = [];
     // Archived before full snapshots existed — restore what the
     // summary row actually has (identity + times) rather than refusing
     // to load it at all.
@@ -4716,8 +4888,12 @@ function loadFlightFromHistory(idx){
     STATE.atisEntries = [];
     STATE.flightDetails = { date:h.date||'', slotFrom:'', slotTo:'', registration:h.registration||'', student:h.student||'', flightDetail:'', defects:'', safetyReport:'', notes:'' };
   }
-  STATE.customItems = {};
-  STATE.manualTasks = [];
+  // customItems (manual list additions, e.g. TEM) are kept: they belong to
+  // the app, not to any one flight, and are only removed by deleting them.
+  // The student's open tasks (from the student book) come with the flight.
+  var loadedStudent = ensureStudent(STATE.flightDetails.student);
+  STATE.activeStudent = loadedStudent ? loadedStudent.name : '';
+  if(loadedStudent) mergeTasks(STATE.manualTasks, studentTasksAsTasks(loadedStudent));
   STATE.tankSelected = 'L';
   STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
   // The just-loaded flight now matches what's archived for it by
@@ -4777,7 +4953,8 @@ function resetAllData(){
   STATE.checked = {};
   STATE.values = {};
   STATE.global = { etob:'', ctot:'', transponderCode:'' };
-  STATE.customItems = {};
+  STATE.activeStudent = '';
+  // customItems deliberately kept (only removed by deleting the item).
   STATE.fuel = { unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:8, tripMins:'60', contPct:'', alt:4, altMins:'30', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
   STATE.tankLog = [];
   STATE.tankSelected = 'L';
@@ -4840,7 +5017,7 @@ function resetSecondFlight(){
   // same way — both its built-in ticks and anything added on the day.
   delete STATE.checked['tem.1s'];
   Object.keys(STATE.checked).forEach(function(k){ if(k.indexOf('tem.1s.') === 0) delete STATE.checked[k]; });
-  delete STATE.customItems['tem.1s'];
+  // Manually added TEM items stay; only their ticks (cleared above) reset.
   STATE.global.etob = '';
   STATE.global.ctot = '';
   STATE.tankLog = [];
@@ -4852,6 +5029,11 @@ function resetSecondFlight(){
   STATE.fuelTimerPausedSecs = 0;
   STATE.fuelTimerPauseStartedAt = null;
   STATE.atisEntries = [];
+  // Notes and tasks belong to the leg just archived (its snapshot keeps them);
+  // the next leg starts clean apart from carried-over unticked tasks.
+  STATE.flightDetails.notes = '';
+  // Student is unchanged here (Flight Details are kept), so open tasks carry on.
+  STATE.manualTasks = carriedTasks(STATE.flightDetails.student, STATE.flightDetails.student, STATE.manualTasks);
   STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
   if(prevEnd.tacho || prevEnd.hobbs){
     STATE.values['start.startgrp.1'] = { tacho: prevEnd.tacho||'', hobbs: prevEnd.hobbs||'' };
@@ -5686,7 +5868,7 @@ function renderCalculations(){
       '<div class="fdField"><label>Slot From (UTC)</label><button type="button" class="fpFieldBtn" id="fdSlotFrom" style="text-align:left">'+(fd.slotFrom?escapeHtml(fd.slotFrom):'Tap to set')+'</button></div>'+
       '<div class="fdField"><label>Slot To (UTC)</label><button type="button" class="fpFieldBtn" id="fdSlotTo" style="text-align:left">'+(fd.slotTo?escapeHtml(fd.slotTo):'Tap to set')+'</button></div>'+
       '<div class="fdField"><label>Registration</label><input type="text" id="fdReg" placeholder="G-XXXX" value="'+escapeHtml(fd.registration||'')+'" style="text-transform:uppercase"/></div>'+
-      '<div class="fdField"><label>Student</label><input type="text" id="fdStudent" value="'+escapeHtml(fd.student||'')+'"/></div>'+
+      '<div class="fdField"><label>Student <button type="button" id="manageStudentsBtn" style="border:none;background:none;color:var(--sky);font-size:11px;font-weight:800;cursor:pointer;padding:0 0 0 4px">Manage</button></label><input type="text" id="fdStudent" list="studentList" autocomplete="off" value="'+escapeHtml(fd.student||'')+'"/><datalist id="studentList">'+STATE.students.map(function(r){ return '<option value="'+escapeHtml(r.name)+'">'; }).join('')+'</datalist></div>'+
       '<div class="fdField" style="grid-column:1/-1"><label>Flight Detail</label><input type="text" id="fdFlightDetail" placeholder="e.g. Circuits, Nav to EGSS" value="'+escapeHtml(fd.flightDetail !== undefined ? fd.flightDetail : legacyFlightDetail(fd))+'"/></div>'+
     '</div>'+
   '</div>';
@@ -5943,6 +6125,17 @@ function wireFlightDetails(){
   });
   bind('fdReg', 'registration', function(v){ return v.toUpperCase(); });
   bind('fdStudent', 'student', titleCaseStr);
+  var stuEl = document.getElementById('fdStudent');
+  if(stuEl) stuEl.addEventListener('change', function(){
+    var r = findStudent(stuEl.value);
+    if(r) stuEl.value = r.name;                    // use the saved spelling
+    STATE.flightDetails.student = stuEl.value.trim();
+    switchStudent(STATE.flightDetails.student);
+    renderHeadingRow();
+    renderCalculations();
+  });
+  var manageStuBtn = document.getElementById('manageStudentsBtn');
+  if(manageStuBtn) manageStuBtn.addEventListener('click', function(ev){ ev.preventDefault(); showStudentsModal(); });
   bind('fdFlightDetail', 'flightDetail', sentenceCaseStr);
   bind('fdDefects', 'defects', sentenceCaseStr);
   bind('fdSafetyReport', 'safetyReport', sentenceCaseStr);
