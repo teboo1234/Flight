@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v84 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v85 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -192,6 +192,13 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .enduranceLbl{ font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--sky); flex-shrink:0; }
 .enduranceVal{ font-family:'Syne',sans-serif; font-weight:700; font-size:16px; color:var(--sky); flex-shrink:0; }
 .enduranceSub{ font-size:10px; color:var(--muted); min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.dapaBox{ margin-bottom:10px; flex-shrink:0; border:1px solid var(--border); border-radius:10px; padding:10px; background:rgba(255,255,255,.7); }
+.dapaGrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:8px; }
+.dapaGrid label{ display:block; font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
+.dapaGrid input{ width:100%; box-sizing:border-box; padding:8px 6px; font-size:16px; border-radius:8px; border:1px solid var(--border); }
+.dapaSentence{ font-weight:800; font-size:14px; margin:4px 0 6px; }
+.dapaOut{ display:flex; gap:14px; flex-wrap:wrap; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:800; }
+.dapaNote{ font-size:11px; color:var(--muted); margin-top:6px; }
 .clrBox{ margin-bottom:10px; flex-shrink:0; }
 .clrHead{ display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
 .clrHead label{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
@@ -450,7 +457,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v84</div>
+  <div id="versionBadge">v85</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -1823,6 +1830,7 @@ function renderCard(card){
       html += renderEnduranceBarHtml();
       html += renderClearancesHtml();
     }
+    if(card.id === 'dapa.dapagrp') html += renderDapaHtml();
     var doneN = groupChildDone(card);
     var totalN = groupTotalCount(card);
     html += '<div class="groupProgress">'+doneN+' / '+totalN+' done'+
@@ -1980,6 +1988,7 @@ function renderCard(card){
       });
     });
     wireClearances();
+    if(card.id === 'dapa.dapagrp') wireDapa(card);
     var hideBtn = document.getElementById('hideCompletedBtn');
     if(hideBtn) hideBtn.addEventListener('click', function(){
       STATE.hideCompleted = !STATE.hideCompleted;
@@ -2598,6 +2607,78 @@ var CLR_KEY = 'airborne.airbornegrp.clr';
 function latestAtisQnh(){
   for(var i = STATE.atisEntries.length-1; i >= 0; i--){ if(STATE.atisEntries[i].qnh) return STATE.atisEntries[i].qnh; }
   return STATE.atisDraft.qnh || '';
+}
+// ---- DA / PA calculator -------------------------------------------------
+// PA = height AMSL + (1013.25 - QNH) x 27 ft/hPa (rule of thumb).
+// DA = PA + 120 x (OAT - ISA temp at PA); ISA = 15 - 1.98 C per 1000 ft.
+// "FL vs Altitude" difference = the same (1013.25 - QNH) x 27 ft.
+var DAPA_KEY = 'dapa.dapagrp.calc';
+function atisOatSeed(){
+  var t = '';
+  for(var i = STATE.atisEntries.length-1; i >= 0; i--){ if(STATE.atisEntries[i].tempDew){ t = STATE.atisEntries[i].tempDew; break; } }
+  if(!t) t = (STATE.atisDraft && STATE.atisDraft.tempDew) || '';
+  var m = String(t).match(/^\s*(M|-)?\s*(\d+(?:\.\d+)?)/i);
+  return m ? ((m[1] ? '-' : '') + m[2]) : '';
+}
+function dapaCalc(c){
+  var qnh = parseFloat(c.qnh), oat = parseFloat(c.oat), h = parseFloat(c.height);
+  var out = { diff:null, pa:null, da:null };
+  if(!isNaN(qnh)){ out.diff = Math.round((1013.25 - qnh) * 27); }
+  if(!isNaN(qnh) && !isNaN(h)){
+    out.pa = Math.round(h + (1013.25 - qnh) * 27);
+    if(!isNaN(oat)){
+      var isa = 15 - 1.98 * out.pa / 1000;
+      out.da = Math.round(out.pa + 120 * (oat - isa));
+    }
+  }
+  return out;
+}
+function dapaSentence(d){
+  if(d.diff === null) return 'Enter the current QNH';
+  if(d.diff === 0) return 'FL is the same as Altitude';
+  return 'FL is '+Math.abs(d.diff).toLocaleString()+' ft '+(d.diff > 0 ? 'higher' : 'lower')+' than Altitude';
+}
+function dapaFmt(n){ return n === null ? '\u2014' : n.toLocaleString()+' ft'; }
+function renderDapaHtml(){
+  var c = STATE.values[DAPA_KEY];
+  if(c === undefined){
+    c = { qnh: latestAtisQnh() || '', oat: atisOatSeed(), height: '' };
+    STATE.values[DAPA_KEY] = c; saveState();
+  }
+  var d = dapaCalc(c);
+  return '<div class="dapaBox">'+
+    '<div class="dapaGrid">'+
+      '<div><label>QNH (hPa)</label><input type="text" inputmode="decimal" id="dapaQnh" value="'+escapeHtml(c.qnh||'')+'" placeholder="1013"/></div>'+
+      '<div><label>OAT (\u00b0C)</label><input type="text" inputmode="decimal" id="dapaOat" value="'+escapeHtml(c.oat||'')+'" placeholder="15"/></div>'+
+      '<div><label>Height AMSL (ft)</label><input type="text" inputmode="decimal" id="dapaHt" value="'+escapeHtml(c.height||'')+'" placeholder="elev / alt"/></div>'+
+    '</div>'+
+    '<div class="dapaSentence" id="dapaSentence">'+dapaSentence(d)+'</div>'+
+    '<div class="dapaOut"><span>PA <span id="dapaPa">'+dapaFmt(d.pa)+'</span></span><span>DA <span id="dapaDa">'+dapaFmt(d.da)+'</span></span></div>'+
+    '<button type="button" id="dapaFillBtn" class="clrQnhBtn" style="margin-top:8px">Copy to fields below</button>'+
+    '<div class="dapaNote">PA = height + (1013 \u2212 QNH) \u00d7 27 ft. DA = PA + 120 \u00d7 (OAT \u2212 ISA). Planning estimate only.</div>'+
+  '</div>';
+}
+function wireDapa(card){
+  var q = document.getElementById('dapaQnh'), o = document.getElementById('dapaOat'), h = document.getElementById('dapaHt');
+  if(!q || !o || !h) return;
+  function refresh(){
+    var c = STATE.values[DAPA_KEY] = { qnh:q.value.trim(), oat:o.value.trim(), height:h.value.trim() };
+    saveState();
+    var d = dapaCalc(c);
+    document.getElementById('dapaSentence').textContent = dapaSentence(d);
+    document.getElementById('dapaPa').textContent = dapaFmt(d.pa);
+    document.getElementById('dapaDa').textContent = dapaFmt(d.da);
+  }
+  [q,o,h].forEach(function(el){ el.addEventListener('input', refresh); });
+  var fill = document.getElementById('dapaFillBtn');
+  if(fill) fill.addEventListener('click', function(){
+    var d = dapaCalc(STATE.values[DAPA_KEY] || {});
+    // Children: 0 DA, 1 PA, 2 QNH-SPS difference (FL minus Altitude, ft)
+    if(d.da !== null){ STATE.values[card.id+'.0'] = { val:String(d.da) }; STATE.checked[card.id+'.0'] = 'go'; }
+    if(d.pa !== null){ STATE.values[card.id+'.1'] = { val:String(d.pa) }; STATE.checked[card.id+'.1'] = 'go'; }
+    if(d.diff !== null){ STATE.values[card.id+'.2'] = { val:String(d.diff) }; STATE.checked[card.id+'.2'] = 'go'; }
+    saveState(); renderCard(card);
+  });
 }
 function renderClearancesHtml(){
   var v = STATE.values[CLR_KEY];
