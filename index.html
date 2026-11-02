@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v91 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v92 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -461,7 +461,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v91</div>
+  <div id="versionBadge">v92</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
@@ -4468,6 +4468,8 @@ function importAllDataFromJson(text){
       if(!inc || !inc.name) return;
       var r = ensureStudent(inc.name);
       (inc.tasks||[]).forEach(function(t){ if(r.tasks.indexOf(t) === -1) r.tasks.push(t); });
+      if(inc.defects) r.defects = mergeBullets(r.defects, inc.defects);
+      if(inc.safetyReport) r.safetyReport = mergeBullets(r.safetyReport, inc.safetyReport);
     });
   }
   saveState();
