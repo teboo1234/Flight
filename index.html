@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v93 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v99 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -55,11 +55,19 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .slotBarFill.amber{ background:var(--amber); }
 .slotBarFill.overdue{ background:var(--rose); }
 .notesBtnHeading{ flex:0 0 42px; border:none; border-right:1px solid var(--border); background:rgba(109,40,217,.06); color:var(--violet); font-size:15px; cursor:pointer; }
+.minAltBar{ display:flex; flex-direction:column; gap:4px; padding:4px 8px; background:var(--surface); border-bottom:1px solid var(--border); font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; color:var(--muted); }
+.minAltBar .mabLbl{ letter-spacing:.05em; text-transform:uppercase; font-size:10px; }
+.minAltBar button{ border:1px solid var(--border); background:var(--surface); border-radius:6px; padding:3px 9px; font-family:inherit; font-size:12px; font-weight:800; color:var(--text); cursor:pointer; }
+.minAltBar .mabRow{ display:flex; align-items:center; gap:6px; }
+.minAltBar .mabSep{ margin-left:6px; }
+.minAltBar button{ padding:6px 4px; }
+.minAltBar button.mabIcon{ flex:1 1 auto; font-size:11.5px; min-width:0; padding:6px 2px; white-space:nowrap; }
+.minAltBar #minAltBtn, .minAltBar #topQnhBtn{ flex:1 1 auto; min-width:0; font-size:12px; white-space:nowrap; padding:6px 2px; }
+.minAltBar button small{ font-size:9px; color:var(--muted); letter-spacing:.04em; }
+@media (max-width:360px){ .minAltBar{ padding:4px 4px; } .minAltBar .mabRow{ gap:3px; } .minAltBar button.mabIcon{ font-size:10px; } .minAltBar #minAltBtn, .minAltBar #topQnhBtn{ font-size:10.5px; } .minAltBar button small{ font-size:8px; } }
 .quickFieldBtn{ flex:0 0 28px !important; padding:0; font-size:14px; }
 .tasksBtnHeading{ border-right:none; border-left:1px solid var(--border); background:rgba(3,105,161,.06); color:var(--sky); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; }
 .headingBtn:last-child{ border-right:none; }
-.headingBtn{ font-size:11.5px; letter-spacing:.02em; }
-@media (max-width:360px){ .headingBtn{ font-size:7.5px; letter-spacing:0; } .notesBtnHeading:not(.quickFieldBtn){ flex-basis:34px; } }
 .headingBtn.on{ background:var(--sky); color:#fff; }
 .headingBtn.complete{ background:var(--em); color:#fff; }
 .headingBtn.complete.on{ background:var(--em); color:#fff; box-shadow:inset 0 -3px 0 var(--sky); }
@@ -196,7 +204,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .enduranceVal{ font-family:'Syne',sans-serif; font-weight:700; font-size:16px; color:var(--sky); flex-shrink:0; }
 .enduranceSub{ font-size:10px; color:var(--muted); min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .dapaBox{ margin-bottom:10px; flex-shrink:0; border:1px solid var(--border); border-radius:10px; padding:10px; background:rgba(255,255,255,.7); }
-.dapaGrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:8px; }
+.dapaGrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:8px; }
 .dapaGrid label{ display:block; font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
 .dapaGrid input{ width:100%; box-sizing:border-box; padding:8px 6px; font-size:16px; border-radius:8px; border:1px solid var(--border); }
 .dapaSentence{ font-weight:800; font-size:14px; margin:4px 0 6px; }
@@ -461,9 +469,10 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v93</div>
+  <div id="versionBadge">v99</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
+  <div class="minAltBar" id="minAltBar"></div>
   <div class="slotBar" id="slotBar" style="display:none"><div class="slotBarFill" id="slotBarFill"></div></div>
   <div class="tankBar" id="tankBarHeader" style="display:none"></div>
   <div class="phaseRow" id="phaseRow"></div>
@@ -1495,7 +1504,7 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     }
   }catch(e){}
 })();
-function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); }catch(e){} }
+function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); }catch(e){} try{ renderMinAltBar(); }catch(e){} }
 
 // Is a single child of a grouplist card resolved? Most types need an
 // explicit tick (matching the plain-item convention), but timenow/hobbstacho
@@ -1595,25 +1604,8 @@ var elPhaseRow = document.getElementById('phaseRow');
 function renderHeadingRow(){
   var elHeadingRow = document.getElementById('headingRow');
   elHeadingRow.innerHTML = '';
-  // Notes lives here, far left, on the same row as the heading tabs
-  // themselves — one sticky button, always in the same spot regardless
-  // of which heading/tab is active.
-  var notesBtn = document.createElement('button');
-  notesBtn.className = 'notesBtnHeading';
-  notesBtn.innerHTML = '\u270E'+(STATE.flightDetails.notes?' \u2022':'');
-  notesBtn.title = 'Notes';
-  notesBtn.addEventListener('click', showNotesModal);
-  elHeadingRow.appendChild(notesBtn);
-  // Defects and Safety Report: same quick-popup idea as Notes, so they can
-  // be jotted down mid-flight rather than waiting for Post Flight.
-  [['defects','\u26a0','Defects','Defect\u2026'],['safetyReport','\u2691','Safety Report','Safety report\u2026']].forEach(function(f){
-    var b = document.createElement('button');
-    b.className = 'notesBtnHeading quickFieldBtn';
-    b.innerHTML = f[1]+(STATE.flightDetails[f[0]]?' \u2022':'');
-    b.title = f[2];
-    b.addEventListener('click', function(){ showFieldModal(f[0], f[2], f[3]); });
-    elHeadingRow.appendChild(b);
-  });
+  // Notes / Defects / Safety Report / Tasks now live on the second layer
+  // (#minAltBar) just below these tabs — see renderMinAltBar().
   HEADINGS.forEach(function(h){
     var btn = document.createElement('button');
     btn.className = 'headingBtn' + (h.key===curHeading?' on':'') + (headingComplete(h)?' complete':'');
@@ -1634,17 +1626,8 @@ function renderHeadingRow(){
     });
     elHeadingRow.appendChild(btn);
   });
-  // Tasks mirrors Notes — one sticky button, far right this time — for a
-  // manual tick-box list independent of the main checklist phases.
-  var doneCount = STATE.manualTasks.filter(function(t){ return t.done; }).length;
-  var openCount = STATE.manualTasks.length - doneCount;
-  var tasksBtn = document.createElement('button');
-  tasksBtn.className = 'notesBtnHeading tasksBtnHeading';
-  tasksBtn.innerHTML = '\u2611'+(openCount>0?' '+openCount:'');
-  tasksBtn.title = 'Tasks';
-  tasksBtn.addEventListener('click', showTasksModal);
-  elHeadingRow.appendChild(tasksBtn);
   renderTankHeaderBar();
+  renderMinAltBar();
 }
 // Only needed where the internal phase key isn't already good display
 // text (e.g. camelCase used as a plain identifier) — anything absent here
@@ -2701,7 +2684,7 @@ function dapaFmt(n){ return n === null ? '\u2014' : n.toLocaleString()+' ft'; }
 function renderDapaHtml(){
   var c = STATE.values[DAPA_KEY];
   if(c === undefined){
-    c = { qnh: latestAtisQnh() || '', oat: atisOatSeed(), height: '' };
+    c = { qnh: latestAtisQnh() || '', oat: atisOatSeed(), height: '', minAlt: '' };
     STATE.values[DAPA_KEY] = c; saveState();
   }
   var d = dapaCalc(c);
@@ -2710,6 +2693,7 @@ function renderDapaHtml(){
       '<div><label>QNH (hPa)</label><input type="text" inputmode="decimal" id="dapaQnh" value="'+escapeHtml(c.qnh||'')+'" placeholder="1013"/></div>'+
       '<div><label>OAT (\u00b0C)</label><input type="text" inputmode="decimal" id="dapaOat" value="'+escapeHtml(c.oat||'')+'" placeholder="15"/></div>'+
       '<div><label>Height AMSL (ft)</label><input type="text" inputmode="decimal" id="dapaHt" value="'+escapeHtml(c.height||'')+'" placeholder="elev / alt"/></div>'+
+      '<div><label>Min alt AMSL (ft)</label><input type="text" inputmode="numeric" id="dapaMin" value="'+escapeHtml(c.minAlt||'')+'" placeholder="shown in top bar"/></div>'+
     '</div>'+
     '<div class="dapaSentence" id="dapaSentence">'+dapaSentence(d)+'</div>'+
     '<div class="dapaOut"><span>PA <span id="dapaPa">'+dapaFmt(d.pa)+'</span></span><span>DA <span id="dapaDa">'+dapaFmt(d.da)+'</span></span></div>'+
@@ -2718,17 +2702,17 @@ function renderDapaHtml(){
   '</div>';
 }
 function wireDapa(card){
-  var q = document.getElementById('dapaQnh'), o = document.getElementById('dapaOat'), h = document.getElementById('dapaHt');
-  if(!q || !o || !h) return;
+  var q = document.getElementById('dapaQnh'), o = document.getElementById('dapaOat'), h = document.getElementById('dapaHt'), mn = document.getElementById('dapaMin');
+  if(!q || !o || !h || !mn) return;
   function refresh(){
-    var c = STATE.values[DAPA_KEY] = { qnh:q.value.trim(), oat:o.value.trim(), height:h.value.trim() };
+    var c = STATE.values[DAPA_KEY] = { qnh:q.value.trim(), oat:o.value.trim(), height:h.value.trim(), minAlt:mn.value.trim() };
     saveState();
     var d = dapaCalc(c);
     document.getElementById('dapaSentence').textContent = dapaSentence(d);
     document.getElementById('dapaPa').textContent = dapaFmt(d.pa);
     document.getElementById('dapaDa').textContent = dapaFmt(d.da);
   }
-  [q,o,h].forEach(function(el){ el.addEventListener('input', refresh); });
+  [q,o,h,mn].forEach(function(el){ el.addEventListener('input', refresh); });
   var fill = document.getElementById('dapaFillBtn');
   if(fill) fill.addEventListener('click', function(){
     var d = dapaCalc(STATE.values[DAPA_KEY] || {});
@@ -2806,6 +2790,12 @@ function wireBulletTextarea(el, onChange){
   };
 }
 function showNotesModal(){ showFieldModal('notes', 'Notes', 'Quick note\u2026'); }
+// Keep the Post Flight Debrief textarea (same data) in step with the popup.
+var FIELD_DEBRIEF_ID = { notes:'fdNotes', defects:'fdDefects', safetyReport:'fdSafetyReport' };
+function mirrorToDebrief(field){
+  var el = document.getElementById(FIELD_DEBRIEF_ID[field]);
+  if(el && el.value !== (STATE.flightDetails[field]||'')) el.value = STATE.flightDetails[field] || '';
+}
 // One popup for any free-text Flight Details field (notes / defects / safetyReport).
 function showFieldModal(field, title, placeholder){
   var modal = document.getElementById('notesModal');
@@ -2820,6 +2810,7 @@ function showFieldModal(field, title, placeholder){
     var formatted = sentenceCaseStr(raw);
     STATE.flightDetails[field] = formatted;
     if(field === 'defects' || field === 'safetyReport') syncStudentText();
+    mirrorToDebrief(field);
     if(formatted !== raw){
       var pos = ta.selectionStart;
       ta.value = formatted;
@@ -2831,10 +2822,12 @@ function showFieldModal(field, title, placeholder){
     STATE.flightDetails[field] = sentenceCaseStr(v);
     if(field === 'defects' || field === 'safetyReport') syncStudentText();
     saveState();
+    mirrorToDebrief(field);
   });
   document.getElementById('notesModalCloseBtn').onclick = function(){
     modal.style.display = 'none';
     renderHeadingRow();
+    renderCalculations();     // refresh the Post Flight Debrief with what was entered
   };
 }
 // Tasks — a manual tick-box list, separate from the main phase checklists.
@@ -2947,6 +2940,54 @@ function showTasksModal(){
   document.getElementById('tasksModalCloseBtn').onclick = function(){
     modal.style.display = 'none';
   };
+}
+// Top-bar readout: Minimum altitude AMSL (from the DA / PA card) and the
+// current QNH (latest ATIS, or a manual value set by tapping it — the
+// manual value lasts until a newer ATIS entry is recorded).
+function topQnh(){
+  var o = STATE.values['topbar.qnh'];
+  if(o && o.val && o.n === STATE.atisEntries.length) return { val:o.val, manual:true };
+  return { val:latestAtisQnh(), manual:false };
+}
+function renderMinAltBar(){
+  var el = document.getElementById('minAltBar');
+  if(!el) return;
+  var c = STATE.values[DAPA_KEY] || {};
+  var q = topQnh();
+  var minTxt = c.minAlt ? Number(String(c.minAlt).replace(/,/g,'')).toLocaleString() : '\u2014';
+  var fd = STATE.flightDetails;
+  var openTasks = STATE.manualTasks.filter(function(t){ return !t.done; }).length;
+  var html = '<div class="mabRow"><button type="button" class="mabIcon" id="mabNotes" title="Notes">Notes'+(fd.notes?'\u2022':'')+'</button>'+
+    '<button type="button" class="mabIcon" id="mabDefects" title="Defects">Defects'+(fd.defects?'\u2022':'')+'</button>'+
+    '<button type="button" class="mabIcon" id="mabSafety" title="Safety Report">Safety'+(fd.safetyReport?'\u2022':'')+'</button>'+
+    '<button type="button" class="mabIcon" id="mabTasks" title="Tasks">Tasks'+(openTasks>0?' '+openTasks:'')+'</button>'+
+    '<button type="button" id="minAltBtn" title="Minimum altitude AMSL (ft)"><small>MIN</small> '+escapeHtml(minTxt)+'</button>'+
+    '<button type="button" id="topQnhBtn" title="Current QNH (hPa)"><small>QNH</small> '+escapeHtml(q.val||'\u2014')+(q.manual?' \u270E':'')+'</button></div>';
+  if(el.getAttribute('data-sig') === html) return;
+  el.setAttribute('data-sig', html);
+  el.innerHTML = html;
+  document.getElementById('mabNotes').addEventListener('click', showNotesModal);
+  document.getElementById('mabDefects').addEventListener('click', function(){ showFieldModal('defects', 'Defects', 'Defect\u2026'); });
+  document.getElementById('mabSafety').addEventListener('click', function(){ showFieldModal('safetyReport', 'Safety Report', 'Safety report\u2026'); });
+  document.getElementById('mabTasks').addEventListener('click', showTasksModal);
+  document.getElementById('minAltBtn').addEventListener('click', function(){
+    var cur = (STATE.values[DAPA_KEY] || {}).minAlt || '';
+    openNumericKeypad({ title:'Minimum altitude AMSL (ft)', digits:5, suffix:'ft', allowEmpty:true, help:'Now '+(cur||'\u2014')+' \u00b7 Enter blank = clear' }, '', function(v){
+      var cc = STATE.values[DAPA_KEY] = Object.assign({ qnh:latestAtisQnh()||'', oat:atisOatSeed(), height:'' }, STATE.values[DAPA_KEY] || {});
+      cc.minAlt = v ? String(v) : '';
+      saveState();
+      if(curSection && curSection() && curSection().id === 'dapa') renderCard(ALLCARDS['dapa.dapagrp']);
+    });
+  });
+  document.getElementById('topQnhBtn').addEventListener('click', function(){
+    var cur = topQnh();
+    openNumericKeypad({ title:'Current QNH (hPa)', digits:4, suffix:'hPa', allowEmpty:true, help:'Now '+(cur.val||'\u2014')+' \u00b7 Enter blank = use ATIS' }, '', function(v){
+      if(v) STATE.values['topbar.qnh'] = { val:String(v), n:STATE.atisEntries.length };
+      else delete STATE.values['topbar.qnh'];
+      saveState();
+    });
+  });
+  syncHeaderOffset();
 }
 function renderTankHeaderBar(){
   var el = document.getElementById('tankBarHeader');
