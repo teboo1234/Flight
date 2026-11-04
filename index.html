@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v104 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v105 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -472,7 +472,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v104</div>
+  <div id="versionBadge">v105</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="minAltBar" id="minAltBar"></div>
@@ -2817,7 +2817,7 @@ function showFieldModal(field, title, placeholder){
     var raw = ta.value;
     var formatted = sentenceCaseStr(raw);
     STATE.flightDetails[field] = formatted;
-    if(field === 'defects' || field === 'safetyReport') syncStudentText();
+    if(field === 'defects' || field === 'safetyReport' || field === 'notes') syncStudentText();
     mirrorToDebrief(field);
     if(formatted !== raw){
       var pos = ta.selectionStart;
@@ -2828,7 +2828,7 @@ function showFieldModal(field, title, placeholder){
   };
   wireBulletTextarea(ta, function(v){
     STATE.flightDetails[field] = sentenceCaseStr(v);
-    if(field === 'defects' || field === 'safetyReport') syncStudentText();
+    if(field === 'defects' || field === 'safetyReport' || field === 'notes') syncStudentText();
     saveState();
     mirrorToDebrief(field);
   });
@@ -4519,6 +4519,7 @@ function importAllDataFromJson(text){
       (inc.tasks||[]).forEach(function(t){ if(r.tasks.indexOf(t) === -1) r.tasks.push(t); });
       if(inc.defects) r.defects = mergeBullets(r.defects, inc.defects);
       if(inc.safetyReport) r.safetyReport = mergeBullets(r.safetyReport, inc.safetyReport);
+      if(inc.notes) r.notes = mergeBullets(r.notes, inc.notes);
     });
   }
   saveState();
@@ -4839,6 +4840,7 @@ function syncStudentText(){
   if(!r || studentKey(fd.student) !== studentKey(STATE.activeStudent)) return;
   r.defects = fd.defects || '';
   r.safetyReport = fd.safetyReport || '';
+  r.notes = fd.notes || '';
 }
 function studentTasksAsTasks(r){ return (r && r.tasks || []).map(function(t){ return { text:t, done:false }; }); }
 // The Student field has been set/changed on the live flight.
@@ -4850,7 +4852,7 @@ function switchStudent(newName){
     syncStudentTasks(prev);
     STATE.manualTasks = STATE.manualTasks.filter(function(t){ return t.done; });
     var pr = findStudent(prev);
-    if(pr){ pr.defects = fd.defects || ''; pr.safetyReport = fd.safetyReport || ''; }
+    if(pr){ pr.defects = fd.defects || ''; pr.safetyReport = fd.safetyReport || ''; pr.notes = fd.notes || ''; }
   }
   var r = ensureStudent(newName);
   STATE.activeStudent = r ? r.name : '';
@@ -4861,9 +4863,11 @@ function switchStudent(newName){
       if(prev){                       // switching between students: take theirs
         fd.defects = r.defects || '';
         fd.safetyReport = r.safetyReport || '';
+        fd.notes = r.notes || '';
       } else {                        // first naming of this flight: keep what was typed
         fd.defects = mergeBullets(r.defects, fd.defects);
         fd.safetyReport = mergeBullets(r.safetyReport, fd.safetyReport);
+        fd.notes = mergeBullets(r.notes, fd.notes);
       }
     }
     syncStudentText();
@@ -4996,6 +5000,8 @@ function loadFlightFromHistory(idx){
     if(loadedStudent.safetyReport === undefined) loadedStudent.safetyReport = STATE.flightDetails.safetyReport || '';
     STATE.flightDetails.defects = loadedStudent.defects;
     STATE.flightDetails.safetyReport = loadedStudent.safetyReport;
+    if(loadedStudent.notes === undefined) loadedStudent.notes = STATE.flightDetails.notes || '';
+    STATE.flightDetails.notes = loadedStudent.notes;
   }
   STATE.tankSelected = 'L';
   STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
@@ -5135,7 +5141,8 @@ function resetSecondFlight(){
   STATE.atisEntries = [];
   // Notes and tasks belong to the leg just archived (its snapshot keeps them);
   // the next leg starts clean apart from carried-over unticked tasks.
-  STATE.flightDetails.notes = '';
+  // Notes live in the student book, so they carry on with the same student.
+  if(!(STATE.flightDetails.student||'').trim()) STATE.flightDetails.notes = '';
   // Student is unchanged here (Flight Details are kept), so open tasks carry on.
   STATE.manualTasks = carriedTasks(STATE.flightDetails.student, STATE.flightDetails.student, STATE.manualTasks);
   STATE.atisDraft = { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
@@ -6233,7 +6240,7 @@ function wireFlightDetails(){
       var raw = el.value;
       var formatted = formatter ? formatter(raw) : raw;
       STATE.flightDetails[key] = formatted;
-      if(key === 'defects' || key === 'safetyReport') syncStudentText();
+      if(key === 'defects' || key === 'safetyReport' || key === 'notes') syncStudentText();
       if(formatted !== raw){
         // Cursor-preserving: a plain "el.value = formatted" always
         // snaps the cursor to the end, which is fine for a short field
@@ -6298,7 +6305,7 @@ function wireFlightDetails(){
   wireBulletTextarea(document.getElementById('fdDefects'), function(v){ STATE.flightDetails.defects = sentenceCaseStr(v); syncStudentText(); saveState(); });
   wireBulletTextarea(document.getElementById('fdSafetyReport'), function(v){ STATE.flightDetails.safetyReport = sentenceCaseStr(v); syncStudentText(); saveState(); });
   bind('fdNotes', 'notes', sentenceCaseStr);
-  wireBulletTextarea(document.getElementById('fdNotes'), function(v){ STATE.flightDetails.notes = sentenceCaseStr(v); saveState(); });
+  wireBulletTextarea(document.getElementById('fdNotes'), function(v){ STATE.flightDetails.notes = sentenceCaseStr(v); syncStudentText(); saveState(); });
   var todayBtn = document.getElementById('fdTodayBtn');
   if(todayBtn) todayBtn.addEventListener('click', function(){
     var d = new Date();
