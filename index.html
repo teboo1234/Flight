@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v99 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v104 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -47,6 +47,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .countdownRow .cdT.etob{ color:var(--amber); }
 .countdownRow .cdT.endurance{ color:var(--em); }
 .countdownRow .cdT.slot{ color:var(--text); }
+.countdownRow .cdT.fz{ color:#0891b2; margin-left:0; }
 .countdownRow .cdT.slot.overdue{ color:var(--rose); }
 .headingRow{ display:flex; height:42px; border-bottom:1px solid var(--border); }
 .headingBtn{ flex:1; min-width:0; border:none; border-right:1px solid var(--border); background:var(--surface); color:var(--text); font-family:'Syne',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; padding:0 2px; }
@@ -203,13 +204,13 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .enduranceLbl{ font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--sky); flex-shrink:0; }
 .enduranceVal{ font-family:'Syne',sans-serif; font-weight:700; font-size:16px; color:var(--sky); flex-shrink:0; }
 .enduranceSub{ font-size:10px; color:var(--muted); min-width:0; overflow:hidden; text-overflow:ellipsis; }
-.dapaBox{ margin-bottom:10px; flex-shrink:0; border:1px solid var(--border); border-radius:10px; padding:10px; background:rgba(255,255,255,.7); }
-.dapaGrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:8px; }
-.dapaGrid label{ display:block; font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
-.dapaGrid input{ width:100%; box-sizing:border-box; padding:8px 6px; font-size:16px; border-radius:8px; border:1px solid var(--border); }
-.dapaSentence{ font-weight:800; font-size:14px; margin:4px 0 6px; }
-.dapaOut{ display:flex; gap:14px; flex-wrap:wrap; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:800; }
-.dapaNote{ font-size:11px; color:var(--muted); margin-top:6px; }
+.dapaBox{ margin-bottom:12px; flex-shrink:0; border:2px solid var(--border); border-radius:12px; padding:14px; background:rgba(255,255,255,.85); }
+.dapaGrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:12px; }
+.dapaGrid label{ display:block; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:900; letter-spacing:.03em; text-transform:uppercase; color:var(--text); margin-bottom:5px; line-height:1.2; }
+.dapaGrid input{ width:100%; box-sizing:border-box; padding:12px 10px; font-size:22px; font-weight:800; font-family:'JetBrains Mono',monospace; border-radius:10px; border:2px solid var(--border); }
+.dapaSentence{ font-weight:900; font-size:19px; line-height:1.25; margin:6px 0 10px; }
+.dapaOut{ display:flex; gap:20px; flex-wrap:wrap; font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:900; }
+.dapaNote{ font-size:12px; font-weight:700; color:var(--muted); margin-top:10px; }
 .clrBox{ margin-bottom:10px; flex-shrink:0; }
 .clrHead{ display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
 .clrHead label{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
@@ -294,6 +295,8 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .grBtn.go.on{ background:var(--em); color:#fff; }
 .grBtn.na{ color:var(--amber); border-color:var(--amber); }
 .grBtn.na.on{ background:var(--amber); color:#fff; }
+.grBtn.later{ color:var(--sky); border-color:var(--sky); }
+.grBtn.later.on{ background:var(--sky); color:#fff; }
 .customDel{ border:1px solid #dc2626; background:transparent; border-radius:7px; padding:7px 9px; font-size:13px; cursor:pointer; color:#dc2626; }
 .grNowBtn{ flex-shrink:0; border:1px solid rgba(3,105,161,.35); background:rgba(14,165,233,.1); color:var(--sky); border-radius:7px; padding:7px 12px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; cursor:pointer; white-space:nowrap; }
 .grTimeBtns{ display:flex; gap:5px; align-items:center; flex-shrink:0; }
@@ -469,7 +472,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v99</div>
+  <div id="versionBadge">v104</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="minAltBar" id="minAltBar"></div>
@@ -1062,9 +1065,7 @@ var CHECKLIST_DATA = [
   ]},
   { phase:'PreFlight', id:'dapa', title:'DA / PA', items: [
     { id:'dapagrp', text:'DA / PA', type:'group', children:[
-      {text:'Density Altitude (DA)', keypad:'alt', unit:'ft'},
-      {text:'Pressure Altitude (PA)', keypad:'alt', unit:'ft'},
-      {text:'QNH-SPS difference', keypad:'alt', unit:'ft'}
+      'DA / PA checked'
     ] }
   ]},
   { phase:'PreFlight', id:'etob', title:'ETOB / CTOT', items: [
@@ -1140,7 +1141,7 @@ var CHECKLIST_DATA = [
       'OBS/CDI course set for initial departure routing',
       'Hdg bug set','Alt bug set',
       {text:'ATIS re-checked', hasLaw:true, lawKey:'4a'},
-      {text:'Obtain Clearance', hasLaw:true, lawKey:'4b', prompt:true},
+      {text:'Obtain Clearance', hasLaw:true, lawKey:'4b', prompt:true, later:true},
       {text:'Transponder code set', type:'code'},
       'OCAS to CAS transition',
       {text:'ETOB / CTOT (UTC)', type:'etobctot'},
@@ -1167,8 +1168,11 @@ var CHECKLIST_DATA = [
         'Problem on the ground or after departure',
         'Initial Altitude/Height restriction and Heading',
         'Wind | CAS | Noise Abatement | Wake | Threats',
-        {text:'IFR Departure Brief', note:'Review clearance, initial routing/altitude, and lost-comms procedure before taxi.'}
-      ] }
+        {text:'IFR Departure Brief', note:'Review clearance, initial routing/altitude, and lost-comms procedure before taxi.'},
+        // Appended (index 17) so existing keys never shift; displayOrder puts it
+        // right after Cockpit Scan. Linked to the IFR card's Obtain Clearance.
+        {text:'Obtain Clearance', hasLaw:true, lawKey:'4b', prompt:true}
+      ], displayOrder:[0,1,2,3,4,5,6,7,8,9,17,10,11,12,13,14,15,16] }
   ]},
   { phase:'Airborne', id:'airborne', title:'Airborne', items: [
     { id:'airbornegrp', text:'Airborne', type:'group', children:[
@@ -1241,6 +1245,7 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
           if(isObj && childDef.type === 'weight'){ child.weightToggle = true; }
           if(isObj && childDef.prompt){ child.prompt = true; }
           if(isObj && childDef.flashRed){ child.flashRed = true; }
+          if(isObj && childDef.later){ child.later = true; }
           if(isObj && childDef.type === 'divider'){ child.divider = true; }
           return child;
         });
@@ -1510,6 +1515,7 @@ function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(STATE)
 // explicit tick (matching the plain-item convention), but timenow/hobbstacho
 // children — like their top-level counterparts — have no tick at all and
 // resolve purely from having a captured value.
+var MIRROR_PAIRS = { 'therest.restgrp.12':'offblockspretakeoff.otpgrp.17', 'offblockspretakeoff.otpgrp.17':'therest.restgrp.12' };
 function groupChildResolved(card, i){
   var key = card.id+'.'+i;
   var child = card.children[i];
@@ -1881,6 +1887,7 @@ function renderCard(card){
         rightControl = '<div class="grBtns">'+
             '<button class="grBtn go'+(s==='go'?' on':'')+'" data-i="'+i+'" data-m="go">&#10003;</button>'+
             '<button class="grBtn na'+(s==='na'?' on':'')+'" data-i="'+i+'" data-m="na">N/A</button>'+
+            (child.later ? '<button class="grBtn later'+(s==='later'?' on':'')+'" data-i="'+i+'" data-m="later">Later</button>' : '')+
           '</div>';
       } else {
         rightControl = '';
@@ -1988,8 +1995,17 @@ function renderCard(card){
       b.addEventListener('click', function(){
         var i = b.getAttribute('data-i'), m = b.getAttribute('data-m');
         var key = card.id+'.'+i;
+        var before = STATE.checked[key];
         STATE.checked[key] = (STATE.checked[key] === m) ? '' : m;
         if(!STATE.checked[key]) delete STATE.checked[key];
+        // Linked copies (Obtain Clearance in IFR <-> after Cockpit Scan):
+        // done / N/A on either sets both; Later only affects the IFR one.
+        var mk = MIRROR_PAIRS[key];
+        if(mk){
+          var now = STATE.checked[key], other = STATE.checked[mk];
+          if(now && now !== 'later') STATE.checked[mk] = now;
+          else if(!now && other && other === before) delete STATE.checked[mk];
+        }
         saveState();
         renderCard(card);
         buildAnnunFor(curSection());
@@ -2684,7 +2700,7 @@ function dapaFmt(n){ return n === null ? '\u2014' : n.toLocaleString()+' ft'; }
 function renderDapaHtml(){
   var c = STATE.values[DAPA_KEY];
   if(c === undefined){
-    c = { qnh: latestAtisQnh() || '', oat: atisOatSeed(), height: '', minAlt: '' };
+    c = { qnh: latestAtisQnh() || '', oat: atisOatSeed(), height: '', minAlt: '', fzl: '' };
     STATE.values[DAPA_KEY] = c; saveState();
   }
   var d = dapaCalc(c);
@@ -2694,34 +2710,26 @@ function renderDapaHtml(){
       '<div><label>OAT (\u00b0C)</label><input type="text" inputmode="decimal" id="dapaOat" value="'+escapeHtml(c.oat||'')+'" placeholder="15"/></div>'+
       '<div><label>Height AMSL (ft)</label><input type="text" inputmode="decimal" id="dapaHt" value="'+escapeHtml(c.height||'')+'" placeholder="elev / alt"/></div>'+
       '<div><label>Min alt AMSL (ft)</label><input type="text" inputmode="numeric" id="dapaMin" value="'+escapeHtml(c.minAlt||'')+'" placeholder="shown in top bar"/></div>'+
+      '<div><label>Lowest freezing lvl AMSL (ft)</label><input type="text" inputmode="numeric" id="dapaFzl" value="'+escapeHtml(c.fzl||'')+'" placeholder="shown as FZ in top bar"/></div>'+
     '</div>'+
     '<div class="dapaSentence" id="dapaSentence">'+dapaSentence(d)+'</div>'+
     '<div class="dapaOut"><span>PA <span id="dapaPa">'+dapaFmt(d.pa)+'</span></span><span>DA <span id="dapaDa">'+dapaFmt(d.da)+'</span></span></div>'+
-    '<button type="button" id="dapaFillBtn" class="clrQnhBtn" style="margin-top:8px">Copy to fields below</button>'+
     '<div class="dapaNote">PA = height + (1013 \u2212 QNH) \u00d7 27 ft. DA = PA + 120 \u00d7 (OAT \u2212 ISA). Planning estimate only.</div>'+
   '</div>';
 }
 function wireDapa(card){
-  var q = document.getElementById('dapaQnh'), o = document.getElementById('dapaOat'), h = document.getElementById('dapaHt'), mn = document.getElementById('dapaMin');
-  if(!q || !o || !h || !mn) return;
+  var q = document.getElementById('dapaQnh'), o = document.getElementById('dapaOat'), h = document.getElementById('dapaHt'), mn = document.getElementById('dapaMin'), fz = document.getElementById('dapaFzl');
+  if(!q || !o || !h || !mn || !fz) return;
   function refresh(){
-    var c = STATE.values[DAPA_KEY] = { qnh:q.value.trim(), oat:o.value.trim(), height:h.value.trim(), minAlt:mn.value.trim() };
+    var c = STATE.values[DAPA_KEY] = { qnh:q.value.trim(), oat:o.value.trim(), height:h.value.trim(), minAlt:mn.value.trim(), fzl:fz.value.trim() };
     saveState();
+    updateCountdown();
     var d = dapaCalc(c);
     document.getElementById('dapaSentence').textContent = dapaSentence(d);
     document.getElementById('dapaPa').textContent = dapaFmt(d.pa);
     document.getElementById('dapaDa').textContent = dapaFmt(d.da);
   }
-  [q,o,h,mn].forEach(function(el){ el.addEventListener('input', refresh); });
-  var fill = document.getElementById('dapaFillBtn');
-  if(fill) fill.addEventListener('click', function(){
-    var d = dapaCalc(STATE.values[DAPA_KEY] || {});
-    // Children: 0 DA, 1 PA, 2 QNH-SPS difference (FL minus Altitude, ft)
-    if(d.da !== null){ STATE.values[card.id+'.0'] = { val:String(d.da) }; STATE.checked[card.id+'.0'] = 'go'; }
-    if(d.pa !== null){ STATE.values[card.id+'.1'] = { val:String(d.pa) }; STATE.checked[card.id+'.1'] = 'go'; }
-    if(d.diff !== null){ STATE.values[card.id+'.2'] = { val:String(d.diff) }; STATE.checked[card.id+'.2'] = 'go'; }
-    saveState(); renderCard(card);
-  });
+  [q,o,h,mn,fz].forEach(function(el){ el.addEventListener('input', refresh); });
 }
 function renderClearancesHtml(){
   var v = STATE.values[CLR_KEY];
@@ -4934,9 +4942,21 @@ function archiveCurrentFlightToHistory(forceNew){
 // filled in yet) and then loaded one at a time as each is actually
 // flown. Overwrites whatever's currently live, so the caller is
 // expected to have already confirmed that's really what's wanted.
+// Same-day carry-over of Pre-Flight ticks to another flight: Personal ticks
+// stay if it's the same day; Documents ticks stay only if it's also the
+// same registration. Only fills in ticks the target doesn't already have.
+function sameText(a, b){ a = (a||'').trim().toLowerCase(); b = (b||'').trim().toLowerCase(); return !!a && a === b; }
+function carryPreflightTicks(fromChecked, fromDate, fromReg, toDate, toReg){
+  var sameDay = sameText(fromDate, toDate), sameReg = sameText(fromReg, toReg);
+  Object.keys(fromChecked || {}).forEach(function(k){
+    var ok = (k.indexOf('personal.') === 0 && sameDay) || (k.indexOf('documents.') === 0 && sameDay && sameReg);
+    if(ok && !STATE.checked[k]) STATE.checked[k] = fromChecked[k];
+  });
+}
 function loadFlightFromHistory(idx){
   var h = STATE.flightHistory[idx];
   if(!h) return;
+  var outChecked = STATE.checked, outDate = STATE.flightDetails.date, outReg = STATE.flightDetails.registration;
   if(h.full){
     STATE.checked = JSON.parse(JSON.stringify(h.full.checked));
     STATE.values = JSON.parse(JSON.stringify(h.full.values));
@@ -4983,6 +5003,7 @@ function loadFlightFromHistory(idx){
   // definition, so there's nothing "unsaved" about it yet — and Save
   // Current will update this entry (and only this one).
   if(!h.id) h.id = newHistoryId();
+  carryPreflightTicks(outChecked, outDate, outReg, STATE.flightDetails.date, STATE.flightDetails.registration);
   STATE.currentHistoryId = h.id;
   STATE.lastSavedSnapshot = currentFlightSnapshotStr();
   saveState();
@@ -5484,7 +5505,7 @@ function renderResults(){
               var parts=[]; if(vObj.da) parts.push('DA '+vObj.da+'ft'); if(vObj.vis) parts.push('Vis '+vObj.vis+'m');
               kv = parts.length ? parts.join(', ') : null;
               if(kv) valuesAll++;
-              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : (kv ? kv : '&mdash;');
+              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : s==='later' ? 'LATER' : (kv ? kv : '&mdash;');
               cls = s==='go' ? 'go' : s==='na' ? 'na' : 'pending';
             } else if(child.hobbstacho){
               var parts2=[]; if(vObj.tacho) parts2.push('Tacho '+vObj.tacho); if(vObj.hobbs) parts2.push('Hobbs '+vObj.hobbs);
@@ -5500,30 +5521,30 @@ function renderResults(){
             } else if(child.keypad && child.unitToggle){
               kv = (vObj.valFt !== undefined && vObj.valFt !== '') ? fmtVal(parseFloat(vObj.valFt), vObj.unit||child.unit) : null;
               if(kv) valuesAll++;
-              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : (kv ? kv : '&mdash;');
+              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : s==='later' ? 'LATER' : (kv ? kv : '&mdash;');
               cls = s==='go' ? 'go' : s==='na' ? 'na' : 'pending';
             } else if(child.fuelQty){
               kv = (vObj.valUSG !== undefined && vObj.valUSG !== '') ? fmtFuel(vObj.valUSG) : null;
               if(kv) valuesAll++;
-              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : (kv ? kv : '&mdash;');
+              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : s==='later' ? 'LATER' : (kv ? kv : '&mdash;');
               cls = s==='go' ? 'go' : s==='na' ? 'na' : 'pending';
             } else if(child.weightToggle){
               kv = (vObj.valKG !== undefined && vObj.valKG !== '') ? fmtWeight(vObj.valKG, vObj.unit) : null;
               if(kv) valuesAll++;
-              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : (kv ? kv : '&mdash;');
+              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : s==='later' ? 'LATER' : (kv ? kv : '&mdash;');
               cls = s==='go' ? 'go' : s==='na' ? 'na' : 'pending';
             } else if(child.codeEntry){
               kv = STATE.global.transponderCode || null;
               if(kv) valuesAll++;
               var codeMatchR = kv ? STATE.codes.filter(function(c){ return c.code === kv; })[0] : null;
               var kvDisplay2 = kv ? (kv+(codeMatchR&&codeMatchR.name?' ('+codeMatchR.name+')':'')) : null;
-              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : (kvDisplay2 ? kvDisplay2 : '&mdash;');
+              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : s==='later' ? 'LATER' : (kvDisplay2 ? kvDisplay2 : '&mdash;');
               cls = s==='go' ? 'go' : s==='na' ? 'na' : 'pending';
             } else {
               kv = vObj.val;
               if(kv) valuesAll++;
               var kvDisplay = kv ? (kv+(child.keypad?(' '+(child.unit||'')):'')) : null;
-              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : (kvDisplay ? kvDisplay : '&mdash;');
+              stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : s==='later' ? 'LATER' : (kvDisplay ? kvDisplay : '&mdash;');
               cls = s==='go' ? 'go' : s==='na' ? 'na' : 'pending';
             }
             html += '<div class="resRow" style="padding-left:20px"><span class="rt">'+escapeHtml(child.text)+'</span><span class="rv '+cls+'">'+stateLabel+'</span></div>';
@@ -5534,7 +5555,7 @@ function renderResults(){
         var vLabel = valueLabel(c);
         if(s==='na') naAll++;
         if(vLabel) valuesAll++;
-        var stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : (vLabel ? vLabel : '&mdash;');
+        var stateLabel = s==='go' ? '&#10003; DONE' : s==='na' ? 'N/A' : s==='later' ? 'LATER' : (vLabel ? vLabel : '&mdash;');
         var cls = s==='go' ? 'go' : s==='na' ? 'na' : 'pending';
         html += '<div class="resRow"><span class="rt">'+escapeHtml(c.text)+(vLabel && s ? ' <b>('+escapeHtml(vLabel)+')</b>' : '')+'</span><span class="rv '+cls+'">'+stateLabel+'</span></div>';
       });
@@ -5871,6 +5892,12 @@ function updateCountdown(){
   updateHeadingRowProgress(slotInfo);
   if(slotInfo){
     parts.push('SLOT <span class="cdT slot'+(slotInfo.overdue?' overdue':'')+'">'+slotInfo.label+'</span>');
+  }
+  // Lowest expected freezing level (from the DA / PA card), shown as an
+  // altitude AMSL, e.g. FZ 4,500 ft.
+  var fzl = parseFloat(String((STATE.values['dapa.dapagrp.calc']||{}).fzl||'').replace(/,/g,''));
+  if(!isNaN(fzl) && fzl >= 0){
+    parts.push('<span class="cdT fz">FZ '+Math.round(fzl).toLocaleString()+' ft</span>');
   }
   if(!parts.length){ row.style.display = 'none'; syncHeaderOffset(); return; }
   row.innerHTML = parts.join(' &nbsp;&middot;&nbsp; ');
@@ -6220,6 +6247,26 @@ function wireFlightDetails(){
     });
   }
   bind('fdDate', 'date');
+  // Changing the day or the aircraft ends the carry-over: offer to clear
+  // the ticks that only apply to the same day / same registration.
+  (function(){
+    var dEl = document.getElementById('fdDate'), rEl = document.getElementById('fdReg');
+    var prevDate = STATE.flightDetails.date || '', prevReg = STATE.flightDetails.registration || '';
+    function hasTicks(prefix){ return Object.keys(STATE.checked).some(function(k){ return k.indexOf(prefix) === 0; }); }
+    function clearTicks(prefix){ Object.keys(STATE.checked).forEach(function(k){ if(k.indexOf(prefix) === 0) delete STATE.checked[k]; }); saveState(); render(); renderResults(); }
+    if(dEl) dEl.addEventListener('change', function(){
+      var nv = dEl.value, was = prevDate; prevDate = nv;
+      if(was && nv && nv !== was && hasTicks('personal.')){
+        showConfirm('The day has changed. Clear the Personal ticks so they are checked again?', 'Clear Personal', function(){ clearTicks('personal.'); clearTicks('documents.'); });
+      }
+    });
+    if(rEl) rEl.addEventListener('change', function(){
+      var nv = rEl.value.trim(), was = prevReg; prevReg = nv;
+      if(was && nv && !sameText(nv, was) && hasTicks('documents.')){
+        showConfirm('The registration has changed. Clear the Documents ticks so they are checked again for this aircraft?', 'Clear Documents', function(){ clearTicks('documents.'); });
+      }
+    });
+  })();
   var slotFromBtn = document.getElementById('fdSlotFrom');
   if(slotFromBtn) slotFromBtn.addEventListener('click', function(){
     openTimeKeypad(STATE.flightDetails.slotFrom||'', function(v){
