@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v106 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v108 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -281,6 +281,9 @@ input,select{ font-family:'JetBrains Mono',monospace; }
    Pre-Take-Off checklist"), not a digital item to just tick off casually.
    Bold, brighter, with a left accent so it reads as a distinct category
    at a glance among the regular tick items. */
+.mnemToggle{ display:flex; justify-content:space-between; align-items:center; width:100%; margin:6px 0; padding:12px 14px; border:2px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); font-family:inherit; font-size:15px; font-weight:800; cursor:pointer; }
+.mnemToggle.flashRed{ border-color:#dc2626; animation:flashRedRow 1s ease-in-out infinite; }
+.mnemWrap{ border-left:3px solid var(--border); padding-left:8px; margin-bottom:6px; }
 .groupRow.flashRed{ border:2px solid #dc2626; padding:10px 11px; animation:flashRedRow 1s ease-in-out infinite; }
 @keyframes flashRedRow{ 0%,100%{ background:rgba(220,38,38,.08);} 50%{ background:rgba(220,38,38,.5);} }
 .groupRow.promptRow{ background:rgba(180,83,9,.06); border-color:rgba(180,83,9,.3); border-left:3px solid var(--amber); }
@@ -472,7 +475,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v106</div>
+  <div id="versionBadge">v108</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="minAltBar" id="minAltBar"></div>
@@ -1193,7 +1196,7 @@ var CHECKLIST_DATA = [
       {text:'Line up check', note:'Align DI | Compass | Runway. Feet to floor.', flashRed:true},
       {text:'BUFF check', note:'Brakes | Undercarriage | Fuel | Flaps', flashRed:true},
       'FREDAMIT','WASP','BUFFPEARL','LUC','PET'
-    ], displayOrder:[11,12,0,13,18,14,15,16,17,1,2,3,4,5,6,7,8,9,10] }
+    ], displayOrder:[0,1,2,'M',11,12,13,18,14,15,16,17,'E',3,4,5,6,7,8,9,10] }
   ]},
 ];
 
@@ -1348,6 +1351,8 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     // Flight History so it survives history being deleted. Seeded once from
     // the students already in History.
     if(!STATE.students) STATE.students = [];
+    // Minimum altitude is app-wide: kept across all flights until changed by hand.
+    if(STATE.minAlt === undefined) STATE.minAlt = ((STATE.values && STATE.values['dapa.dapagrp.calc']) || {}).minAlt || '';
     if(!STATE.studentsSeeded){
       STATE.flightHistory.forEach(function(h){
         var n = (h.student||'').trim();
@@ -1862,7 +1867,24 @@ function renderCard(card){
       '</div>';
     html += '<div class="groupList">';
     var shownCount = 0;
+    var mnemOpen = !!STATE.airMnemOpen, inMnem = false;
     (card.displayOrder || card.children.map(function(_, k){ return k; })).forEach(function(i){
+      if(i === 'M'){
+        // Collapsible mnemonics group (RSPLIITTT, line up, BUFF, PET, ...).
+        var mIdx = card.displayOrder.slice(card.displayOrder.indexOf('M')+1, card.displayOrder.indexOf('E'));
+        var mOpenN = 0, mFlash = false;
+        mIdx.forEach(function(k){
+          var ch = card.children[k], ks = STATE.checked[card.id+'.'+k];
+          if(!ks){ mOpenN++; if(ch.flashRed && (STATE.values['airborne.airbornegrp.flash'] || (STATE.values['airborne.airbornegrp.0'] && !STATE.values['airborne.airbornegrp.2']))) mFlash = true; }
+        });
+        shownCount++;
+        html += '<button type="button" id="mnemToggle" class="mnemToggle'+(mFlash?' flashRed':'')+'"><span>Mnemonics'+(mOpenN?' \u00b7 '+mOpenN+' open':' \u00b7 all done')+'</span><span>'+(mnemOpen?'\u25B2':'\u25BC')+'</span></button>';
+        inMnem = true;
+        if(mnemOpen) html += '<div class="mnemWrap">';
+        return;
+      }
+      if(i === 'E'){ if(mnemOpen) html += '</div>'; inMnem = false; return; }
+      if(inMnem && !mnemOpen) return;
       var child = card.children[i];
       if(child.divider){
         // A pure visual separator — not tickable, never counted toward
@@ -2024,6 +2046,10 @@ function renderCard(card){
     });
     wireClearances();
     if(card.id === 'dapa.dapagrp') wireDapa(card);
+    var mnemBtn = document.getElementById('mnemToggle');
+    if(mnemBtn) mnemBtn.addEventListener('click', function(){
+      STATE.airMnemOpen = !STATE.airMnemOpen; saveState(); renderCard(card);
+    });
     var hideBtn = document.getElementById('hideCompletedBtn');
     if(hideBtn) hideBtn.addEventListener('click', function(){
       STATE.hideCompleted = !STATE.hideCompleted;
@@ -2700,7 +2726,7 @@ function dapaFmt(n){ return n === null ? '\u2014' : n.toLocaleString()+' ft'; }
 function renderDapaHtml(){
   var c = STATE.values[DAPA_KEY];
   if(c === undefined){
-    c = { qnh: latestAtisQnh() || '', oat: atisOatSeed(), height: '', minAlt: '', fzl: '' };
+    c = { qnh: latestAtisQnh() || '', oat: atisOatSeed(), height: '', fzl: '' };
     STATE.values[DAPA_KEY] = c; saveState();
   }
   var d = dapaCalc(c);
@@ -2709,7 +2735,7 @@ function renderDapaHtml(){
       '<div><label>QNH (hPa)</label><input type="text" inputmode="decimal" id="dapaQnh" value="'+escapeHtml(c.qnh||'')+'" placeholder="1013"/></div>'+
       '<div><label>OAT (\u00b0C)</label><input type="text" inputmode="decimal" id="dapaOat" value="'+escapeHtml(c.oat||'')+'" placeholder="15"/></div>'+
       '<div><label>Height AMSL (ft)</label><input type="text" inputmode="decimal" id="dapaHt" value="'+escapeHtml(c.height||'')+'" placeholder="elev / alt"/></div>'+
-      '<div><label>Min alt AMSL (ft)</label><input type="text" inputmode="numeric" id="dapaMin" value="'+escapeHtml(c.minAlt||'')+'" placeholder="shown in top bar"/></div>'+
+      '<div><label>Min alt AMSL (ft)</label><input type="text" inputmode="numeric" id="dapaMin" value="'+escapeHtml(STATE.minAlt||'')+'" placeholder="shown in top bar"/></div>'+
       '<div><label>Lowest freezing lvl AMSL (ft)</label><input type="text" inputmode="numeric" id="dapaFzl" value="'+escapeHtml(c.fzl||'')+'" placeholder="shown as FZ in top bar"/></div>'+
     '</div>'+
     '<div class="dapaSentence" id="dapaSentence">'+dapaSentence(d)+'</div>'+
@@ -2721,7 +2747,8 @@ function wireDapa(card){
   var q = document.getElementById('dapaQnh'), o = document.getElementById('dapaOat'), h = document.getElementById('dapaHt'), mn = document.getElementById('dapaMin'), fz = document.getElementById('dapaFzl');
   if(!q || !o || !h || !mn || !fz) return;
   function refresh(){
-    var c = STATE.values[DAPA_KEY] = { qnh:q.value.trim(), oat:o.value.trim(), height:h.value.trim(), minAlt:mn.value.trim(), fzl:fz.value.trim() };
+    STATE.minAlt = mn.value.trim();
+    var c = STATE.values[DAPA_KEY] = { qnh:q.value.trim(), oat:o.value.trim(), height:h.value.trim(), fzl:fz.value.trim() };
     saveState();
     updateCountdown();
     var d = dapaCalc(c);
@@ -2962,10 +2989,10 @@ function renderMinAltBar(){
   if(!el) return;
   var c = STATE.values[DAPA_KEY] || {};
   var q = topQnh();
-  var minTxt = c.minAlt ? Number(String(c.minAlt).replace(/,/g,'')).toLocaleString() : '\u2014';
+  var minTxt = STATE.minAlt ? Number(String(STATE.minAlt).replace(/,/g,'')).toLocaleString() : '\u2014';
   var fd = STATE.flightDetails;
   var openTasks = STATE.manualTasks.filter(function(t){ return !t.done; }).length;
-  var html = '<div class="mabRow"><button type="button" class="mabIcon" id="mabNotes" title="Notes">Notes'+(fd.notes?'\u2022':'')+'</button>'+
+  var html = '<div class="mabRow"><button type="button" class="mabIcon" id="mabNotes" title="Notes">Notes'+(bulletLines(fd.notes).length?' '+bulletLines(fd.notes).length:'')+'</button>'+
     '<button type="button" class="mabIcon" id="mabDefects" title="Defects">Defects'+(fd.defects?'\u2022':'')+'</button>'+
     '<button type="button" class="mabIcon" id="mabSafety" title="Safety Report">Safety'+(fd.safetyReport?'\u2022':'')+'</button>'+
     '<button type="button" class="mabIcon" id="mabTasks" title="Tasks">Tasks'+(openTasks>0?' '+openTasks:'')+'</button>'+
@@ -2979,10 +3006,10 @@ function renderMinAltBar(){
   document.getElementById('mabSafety').addEventListener('click', function(){ showFieldModal('safetyReport', 'Safety Report', 'Safety report\u2026'); });
   document.getElementById('mabTasks').addEventListener('click', showTasksModal);
   document.getElementById('minAltBtn').addEventListener('click', function(){
-    var cur = (STATE.values[DAPA_KEY] || {}).minAlt || '';
+    var cur = STATE.minAlt || '';
     openNumericKeypad({ title:'Minimum altitude AMSL (ft)', digits:5, suffix:'ft', allowEmpty:true, help:'Now '+(cur||'\u2014')+' \u00b7 Enter blank = clear' }, '', function(v){
       var cc = STATE.values[DAPA_KEY] = Object.assign({ qnh:latestAtisQnh()||'', oat:atisOatSeed(), height:'' }, STATE.values[DAPA_KEY] || {});
-      cc.minAlt = v ? String(v) : '';
+      STATE.minAlt = v ? String(v) : '';
       saveState();
       if(curSection && curSection() && curSection().id === 'dapa') renderCard(ALLCARDS['dapa.dapagrp']);
     });
