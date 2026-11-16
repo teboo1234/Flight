@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v108 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v110 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -39,7 +39,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 /* ===== Top strip: mode + phase ===== */
 .topStrip{ position:fixed; top:0; left:0; right:0; z-index:50; background:rgba(245,247,250,.97); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); padding-top:env(safe-area-inset-top); }
 #versionBadge{ position:absolute; bottom:2px; right:5px; font-family:'JetBrains Mono',monospace; font-size:8px; font-weight:700; color:var(--muted); opacity:.5; letter-spacing:.05em; z-index:60; pointer-events:none; }
-.countdownRow{ display:flex; gap:14px; justify-content:center; align-items:center; height:24px; background:var(--card); font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; color:var(--sky); border-bottom:1px solid var(--border); }
+.countdownRow{ display:flex; gap:.3em; justify-content:center; align-items:center; height:24px; white-space:nowrap; overflow:hidden; padding:0 4px; background:var(--card); font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; color:var(--sky); border-bottom:1px solid var(--border); }
 .countdownRow .cdT{ color:var(--em); margin-left:3px; }
 .countdownRow .cdT.overdue{ color:var(--rose); }
 .countdownRow .cdT.air{ color:var(--sky); }
@@ -62,10 +62,12 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .minAltBar .mabRow{ display:flex; align-items:center; gap:6px; }
 .minAltBar .mabSep{ margin-left:6px; }
 .minAltBar button{ padding:6px 4px; }
+.minAltBar button{ overflow:hidden; text-overflow:clip; }
+.minAltBar .mabRow{ flex-wrap:nowrap; }
 .minAltBar button.mabIcon{ flex:1 1 auto; font-size:11.5px; min-width:0; padding:6px 2px; white-space:nowrap; }
-.minAltBar #minAltBtn, .minAltBar #topQnhBtn{ flex:1 1 auto; min-width:0; font-size:12px; white-space:nowrap; padding:6px 2px; }
+.minAltBar #minAltBtn, .minAltBar #topQnhBtn, .minAltBar #windBtn, .minAltBar #driftBtn{ flex:1 1 auto; min-width:0; font-size:12px; white-space:nowrap; padding:6px 2px; }
 .minAltBar button small{ font-size:9px; color:var(--muted); letter-spacing:.04em; }
-@media (max-width:360px){ .minAltBar{ padding:4px 4px; } .minAltBar .mabRow{ gap:3px; } .minAltBar button.mabIcon{ font-size:10px; } .minAltBar #minAltBtn, .minAltBar #topQnhBtn{ font-size:10.5px; } .minAltBar button small{ font-size:8px; } }
+@media (max-width:360px){ .minAltBar{ padding:4px 4px; } .minAltBar .mabRow{ gap:3px; } .minAltBar button.mabIcon{ font-size:10px; } .minAltBar #minAltBtn, .minAltBar #topQnhBtn, .minAltBar #windBtn, .minAltBar #driftBtn{ font-size:10.5px; } .minAltBar button small{ font-size:8px; } }
 .quickFieldBtn{ flex:0 0 28px !important; padding:0; font-size:14px; }
 .tasksBtnHeading{ border-right:none; border-left:1px solid var(--border); background:rgba(3,105,161,.06); color:var(--sky); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; }
 .headingBtn:last-child{ border-right:none; }
@@ -475,7 +477,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v108</div>
+  <div id="versionBadge">v110</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="minAltBar" id="minAltBar"></div>
@@ -568,6 +570,18 @@ input,select{ font-family:'JetBrains Mono',monospace; }
     <textarea id="notesModalText" class="promptInput" rows="6" placeholder="Quick note&hellip;" autocomplete="off" autocorrect="off" style="text-align:left;font-size:16px;height:auto;font-family:'DM Sans',sans-serif"></textarea>
     <div class="confirmBtns">
       <button type="button" id="notesModalCloseBtn" class="confirmOk" style="background:#0369a1;flex:1">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="dsModal" class="confirmModal" style="display:none">
+  <div class="confirmBox">
+    <div class="confirmMsg">Defects</div>
+    <textarea id="dsDefects" class="promptInput" rows="4" placeholder="Defect&hellip;" autocomplete="off" autocorrect="off" style="text-align:left;font-size:16px;height:auto;font-family:'DM Sans',sans-serif"></textarea>
+    <div class="confirmMsg" style="margin-top:10px">Safety Report</div>
+    <textarea id="dsSafety" class="promptInput" rows="4" placeholder="Safety report&hellip;" autocomplete="off" autocorrect="off" style="text-align:left;font-size:16px;height:auto;font-family:'DM Sans',sans-serif"></textarea>
+    <div class="confirmBtns">
+      <button type="button" id="dsCloseBtn" class="confirmOk" style="background:#0369a1;flex:1">Done</button>
     </div>
   </div>
 </div>
@@ -1352,6 +1366,8 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     // the students already in History.
     if(!STATE.students) STATE.students = [];
     // Minimum altitude is app-wide: kept across all flights until changed by hand.
+    if(STATE.wind === undefined) STATE.wind = '';
+    if(STATE.maxDrift === undefined) STATE.maxDrift = '';
     if(STATE.minAlt === undefined) STATE.minAlt = ((STATE.values && STATE.values['dapa.dapagrp.calc']) || {}).minAlt || '';
     if(!STATE.studentsSeeded){
       STATE.flightHistory.forEach(function(h){
@@ -2736,6 +2752,8 @@ function renderDapaHtml(){
       '<div><label>OAT (\u00b0C)</label><input type="text" inputmode="decimal" id="dapaOat" value="'+escapeHtml(c.oat||'')+'" placeholder="15"/></div>'+
       '<div><label>Height AMSL (ft)</label><input type="text" inputmode="decimal" id="dapaHt" value="'+escapeHtml(c.height||'')+'" placeholder="elev / alt"/></div>'+
       '<div><label>Min alt AMSL (ft)</label><input type="text" inputmode="numeric" id="dapaMin" value="'+escapeHtml(STATE.minAlt||'')+'" placeholder="shown in top bar"/></div>'+
+      '<div><label>Wind (dir/speed)</label><input type="text" inputmode="text" id="dapaWind" value="'+escapeHtml(STATE.wind||'')+'" placeholder="270/15"/></div>'+
+      '<div><label>Max drift (\u00b0)</label><input type="text" inputmode="numeric" id="dapaDrift" value="'+escapeHtml(STATE.maxDrift||'')+'" placeholder="shown in top bar"/></div>'+
       '<div><label>Lowest freezing lvl AMSL (ft)</label><input type="text" inputmode="numeric" id="dapaFzl" value="'+escapeHtml(c.fzl||'')+'" placeholder="shown as FZ in top bar"/></div>'+
     '</div>'+
     '<div class="dapaSentence" id="dapaSentence">'+dapaSentence(d)+'</div>'+
@@ -2744,10 +2762,12 @@ function renderDapaHtml(){
   '</div>';
 }
 function wireDapa(card){
-  var q = document.getElementById('dapaQnh'), o = document.getElementById('dapaOat'), h = document.getElementById('dapaHt'), mn = document.getElementById('dapaMin'), fz = document.getElementById('dapaFzl');
-  if(!q || !o || !h || !mn || !fz) return;
+  var q = document.getElementById('dapaQnh'), o = document.getElementById('dapaOat'), h = document.getElementById('dapaHt'), mn = document.getElementById('dapaMin'), fz = document.getElementById('dapaFzl'), wd = document.getElementById('dapaWind'), dr = document.getElementById('dapaDrift');
+  if(!q || !o || !h || !mn || !fz || !wd || !dr) return;
   function refresh(){
     STATE.minAlt = mn.value.trim();
+    STATE.wind = wd.value.trim();
+    STATE.maxDrift = dr.value.trim();
     var c = STATE.values[DAPA_KEY] = { qnh:q.value.trim(), oat:o.value.trim(), height:h.value.trim(), fzl:fz.value.trim() };
     saveState();
     updateCountdown();
@@ -2756,7 +2776,7 @@ function wireDapa(card){
     document.getElementById('dapaPa').textContent = dapaFmt(d.pa);
     document.getElementById('dapaDa').textContent = dapaFmt(d.da);
   }
-  [q,o,h,mn,fz].forEach(function(el){ el.addEventListener('input', refresh); });
+  [q,o,h,mn,fz,wd,dr].forEach(function(el){ el.addEventListener('input', refresh); });
 }
 function renderClearancesHtml(){
   var v = STATE.values[CLR_KEY];
@@ -2984,6 +3004,35 @@ function topQnh(){
   if(o && o.val && o.n === STATE.atisEntries.length) return { val:o.val, manual:true };
   return { val:latestAtisQnh(), manual:false };
 }
+// 5 pure digits (27015) show as 270/15; anything typed by hand shows as-is.
+function fmtWind(w){
+  w = String(w||'').trim();
+  if(!w) return '\u2014';
+  return /^\d{5}$/.test(w) ? w.slice(0,3)+'/'+w.slice(3) : w;
+}
+// One popup holding both Defects and Safety Report (each bullet-style).
+function showDefSafetyModal(){
+  var modal = document.getElementById('dsModal');
+  var d = document.getElementById('dsDefects'), r = document.getElementById('dsSafety');
+  d.value = STATE.flightDetails.defects || ''; r.value = STATE.flightDetails.safetyReport || '';
+  modal.style.display = 'flex';
+  function hook(ta, field){
+    function apply(v){
+      STATE.flightDetails[field] = sentenceCaseStr(v);
+      saveState(); mirrorToDebrief(field);
+    }
+    ta.oninput = function(){
+      var raw = ta.value, f = sentenceCaseStr(raw);
+      if(f !== raw){ var pos = ta.selectionStart; ta.value = f; ta.setSelectionRange(pos,pos); }
+      apply(f);
+    };
+    wireBulletTextarea(ta, apply);
+  }
+  hook(d, 'defects'); hook(r, 'safetyReport');
+  document.getElementById('dsCloseBtn').onclick = function(){
+    modal.style.display = 'none'; renderHeadingRow(); renderCalculations();
+  };
+}
 function renderMinAltBar(){
   var el = document.getElementById('minAltBar');
   if(!el) return;
@@ -2992,18 +3041,33 @@ function renderMinAltBar(){
   var minTxt = STATE.minAlt ? Number(String(STATE.minAlt).replace(/,/g,'')).toLocaleString() : '\u2014';
   var fd = STATE.flightDetails;
   var openTasks = STATE.manualTasks.filter(function(t){ return !t.done; }).length;
-  var html = '<div class="mabRow"><button type="button" class="mabIcon" id="mabNotes" title="Notes">Notes'+(bulletLines(fd.notes).length?' '+bulletLines(fd.notes).length:'')+'</button>'+
-    '<button type="button" class="mabIcon" id="mabDefects" title="Defects">Defects'+(fd.defects?'\u2022':'')+'</button>'+
-    '<button type="button" class="mabIcon" id="mabSafety" title="Safety Report">Safety'+(fd.safetyReport?'\u2022':'')+'</button>'+
-    '<button type="button" class="mabIcon" id="mabTasks" title="Tasks">Tasks'+(openTasks>0?' '+openTasks:'')+'</button>'+
-    '<button type="button" id="minAltBtn" title="Minimum altitude AMSL (ft)"><small>MIN</small> '+escapeHtml(minTxt)+'</button>'+
+  var dsN = bulletLines(fd.defects).length + bulletLines(fd.safetyReport).length;
+  var nN = bulletLines(fd.notes).length;
+  var windTxt = fmtWind(STATE.wind), driftTxt = STATE.maxDrift ? String(STATE.maxDrift).replace(/[^0-9.]/g,'')+'\u00b0' : '\u2014';
+  var html = '<div class="mabRow"><button type="button" class="mabIcon" id="mabNotes" title="Notes">Notes'+(nN?' '+nN:'')+'</button>'+
+    '<button type="button" class="mabIcon" id="mabDS" title="Defects and Safety Report">Defects/Safety'+(dsN?' '+dsN:'')+'</button>'+
+    '<button type="button" class="mabIcon" id="mabTasks" title="Tasks">Tasks'+(openTasks>0?' '+openTasks:'')+'</button></div>'+
+    '<div class="mabRow"><button type="button" id="minAltBtn" title="Minimum altitude AMSL (ft)"><small>MIN</small> '+escapeHtml(minTxt)+'</button>'+
+    '<button type="button" id="windBtn" title="Wind (direction/speed)"><small>WIND</small> '+escapeHtml(windTxt)+'</button>'+
+    '<button type="button" id="driftBtn" title="Maximum drift (degrees)"><small>DRIFT</small> '+escapeHtml(driftTxt)+'</button>'+
     '<button type="button" id="topQnhBtn" title="Current QNH (hPa)"><small>QNH</small> '+escapeHtml(q.val||'\u2014')+(q.manual?' \u270E':'')+'</button></div>';
   if(el.getAttribute('data-sig') === html) return;
   el.setAttribute('data-sig', html);
   el.innerHTML = html;
   document.getElementById('mabNotes').addEventListener('click', showNotesModal);
-  document.getElementById('mabDefects').addEventListener('click', function(){ showFieldModal('defects', 'Defects', 'Defect\u2026'); });
-  document.getElementById('mabSafety').addEventListener('click', function(){ showFieldModal('safetyReport', 'Safety Report', 'Safety report\u2026'); });
+  document.getElementById('mabDS').addEventListener('click', showDefSafetyModal);
+  document.getElementById('windBtn').addEventListener('click', function(){
+    openNumericKeypad({ title:'Wind (direction/speed) e.g. 27015', digits:5, allowEmpty:true, help:'Now '+(fmtWind(STATE.wind))+' \u00b7 Enter blank = clear' }, '', function(v){
+      STATE.wind = v ? String(v) : ''; saveState();
+      if(curSection && curSection() && curSection().id === 'dapa') renderCard(ALLCARDS['dapa.dapagrp']);
+    });
+  });
+  document.getElementById('driftBtn').addEventListener('click', function(){
+    openNumericKeypad({ title:'Maximum drift (\u00b0)', digits:2, suffix:'\u00b0', allowEmpty:true, help:'Now '+(STATE.maxDrift||'\u2014')+' \u00b7 Enter blank = clear' }, '', function(v){
+      STATE.maxDrift = v ? String(v) : ''; saveState();
+      if(curSection && curSection() && curSection().id === 'dapa') renderCard(ALLCARDS['dapa.dapagrp']);
+    });
+  });
   document.getElementById('mabTasks').addEventListener('click', showTasksModal);
   document.getElementById('minAltBtn').addEventListener('click', function(){
     var cur = STATE.minAlt || '';
@@ -5926,6 +5990,9 @@ function updateCountdown(){
   if(!parts.length){ row.style.display = 'none'; syncHeaderOffset(); return; }
   row.innerHTML = parts.join(' &nbsp;&middot;&nbsp; ');
   row.style.display = 'flex';
+  // Never wrap: shrink the text until the whole line fits the screen width.
+  var fs = 11; row.style.fontSize = fs+'px';
+  while(row.scrollWidth > row.clientWidth && fs > 6){ fs -= 0.5; row.style.fontSize = fs+'px'; }
   syncHeaderOffset();
 }
 // Refreshes just the Endurance Remaining numbers in place — avoids a full
