@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#0369a1"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="CheckDeck"/>
+<link rel="apple-touch-icon" href="icon-180.png"/>
+<title>CheckDeck — Apps</title>
+<style>
+  :root{
+    --bg:#f5f7fa; --surface:#ffffff; --card:#eef2f6; --border:#cbd5e1;
+    --text:#0f172a; --muted:#3f4c5e;
+    --sky:#0369a1; --em:#047857; --amber:#b45309; --rose:#be123c; --violet:#6d28d9; --slate:#334155;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text)}
+  body{
+    font-family:'DM Sans',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    padding:max(20px,env(safe-area-inset-top)) 18px max(28px,env(safe-area-inset-bottom));
+    max-width:880px;margin:0 auto;
+  }
+  header{margin:8px 0 22px}
+  h1{font-family:'Syne','DM Sans',system-ui,sans-serif;font-size:30px;margin:0;letter-spacing:-.3px}
+  .sub{color:var(--muted);margin-top:4px;font-size:15px}
+  h2{
+    font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    font-size:12px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;
+    color:var(--muted);margin:26px 0 10px;
+  }
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+  a.app{
+    display:flex;gap:14px;align-items:center;text-decoration:none;color:inherit;
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    padding:14px 16px;border-left:6px solid var(--c);
+    transition:transform .08s ease, box-shadow .15s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  a.app:hover{box-shadow:0 4px 14px rgba(15,23,42,.08)}
+  a.app:active{transform:scale(.98)}
+  .ico{
+    flex:none;width:46px;height:46px;border-radius:11px;background:var(--c);color:#fff;
+    display:grid;place-items:center;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    font-weight:700;font-size:15px;overflow:hidden;
+  }
+  .ico img{width:100%;height:100%;object-fit:cover;display:block}
+  .name{font-weight:700;font-size:17px}
+  .desc{color:var(--muted);font-size:13.5px;margin-top:2px;line-height:1.3}
+  footer{margin-top:30px;color:var(--muted);font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>CheckDeck</h1>
+  <div class="sub">Flight instruction apps &amp; references</div>
+</header>
+
+<h2>Flight day</h2>
+<div class="grid">
+  <a class="app" href="brief.html" style="--c:var(--violet)">
+    <div class="ico"><img src="briefing-icon-192.png" alt="" onerror="this.replaceWith('BR')"/></div>
+    <div><div class="name">Briefing</div><div class="desc">Pre-flight planning, weather, refresher &amp; emergencies</div></div>
+  </a>
+  <a class="app" href="index.html" style="--c:var(--amber)">
+    <div class="ico"><img src="icon-192.png" alt="" onerror="this.replaceWith('FL')"/></div>
+    <div><div class="name">Flight</div><div class="desc">Flight-day checklist — pre-flight, airborne, post-flight</div></div>
+  </a>
+  <a class="app" href="plan.html" style="--c:var(--em)">
+    <div class="ico">PL</div>
+    <div><div class="name">Day Planner</div><div class="desc">Plan the flying day</div></div>
+  </a>
+</div>
+
+<h2>Reference</h2>
+<div class="grid">
+  <a class="app" href="ref.html" style="--c:var(--slate)">
+    <div class="ico">REF</div>
+    <div><div class="name">FlightRef</div><div class="desc">Checklists &amp; reference for instruction</div></div>
+  </a>
+  <a class="app" href="nco.html" style="--c:var(--sky)">
+    <div class="ico">NCO</div>
+    <div><div class="name">UK Part-NCO</div><div class="desc">Part-NCO regulation reader</div></div>
+  </a>
+  <a class="app" href="sera.html" style="--c:var(--sky)">
+    <div class="ico">SERA</div>
+    <div><div class="name">UK SERA</div><div class="desc">Standardised European Rules of the Air reader</div></div>
+  </a>
+</div>
+
+<h2>Forms</h2>
+<div class="grid">
+  <a class="app" href="checkout.html" style="--c:var(--rose)">
+    <div class="ico">CO</div>
+    <div><div class="name">Hour Builder Club Checkout</div><div class="desc">Printable A4 checkout form</div></div>
+  </a>
+</div>
+
+<footer>teboo1234 / Flight</footer>
+</body>
+</html>
