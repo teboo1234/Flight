@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v110 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v113 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -477,7 +477,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v110</div>
+  <div id="versionBadge">v113</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="minAltBar" id="minAltBar"></div>
@@ -2433,6 +2433,7 @@ function renderCard(card){
       openNumericKeypad({ title:'Initial Fuel (L)', digits:4, suffix:STATE.fuel.unit, allowEmpty:true, help:STATE.fuel.unit }, fuelInputVal(STATE.fuel.fobL), function(v){
         var n = parseFloat(v);
         STATE.fuel.fobL = isNaN(n) ? '' : (STATE.fuel.unit==='L' ? n/USG_TO_L : n);
+        STATE.fuelAutoFrom = null;
         saveState(); renderCard(card); updateFuelSummaryOnly();
         if(v) autoTickCard();
       });
@@ -2441,9 +2442,17 @@ function renderCard(card){
       openNumericKeypad({ title:'Initial Fuel (R)', digits:4, suffix:STATE.fuel.unit, allowEmpty:true, help:STATE.fuel.unit }, fuelInputVal(STATE.fuel.fobR), function(v){
         var n = parseFloat(v);
         STATE.fuel.fobR = isNaN(n) ? '' : (STATE.fuel.unit==='L' ? n/USG_TO_L : n);
+        STATE.fuelAutoFrom = null;
         saveState(); renderCard(card); updateFuelSummaryOnly();
         if(v) autoTickCard();
       });
+    });
+    document.getElementById('fpPrevEnd').addEventListener('click', function(){
+      var p = previousFlightEndFuel();
+      if(!p.ok){ showConfirm(p.msg, 'OK', function(){}); return; }
+      STATE.fuel.fobL = p.L; STATE.fuel.fobR = p.R; STATE.fuelAutoFrom = null;
+      saveState(); renderCard(card); updateFuelSummaryOnly(); autoTickCard();
+      showConfirm('Initial fuel set from '+p.label+': '+fmtFuel(p.L+p.R)+' total ('+p.src+').', 'OK', function(){});
     });
     document.getElementById('fpUplifted').addEventListener('click', function(){
       openNumericKeypad({ title:'Uplifted', digits:4, suffix:STATE.fuel.unit, allowEmpty:true, help:STATE.fuel.unit }, fuelInputVal(STATE.fuel.uplifted), function(v){
@@ -2766,7 +2775,9 @@ function wireDapa(card){
   if(!q || !o || !h || !mn || !fz || !wd || !dr) return;
   function refresh(){
     STATE.minAlt = mn.value.trim();
-    STATE.wind = wd.value.trim();
+    var nw = normWind(wd.value);
+    if(nw || !wd.value.trim()) STATE.wind = nw;
+    wd.style.borderColor = (!nw && wd.value.trim()) ? '#dc2626' : '';
     STATE.maxDrift = dr.value.trim();
     var c = STATE.values[DAPA_KEY] = { qnh:q.value.trim(), oat:o.value.trim(), height:h.value.trim(), fzl:fz.value.trim() };
     saveState();
@@ -2777,6 +2788,7 @@ function wireDapa(card){
     document.getElementById('dapaDa').textContent = dapaFmt(d.da);
   }
   [q,o,h,mn,fz,wd,dr].forEach(function(el){ el.addEventListener('input', refresh); });
+  wd.addEventListener('change', function(){ var n = normWind(wd.value); if(n){ wd.value = n; wd.style.borderColor=''; } });
 }
 function renderClearancesHtml(){
   var v = STATE.values[CLR_KEY];
@@ -3004,11 +3016,23 @@ function topQnh(){
   if(o && o.val && o.n === STATE.atisEntries.length) return { val:o.val, manual:true };
   return { val:latestAtisQnh(), manual:false };
 }
-// 5 pure digits (27015) show as 270/15; anything typed by hand shows as-is.
+// Wind in standard form: 3-digit direction / 2-digit speed, optional gust: 270/15, 090/08, 270/15G25.
+// Accepts 27015, 9008 (=090/08), 27015G25, 270 15, 270/15 etc. Returns '' if it can't be read.
+function normWind(w){
+  var t = String(w||'').toUpperCase().replace(/\s+/g,'');
+  if(!t) return '';
+  var m = t.match(/^(\d{3})\/?(\d{2,3})(?:G(\d{2,3}))?$/) || t.match(/^(\d{2})\/(\d{2,3})(?:G(\d{2,3}))?$/) ||
+          (/^\d{4}$/.test(t) ? t.match(/^(\d{2})(\d{2})()$/) : null) || t.match(/^(\d{3})(\d{2})(\d{2,3})$/);
+  if(!m) return '';
+  var dir = parseInt(m[1],10), spd = parseInt(m[2],10), g = m[3] ? parseInt(m[3],10) : 0;
+  if(dir > 360 || spd > 99 || (g && g <= spd)) return '';
+  var pad = function(n,l){ n = String(n); while(n.length < l) n = '0'+n; return n; };
+  return pad(dir,3)+'/'+pad(spd,2)+(g ? 'G'+pad(g,2) : '');
+}
 function fmtWind(w){
   w = String(w||'').trim();
   if(!w) return '\u2014';
-  return /^\d{5}$/.test(w) ? w.slice(0,3)+'/'+w.slice(3) : w;
+  return normWind(w) || w;
 }
 // One popup holding both Defects and Safety Report (each bullet-style).
 function showDefSafetyModal(){
@@ -3057,8 +3081,8 @@ function renderMinAltBar(){
   document.getElementById('mabNotes').addEventListener('click', showNotesModal);
   document.getElementById('mabDS').addEventListener('click', showDefSafetyModal);
   document.getElementById('windBtn').addEventListener('click', function(){
-    openNumericKeypad({ title:'Wind (direction/speed) e.g. 27015', digits:5, allowEmpty:true, help:'Now '+(fmtWind(STATE.wind))+' \u00b7 Enter blank = clear' }, '', function(v){
-      STATE.wind = v ? String(v) : ''; saveState();
+    openNumericKeypad({ title:'Wind: 5 digits, e.g. 27015 = 270/15', digits:5, allowEmpty:true, help:'Now '+(fmtWind(STATE.wind))+' \u00b7 Enter blank = clear' }, '', function(v){
+      STATE.wind = normWind(v); saveState();
       if(curSection && curSection() && curSection().id === 'dapa') renderCard(ALLCARDS['dapa.dapagrp']);
     });
   });
@@ -4066,6 +4090,7 @@ function renderFuelPlanHtml(cardId){
     '<div class="fpField"><label>Initial Fuel (L)</label><button type="button" class="fpFieldBtn" id="fpFobL">'+(fuelInputVal(f.fobL)||'0')+'</button></div>'+
     '<div class="fpField"><label>Initial Fuel (R)</label><button type="button" class="fpFieldBtn" id="fpFobR">'+(fuelInputVal(f.fobR)||'0')+'</button></div>'+
   '</div>';
+  html += '<button type="button" id="fpPrevEnd" class="fpFieldBtn" style="width:100%;margin-top:8px;font-size:14px;font-weight:800;padding:10px 6px">Set previous flight\u2019s end fuel</button>';
   html += '<div class="fpTtcafe">';
   html += row('T','Taxi','taxi','taxiMins');
   html += row('T','Trip','trip','tripMins');
@@ -5137,6 +5162,67 @@ function applyLandingFuelToFob(){
   }
   return true;
 }
+// Landing fuel of an archived flight, worked out exactly as the Fuel tab would
+// (actual figure if entered, else estimate from air time, split by tank log).
+// Temporarily swaps that flight's data in, then puts everything back.
+function landingFuelFromHistory(h){
+  if(!h || !h.full || !h.full.fuel) return null;
+  var keep = { fuel:STATE.fuel, tankLog:STATE.tankLog, values:STATE.values, global:STATE.global };
+  var out = null;
+  try{
+    STATE.fuel = JSON.parse(JSON.stringify(h.full.fuel));
+    STATE.tankLog = JSON.parse(JSON.stringify(h.full.tankLog || []));
+    STATE.values = JSON.parse(JSON.stringify(h.full.values || {}));
+    STATE.global = JSON.parse(JSON.stringify(h.full.global || {}));
+    if(applyLandingFuelToFob()) out = { L: STATE.fuel.fobL, R: STATE.fuel.fobR, src:'landing figure' };
+    else {
+      // Not flown yet: planned end fuel (start + uplift - taxi - trip - extra), split evenly.
+      var pl = fuelCalc().expLanding;
+      if(pl !== null && !isNaN(pl) && pl >= 0) out = { L: pl/2, R: pl/2, src:'planned' };
+    }
+  }catch(e){ out = null; }
+  STATE.fuel = keep.fuel; STATE.tankLog = keep.tankLog; STATE.values = keep.values; STATE.global = keep.global;
+  return out;
+}
+// The flight before this one (same date + registration) and its end fuel.
+function previousFlightEndFuel(){
+  var fd = STATE.flightDetails;
+  if(!(fd.date||'').trim() || !(fd.registration||'').trim()) return { ok:false, msg:'Set the date and registration under Flight Details first, so the previous flight can be found.' };
+  var same = chronologicalHistory().filter(function(h){ return sameText(h.date, fd.date) && sameText(h.registration, fd.registration) && h.full; });
+  var curIdx = -1;
+  same.forEach(function(h, i){ if(h.id && h.id === STATE.currentHistoryId) curIdx = i; });
+  var prev = curIdx > 0 ? same[curIdx-1] : (curIdx === -1 ? same[same.length-1] : null);
+  if(!prev) return { ok:false, msg:'No earlier saved flight found for this date and aircraft.' };
+  var r = landingFuelFromHistory(prev);
+  if(!r) return { ok:false, msg:'The previous flight has no fuel figures to work from.' };
+  var label = 'flight '+(prev.__flightNum||'')+(prev.takeoff||prev.offBlocks ? ' ('+(prev.offBlocks||prev.takeoff)+')' : '');
+  return { ok:true, L:r.L, R:r.R, label:label.trim(), src:r.src };
+}
+// Back-to-back flights, same day and same aircraft: the new flight's starting
+// fuel (Initial Fuel L/R) follows the previous flight's landing fuel by itself.
+// Runs when the date or registration is set. It never overwrites figures you
+// typed in yourself: only a still-untouched (default) or previously auto-filled
+// starting fuel is updated.
+function autoCarryFuel(){
+  var fd = STATE.flightDetails;
+  if(!fd || !(fd.date||'').trim() || !(fd.registration||'').trim()) return false;
+  var f = STATE.fuel;
+  var untouched = parseFloat(f.fobL) === 17 && parseFloat(f.fobR) === 17 && !f.uplifted;
+  if(!untouched && !STATE.fuelAutoFrom) return false;
+  var best = null;
+  chronologicalHistory().forEach(function(h){
+    if(h.id && h.id === STATE.currentHistoryId) return;
+    if(sameText(h.date, fd.date) && sameText(h.registration, fd.registration) && h.full) best = h;
+  });
+  if(!best) return false;
+  var r = landingFuelFromHistory(best);
+  if(!r || isNaN(r.L) || isNaN(r.R)) return false;
+  f.fobL = r.L; f.fobR = r.R;
+  STATE.fuelAutoFrom = best.id || true;
+  saveState();
+  try{ render(); renderResults(); renderCalculations(); }catch(e){}
+  return true;
+}
 function resetAllData(){
   archiveCurrentFlightToHistory();
   STATE.checked = {};
@@ -5147,6 +5233,7 @@ function resetAllData(){
   STATE.fuel = { unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:8, tripMins:'60', contPct:'', alt:4, altMins:'30', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' };
   STATE.tankLog = [];
   STATE.tankSelected = 'L';
+  STATE.fuelAutoFrom = null;
   STATE.currentHistoryId = null;
   STATE.fuelTimerPaused = false;
   STATE.fuelTimerPausedSecs = 0;
@@ -6347,12 +6434,14 @@ function wireFlightDetails(){
     function clearTicks(prefix){ Object.keys(STATE.checked).forEach(function(k){ if(k.indexOf(prefix) === 0) delete STATE.checked[k]; }); saveState(); render(); renderResults(); }
     if(dEl) dEl.addEventListener('change', function(){
       var nv = dEl.value, was = prevDate; prevDate = nv;
+      autoCarryFuel();
       if(was && nv && nv !== was && hasTicks('personal.')){
         showConfirm('The day has changed. Clear the Personal ticks so they are checked again?', 'Clear Personal', function(){ clearTicks('personal.'); clearTicks('documents.'); });
       }
     });
     if(rEl) rEl.addEventListener('change', function(){
       var nv = rEl.value.trim(), was = prevReg; prevReg = nv;
+      autoCarryFuel();
       if(was && nv && !sameText(nv, was) && hasTicks('documents.')){
         showConfirm('The registration has changed. Clear the Documents ticks so they are checked again for this aircraft?', 'Clear Documents', function(){ clearTicks('documents.'); });
       }
