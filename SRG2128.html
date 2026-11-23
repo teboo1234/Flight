@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPL(A) Skill Test Items</title>
+<style>
+  @page { size: 210mm 297mm; margin: 0; }
+  * { box-sizing: border-box; }
+  html { background: #e6e6e6; }
+  body {
+    width: 210mm; height: 297mm; overflow: hidden; padding: 6mm;
+    margin: 0 auto; background: #fff; color: #000;
+    font-family: Arial, "Helvetica Neue", sans-serif;
+    display: flex; flex-direction: column;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  header { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 1.5mm; margin-bottom: 2mm; }
+  h1 { margin: 0; font-size: 15pt; }
+  .meta { font-size: 8pt; text-align: right; }
+  .meta .field { display: flex; gap: 2mm; align-items: flex-end; margin-top: 1mm; }
+  .meta input { width: 55mm; border: 0; border-bottom: 1px solid #000; font: inherit; font-size: 9pt; height: 5mm; background: transparent; }
+
+  .reg { font-size: 6.8pt; line-height: 1.3; margin: 0 0 1.5mm; }
+  .reg b { font-size: 7.2pt; }
+  .general { font-size: 7.8pt; font-style: italic; border: 1px solid #000; padding: 1mm 1.5mm; margin-bottom: 2.5mm; }
+
+  .grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0 3mm; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 2.5mm; }
+
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 1.6px solid #000; }
+  th { background: #e8e8e8; text-align: left; font-size: 8.6pt; padding: 1.2mm 1.5mm; border-bottom: 1.2px solid #000; line-height: 1.2; }
+  th small { display: block; font-weight: 400; font-style: italic; font-size: 7.2pt; margin-top: .5mm; }
+  td { border-top: 1px solid #999; font-size: 7.9pt; line-height: 1.22; padding: 1mm 1.2mm; vertical-align: middle; }
+  td.l { font-weight: 700; text-align: center; }
+  td.b { text-align: center; padding: 0.6mm 0; }
+  tr.sub td { border-top: 1px dotted #bbb; padding-top: .6mm; padding-bottom: .6mm; }
+  tr.sub td.t { padding-left: 4mm; }
+  tr.parent td { padding-bottom: .4mm; }
+
+  input.tick {
+    appearance: none; -webkit-appearance: none; margin: 0; cursor: pointer;
+    width: 4.6mm; height: 4.6mm; border: 1.3px solid #000; border-radius: 1px;
+    background: #fff; position: relative; vertical-align: middle;
+  }
+  input.tick:checked::after {
+    content: ""; position: absolute; left: 1.3mm; top: 0.2mm;
+    width: 1.3mm; height: 2.7mm; border: solid #000; border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  input.tick.mixed { background: repeating-linear-gradient(45deg, #fff 0 1px, #ddd 1px 2.5px); }
+  input.tick:focus-visible { outline: 2px solid #3b82f6; outline-offset: 1px; }
+  .star { font-weight: 700; }
+
+  .foot { font-size: 7.3pt; line-height: 1.3; margin-top: 2.5mm; }
+  .foot p { margin: 0 0 1mm; }
+
+  .toolbar { position: fixed; right: 12px; bottom: 12px; display: flex; gap: 8px; }
+  .toolbar button {
+    font: 600 14px system-ui, sans-serif; padding: 10px 14px; border-radius: 8px;
+    border: 0; background: #1f4e9c; color: #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  }
+  .toolbar button.alt { background: #666; }
+  @media print { html { background: #fff; } .toolbar { display: none; } }
+  @media screen and (max-width: 820px) { html { overflow-x: auto; } }
+</style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>PPL(A) Skill Test – Test Items</h1>
+      <div style="font-size:8pt">Form SRG 2128 Issue 5 · Page 2 of 2 (tick-box version)</div>
+    </div>
+    <div class="meta">
+      <div class="field"><label>Applicant:</label><input></div>
+      <div class="field"><label>Date:</label><input></div>
+    </div>
+  </header>
+
+  <p class="reg"><b>Civil Aviation Authority Regulation 6</b> — Regulation 6(5) of the Civil Aviation Authority Regulations 1991 provides as follows: Any person who has failed any test or examination which he is required to pass before he is granted or may exercise the privileges of a personnel licence may within 14 days of being notified of his failure request that the Authority determine whether the test or examination was properly conducted. In order to succeed you will have to satisfy the Authority that the examination or test was not properly conducted. Mere dissatisfaction with the result is not sufficient reason for appeal.</p>
+
+  <div class="general">Use of checklist, airmanship, control of aeroplane or TMG by external visual references, anti-icing procedures, etc. apply in all sections.</div>
+
+  <main class="grid">
+    <div class="col" id="left"></div>
+    <div class="col" id="right"></div>
+  </main>
+
+  <div class="foot">
+    <p><span class="star">*</span> These items may be combined at the discretion of the FE.</p>
+    <p><b>Note:</b> If the test is completed in two parts then Section 1 and Items a, b and h of Section 4 (aerodrome arrival, landing, actions after flight) shall be assessed on both flights.</p>
+  </div>
+
+  <div class="toolbar">
+    <button class="alt" onclick="clearForm()">Clear</button>
+    <button onclick="window.print()">Print</button>
+  </div>
+
+<script>
+const sections = [
+  { col: "left", title: "SECTION 1. PRE-FLIGHT OPERATIONS AND DEPARTURE", items: [
+    ["a", "Pre-flight documentation, NOTAM and weather briefing"],
+    ["b", "Mass, balance and performance calculation"],
+    ["c", "Aeroplane inspection and servicing"],
+    ["d", "Engine starting and after starting procedures"],
+    ["e", "Taxiing and aerodrome procedures, pre-takeoff procedures"],
+    ["f", "Take-off and after take-off checks"],
+    ["g", "Aerodrome departure procedures"],
+    ["h", "ATC liaison – compliance, R/T procedures"]] },
+  { col: "left", title: "SECTION 2. GENERAL AIRWORK", items: [
+    ["a", "ATC liaison – compliance, R/T procedures"],
+    ["b", "Straight and Level flight, with speed changes"],
+    ["c", "Climbing:", ["Best rate of climb", "Climbing turns", "Levelling off"]],
+    ["d", "Medium (30° bank) turns, lookout procedure and collision avoidance"],
+    ["e", "Steep (45° bank) turns (including recognition and recovery from a spiral dive)"],
+    ["f", "Flight at critically low airspeed with and without flaps"],
+    ["g", "Stalling:", ["Clean stall and recover with power",
+                       "Approach to stall descending turn with bank angle 20°, approach configuration",
+                       "Approach to stall in landing configuration"]],
+    ["h", "Descending:", ["With and without power", "Descending turns (steep gliding turns)", "Levelling off"]]] },
+  { col: "right", title: "SECTION 3. ENROUTE PROCEDURES", items: [
+    ["a", "Flight plan, dead reckoning, map reading. Use of moving map display (optional)"],
+    ["b", "Maintenance of altitude, heading and speed"],
+    ["c", "Orientation, airspace structure, timing and revision of ETAs, and log keeping using a manual flight log"],
+    ["d", "Diversion to alternate aerodrome (planning and implementation). Use of moving map displays (optional)"],
+    ["e", "Use of radio navigation aids for tracking and fixing. Use of moving map displays (optional)"],
+    ["f", "Basic instrument flying (180° turn in simulated IMC)"],
+    ["g", "Flight management (checks, fuel systems and carburettor icing etc.)"],
+    ["h", "ATC compliance and R/T procedures"]] },
+  { col: "right", title: "SECTION 4. APPROACH AND LANDING PROCEDURES", items: [
+    ["a", "Aerodrome arrival procedures"],
+    ["b", "<span class='star'>*</span>Precision landing (short field landing), crosswind, if suitable conditions available"],
+    ["c", "<span class='star'>*</span>Flapless landing"],
+    ["d", "<span class='star'>*</span>Approach to landing with idle power (SE only)"],
+    ["e", "Touch and go"],
+    ["f", "Go around from low height"],
+    ["g", "ATC compliance and RT procedures"],
+    ["h", "Actions after flight"]] },
+  { col: "left", title: "SECTION 5. ABNORMAL AND EMERGENCY PROCEDURES",
+    note: "This section may be combined with sections 1 through 4", items: [
+    ["a", "Simulated engine failure after take-off (at a safe altitude), fire drill (SE only)"],
+    ["b", "<span class='star'>*</span>Forced landing (simulated) (SE only)"],
+    ["c", "Simulated precautionary landing (SE only)"],
+    ["d", "Simulated emergencies"],
+    ["e", "Oral questions"]] },
+  { col: "right", title: "SECTION 6. SIMULATED ASYMMETRIC FLIGHT AND RELEVANT CLASS OR TYPE ITEMS",
+    note: "This section may be combined with sections 1 through 5", items: [
+    ["a", "Simulated engine failure during take-off (at a safe altitude unless carried out in an FFS)"],
+    ["b", "Asymmetric approach and go-around"],
+    ["c", "Asymmetric approach and full stop landing"],
+    ["d", "Engine shutdown and restart"],
+    ["e", "ATC compliance, R/T procedures or airmanship"],
+    ["f", "As determined by the FE – any relevant items of the class or type rating skill test to include, if applicable:",
+       ["Aeroplane systems including handling of autopilot", "Operation of pressurisation system", "Use of de-icing and anti-icing system"]],
+    ["g", "Oral questions"]] }
+];
+const roman = ["i", "ii", "iii"];
+let n = 0;
+const box = (label, extra = "") => `<td class="b"><input type="checkbox" class="tick" id="c${++n}" aria-label="${label.replace(/<[^>]+>/g, "")}" ${extra}></td>`;
+
+[...sections].sort((a,b)=>parseInt(a.title.match(/\d/))-parseInt(b.title.match(/\d/))).forEach((s, si) => {
+  const t = document.createElement("table");
+  let h = `<colgroup><col style="width:6mm"><col><col style="width:9mm"></colgroup><thead><tr><th colspan="3">${s.title}${s.note ? `<small>${s.note}</small>` : ""}</th></tr></thead><tbody>`;
+  s.items.forEach(([l, text, subs]) => {
+    if (subs) {
+      h += `<tr class="parent"><td class="l">${l}</td><td class="t">${text}</td>${box(text, `data-parent="${si}${l}"`)}</tr>`;
+      subs.forEach((st, i) => {
+        h += `<tr class="sub"><td class="l"></td><td class="t">(${roman[i]}) ${st}</td>${box(st, `data-child="${si}${l}"`)}</tr>`;
+      });
+    } else {
+      h += `<tr><td class="l">${l}</td><td class="t">${text}</td>${box(text)}</tr>`;
+    }
+  });
+  t.innerHTML = h + "</tbody>";
+  document.getElementById(s.col).appendChild(t);
+});
+
+// Parent box ticks all sub-items; sub-items roll up to the parent
+document.addEventListener("change", e => {
+  const el = e.target;
+  if (el.dataset.parent) {
+    document.querySelectorAll(`[data-child="${el.dataset.parent}"]`).forEach(c => c.checked = el.checked);
+    el.classList.remove("mixed");
+  } else if (el.dataset.child) {
+    const kids = [...document.querySelectorAll(`[data-child="${el.dataset.child}"]`)];
+    const p = document.querySelector(`[data-parent="${el.dataset.child}"]`);
+    const on = kids.filter(k => k.checked).length;
+    p.checked = on === kids.length;
+    p.classList.toggle("mixed", on > 0 && on < kids.length);
+  }
+});
+
+function clearForm() {
+  if (!confirm("Clear all ticks and fields?")) return;
+  document.querySelectorAll("input.tick").forEach(i => { i.checked = false; i.classList.remove("mixed"); });
+  document.querySelectorAll(".meta input").forEach(i => i.value = "");
+}
+</script>
+</body>
+</html>
