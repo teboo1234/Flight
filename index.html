@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v122 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v124 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -585,12 +585,24 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 #calcMode .calcCard .cv{ font-size:44px; }
 #calcMode .calcCard textarea{ font-size:17px; text-align:left; }
 #calcMode .resHead h2{ font-size:22px; }
+
+/* v124 fit fixes: text must fit inside its box on iPad */
+.homeTile .hT{ font-size:clamp(13px,3.2vw,22px); overflow-wrap:normal; word-break:normal; hyphens:none; }
+.homeTile .hMain{ padding:0 4px; }
+.fdDateRow{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:stretch; }
+.fdField{ min-width:0; }
+.fdDateRow input[type=date]{ width:100%; min-width:0; max-width:100%; box-sizing:border-box; -webkit-appearance:none; appearance:none; }
+.fdDateRow input[type=date]{ font-size:clamp(13px,2vw,16px); }
+.fdDateRow button{ flex:0 0 auto; padding:0 8px; font-size:clamp(11px,1.7vw,14px); }
+.fpSumLbl{ font-size:clamp(8px,1.2vw,9.5px); letter-spacing:0; overflow-wrap:anywhere; }
+.fpFieldBtn, .fdField input{ font-size:clamp(12px,2vw,15px); min-width:0; }
+.fdField label{ white-space:nowrap; }
 </style>
 </head>
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v122</div>
+  <div id="versionBadge">v124</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="minAltBar" id="minAltBar"></div>
@@ -1817,6 +1829,22 @@ function sectionTickState(sec){
   });
   return { total:total, done:done, all: total > 0 && done === total };
 }
+// Shrink each tile title until no word is cut and everything fits inside the
+// tile, whatever font the device ends up using (Syne is very wide).
+function fitHomeTiles(root){
+  function run(){
+    Array.prototype.forEach.call(root.querySelectorAll('.homeTile'), function(t){
+      var h = t.querySelector('.hT'), m = t.querySelector('.hMain'); if(!h || !m) return;
+      var fs = Math.min(24, Math.max(13, window.innerWidth * 0.032)); h.style.fontSize = fs + 'px';
+      var guard = 0;
+      while(guard++ < 60 && fs > 7 && (h.scrollWidth > m.clientWidth + 1 || t.scrollHeight > t.clientHeight + 1 || m.scrollHeight > m.clientHeight + 1)){
+        fs -= 0.5; h.style.fontSize = fs + 'px';
+      }
+    });
+  }
+  run();
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ if(homeOpen) run(); });
+}
 function renderHome(){
   var el = document.getElementById('homeView');
   var cols = window.innerWidth >= 700 ? 3 : 2;
@@ -1847,6 +1875,7 @@ function renderHome(){
     html += '<div class="homeBand '+band.cls+'" style="flex:'+rows+' 1 0"><div class="homeBandHead">'+band.label+'</div><div class="homeGrid">'+tiles+'</div></div>';
   });
   el.innerHTML = html;
+  fitHomeTiles(el);
   Array.prototype.forEach.call(el.querySelectorAll('.homeTile'), function(b){
     var ph = b.getAttribute('data-phase'), si = parseInt(b.getAttribute('data-sec'),10);
     var all = b.querySelector('.hAll');
@@ -6488,7 +6517,7 @@ function renderCalculations(){
   var fd = STATE.flightDetails;
   html += '<div class="calcCard flightDetailsCard"><div class="ck">Flight Details</div>'+
     '<div class="fdGrid">'+
-      '<div class="fdField"><label>Date</label><div class="fdDateRow"><input type="date" id="fdDate" value="'+escapeHtml(fd.date||'')+'"/><button type="button" id="fdTodayBtn">Today</button></div></div>'+
+      '<div class="fdField" style="grid-column:1/-1"><label>Date</label><div class="fdDateRow"><input type="date" id="fdDate" value="'+escapeHtml(fd.date||'')+'"/><button type="button" id="fdTodayBtn">Today</button></div></div>'+
       '<div class="fdField"><label>Slot From (UTC)</label><button type="button" class="fpFieldBtn" id="fdSlotFrom" style="text-align:left">'+(fd.slotFrom?escapeHtml(fd.slotFrom):'Tap to set')+'</button></div>'+
       '<div class="fdField"><label>Slot To (UTC)</label><button type="button" class="fpFieldBtn" id="fdSlotTo" style="text-align:left">'+(fd.slotTo?escapeHtml(fd.slotTo):'Tap to set')+'</button></div>'+
       '<div class="fdField"><label>Registration</label><input type="text" id="fdReg" placeholder="G-XXXX" value="'+escapeHtml(fd.registration||'')+'" style="text-transform:uppercase"/></div>'+
