@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Briefing v19 — Pre-Flight Planning</title>
+<title>CheckDeck Briefing v20 — Pre-Flight Planning</title>
 <link rel="manifest" href="briefing-manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -257,7 +257,9 @@ input,select{ font-family:'JetBrains Mono',monospace; }
    rendered copy of MSA/Freezing level (whichever tab it's on) red. */
 .groupRow.msaDanger{ border-color:var(--rose); background:rgba(190,18,60,.07); }
 .groupRow.msaDanger .grLabel{ color:var(--rose); }
-.groupRow.msaDanger .grKeypad{ border-color:var(--rose) !important; color:var(--rose); }
+.groupRow.msaDanger .grKeypad, .groupRow.msaDanger .grKeypadBtn{ border-color:var(--rose) !important; color:var(--rose) !important; }
+@keyframes digCursorBlink{ 0%,50%{ opacity:1; } 51%,100%{ opacity:.15; } }
+.dig-active{ animation:digCursorBlink 1s step-end infinite; }
 .fpField.msaDanger input{ border-color:var(--rose) !important; color:var(--rose) !important; }
 .fpField.msaDanger label{ color:var(--rose); }
 #wxMsaFlDelta.danger{ background:rgba(190,18,60,.08); border-color:rgba(190,18,60,.35); color:var(--rose); }
@@ -459,7 +461,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v19</div>
+  <div id="versionBadge">v20</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="headingRow" id="headingRow2"></div>
@@ -775,10 +777,10 @@ var CHECKLIST_DATA = [
     ] },
     { id:'1k', text:'Documents to be carried (NCO.GEN.135)', shortTitle:'Documents', type:'group', hasLaw:true, children:['AFM (or equivalent)','Certificate of Registration (original)','Certificate of Airworthiness (original) & ARC','Noise certificate (if applicable)','List of specific approvals (if applicable)','Aircraft radio licence (if applicable)','Third-party liability insurance certificate(s)','Journey log (or equivalent)','Details of filed ATS flight plan (if applicable)','Current & suitable aeronautical charts (route + diversions)','Interception procedures & visual signals','MEL or CDL (if applicable)','Any other documentation pertinent / required by States'] },
     { id:'1n', text:'Destination', type:'group', children:['Fees','Fuel availability','PPR','Slots','Opening hours','Phone/Email details',
-      {text:'Sunrise (departure)', keypad:'alt', unit:'hh:mm'},
-      {text:'Sunset (departure)', keypad:'alt', unit:'hh:mm'},
-      {text:'Sunrise (destination)', keypad:'alt', unit:'hh:mm'},
-      {text:'Sunset (destination)', keypad:'alt', unit:'hh:mm'},
+      {text:'Sunrise (departure)', timeEntry:true},
+      {text:'Sunset (departure)', timeEntry:true},
+      {text:'Sunrise (destination)', timeEntry:true},
+      {text:'Sunset (destination)', timeEntry:true},
       'Sun position check — low sun/glare on approach, runway direction at ETA'
     ] },
     { id:'1p', text:'No-go review', shortTitle:'TEM', type:'group', children:['Weather','Recency','Aircraft equipment','Day/night','Complexity','Endurance','Personal limits','External pressure'], note:'Traffic-light check — e.g. cloud base <600ft is a no-fly threshold; consider whether a check flight/safety pilot is needed.' },
@@ -1731,6 +1733,7 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
           if(isObj && childDef.keypad === 'alt'){ child.keypad = true; child.unit = childDef.unit || 'ft'; child.unitToggle = !!childDef.unitToggle; }
           if(isObj && childDef.note){ child.note = childDef.note; }
           if(isObj && childDef.type === 'text'){ child.textEntry = true; }
+          if(isObj && childDef.timeEntry){ child.timeEntry = true; }
           if(isObj && childDef.type === 'daVis'){ child.davis = true; }
           if(isObj && childDef.type === 'timeNow'){ child.timenow = true; }
           if(isObj && childDef.type === 'hobbsTacho'){ child.hobbstacho = true; }
@@ -2348,6 +2351,546 @@ function buildAnnunFor(sec){
   });
 }
 
+// Time entry as a 4-digit calculator keypad — auto-inserts the colon as
+// you type (e.g. typing "1230" displays "12:30" live), matching the
+// digit-slot style of every other picker instead of two separate
+// dropdowns.
+function openTimeKeypad(currentValue, onDone){
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:14px;padding:20px;max-width:340px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)';
+  var digits = '';
+  if(currentValue && /^\d{1,2}:\d{2}$/.test(currentValue)){
+    var p = currentValue.split(':');
+    digits = ('0'+parseInt(p[0],10)).slice(-2) + p[1];
+  }
+  function fmt(){
+    var activePos = digits.length<4 ? digits.length : -1;
+    var html = '';
+    for(var i=0;i<4;i++){
+      var filled = i<digits.length;
+      var isActive = i===activePos;
+      var color = filled?'#1e3a8a':'rgba(30,58,138,.25)';
+      var border = isActive?'#1e3a8a':(filled?'transparent':'rgba(30,58,138,.15)');
+      var bg = isActive?'rgba(30,58,138,.10)':'transparent';
+      html += '<span class="'+(isActive?'dig-active':'')+'" style="display:inline-block;min-width:22px;text-align:center;color:'+color+';background:'+bg+';border-bottom:3px solid '+border+';border-radius:4px 4px 0 0;padding:0 3px">'+(filled?digits.charAt(i):'\u00a0')+'</span>';
+      if(i===1) html += '<span style="color:var(--muted);padding:0 3px;font-weight:700">:</span>';
+    }
+    return html + '<span style="font-size:14px;color:var(--muted);margin-left:8px">UTC</span>';
+  }
+  function complete(){ return digits.length===4; }
+  function valid(){
+    if(!complete()) return false;
+    var h = parseInt(digits.slice(0,2),10), m = parseInt(digits.slice(2,4),10);
+    return h<=23 && m<=59;
+  }
+  function doSet(){
+    if(!valid()) return;
+    onDone(digits.slice(0,2)+':'+digits.slice(2,4));
+    document.body.removeChild(ov);
+  }
+  box.innerHTML =
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace">Time (UTC)</div>'+
+    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;font-size:32px;font-weight:700"><span id="tk-display">'+fmt()+'</span></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">'+
+      '<button class="tk-k" data-k="1">1</button><button class="tk-k" data-k="2">2</button><button class="tk-k" data-k="3">3</button>'+
+      '<button class="tk-k" data-k="4">4</button><button class="tk-k" data-k="5">5</button><button class="tk-k" data-k="6">6</button>'+
+      '<button class="tk-k" data-k="7">7</button><button class="tk-k" data-k="8">8</button><button class="tk-k" data-k="9">9</button>'+
+      '<span></span><button class="tk-k" data-k="0">0</button><span></span>'+
+    '</div>'+
+    '<div id="tk-status" style="font-size:12px;text-align:center;min-height:16px;margin-bottom:10px;font-family:\'JetBrains Mono\',monospace;color:var(--muted)">&nbsp;</div>'+
+    '<div style="display:flex;gap:8px">'+
+      '<button type="button" id="tk-clear" style="flex:1;padding:14px;font-size:13px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>'+
+      '<button type="button" id="tk-ok" style="flex:2;padding:14px;font-size:15px;font-weight:700;border-radius:9px;border:none;cursor:pointer;background:rgba(4,120,87,.15);color:#047857">Enter</button>'+
+    '</div>';
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  var tkCss = document.createElement('style');
+  tkCss.textContent = '.tk-k{padding:22px 0;font-size:26px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.tk-k:active{background:var(--border)}';
+  box.appendChild(tkCss);
+  function refresh(){
+    var d = box.querySelector('#tk-display'); if(d) d.innerHTML = fmt();
+    var s = box.querySelector('#tk-status');
+    if(s){
+      if(complete() && !valid()){ s.textContent = 'Invalid time'; s.style.color = '#b45309'; }
+      else { s.textContent = '\u00a0'; s.style.color = 'var(--muted)'; }
+    }
+    // Auto-collapses once all 4 digits are in and it's a real time — no
+    // separate Enter tap needed in the common case.
+    if(complete() && valid()) doSet();
+  }
+  box.querySelectorAll('.tk-k').forEach(function(k){
+    k.addEventListener('click', function(){
+      var v = k.getAttribute('data-k');
+      digits = (digits.length>=4) ? v : digits+v;
+      refresh();
+    });
+  });
+  box.querySelector('#tk-clear').addEventListener('click', function(){ digits=''; refresh(); });
+  box.querySelector('#tk-ok').addEventListener('click', doSet);
+  ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
+}
+// Cloud layer picker — same idea as FlightDeck's: pick a type (FEW/SCT/
+// BKN/OVC), enter height in hundreds of feet, stored METAR-style (e.g.
+// "SCT025"). A tap-to-open button replaces the old free-text field.
+// The following pickers are ported directly from FlightDeck's ATIS entry
+// system - same digit-slot entry UX, same colors/layout, same validation
+// rules - just built as dynamically-created overlays (matching how
+// FlightDeck itself built them) rather than the app's other modals.
+function openLetterPicker(title, currentValue, onDone){
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:14px;padding:20px;max-width:440px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)';
+  var letters = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+  box.innerHTML =
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace">'+title+'</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">'+
+      letters.map(function(l){
+        var isSel = l === currentValue;
+        return '<button type="button" class="lp-key" data-l="'+l+'" style="padding:18px 0;font-size:22px;font-weight:700;font-family:\'JetBrains Mono\',monospace;background:'+(isSel?'#1e3a8a':'var(--card)')+';color:'+(isSel?'#fff':'var(--text)')+';border:1px solid var(--border);border-radius:8px;cursor:pointer">'+l+'</button>';
+      }).join('')+
+    '</div>';
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  box.querySelectorAll('.lp-key').forEach(function(b){
+    b.addEventListener('click', function(){
+      onDone(b.getAttribute('data-l'));
+      document.body.removeChild(ov);
+    });
+  });
+  ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
+}
+function openRunwayPicker(currentValue, onDone){
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:14px;padding:20px;max-width:360px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)';
+  var digits = '', suffix = '';
+  if(currentValue){
+    var m = currentValue.match(/^(\d{1,2})([LCR]?)$/i);
+    if(m){ digits = m[1]; suffix = m[2].toUpperCase(); }
+  }
+  function fmt(){
+    var slots = ['',''];
+    for(var i=0;i<digits.length && i<2;i++) slots[i] = digits.charAt(i);
+    var activePos = (digits.length>=2) ? -1 : digits.length;
+    var html = '';
+    for(var i=0;i<2;i++){
+      var ch = slots[i] || '\u00a0';
+      var filled = !!slots[i];
+      var isActive = i === activePos;
+      var color = filled ? '#1e3a8a' : 'rgba(30,58,138,.25)';
+      var borderColor = isActive ? '#1e3a8a' : (filled ? 'transparent' : 'rgba(30,58,138,.15)');
+      var bg = isActive ? 'rgba(30,58,138,.10)' : 'transparent';
+      html += '<span class="'+(isActive?'dig-active':'')+'" style="display:inline-block;min-width:22px;text-align:center;color:'+color+';background:'+bg+';border-bottom:3px solid '+borderColor+';border-radius:4px 4px 0 0;padding:0 3px">'+ch+'</span>';
+    }
+    html += '<span style="min-width:24px;display:inline-block;color:#0369a1;margin-left:6px">'+(suffix||'\u00a0')+'</span>';
+    return html;
+  }
+  function refresh(){
+    var d = box.querySelector('#rp-display');
+    if(d) d.innerHTML = fmt();
+    box.querySelectorAll('.rp-suffix').forEach(function(b){
+      var v = b.getAttribute('data-s');
+      b.style.background = v===suffix ? '#0369a1' : 'var(--card)';
+      b.style.color = v===suffix ? '#fff' : 'var(--text)';
+    });
+  }
+  box.innerHTML =
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:\'JetBrains Mono\',monospace">Runway In Use</div>'+
+    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;font-size:36px;font-weight:700"><span id="rp-display">'+fmt()+'</span></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">'+
+      '<button class="rp-num" data-k="1">1</button><button class="rp-num" data-k="2">2</button><button class="rp-num" data-k="3">3</button>'+
+      '<button class="rp-num" data-k="4">4</button><button class="rp-num" data-k="5">5</button><button class="rp-num" data-k="6">6</button>'+
+      '<button class="rp-num" data-k="7">7</button><button class="rp-num" data-k="8">8</button><button class="rp-num" data-k="9">9</button>'+
+      '<span></span><button class="rp-num" data-k="0">0</button><span></span>'+
+    '</div>'+
+    '<div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px;font-family:\'JetBrains Mono\',monospace">Pick suffix to submit</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">'+
+      '<button type="button" class="rp-suffix" data-s="" style="padding:22px 0;font-size:18px;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:rgba(4,120,87,.1);color:#047857;border:1px solid rgba(4,120,87,.3);border-radius:8px;cursor:pointer">Enter</button>'+
+      '<button type="button" class="rp-suffix" data-s="L" style="padding:22px 0;font-size:20px;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:rgba(3,105,161,.1);color:#0369a1;border:1px solid rgba(3,105,161,.3);border-radius:8px;cursor:pointer">L</button>'+
+      '<button type="button" class="rp-suffix" data-s="C" style="padding:22px 0;font-size:20px;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:rgba(3,105,161,.1);color:#0369a1;border:1px solid rgba(3,105,161,.3);border-radius:8px;cursor:pointer">C</button>'+
+      '<button type="button" class="rp-suffix" data-s="R" style="padding:22px 0;font-size:20px;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:rgba(3,105,161,.1);color:#0369a1;border:1px solid rgba(3,105,161,.3);border-radius:8px;cursor:pointer">R</button>'+
+    '</div>'+
+    '<button type="button" id="rp-clear" style="width:100%;padding:12px;font-size:13px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>';
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  var rpCss = document.createElement('style');
+  rpCss.textContent = '.rp-num{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.rp-num:active{background:var(--border)}';
+  box.appendChild(rpCss);
+  refresh();
+  box.querySelectorAll('.rp-num').forEach(function(k){
+    k.addEventListener('click', function(){
+      var v = k.getAttribute('data-k');
+      if(digits.length >= 2) digits = v; else digits += v;
+      refresh();
+    });
+  });
+  box.querySelector('#rp-clear').addEventListener('click', function(){ digits=''; suffix=''; refresh(); });
+  box.querySelectorAll('.rp-suffix').forEach(function(b){
+    b.addEventListener('click', function(){
+      if(digits.length < 2) return;
+      suffix = b.getAttribute('data-s');
+      onDone(digits + suffix);
+      document.body.removeChild(ov);
+    });
+  });
+  ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
+}
+function openWindKeypad(currentValue, onDone){
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:14px;padding:20px;max-width:400px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)';
+  var dir='', spd='', gust='', hasGust=false, hasVar=false, varFrom='', varTo='';
+  if(currentValue){
+    var wparts = String(currentValue).trim().split(/\s+/);
+    var m = wparts[0].match(/^(\d{1,3})\/(\d{1,2})(?:G(\d{1,2}))?$/);
+    if(m){ dir=m[1]; spd=m[2]; if(m[3]){ hasGust=true; gust=m[3]; } }
+    if(wparts[1]){
+      var vm = wparts[1].match(/^(\d{1,3})V(\d{1,3})$/);
+      if(vm){ hasVar=true; varFrom=vm[1]; varTo=vm[2]; }
+    }
+  }
+  function stage(){
+    if(dir.length<3) return 'dir';
+    if(spd.length<2) return 'spd';
+    if(hasGust && gust.length<2) return 'gust';
+    if(hasVar && varFrom.length<3) return 'varFrom';
+    if(hasVar && varTo.length<3) return 'varTo';
+    return 'done';
+  }
+  function fmtSlot(text, active, filled){
+    var color = filled ? '#1e3a8a' : 'rgba(30,58,138,.25)';
+    var border = active ? '#1e3a8a' : (filled?'transparent':'rgba(30,58,138,.15)');
+    var bg = active ? 'rgba(30,58,138,.10)' : 'transparent';
+    return '<span class="'+(active?'dig-active':'')+'" style="display:inline-block;min-width:20px;text-align:center;color:'+color+';background:'+bg+';border-bottom:3px solid '+border+';border-radius:4px 4px 0 0;padding:0 2px">'+(text||'\u00a0')+'</span>';
+  }
+  function fmt(){
+    var st = stage();
+    var html = '';
+    for(var i=0;i<3;i++){ var filled=i<dir.length; html += fmtSlot(filled?dir.charAt(i):'', st==='dir'&&i===dir.length, filled); }
+    html += '<span style="color:var(--muted);padding:0 3px;font-weight:700">/</span>';
+    for(var i=0;i<2;i++){ var filled=i<spd.length; html += fmtSlot(filled?spd.charAt(i):'', st==='spd'&&i===spd.length, filled); }
+    if(hasGust){
+      html += '<span style="color:var(--muted);padding:0 3px;font-weight:700">G</span>';
+      for(var i=0;i<2;i++){ var filled=i<gust.length; html += fmtSlot(filled?gust.charAt(i):'', st==='gust'&&i===gust.length, filled); }
+    }
+    html += '<span style="font-size:16px;color:var(--muted);margin:0 8px">kt</span>';
+    if(hasVar){
+      html += '<br/><span style="font-size:20px">';
+      for(var i=0;i<3;i++){ var filled=i<varFrom.length; html += fmtSlot(filled?varFrom.charAt(i):'', st==='varFrom'&&i===varFrom.length, filled); }
+      html += '<span style="color:#b45309;padding:0 5px;font-weight:800">V</span>';
+      for(var i=0;i<3;i++){ var filled=i<varTo.length; html += fmtSlot(filled?varTo.charAt(i):'', st==='varTo'&&i===varTo.length, filled); }
+      html += '</span>';
+    }
+    return html;
+  }
+  function assembled(){
+    if(dir.length<3 || spd.length<1) return '';
+    var s = spd.length===1 ? '0'+spd : spd;
+    var out = dir+'/'+s;
+    if(hasGust && gust.length>=1){ out += 'G'+(gust.length===1?'0'+gust:gust); }
+    if(hasVar && varFrom.length===3 && varTo.length===3){ out += ' '+varFrom+'V'+varTo; }
+    return out;
+  }
+  function isComplete(){
+    if(dir.length!==3 || spd.length<1) return false;
+    if(hasGust && gust.length<1) return false;
+    if(hasVar && (varFrom.length<3 || varTo.length<3)) return false;
+    return true;
+  }
+  box.innerHTML =
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:\'JetBrains Mono\',monospace">Wind \u00b7 DDD/SS [GXX] [+ vvvVvvv]</div>'+
+    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;font-size:30px;font-weight:700;line-height:1.6"><span id="wk-display">'+fmt()+'</span></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">'+
+      '<button class="wk-k" data-k="1">1</button><button class="wk-k" data-k="2">2</button><button class="wk-k" data-k="3">3</button>'+
+      '<button class="wk-k" data-k="4">4</button><button class="wk-k" data-k="5">5</button><button class="wk-k" data-k="6">6</button>'+
+      '<button class="wk-k" data-k="7">7</button><button class="wk-k" data-k="8">8</button><button class="wk-k" data-k="9">9</button>'+
+      '<button class="wk-k wk-k-var" id="wk-var" data-k="var">V</button><button class="wk-k" data-k="0">0</button><button class="wk-k wk-k-gust" id="wk-gust" data-k="gust">G</button>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px">'+
+      '<button type="button" id="wk-clear" style="flex:1;padding:16px;font-size:14px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>'+
+      '<button type="button" id="wk-ok" style="flex:2;padding:16px;font-size:17px;font-weight:700;border-radius:9px;border:none;cursor:pointer;background:rgba(4,120,87,.15);color:#047857" '+(isComplete()?'':'disabled')+'>Enter</button>'+
+    '</div>';
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  var wkCss = document.createElement('style');
+  wkCss.textContent = '.wk-k{padding:22px 0;font-size:26px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.wk-k:active{background:var(--border)}.wk-k-gust{background:rgba(180,83,9,.1);color:#b45309;border-color:rgba(180,83,9,.3)}.wk-k-gust:active{background:rgba(180,83,9,.25)}.wk-k-var{background:rgba(3,105,161,.1);color:#0369a1;border-color:rgba(3,105,161,.3)}.wk-k-var:active{background:rgba(3,105,161,.25)}';
+  box.appendChild(wkCss);
+  function refresh(){
+    var d = box.querySelector('#wk-display'); if(d) d.innerHTML = fmt();
+    var okBtn = box.querySelector('#wk-ok'); if(okBtn) okBtn.disabled = !isComplete();
+    var gustBtn = box.querySelector('#wk-gust');
+    if(gustBtn){ var canAddGust = (dir.length===3 && spd.length>=1 && !hasGust && !hasVar); gustBtn.style.opacity = canAddGust ? '1' : '.4'; }
+    var varBtn = box.querySelector('#wk-var');
+    if(varBtn){ var canAddVar = (dir.length===3 && spd.length>=1 && !hasVar && (!hasGust || gust.length>=1)); varBtn.style.opacity = canAddVar ? '1' : '.4'; }
+  }
+  box.querySelectorAll('.wk-k').forEach(function(k){
+    k.addEventListener('click', function(){
+      var v = k.getAttribute('data-k');
+      if(v === 'gust'){
+        if(dir.length===3 && spd.length>=1 && !hasGust && !hasVar){
+          // Commit speed to its final 2 digits right now — otherwise
+          // stage() still thinks speed needs another digit, and the next
+          // number typed completes speed instead of starting gust.
+          if(spd.length===1) spd = '0'+spd;
+          hasGust = true;
+        }
+      }
+      else if(v === 'var'){
+        if(dir.length===3 && spd.length>=1 && !hasVar && (!hasGust || gust.length>=1)){
+          if(spd.length===1) spd = '0'+spd;
+          if(hasGust && gust.length===1) gust = '0'+gust;
+          hasVar = true;
+        }
+      }
+      else {
+        var st = stage();
+        if(st === 'dir'){ dir = (dir.length>=3) ? v : dir+v; }
+        else if(st === 'spd'){ spd = (spd.length>=2) ? v : spd+v; }
+        else if(st === 'gust'){ gust = (gust.length>=2) ? v : gust+v; }
+        else if(st === 'varFrom'){ varFrom = (varFrom.length>=3) ? v : varFrom+v; }
+        else if(st === 'varTo'){ varTo = (varTo.length>=3) ? v : varTo+v; }
+        else { dir=v; spd=''; gust=''; hasGust=false; hasVar=false; varFrom=''; varTo=''; }
+      }
+      refresh();
+    });
+  });
+  box.querySelector('#wk-ok').addEventListener('click', function(){
+    var a = assembled();
+    if(a){ onDone(a); document.body.removeChild(ov); }
+  });
+  box.querySelector('#wk-clear').addEventListener('click', function(){
+    dir=''; spd=''; gust=''; hasGust=false; hasVar=false; varFrom=''; varTo=''; refresh();
+  });
+  ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
+}
+function openTempDewKeypad(currentValue, onDone){
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:14px;padding:20px;max-width:360px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)';
+  var tempNeg=false, tempDigits='', dewNeg=false, dewDigits='';
+  if(currentValue){
+    var m = currentValue.match(/^(M?)(\d{1,2})\/(M?)(\d{1,2})$/);
+    if(m){ tempNeg = m[1]==='M'; tempDigits=m[2]; dewNeg = m[3]==='M'; dewDigits=m[4]; }
+  }
+  function stage(){ if(tempDigits.length<2) return 'temp'; if(dewDigits.length<2) return 'dew'; return 'done'; }
+  function fmtSlot(text, active, filled){
+    var color = filled ? '#1e3a8a' : 'rgba(30,58,138,.25)';
+    var border = active ? '#1e3a8a' : (filled?'transparent':'rgba(30,58,138,.15)');
+    var bg = active ? 'rgba(30,58,138,.10)' : 'transparent';
+    return '<span class="'+(active?'dig-active':'')+'" style="display:inline-block;min-width:22px;text-align:center;color:'+color+';background:'+bg+';border-bottom:3px solid '+border+';border-radius:4px 4px 0 0;padding:0 2px">'+(text||'\u00a0')+'</span>';
+  }
+  function fmtSign(neg){ return '<span style="display:inline-block;min-width:14px;text-align:center;color:'+(neg?'#be123c':'rgba(30,58,138,.25)')+';font-size:20px;font-weight:700;padding:0 2px">'+(neg?'-':'')+'</span>'; }
+  function fmt(){
+    var st = stage();
+    var html = '';
+    html += '<span id="td-temp-zone" style="cursor:pointer">';
+    html += fmtSign(tempNeg);
+    for(var i=0;i<2;i++){ var filled=i<tempDigits.length; html += fmtSlot(filled?tempDigits.charAt(i):'', st==='temp'&&i===tempDigits.length, filled); }
+    html += '</span>';
+    html += '<span style="color:var(--muted);padding:0 6px;font-weight:700">/</span>';
+    html += '<span id="td-dew-zone" style="cursor:pointer">';
+    html += fmtSign(dewNeg);
+    for(var i=0;i<2;i++){ var filled=i<dewDigits.length; html += fmtSlot(filled?dewDigits.charAt(i):'', st==='dew'&&i===dewDigits.length, filled); }
+    html += '</span>';
+    html += '<span style="font-size:16px;color:var(--muted);margin-left:8px">\u00b0C</span>';
+    return html;
+  }
+  function assembled(){
+    if(tempDigits.length<1 || dewDigits.length<1) return '';
+    var t = tempDigits.length===1 ? '0'+tempDigits : tempDigits;
+    var d = dewDigits.length===1 ? '0'+dewDigits : dewDigits;
+    return (tempNeg?'M':'')+t+'/'+(dewNeg?'M':'')+d;
+  }
+  function complete(){ return tempDigits.length>=1 && dewDigits.length>=1; }
+  box.innerHTML =
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:\'JetBrains Mono\',monospace">Temperature / Dewpoint</div>'+
+    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;font-size:32px;font-weight:700"><span id="td-display">'+fmt()+'</span></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">'+
+      '<button class="td-k" data-k="1">1</button><button class="td-k" data-k="2">2</button><button class="td-k" data-k="3">3</button>'+
+      '<button class="td-k" data-k="4">4</button><button class="td-k" data-k="5">5</button><button class="td-k" data-k="6">6</button>'+
+      '<button class="td-k" data-k="7">7</button><button class="td-k" data-k="8">8</button><button class="td-k" data-k="9">9</button>'+
+      '<button class="td-k td-k-neg" data-k="neg">\u00b1</button><button class="td-k" data-k="0">0</button><button class="td-k td-k-next" data-k="next">Next</button>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px">'+
+      '<button type="button" id="td-clear" style="flex:1;padding:16px;font-size:14px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>'+
+      '<button type="button" id="td-ok" style="flex:2;padding:16px;font-size:17px;font-weight:700;border-radius:9px;border:none;cursor:pointer;background:rgba(4,120,87,.15);color:#047857" '+(complete()?'':'disabled')+'>Enter</button>'+
+    '</div>';
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  var tdCss = document.createElement('style');
+  tdCss.textContent = '.td-k{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.td-k:active{background:var(--border)}.td-k-neg{background:rgba(190,18,60,.08);color:#be123c;border-color:rgba(190,18,60,.25)}.td-k-neg:active{background:rgba(190,18,60,.18)}.td-k-next{background:rgba(3,105,161,.1);color:#0369a1;border-color:rgba(3,105,161,.3);font-size:16px}.td-k-next:active{background:rgba(3,105,161,.2)}';
+  box.appendChild(tdCss);
+  function doSet(){
+    var a = assembled();
+    if(a){ onDone(a); document.body.removeChild(ov); }
+  }
+  function refresh(isInitial){
+    var d = box.querySelector('#td-display'); if(d) d.innerHTML = fmt();
+    var ok = box.querySelector('#td-ok'); if(ok) ok.disabled = !complete();
+    // Tapping directly on the temp/dew digits themselves commits a
+    // single-digit entry and moves on — the same thing "Next" does, just
+    // far more discoverable than a small separate button.
+    var tempZone = box.querySelector('#td-temp-zone');
+    if(tempZone) tempZone.addEventListener('click', function(){
+      if(stage()==='temp' && tempDigits.length===1){ tempDigits = '0'+tempDigits; refresh(); }
+    });
+    var dewZone = box.querySelector('#td-dew-zone');
+    if(dewZone) dewZone.addEventListener('click', function(){
+      if(stage()==='dew' && dewDigits.length===1){ dewDigits = '0'+dewDigits; refresh(); }
+    });
+    // Auto-collapses once both sides have their full 2 digits — no
+    // separate Enter tap needed in the common case. Skipped on the
+    // very first render so opening the picker on an already-complete
+    // saved value doesn't instantly close it again.
+    if(!isInitial && tempDigits.length===2 && dewDigits.length===2) doSet();
+  }
+  box.querySelectorAll('.td-k').forEach(function(k){
+    k.addEventListener('click', function(){
+      var v = k.getAttribute('data-k');
+      if(v === 'neg'){
+        var st = stage();
+        if(st === 'temp' || (st === 'dew' && dewDigits.length===0)) tempNeg = !tempNeg; else dewNeg = !dewNeg;
+      } else if(v === 'next'){
+        var st = stage();
+        if(st === 'temp' && tempDigits.length >= 1){ if(tempDigits.length === 1) tempDigits = '0' + tempDigits; }
+        else if(st === 'dew' && dewDigits.length >= 1){ if(dewDigits.length === 1) dewDigits = '0' + dewDigits; }
+      } else {
+        var st = stage();
+        if(st === 'temp'){ tempDigits = (tempDigits.length>=2) ? v : tempDigits+v; }
+        else if(st === 'dew'){ dewDigits = (dewDigits.length>=2) ? v : dewDigits+v; }
+        else { tempDigits = v; dewDigits=''; tempNeg=false; dewNeg=false; }
+      }
+      refresh();
+    });
+  });
+  box.querySelector('#td-clear').addEventListener('click', function(){
+    tempNeg=false; tempDigits=''; dewNeg=false; dewDigits=''; refresh();
+  });
+  box.querySelector('#td-ok').addEventListener('click', doSet);
+  ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
+  refresh(true);
+}
+function openNumericKeypad(config, currentValue, onDone){
+  var cfg = Object.assign({ title:'Enter value', digits:3, decimalPlaces:0, suffix:'', allowNeg:false, allowEmpty:false, min:null, max:null, help:'' }, config);
+  var allowDecimal = cfg.decimalPlaces > 0;
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:14px;padding:20px;max-width:340px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)';
+  // Whole and fractional digits are tracked separately, and the decimal
+  // point only appears once you actually tap it — a plain "2" means 2,
+  // never 0.2, exactly like tapping "2" on a real calculator.
+  var whole = '', frac = '', hasDot = false, negative = false;
+  if(currentValue !== null && currentValue !== undefined && currentValue !== ''){
+    var s = String(currentValue);
+    if(s.charAt(0)==='-'){ negative = true; s = s.substring(1); }
+    var parts = s.split('.');
+    whole = (parts[0]||'').replace(/[^0-9]/g,'').substring(0, cfg.digits);
+    if(allowDecimal && parts.length>1){
+      hasDot = true;
+      frac = parts[1].replace(/[^0-9]/g,'').substring(0, cfg.decimalPlaces);
+    }
+  }
+  function assembled(){
+    if(!whole && !frac) return '';
+    var w = whole || '0';
+    return (negative?'-':'') + w + (hasDot ? '.'+frac : '');
+  }
+  function fmtDisplay(){
+    var html = '';
+    if(cfg.allowNeg) html += '<span style="display:inline-block;min-width:16px;color:'+(negative?'#be123c':'rgba(30,58,138,.25)')+'">'+(negative?'-':'')+'</span>';
+    var activeWhole = !hasDot && whole.length<cfg.digits;
+    for(var i=0;i<cfg.digits;i++){
+      var filled = i<whole.length;
+      var isActive = activeWhole && i===whole.length;
+      var color = filled ? '#1e3a8a' : 'rgba(30,58,138,.25)';
+      var borderColor = isActive ? '#1e3a8a' : (filled ? 'transparent' : 'rgba(30,58,138,.15)');
+      var bg = isActive ? 'rgba(30,58,138,.10)' : 'transparent';
+      html += '<span class="'+(isActive?'dig-active':'')+'" style="display:inline-block;min-width:20px;text-align:center;color:'+color+';background:'+bg+';border-bottom:3px solid '+borderColor+';border-radius:4px 4px 0 0;padding:0 2px">'+(filled?whole.charAt(i):'\u00a0')+'</span>';
+    }
+    if(allowDecimal){
+      html += '<span style="color:'+(hasDot?'var(--muted)':'rgba(30,58,138,.25)')+';padding:0 1px;font-weight:700">.</span>';
+      for(var j=0;j<cfg.decimalPlaces;j++){
+        var fFilled = j<frac.length;
+        var fActive = hasDot && j===frac.length;
+        var fColor = fFilled ? '#1e3a8a' : 'rgba(30,58,138,.25)';
+        var fBorder = fActive ? '#1e3a8a' : (fFilled ? 'transparent' : 'rgba(30,58,138,.15)');
+        var fBg = fActive ? 'rgba(30,58,138,.10)' : 'transparent';
+        html += '<span class="'+(fActive?'dig-active':'')+'" style="display:inline-block;min-width:20px;text-align:center;color:'+fColor+';background:'+fBg+';border-bottom:3px solid '+fBorder+';border-radius:4px 4px 0 0;padding:0 2px">'+(fFilled?frac.charAt(j):'\u00a0')+'</span>';
+      }
+    }
+    if(cfg.suffix) html += '<span style="font-size:16px;color:var(--muted);margin-left:6px">'+cfg.suffix+'</span>';
+    return html;
+  }
+  function validate(){
+    var val = assembled();
+    if(!val){ return cfg.allowEmpty ? '' : 'Enter a value'; }
+    var num = parseFloat(val);
+    if(isNaN(num)) return 'Invalid';
+    if(cfg.min !== null && num<cfg.min) return 'Min '+cfg.min;
+    if(cfg.max !== null && num>cfg.max) return 'Max '+cfg.max;
+    return '';
+  }
+  box.innerHTML =
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:\'JetBrains Mono\',monospace">'+cfg.title+'</div>'+
+    '<div style="display:flex;align-items:baseline;justify-content:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:8px;font-family:\'JetBrains Mono\',monospace;font-size:32px;font-weight:700"><span id="fnk-display">'+fmtDisplay()+'</span></div>'+
+    '<div id="fnk-status" style="font-size:12px;text-align:center;min-height:16px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;color:var(--muted)">'+(cfg.help||'&nbsp;')+'</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">'+
+      '<button class="nk-k" data-k="1">1</button><button class="nk-k" data-k="2">2</button><button class="nk-k" data-k="3">3</button>'+
+      '<button class="nk-k" data-k="4">4</button><button class="nk-k" data-k="5">5</button><button class="nk-k" data-k="6">6</button>'+
+      '<button class="nk-k" data-k="7">7</button><button class="nk-k" data-k="8">8</button><button class="nk-k" data-k="9">9</button>'+
+      (cfg.allowNeg ? '<button class="nk-k nk-k-neg" data-k="neg">\u00b1</button>' : '<span></span>')+
+      '<button class="nk-k" data-k="0">0</button>'+
+      (allowDecimal ? '<button class="nk-k nk-k-dot" data-k="dot">.</button>' : '<span></span>')+
+    '</div>'+
+    '<div style="display:flex;gap:8px">'+
+      '<button type="button" id="fnk-clear" style="flex:1;padding:16px;font-size:14px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>'+
+      '<button type="button" id="fnk-ok" style="flex:2;padding:16px;font-size:17px;font-weight:700;border-radius:9px;border:none;cursor:pointer;background:rgba(4,120,87,.15);color:#047857">Enter</button>'+
+    '</div>';
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  var nkCss = document.createElement('style');
+  nkCss.textContent = '.nk-k{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.nk-k:active{background:var(--border)}.nk-k-neg{background:rgba(190,18,60,.08);color:#be123c;border-color:rgba(190,18,60,.25)}.nk-k-neg:active{background:rgba(190,18,60,.18)}.nk-k-dot{background:rgba(3,105,161,.1);color:#0369a1;border-color:rgba(3,105,161,.3)}.nk-k-dot:active{background:rgba(3,105,161,.2)}';
+  box.appendChild(nkCss);
+  function doSet(){
+    if(!validate()){ onDone(assembled()); document.body.removeChild(ov); }
+  }
+  function refresh(){
+    var d = box.querySelector('#fnk-display'); if(d) d.innerHTML = fmtDisplay();
+    var s = box.querySelector('#fnk-status'); if(!s) return;
+    var err = validate();
+    if(err){ s.textContent = err; s.style.color='#b45309'; }
+    else { s.textContent = cfg.help || '\u00a0'; s.style.color='var(--muted)'; }
+    // Auto-collapses once there's nothing more useful to type: for a
+    // plain whole-number field, that's simply reaching the digit limit
+    // (unchanged from before); for a decimal-capable field, it's either
+    // the same (typed a full whole number and never touched ".") or
+    // having actually finished the fractional part after tapping ".".
+    var wholeFull = whole.length===cfg.digits;
+    var fracFull = hasDot && frac.length===cfg.decimalPlaces;
+    var shouldClose = allowDecimal ? (fracFull || (wholeFull && !hasDot)) : wholeFull;
+    if(shouldClose && !err) doSet();
+  }
+  box.querySelectorAll('.nk-k').forEach(function(k){
+    k.addEventListener('click', function(){
+      var v = k.getAttribute('data-k');
+      if(v === 'neg'){ negative = !negative; }
+      else if(v === 'dot'){ if(allowDecimal) hasDot = true; }
+      else if(hasDot){ frac = (frac.length >= cfg.decimalPlaces) ? frac : frac+v; }
+      else { whole = (whole.length >= cfg.digits) ? whole : whole+v; }
+      refresh();
+    });
+  });
+  box.querySelector('#fnk-clear').addEventListener('click', function(){ whole=''; frac=''; hasDot=false; negative=false; refresh(); });
+  box.querySelector('#fnk-ok').addEventListener('click', doSet);
+  ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
+}
 function renderCard(card){
   var html = '';
   if(card.groupTitle) html += '<div class="cardTitle'+(card.id.indexOf('pa28emerg.')===0?' emerg':'')+'">'+escapeHtml(card.groupTitle)+'</div>';
@@ -2442,7 +2985,8 @@ function renderCard(card){
             '<div class="unitToggle" data-i="'+i+'"><button data-u="ft" class="'+(unit==='ft'?'on':'')+'">FT</button><button data-u="FL" class="'+(unit==='FL'?'on':'')+'">FL</button></div>'+
             '<input type="text" inputmode="numeric" class="grKeypadUnit" data-i="'+i+'" placeholder="'+(unit==='FL'?'e.g. 035':'e.g. 3500')+'" value="'+(dispVal===''?'':dispVal)+'" style="margin-top:8px"/>';
         })() : '')+
-        (child.keypad && !child.unitToggle ? '<input type="text" inputmode="numeric" class="grKeypad" data-i="'+i+'" placeholder="value ('+child.unit+')" value="'+((STATE.values[card.id+'.'+i]||{}).val||'')+'"/>' : '')+
+        (child.keypad && !child.unitToggle ? '<button type="button" class="grKeypadBtn" data-i="'+i+'" style="width:100%;margin-top:8px;padding:9px 10px;font-size:16px;border-radius:8px;text-align:right;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:var(--card);border:1px solid var(--border);color:var(--text);cursor:pointer">'+(((STATE.values[card.id+'.'+i]||{}).val) ? escapeHtml((STATE.values[card.id+'.'+i]||{}).val)+' '+child.unit : 'value ('+child.unit+')')+'</button>' : '')+
+        (child.timeEntry ? '<button type="button" class="grTimeKpBtn" data-i="'+i+'" style="width:100%;margin-top:8px;padding:9px 10px;font-size:16px;border-radius:8px;text-align:right;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:var(--card);border:1px solid var(--border);color:var(--text);cursor:pointer">'+(((STATE.values[card.id+'.'+i]||{}).val) ? escapeHtml((STATE.values[card.id+'.'+i]||{}).val) : 'Tap to set')+'</button>' : '')+
         (child.textEntry ? '<input type="text" class="grKeypad" data-i="'+i+'" placeholder="value" value="'+escapeHtml((STATE.values[card.id+'.'+i]||{}).val||'')+'"/>' : '')+
         (child.davis ? '<div class="grDaVisRow">'+
           '<input type="text" inputmode="numeric" class="grDa" data-i="'+i+'" placeholder="DA (ft)" value="'+((STATE.values[card.id+'.'+i]||{}).da||'')+'"/>'+
@@ -2593,6 +3137,36 @@ function renderCard(card){
         saveState(); renderResults(); renderCalculations();
         applyMsaFreezeWarnings();
         if(inp.value) autoTickRow(parseInt(i,10));
+      });
+    });
+    // Calculator-style entry (same keypads as the Flight app): numeric
+    // values open the number pad, times open the 4-digit time pad.
+    elCard.querySelectorAll('.grKeypadBtn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var i = btn.getAttribute('data-i');
+        var key = card.id+'.'+i;
+        var unit = card.children[i].unit || '';
+        var current = (STATE.values[key]||{}).val || '';
+        openNumericKeypad({ title: card.children[i].text || ('Value ('+unit+')'), digits:5, suffix:unit, allowNeg:true, allowEmpty:true, help:unit }, current, function(v){
+          STATE.values[key] = { val: v };
+          syncDuplicateFromGrKeypad(key, v);
+          saveState(); renderResults(); renderCalculations();
+          renderCard(card);
+          if(v) autoTickRow(parseInt(i,10));
+        });
+      });
+    });
+    elCard.querySelectorAll('.grTimeKpBtn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var i = btn.getAttribute('data-i');
+        var key = card.id+'.'+i;
+        var current = (STATE.values[key]||{}).val || '';
+        openTimeKeypad(current, function(v){
+          STATE.values[key] = { val: v };
+          saveState(); renderResults(); renderCalculations();
+          renderCard(card);
+          if(v) autoTickRow(parseInt(i,10));
+        });
       });
     });
     elCard.querySelectorAll('.grKeypadUnit').forEach(function(inp){
