@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v124 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v127 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -586,7 +586,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 #calcMode .calcCard textarea{ font-size:17px; text-align:left; }
 #calcMode .resHead h2{ font-size:22px; }
 
-/* v124 fit fixes: text must fit inside its box on iPad */
+/* v127 fit fixes: text must fit inside its box on iPad */
 .homeTile .hT{ font-size:clamp(13px,3.2vw,22px); overflow-wrap:normal; word-break:normal; hyphens:none; }
 .homeTile .hMain{ padding:0 4px; }
 .fdDateRow{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:stretch; }
@@ -602,7 +602,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v124</div>
+  <div id="versionBadge">v127</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="minAltBar" id="minAltBar"></div>
@@ -1209,12 +1209,10 @@ var CHECKLIST_DATA = [
   { phase:'PreFlight', id:'tem', title:'Threat & Error Management', items: [
     { id:'1s', text:'Threat & Error Management', type:'group', allowAddItems:true, children:['Terrain','CFIT','MSA','Emergency options'] }
   ]},
-  { phase:'PreFlight', id:'dapa', title:'DA / PA', items: [
+  { phase:'PreFlight', id:'dapa', title:'DA / PA + ETOB / CTOT', items: [
     { id:'dapagrp', text:'DA / PA', type:'group', children:[
       'DA / PA checked'
-    ] }
-  ]},
-  { phase:'PreFlight', id:'etob', title:'ETOB / CTOT', items: [
+    ] },
     { id:'etobgrp', text:'ETOB / CTOT', type:'group', children:[
       {text:'ETOB / CTOT (UTC)', type:'etobctot'}
     ] }
@@ -1241,6 +1239,27 @@ var CHECKLIST_DATA = [
       'Search and rescue service information',
       'Each crew member\'s licence, ratings, personal logbook and medical certificate',
       {text:'International flights — passport, visas, GAR notification, customs/immigration', hasLaw:true, lawKey:'1g'}
+    ] }
+  ]},
+  { phase:'PreFlight', id:'acheck', title:'A-Check', items: [
+    { id:'acheckgrp', text:'A-Check', type:'group', children:[
+      'IFR Planning complete',
+      'VFR Planning complete',
+      {text:'Defects \u2014 Flying Order Book', type:'text'},
+      'Tech log',
+      {text:'Hours remaining', type:'text'},
+      {text:'Equipment required and checks: Day / Night / Nav / IFR', note:'NCO.IDE.A.115 \u00b7 A.125'},
+      {text:'Pitot heat, alternate static, standby instruments, Mode S / 8.33 radios', note:'NCO.IDE.A.125 \u00b7 A.190 \u00b7 A.200 +'},
+      {text:'Safety equipment', type:'divider'},
+      {text:'PLB', note:'NCO.IDE.A.170'},
+      {text:'Dinghy', note:'NCO.IDE.A.175 \u00b7 A.180'},
+      {text:'GNSS specific (AFM supplements)', type:'divider'},
+      'RNAV LOI contingency',
+      {text:'PBN approvals in AFM match planned procedures (RNAV 5 / RNP APCH)', note:'NCO.OP.116 \u00b7 NCO.IDE.A.195 +'},
+      {text:'Oxygen', note:'NCO.OP.190 \u00b7 NCO.IDE.A.155'},
+      {text:'De-ice / Anti-ice (not cleared for known icing?)', note:'NCO.OP.165 \u00b7 NCO.OP.170'},
+      {text:'Mass & Balance', note:'NCO.GEN.105'},
+      {text:'Performance', note:'NCO.POL.110'}
     ] }
   ]},
   { phase:'PreFlight', id:'paxbrief', title:'Pax Brief', items: [
