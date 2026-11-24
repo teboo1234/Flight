@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v127 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v129 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -586,7 +586,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 #calcMode .calcCard textarea{ font-size:17px; text-align:left; }
 #calcMode .resHead h2{ font-size:22px; }
 
-/* v127 fit fixes: text must fit inside its box on iPad */
+/* v129 fit fixes: text must fit inside its box on iPad */
 .homeTile .hT{ font-size:clamp(13px,3.2vw,22px); overflow-wrap:normal; word-break:normal; hyphens:none; }
 .homeTile .hMain{ padding:0 4px; }
 .fdDateRow{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:stretch; }
@@ -597,12 +597,20 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .fpSumLbl{ font-size:clamp(8px,1.2vw,9.5px); letter-spacing:0; overflow-wrap:anywhere; }
 .fpFieldBtn, .fdField input{ font-size:clamp(12px,2vw,15px); min-width:0; }
 .fdField label{ white-space:nowrap; }
+
+/* v129 progress bars */
+.homeTile .hBar{ display:block; align-self:stretch; width:auto; min-width:60%; height:7px; border-radius:4px; background:#e2e8f0; overflow:hidden; margin:3px 6px 0; }
+.homeTile .hBar i{ display:block; height:100%; background:#f59e0b; border-radius:4px; transition:width .25s; }
+.homeTile.done .hBar i{ background:#059669; }
+.secBar{ height:8px; margin:0 12px 2px; border-radius:4px; background:#e2e8f0; overflow:hidden; flex:0 0 auto; }
+.secBar i{ display:block; height:100%; width:0; background:#0369a1; border-radius:4px; transition:width .25s; }
+.secBar.full i{ background:#059669; }
 </style>
 </head>
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v127</div>
+  <div id="versionBadge">v129</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="minAltBar" id="minAltBar"></div>
@@ -620,6 +628,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
     <div class="grp" id="grpName"></div>
     <div class="sec"><span id="secName">—</span><span class="cnt"><b id="doneCount">0</b> / <span id="totalCount">0</span></span></div>
   </div>
+  <div class="secBar" id="secBar"><i></i></div>
   <div class="annun" id="annun"></div>
   <div class="sectionRow" id="sectionRow"></div>
   <div class="stage" id="stage">
@@ -1687,7 +1696,7 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     }
   }catch(e){}
 })();
-function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); }catch(e){} try{ renderMinAltBar(); }catch(e){} }
+function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); }catch(e){} try{ renderMinAltBar(); }catch(e){} try{ setTimeout(updateSecBar,0); }catch(e){} }
 
 // Is a single child of a grouplist card resolved? Most types need an
 // explicit tick (matching the plain-item convention), but timenow/hobbstacho
@@ -1826,6 +1835,7 @@ function firstOpenCardIdx(sec){
 }
 // True while a flashing mnemonic (RSPLIITTT, Line up, BUFF) is still unticked after Take Off.
 function mnemonicsFlashing(){
+  return false; // flashing switched off
   var on = STATE.values['airborne.airbornegrp.flash'] || (STATE.values['airborne.airbornegrp.0'] && !STATE.values['airborne.airbornegrp.2']);
   if(!on) return false;
   return [0,1,2].some(function(i){ return !STATE.checked['mnemonics.mnemgrp.'+i]; });
@@ -1847,6 +1857,16 @@ function sectionTickState(sec){
     }
   });
   return { total:total, done:done, all: total > 0 && done === total };
+}
+// Progress bar under the section name: ticks done / ticks in this section.
+function updateSecBar(){
+  var bar = document.getElementById('secBar'); if(!bar || curMode !== 'card' || homeOpen) return;
+  var sec; try{ sec = curSection(); }catch(e){ return; } if(!sec) return;
+  var ts = sectionTickState(sec), tot = sectionTotals(sec);
+  var done = ts.total ? ts.done : tot.done, total = ts.total ? ts.total : tot.total;
+  elDoneCount.textContent = done; elTotalCount.textContent = total;
+  bar.firstChild.style.width = (total ? Math.round(done / total * 100) : 0) + '%';
+  bar.classList.toggle('full', total > 0 && done >= total);
 }
 // Shrink each tile title until no word is cut and everything fits inside the
 // tile, whatever font the device ends up using (Syne is very wide).
@@ -1871,14 +1891,14 @@ function renderHome(){
   function tile(title, gi, n, total, cls, attrs, allBtn){
     var st = total ? (n >= total ? 'done' : (n > 0 ? 'part' : '')) : '';
     return '<div class="homeTile '+st+' '+(cls||'')+'" role="button" tabindex="0" '+attrs+'>'+
-      '<div class="hMain"><span class="hT">'+(st==='done'?'✓ ':'')+escapeHtml(title)+'</span>'+(total?'<span class="hN">'+n+' / '+total+'</span>':'')+'</div>'+
+      '<div class="hMain"><span class="hT">'+(st==='done'?'✓ ':'')+escapeHtml(title).replace(/-/g,'\u2011')+'</span>'+(total?'<span class="hN">'+n+' / '+total+'</span><span class="hBar"><i style="width:'+Math.round(n/total*100)+'%"></i></span>':'')+'</div>'+
       (allBtn || '')+'</div>';
   }
   HOME_BANDS.forEach(function(band){
     var tiles = '', count = 0;
     band.phases.forEach(function(ph){
       (SECTIONS[ph] || []).forEach(function(sec, i){
-        var t = sectionTotals(sec), ts = sectionTickState(sec);
+        var t = sectionTotals(sec), ts = sectionTickState(sec); if(ts.total) t = { done:ts.done, total:ts.total };
         var here = curMode==='card' && curPhase===ph && curSectionIdx===i;
         var fl = sec.id === 'mnemonics' && mnemonicsFlashing() ? 'flashRed' : '';
         var btn = ts.total ? (ts.all ? '<button type="button" class="hAll hReset" data-tickall="1">↺<br>RESET</button>' : '<button type="button" class="hAll" data-tickall="1">✓<br>ALL</button>') : '';
@@ -2113,6 +2133,7 @@ function render(){
   elDoneCount.textContent = st2.done; elTotalCount.textContent = st2.total;
   buildAnnunFor(sec);
   renderCard(card);
+  updateSecBar();
   renderSwitchBank(card);
   renderResults();
   renderCalculations();
@@ -2198,7 +2219,7 @@ function renderCard(card){
         var mOpenN = 0, mFlash = false;
         mIdx.forEach(function(k){
           var ch = card.children[k], ks = STATE.checked[card.id+'.'+k];
-          if(!ks){ mOpenN++; if(ch.flashRed && (STATE.values['airborne.airbornegrp.flash'] || (STATE.values['airborne.airbornegrp.0'] && !STATE.values['airborne.airbornegrp.2']))) mFlash = true; }
+          if(!ks){ mOpenN++; if(false && ch.flashRed && (STATE.values['airborne.airbornegrp.flash'] || (STATE.values['airborne.airbornegrp.0'] && !STATE.values['airborne.airbornegrp.2']))) mFlash = true; }
         });
         shownCount++;
         html += '<button type="button" id="mnemToggle" class="mnemToggle'+(mFlash?' flashRed':'')+'"><span>Mnemonics'+(mOpenN?' \u00b7 '+mOpenN+' open':' \u00b7 all done')+'</span><span>'+(mnemOpen?'\u25B2':'\u25BC')+'</span></button>';
@@ -2239,7 +2260,7 @@ function renderCard(card){
       }
       // Flash red from Take Off until On Blocks while this check is still
       // un-ticked (RSPLIITTT, Line up check, BUFF check).
-      var flashNow = child.flashRed && !s && (STATE.values['airborne.airbornegrp.flash'] || (STATE.values['airborne.airbornegrp.0'] && !STATE.values['airborne.airbornegrp.2']));
+      var flashNow = false && child.flashRed && !s && (STATE.values['airborne.airbornegrp.flash'] || (STATE.values['airborne.airbornegrp.0'] && !STATE.values['airborne.airbornegrp.2']));
       var isNext = !nextMarked && !groupChildResolved(card, i);
       if(isNext) nextMarked = true;
       html += '<div class="groupRow'+(child.prompt?' promptRow':'')+(flashNow?' flashRed':'')+(isNext?' nextUp':'')+'">'+
