@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v134 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v137 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -585,7 +585,7 @@ input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro
 #calcMode .calcCard textarea{ font-size:17px; text-align:left; }
 #calcMode .resHead h2{ font-size:22px; }
 
-/* v134 fit fixes: text must fit inside its box on iPad */
+/* v137 fit fixes: text must fit inside its box on iPad */
 .homeTile .hT{ font-size:clamp(13px,3.2vw,22px); overflow-wrap:normal; word-break:normal; hyphens:none; }
 .homeTile .hMain{ padding:0 4px; }
 .fdDateRow{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:stretch; }
@@ -597,7 +597,7 @@ input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro
 .fpFieldBtn, .fdField input{ font-size:clamp(12px,2vw,15px); min-width:0; }
 .fdField label{ white-space:nowrap; }
 
-/* v134 progress bars */
+/* v137 progress bars */
 .homeTile .hBar{ display:block; align-self:stretch; width:auto; min-width:60%; height:7px; border-radius:4px; background:#e2e8f0; overflow:hidden; margin:3px 6px 0; }
 .homeTile .hBar i{ display:block; height:100%; background:#f59e0b; border-radius:4px; transition:width .25s; }
 .homeTile.done .hBar i{ background:#059669; }
@@ -605,7 +605,7 @@ input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro
 .secBar i{ display:block; height:100%; width:0; background:#0369a1; border-radius:4px; transition:width .25s; }
 .secBar.full i{ background:#059669; }
 
-/* v134 touch responsiveness */
+/* v137 touch responsiveness */
 button, [role=button], .homeTile, .groupRow, .rocker, .mnemToggle, label, select, summary, a{ touch-action:manipulation; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; cursor:pointer; }
 input, textarea{ touch-action:manipulation; -webkit-user-select:text; user-select:text; }
 button:active, [role=button]:active, .homeTile:active, .rocker:active, .mnemToggle:active{ transform:scale(.96); filter:brightness(.92); transition:none !important; }
@@ -613,19 +613,22 @@ button:active, [role=button]:active, .homeTile:active, .rocker:active, .mnemTogg
 .groupRow button:active{ transform:scale(.9); }
 .card.flash-go, .card.flash-na{ animation-duration:.2s; }
 
-/* v134 system font (San Francisco on iPad/iPhone): clearest, instant, works offline */
+/* v137 system font (San Francisco on iPad/iPhone): clearest, instant, works offline */
 html,body,button,input,select,textarea{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; }
 body, button, input, select, textarea{ font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; letter-spacing:0; }
 body{ font-weight:500; }
 #calcMode .timesTable th{ font-size:clamp(8px,1.4vw,11px) !important; letter-spacing:0 !important; padding-left:0 !important; }
 
 .atCavokBtn.on{ background:#059669 !important; color:#fff !important; border-color:#059669 !important; }
+
+.atClear{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:clamp(14px,2.2vw,20px) !important; font-weight:800; color:var(--rose); }
+.atClear svg{ width:clamp(44px,8vw,72px); height:auto; }
 </style>
 </head>
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v134</div>
+  <div id="versionBadge">v137</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="minAltBar" id="minAltBar"></div>
@@ -1497,7 +1500,7 @@ function legacyFlightDetail(fd){
   return parts.join(', ');
 }
 var USG_TO_L = 3.785;
-var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'4520',name:'EGTK VFR Departures'},{code:'7010',name:'EGTK Circuits'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, atisEntries:[], atisDraft:{ icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' }, manualTasks:[], flightHistory:[], lastSavedSnapshot:null, customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
+var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:'' }, codes:[{code:'4520',name:'EGTK VFR Departures'},{code:'7010',name:'EGTK Circuits'},{code:'7000',name:'Conspicuity'},{code:'2000',name:'No ATC/Flight Plan'}], codePresets:{}, savedFlights:{}, autoPrintOnSync:false, atisEntries:[], atisDraft:{ icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', visUnit:'m', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' }, manualTasks:[], flightHistory:[], lastSavedSnapshot:null, customItems:{}, hideCompleted:true, hideCompletedMigratedV2:true,
   fuel:{ unit:'USG', burnRate:8, fobL:17, fobR:17, uplifted:'', taxi:2, taxiMins:'15', trip:8, tripMins:'60', contPct:'', alt:4, altMins:'30', final:8, finalMins:'', extra:'', extraMins:'', actualLanding:'', oilLevel:'', oilAdded:'' },
   tankLog:[], tankSelected:'L', currentHistoryId:null,
   fuelTimerPaused:false, fuelTimerPausedSecs:0, fuelTimerPauseStartedAt:null,
@@ -3616,7 +3619,7 @@ function atisEntryString(e){
   if(e.wind) parts.push(e.wind);
   if(e.cavok) parts.push('CAVOK');
   else {
-    if(e.vis) parts.push(e.vis+'KM');
+    if(e.vis) parts.push(e.vis + (e.visUnit === 'm' ? 'M' : 'KM'));
     [e.cloud1,e.cloud2,e.cloud3].forEach(function(c){ if(c) parts.push(c.toUpperCase()); });
   }
   if(e.tempDew) parts.push(e.tempDew);
@@ -3626,7 +3629,7 @@ function atisEntryString(e){
 }
 function renderAtisHtml(){
   var d = STATE.atisDraft;
-  function dispVis(v){ return v ? v+' km' : '--'; }
+  function dispVis(v){ return v ? v+(d.visUnit === 'm' ? ' m' : ' km') : '--'; }
   function dispQnh(v){ return v ? v+' hPa' : '--'; }
   function dispTempDew(v){ return v ? v.replace(/M/g,'-')+' \u00b0C' : '--'; }
   var html = '';
@@ -3651,7 +3654,7 @@ function renderAtisHtml(){
     box('Notes', '<textarea id="atisNotes" class="atBig atNotes" placeholder="Remarks, NOTAMs…" autocomplete="off" autocorrect="off">'+escapeHtml(d.notes||'')+'</textarea>', 'w3')+
     '<div class="atActions">'+
       '<button type="button" id="atisSubmitBtn" class="atSubmit">✓ Submit ATIS</button>'+
-      '<button type="button" id="atisClearBtn" class="atClear" aria-label="Backspace">\u232B</button>'+
+      '<button type="button" id="atisClearBtn" class="atClear" aria-label="Backspace"><svg viewBox="0 0 64 44" width="64" height="44" aria-hidden="true"><path d="M20 3h38a4 4 0 0 1 4 4v30a4 4 0 0 1-4 4H20L3 22z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/><path d="M30 14l16 16M46 14L30 30" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg><span class="atClearTxt">BACK</span></button>'+
     '</div>'+
   '</div>';
   if(STATE.atisEntries.length){
@@ -3711,7 +3714,7 @@ function openTimeKeypad(currentValue, onDone){
     '</div>'+
     '<div id="tk-status" style="font-size:12px;text-align:center;min-height:16px;margin-bottom:10px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;color:var(--muted)">&nbsp;</div>'+
     '<div style="display:flex;gap:8px">'+
-      '<button type="button" id="tk-clear" style="flex:1;padding:14px;font-size:13px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>'+
+      '<button type="button" id="tk-clear" style="flex:1;padding:14px;font-size:13px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">\u2190 Back</button>'+
       '<button type="button" id="tk-ok" style="flex:2;padding:14px;font-size:15px;font-weight:700;border-radius:9px;border:none;cursor:pointer;background:rgba(4,120,87,.15);color:#047857">Enter</button>'+
     '</div>';
   ov.appendChild(box);
@@ -3737,7 +3740,7 @@ function openTimeKeypad(currentValue, onDone){
       refresh();
     });
   });
-  box.querySelector('#tk-clear').addEventListener('click', function(){ digits=''; refresh(); });
+  box.querySelector('#tk-clear').addEventListener('click', function(){ digits=digits.slice(0,-1); refresh(); });
   box.querySelector('#tk-ok').addEventListener('click', doSet);
   ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
 }
@@ -3824,7 +3827,7 @@ function openRunwayPicker(currentValue, onDone){
       '<button type="button" class="rp-suffix" data-s="C" style="padding:22px 0;font-size:20px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-weight:700;background:rgba(3,105,161,.1);color:#0369a1;border:1px solid rgba(3,105,161,.3);border-radius:8px;cursor:pointer">C</button>'+
       '<button type="button" class="rp-suffix" data-s="R" style="padding:22px 0;font-size:20px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-weight:700;background:rgba(3,105,161,.1);color:#0369a1;border:1px solid rgba(3,105,161,.3);border-radius:8px;cursor:pointer">R</button>'+
     '</div>'+
-    '<button type="button" id="rp-clear" style="width:100%;padding:12px;font-size:13px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>';
+    '<button type="button" id="rp-clear" style="width:100%;padding:12px;font-size:13px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">\u2190 Back</button>';
   ov.appendChild(box);
   document.body.appendChild(ov);
   var rpCss = document.createElement('style');
@@ -3838,7 +3841,7 @@ function openRunwayPicker(currentValue, onDone){
       refresh();
     });
   });
-  box.querySelector('#rp-clear').addEventListener('click', function(){ digits=''; suffix=''; refresh(); });
+  box.querySelector('#rp-clear').addEventListener('click', function(){ if(suffix) suffix=''; else digits=digits.slice(0,-1); refresh(); });
   box.querySelectorAll('.rp-suffix').forEach(function(b){
     b.addEventListener('click', function(){
       if(digits.length < 2) return;
@@ -3922,7 +3925,7 @@ function openWindKeypad(currentValue, onDone){
       '<button class="wk-k wk-k-var" id="wk-var" data-k="var">V</button><button class="wk-k" data-k="0">0</button><button class="wk-k wk-k-gust" id="wk-gust" data-k="gust">G</button>'+
     '</div>'+
     '<div style="display:flex;gap:8px">'+
-      '<button type="button" id="wk-clear" style="flex:1;padding:16px;font-size:14px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>'+
+      '<button type="button" id="wk-clear" style="flex:1;padding:16px;font-size:14px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">\u2190 Back</button>'+
       '<button type="button" id="wk-ok" style="flex:2;padding:16px;font-size:17px;font-weight:700;border-radius:9px;border:none;cursor:pointer;background:rgba(4,120,87,.15);color:#047857" '+(isComplete()?'':'disabled')+'>Enter</button>'+
     '</div>';
   ov.appendChild(box);
@@ -3974,7 +3977,14 @@ function openWindKeypad(currentValue, onDone){
     if(a){ onDone(a); document.body.removeChild(ov); }
   });
   box.querySelector('#wk-clear').addEventListener('click', function(){
-    dir=''; spd=''; gust=''; hasGust=false; hasVar=false; varFrom=''; varTo=''; refresh();
+    if(varTo) varTo = varTo.slice(0,-1);
+    else if(varFrom) varFrom = varFrom.slice(0,-1);
+    else if(hasVar) hasVar = false;
+    else if(gust) gust = gust.slice(0,-1);
+    else if(hasGust) hasGust = false;
+    else if(spd) spd = spd.slice(0,-1);
+    else dir = dir.slice(0,-1);
+    refresh();
   });
   ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
 }
@@ -4028,7 +4038,7 @@ function openTempDewKeypad(currentValue, onDone){
       '<button class="td-k td-k-neg" data-k="neg">\u00b1</button><button class="td-k" data-k="0">0</button><button class="td-k td-k-next" data-k="next">Next</button>'+
     '</div>'+
     '<div style="display:flex;gap:8px">'+
-      '<button type="button" id="td-clear" style="flex:1;padding:16px;font-size:14px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>'+
+      '<button type="button" id="td-clear" style="flex:1;padding:16px;font-size:14px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">\u2190 Back</button>'+
       '<button type="button" id="td-ok" style="flex:2;padding:16px;font-size:17px;font-weight:700;border-radius:9px;border:none;cursor:pointer;background:rgba(4,120,87,.15);color:#047857" '+(complete()?'':'disabled')+'>Enter</button>'+
     '</div>';
   ov.appendChild(box);
@@ -4080,7 +4090,11 @@ function openTempDewKeypad(currentValue, onDone){
     });
   });
   box.querySelector('#td-clear').addEventListener('click', function(){
-    tempNeg=false; tempDigits=''; dewNeg=false; dewDigits=''; refresh();
+    if(dewDigits) dewDigits = dewDigits.slice(0,-1);
+    else if(dewNeg) dewNeg = false;
+    else if(tempDigits) tempDigits = tempDigits.slice(0,-1);
+    else tempNeg = false;
+    refresh();
   });
   box.querySelector('#td-ok').addEventListener('click', doSet);
   ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
@@ -4160,7 +4174,8 @@ function openNumericKeypad(config, currentValue, onDone){
       (allowDecimal ? '<button class="nk-k nk-k-dot" data-k="dot">.</button>' : '<span></span>')+
     '</div>'+
     '<div style="display:flex;gap:8px">'+
-      '<button type="button" id="fnk-clear" style="flex:1;padding:16px;font-size:14px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>'+
+      '<button type="button" id="fnk-clear" style="flex:1;padding:16px;font-size:14px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">\u2190 Back</button>'+
+      (cfg.altLabel ? '<button type="button" id="fnk-alt" style="flex:1;padding:16px;font-size:17px;font-weight:800;border-radius:9px;border:2px solid var(--sky);background:#fff;color:var(--sky);cursor:pointer">'+cfg.altLabel+'</button>' : '')+
       '<button type="button" id="fnk-ok" style="flex:2;padding:16px;font-size:17px;font-weight:700;border-radius:9px;border:none;cursor:pointer;background:rgba(4,120,87,.15);color:#047857">Enter</button>'+
     '</div>';
   ov.appendChild(box);
@@ -4197,7 +4212,9 @@ function openNumericKeypad(config, currentValue, onDone){
       refresh();
     });
   });
-  box.querySelector('#fnk-clear').addEventListener('click', function(){ whole=''; frac=''; hasDot=false; negative=false; refresh(); });
+  box.querySelector('#fnk-clear').addEventListener('click', function(){ if(frac) frac=frac.slice(0,-1); else if(hasDot) hasDot=false; else if(whole) whole=whole.slice(0,-1); else negative=false; refresh(); });
+  var fnkAlt = box.querySelector('#fnk-alt');
+  if(fnkAlt) fnkAlt.addEventListener('click', function(){ document.body.removeChild(ov); if(cfg.onAlt) cfg.onAlt(); });
   box.querySelector('#fnk-ok').addEventListener('click', doSet);
   ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
 }
@@ -4273,7 +4290,7 @@ function showCloudPicker(slot, card){
       '<span></span><button class="cp-k" data-k="0">0</button><span></span>'+
     '</div>'+
     '<div style="display:flex;gap:8px">'+
-      '<button type="button" id="cp-clear" style="flex:1;padding:14px;font-size:13px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>'+
+      '<button type="button" id="cp-clear" style="flex:1;padding:14px;font-size:13px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">\u2190 Back</button>'+
       '<button type="button" id="cp-remove" style="flex:1;padding:14px;font-size:13px;font-weight:700;border-radius:9px;border:1px solid var(--rose);background:var(--surface);color:var(--rose);cursor:pointer">Remove Layer</button>'+
     '</div>';
   ov.appendChild(box);
@@ -4307,7 +4324,7 @@ function showCloudPicker(slot, card){
       doSet();
     });
   });
-  box.querySelector('#cp-clear').addEventListener('click', function(){ type=''; digits=''; refresh(); });
+  box.querySelector('#cp-clear').addEventListener('click', function(){ if(digits) digits=digits.slice(0,-1); else type=''; refresh(); });
   box.querySelector('#cp-remove').addEventListener('click', function(){
     STATE.atisDraft[key] = '';
     saveState();
@@ -4376,11 +4393,16 @@ function wireAtis(card){
     });
   });
   var visBtn = document.getElementById('atisVisBtn');
-  if(visBtn) visBtn.addEventListener('click', function(){
-    openNumericKeypad({ title:'Visibility', digits:2, suffix:'km', min:0, max:99, help:'kilometres' }, STATE.atisDraft.vis||'', function(v){
-      STATE.atisDraft.vis = v; saveState(); renderCard(card);
+  function openVisPicker(unit){
+    var cur = (STATE.atisDraft.visUnit === unit) ? (STATE.atisDraft.vis || '') : '';
+    var cfg = unit === 'm'
+      ? { title:'Visibility', digits:4, suffix:'m', min:0, max:9999, help:'metres', altLabel:'km', onAlt:function(){ openVisPicker('km'); } }
+      : { title:'Visibility', digits:2, decimalPlaces:1, suffix:'km', min:0, max:99, help:'kilometres', altLabel:'m', onAlt:function(){ openVisPicker('m'); } };
+    openNumericKeypad(cfg, cur, function(v){
+      STATE.atisDraft.vis = v; STATE.atisDraft.visUnit = unit; saveState(); renderCard(card);
     });
-  });
+  }
+  if(visBtn) visBtn.addEventListener('click', function(){ openVisPicker(STATE.atisDraft.visUnit === 'km' ? 'km' : 'm'); });
   document.querySelectorAll('[data-slot]').forEach(function(b){
     b.addEventListener('click', function(){ showCloudPicker(b.getAttribute('data-slot'), card); });
   });
