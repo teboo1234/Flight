@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck IFR v1 — IFR Flight Planning</title>
+<title>CheckDeck IFR v2 — IFR Flight Planning</title>
 <link rel="manifest" href="ifr-manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -609,12 +609,20 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .lawtext ul.lawUl{ margin:6px 0 0; padding-left:18px; } .lawtext ul.lawUl li{ margin-bottom:6px; }
 .lawtext .lawRefs{ font-size:10.5px; }
 .groupRow .lawtext a{ color:var(--violet); }
+.homeTile .hBar{ display:block; width:80%; align-self:center; flex:0 0 auto; height:7px; border-radius:4px; background:#e2e8f0; overflow:hidden; margin-top:3px; max-width:160px; }
+.homeTile .hBar i{ display:block; height:100%; background:#f59e0b; border-radius:4px; transition:width .25s; }
+.homeTile.done .hBar i{ background:#059669; }
+.menuBar{ position:relative; }
+.menuBar .mBar{ position:absolute; left:0; right:0; bottom:0; height:4px; background:rgba(255,255,255,.25); }
+.menuBar .mBar i{ display:block; height:100%; background:#34d399; transition:width .25s; }
+.gBar{ height:8px; border-radius:4px; background:#e2e8f0; overflow:hidden; margin:-6px 0 14px; }
+.gBar i{ display:block; height:100%; background:var(--em); border-radius:4px; transition:width .25s; }
 </style>
 </head>
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v1</div>
+  <div id="versionBadge">v2</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="minAltBar" id="minAltBar"></div>
@@ -2981,7 +2989,16 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     }
   }catch(e){}
 })();
-function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); }catch(e){} try{ renderMinAltBar(); }catch(e){} }
+function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); }catch(e){} try{ renderMinAltBar(); }catch(e){} try{ updateMenuProgress(); }catch(e){} }
+// Keep the top bar's section count and progress bar in step with each tick.
+function updateMenuProgress(){
+  if(homeOpen || curMode !== 'card') return;
+  var sec = curSections()[curSectionIdx]; if(!sec) return;
+  var t = secProgress(sec);
+  var c = document.querySelector('#headingRow .mCnt'), b = document.querySelector('#headingRow .mBar i');
+  if(c) c.textContent = t.done+'/'+t.total;
+  if(b) b.style.width = pctOf(t.done, t.total)+'%';
+}
 
 // Is a single child of a grouplist card resolved? Most types need an
 // explicit tick (matching the plain-item convention), but timenow/hobbstacho
@@ -3053,6 +3070,14 @@ function nextPhaseKey(phase){
   if(idx === -1 || idx === PHASES.length-1) return null;
   return PHASES[idx+1];
 }
+// Item-level progress for a section (ticked or N/A items / all items);
+// sections with no tickable items (Fuel Plan) fall back to card count.
+function secProgress(sec){
+  var ts = sectionTickState(sec);
+  if(ts.total) return { done:ts.done, total:ts.total };
+  return sectionTotals(sec);
+}
+function pctOf(n, t){ return t ? Math.round(100*n/t) : 0; }
 function sectionTotals(sec){
   var total=sec.cards.length, done=0;
   sec.cards.forEach(function(c){ if(cardResolved(c)) done++; });
@@ -3089,12 +3114,12 @@ function renderHeadingRow(){
   else if(curMode === 'calc'){ title = 'Flight Summary'; }
   else {
     var sec = curSections()[curSectionIdx];
-    if(sec){ var t = sectionTotals(sec); title = sec.title; cnt = t.done+'/'+t.total; }
+    if(sec){ var t = secProgress(sec); title = sec.title; cnt = t.done+'/'+t.total; var pct = pctOf(t.done, t.total); }
   }
   var btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'menuBar' + (homeOpen ? ' open' : '');
-  btn.innerHTML = '<span class="mIcon">'+(homeOpen?'\u2715':'\u2630')+'</span><span class="mTitle">'+escapeHtml(title)+'</span>'+(cnt?'<span class="mCnt">'+cnt+'</span>':'');
+  btn.innerHTML = '<span class="mIcon">'+(homeOpen?'\u2715':'\u2630')+'</span><span class="mTitle">'+escapeHtml(title)+'</span>'+(cnt?'<span class="mCnt">'+cnt+'</span><span class="mBar"><i style="width:'+pct+'%"></i></span>':'');
   btn.addEventListener('click', function(){ homeOpen ? hideHome() : showHome(); });
   elHeadingRow.appendChild(btn);
   renderTankHeaderBar();
@@ -3170,14 +3195,14 @@ function renderHome(){
   function tile(title, gi, n, total, cls, attrs, allBtn){
     var st = total ? (n >= total ? 'done' : (n > 0 ? 'part' : '')) : '';
     return '<div class="homeTile '+st+' '+(cls||'')+'" role="button" tabindex="0" '+attrs+'>'+
-      '<div class="hMain"><span class="hT">'+(st==='done'?'✓ ':'')+escapeHtml(title)+'</span>'+(total?'<span class="hN">'+n+' / '+total+'</span>':'')+'</div>'+
+      '<div class="hMain"><span class="hT">'+(st==='done'?'✓ ':'')+escapeHtml(title)+'</span>'+(total?'<span class="hN">'+n+' / '+total+'</span><span class="hBar"><i style="width:'+pctOf(n,total)+'%"></i></span>':'')+'</div>'+
       (allBtn || '')+'</div>';
   }
   HOME_BANDS.forEach(function(band){
     var tiles = '', count = 0;
     band.phases.forEach(function(ph){
       (SECTIONS[ph] || []).forEach(function(sec, i){
-        var t = sectionTotals(sec), ts = sectionTickState(sec);
+        var t = secProgress(sec), ts = sectionTickState(sec);
         var here = curMode==='card' && curPhase===ph && curSectionIdx===i;
         var fl = sec.id === 'mnemonics' && mnemonicsFlashing() ? 'flashRed' : '';
         var btn = ts.total ? (ts.all ? '<button type="button" class="hAll hReset" data-tickall="1">↺<br>RESET</button>' : '<button type="button" class="hAll" data-tickall="1">✓<br>ALL</button>') : '';
@@ -3487,6 +3512,7 @@ function renderCard(card){
     html += '<div class="groupProgress">'+doneN+' / '+totalN+' done'+
       '<button type="button" id="hideCompletedBtn" class="hideCompletedBtn'+(STATE.hideCompleted?' on':'')+'">'+(STATE.hideCompleted?'\u2713 ':'')+'Hide Completed</button>'+
       '</div>';
+    html += '<div class="gBar"><i style="width:'+pctOf(doneN,totalN)+'%"></i></div>';
     html += '<div class="groupList">';
     var shownCount = 0;
     var mnemOpen = !!STATE.airMnemOpen, inMnem = false, nextMarked = false;
