@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v129 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v134 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -15,7 +15,6 @@
 <meta name="apple-mobile-web-app-title" content="CheckDeck Flight"/>
 <link rel="apple-touch-icon" href="icon-180.png"/>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
 
 :root{
   --bg:#f5f7fa; --surface:#ffffff; --card:#eef2f6; --border:#cbd5e1;
@@ -32,14 +31,14 @@
 html,body{height:100%;overflow:hidden}
 body{
   background:var(--bg);
-  color:var(--text); font-family:'DM Sans',sans-serif; font-weight:500; touch-action:pan-y;
+  color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:500; touch-action:pan-y;
 }
-input,select{ font-family:'JetBrains Mono',monospace; }
+input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; }
 
 /* ===== Top strip: mode + phase ===== */
 .topStrip{ position:fixed; top:0; left:0; right:0; z-index:50; background:rgba(245,247,250,.97); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); padding-top:env(safe-area-inset-top); }
-#versionBadge{ position:absolute; bottom:2px; right:5px; font-family:'JetBrains Mono',monospace; font-size:8px; font-weight:700; color:var(--muted); opacity:.5; letter-spacing:.05em; z-index:60; pointer-events:none; }
-.countdownRow{ display:flex; gap:.3em; justify-content:center; align-items:center; height:24px; white-space:nowrap; overflow:hidden; padding:0 4px; background:var(--card); font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; color:var(--sky); border-bottom:1px solid var(--border); }
+#versionBadge{ position:absolute; bottom:2px; right:5px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:8px; font-weight:700; color:var(--muted); opacity:.5; letter-spacing:.05em; z-index:60; pointer-events:none; }
+.countdownRow{ display:flex; gap:.3em; justify-content:center; align-items:center; height:24px; white-space:nowrap; overflow:hidden; padding:0 4px; background:var(--card); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:11px; font-weight:800; color:var(--sky); border-bottom:1px solid var(--border); }
 .countdownRow .cdT{ color:var(--em); margin-left:3px; }
 .countdownRow .cdT.overdue{ color:var(--rose); }
 .countdownRow .cdT.air{ color:var(--sky); }
@@ -51,24 +50,24 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .countdownRow .cdT.slot.overdue{ color:var(--rose); }
 .headingRow{ display:flex; height:46px; border-bottom:1px solid var(--border); }
 #phaseRow,#sectionRow{ display:none !important; }
-.menuBar{ flex:1; display:flex; align-items:center; gap:10px; border:none; background:var(--sky); color:#fff; font-family:'Syne',sans-serif; cursor:pointer; padding:0 14px; text-align:left; min-width:0; }
+.menuBar{ flex:1; display:flex; align-items:center; gap:10px; border:none; background:var(--sky); color:#fff; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; cursor:pointer; padding:0 14px; text-align:left; min-width:0; }
 .menuBar .mIcon{ font-size:24px; line-height:1; }
 .menuBar .mTitle{ flex:1; min-width:0; font-weight:800; font-size:16px; letter-spacing:.03em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .menuBar .mCnt{ font-weight:800; font-size:14px; opacity:.95; white-space:nowrap; }
 .menuBar.open{ background:#0f172a; }
 #bottomDock{ position:fixed; left:0; right:0; bottom:0; z-index:45; background:rgba(245,247,250,.98); border-top:1px solid var(--border); padding-bottom:env(safe-area-inset-bottom); }
 #dockRow{ display:flex; gap:6px; padding:5px 8px; }
-#dockRow button{ flex:1 1 auto; min-width:0; border:1.5px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:13px; padding:8px 4px; white-space:nowrap; overflow:hidden; cursor:pointer; }
+#dockRow button{ flex:1 1 auto; min-width:0; border:1.5px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:13px; padding:8px 4px; white-space:nowrap; overflow:hidden; cursor:pointer; }
 #dockRow button small{ font-size:10px; color:var(--muted); font-weight:800; margin-right:3px; }
-#atisPin{ padding:5px 10px; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; line-height:1.3; background:#0f172a; color:#e2e8f0; cursor:pointer; border-bottom:1px solid #1e293b; }
+#atisPin{ padding:5px 10px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:12px; font-weight:700; line-height:1.3; background:#0f172a; color:#e2e8f0; cursor:pointer; border-bottom:1px solid #1e293b; }
 #atisPin b{ color:#38bdf8; margin-right:6px; }
 #homeView{ position:fixed; inset:60px 0 0 0; z-index:40; overflow:hidden; background:#f5f7fa; color:#0f172a; padding:10px; grid-template-columns:repeat(2,1fr); grid-auto-rows:1fr; gap:9px; }
 @media (min-width:700px){ #homeView{ grid-template-columns:repeat(3,1fr); gap:12px; padding:14px; } }
-.homeTile{ position:relative; min-height:0; border:3px solid #cbd5e1; border-left-width:9px; border-radius:14px; background:#fff; color:#0f172a; text-align:left; padding:6px 10px; cursor:pointer; font-family:'Syne',sans-serif; display:flex; align-items:center; gap:8px; overflow:hidden; }
+.homeTile{ position:relative; min-height:0; border:3px solid #cbd5e1; border-left-width:9px; border-radius:14px; background:#fff; color:#0f172a; text-align:left; padding:6px 10px; cursor:pointer; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; display:flex; align-items:center; gap:8px; overflow:hidden; }
 .homeTile .hMain{ flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:2px; }
 .homeTile .hG{ font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#64748b; }
 .homeTile .hT{ font-size:clamp(15px,4.4vw,24px); font-weight:900; line-height:1.1; letter-spacing:.01em; }
-.homeTile .hN{ font-size:clamp(12px,3.4vw,17px); font-weight:800; color:#475569; font-family:'JetBrains Mono',monospace; }
+.homeTile .hN{ font-size:clamp(12px,3.4vw,17px); font-weight:800; color:#475569; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; }
 .homeTile .hAll{ flex:0 0 auto; align-self:stretch; width:clamp(46px,12vw,72px); margin:-2px -4px -2px 0; border:2px solid #059669; background:#fff; color:#059669; border-radius:10px; font-family:inherit; font-weight:900; font-size:clamp(12px,3vw,17px); line-height:1.05; cursor:pointer; }
 .homeTile .hAll:active{ background:#059669; color:#fff; }
 .homeTile.p0{ border-left-color:#0369a1; } .homeTile.p1{ border-left-color:#d97706; } .homeTile.p2{ border-left-color:#7c3aed; } .homeTile.p3{ border-left-color:#dc2626; } .homeTile.p4{ border-left-color:#0f172a; }
@@ -80,13 +79,13 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .homeTile.here{ box-shadow:0 0 0 3px var(--sky); }
 .homeTile:active{ transform:scale(.98); }
 
-.headingBtn{ flex:1; min-width:0; border:none; border-right:1px solid var(--border); background:var(--surface); color:var(--text); font-family:'Syne',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; padding:0 2px; }
+.headingBtn{ flex:1; min-width:0; border:none; border-right:1px solid var(--border); background:var(--surface); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:12.5px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; padding:0 2px; }
 .slotBar{ width:100%; height:14px; background:var(--border); overflow:hidden; }
 .slotBarFill{ height:100%; width:0%; background:var(--em); transition:width 1s linear, background 0.4s; }
 .slotBarFill.amber{ background:var(--amber); }
 .slotBarFill.overdue{ background:var(--rose); }
 .notesBtnHeading{ flex:0 0 42px; border:none; border-right:1px solid var(--border); background:rgba(109,40,217,.06); color:var(--violet); font-size:15px; cursor:pointer; }
-.minAltBar{ display:flex; flex-direction:column; gap:4px; padding:4px 8px; background:var(--surface); border-bottom:1px solid var(--border); font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; color:var(--muted); }
+.minAltBar{ display:flex; flex-direction:column; gap:4px; padding:4px 8px; background:var(--surface); border-bottom:1px solid var(--border); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:11px; font-weight:800; color:var(--muted); }
 .minAltBar .mabLbl{ letter-spacing:.05em; text-transform:uppercase; font-size:10px; }
 .minAltBar button{ border:1px solid var(--border); background:var(--surface); border-radius:6px; padding:3px 9px; font-family:inherit; font-size:12px; font-weight:800; color:var(--text); cursor:pointer; }
 .minAltBar .mabRow{ display:flex; align-items:center; gap:6px; }
@@ -99,13 +98,13 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .minAltBar button small{ font-size:9px; color:var(--muted); letter-spacing:.04em; }
 @media (max-width:360px){ .minAltBar{ padding:4px 4px; } .minAltBar .mabRow{ gap:3px; } .minAltBar button.mabIcon{ font-size:10px; } .minAltBar #minAltBtn, .minAltBar #topQnhBtn, .minAltBar #windBtn, .minAltBar #driftBtn{ font-size:10.5px; } .minAltBar button small{ font-size:8px; } }
 .quickFieldBtn{ flex:0 0 28px !important; padding:0; font-size:14px; }
-.tasksBtnHeading{ border-right:none; border-left:1px solid var(--border); background:rgba(3,105,161,.06); color:var(--sky); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; }
+.tasksBtnHeading{ border-right:none; border-left:1px solid var(--border); background:rgba(3,105,161,.06); color:var(--sky); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:12px; }
 .headingBtn:last-child{ border-right:none; }
 .headingBtn.on{ background:var(--sky); color:#fff; }
 .headingBtn.complete{ background:var(--em); color:#fff; }
 .headingBtn.complete.on{ background:var(--em); color:#fff; box-shadow:inset 0 -3px 0 var(--sky); }
 .phaseRow{ display:flex; gap:6px; height:38px; overflow-x:auto; padding:0 10px; align-items:center; border-bottom:1px solid var(--border); }
-.phaseBtn{ flex:0 0 auto; padding:5px 12px; border:1.5px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; letter-spacing:.04em; white-space:nowrap; cursor:pointer; }
+.phaseBtn{ flex:0 0 auto; padding:5px 12px; border:1.5px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:11.5px; letter-spacing:.04em; white-space:nowrap; cursor:pointer; }
 .phaseBtn.on{ background:var(--sky); border-color:var(--sky); color:#fff; }
 .phaseBtn.incomplete{ border-color:var(--rose); color:var(--rose); }
 .phaseBtn.incomplete .n{ color:var(--rose); }
@@ -118,7 +117,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
    visible, so a second/third section never feels "missing" just because
    Card Mode only shows one section's cards at a time. */
 .sectionRow{ display:flex; gap:7px; overflow-x:auto; padding:10px 16px 8px; flex-shrink:0; border-bottom:1px solid var(--border); }
-.sectionBtn{ flex:0 0 auto; padding:6px 13px; border-radius:999px; border:1.5px solid var(--border); background:var(--surface); color:var(--text); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; white-space:nowrap; cursor:pointer; }
+.sectionBtn{ flex:0 0 auto; padding:6px 13px; border-radius:999px; border:1.5px solid var(--border); background:var(--surface); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:11.5px; white-space:nowrap; cursor:pointer; }
 .sectionBtn.on{ border-color:var(--sky); background:var(--sky); color:#fff; }
 .sectionBtn.done{ border-color:var(--em); background:var(--em); color:#fff; }
 .sectionBtn .n{ opacity:.85; margin-left:4px; }
@@ -128,7 +127,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .eyebrow{ display:none; }
 .eyebrow .grp{ font-size:10px; font-weight:700; letter-spacing:.1em; color:var(--sky); text-transform:uppercase; margin-bottom:2px; min-height:12px; }
 .eyebrow .sec{ display:flex; justify-content:space-between; align-items:baseline; }
-.eyebrow .sec span:first-child{ font-family:'Syne',sans-serif; font-size:14px; font-weight:700; letter-spacing:.02em; color:var(--text); text-transform:uppercase; }
+.eyebrow .sec span:first-child{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:14px; font-weight:700; letter-spacing:.02em; color:var(--text); text-transform:uppercase; }
 .eyebrow .cnt{ font-size:12px; font-weight:700; color:var(--muted); }
 .eyebrow .cnt b{ color:var(--em); }
 
@@ -149,9 +148,9 @@ input,select{ font-family:'JetBrains Mono',monospace; }
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   padding:3vh 20px; text-align:center; overflow-y:auto;
 }
-.card .tag{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; margin-bottom:14px; }
+.card .tag{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:10px; font-weight:800; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; margin-bottom:14px; }
 .card h1{
-  font-family:'Syne',sans-serif; font-weight:700;
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700;
   font-size:clamp(20px, 5.6vw, 32px); line-height:1.2; letter-spacing:.005em; max-width:640px; color:var(--text);
 }
 .card .note{ margin-top:14px; font-size:12px; color:var(--muted); font-weight:500; max-width:420px; line-height:1.5; text-transform:none; letter-spacing:0; }
@@ -179,7 +178,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
    the keypad-card input. */
 .entryField input, .grKeypad, .grDaVisRow input, #kpInput{
   background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:8px;
-  font-family:'JetBrains Mono',monospace; font-weight:700;
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700;
   text-align:right;
 }
 .entryField input::placeholder, .grKeypad::placeholder, .grDaVisRow input::placeholder, #kpInput::placeholder{
@@ -191,12 +190,12 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 }
 .entryField.wide input{ width:230px; font-size:17px; }
 .unitToggle{ display:inline-flex; margin-top:12px; border-radius:8px; overflow:hidden; border:1px solid var(--border); }
-.unitToggle button{ padding:7px 16px; border:none; background:var(--surface); color:var(--muted); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; cursor:pointer; }
+.unitToggle button{ padding:7px 16px; border:none; background:var(--surface); color:var(--muted); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:12px; cursor:pointer; }
 .unitToggle button.on{ background:var(--sky); color:#fff; }
-.bigValue{ font-family:'Syne',sans-serif; font-weight:700; font-size:clamp(26px,7.5vw,42px); color:var(--sky); margin-top:10px; }
+.bigValue{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:clamp(26px,7.5vw,42px); color:var(--sky); margin-top:10px; }
 .nowBtn{
   margin-top:18px; padding:16px 30px; border-radius:10px; border:none; cursor:pointer;
-  background:var(--sky); color:#fff; font-family:'Syne',sans-serif; font-weight:700; font-size:18px;
+  background:var(--sky); color:#fff; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:18px;
 }
 .nowBtn:hover{ background:#0284c7; }
 .nowBtn:active{ transform:translateY(1px); }
@@ -205,8 +204,8 @@ input,select{ font-family:'JetBrains Mono',monospace; }
    page, each line individually tickable, instead of one card per item. */
 .card.list-mode{ align-items:stretch; justify-content:flex-start; text-align:left; padding-top:4vh; }
 .card.list-mode h1{ font-size:clamp(18px,5vw,26px); text-align:left; align-self:flex-start; }
-.groupProgress{ font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:var(--em); letter-spacing:.06em; text-transform:uppercase; margin:8px 0 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
-.hideCompletedBtn{ flex-shrink:0; border:1.5px solid var(--border); background:var(--surface); color:var(--muted); border-radius:7px; padding:5px 10px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:10px; letter-spacing:.03em; cursor:pointer; text-transform:none; }
+.groupProgress{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:11px; font-weight:700; color:var(--em); letter-spacing:.06em; text-transform:uppercase; margin:8px 0 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.hideCompletedBtn{ flex-shrink:0; border:1.5px solid var(--border); background:var(--surface); color:var(--muted); border-radius:7px; padding:5px 10px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:10px; letter-spacing:.03em; cursor:pointer; text-transform:none; }
 .hideCompletedBtn.on{ border-color:var(--sky); background:var(--sky); color:#fff; }
 .allHiddenNote{ margin-top:10px; padding:12px 14px; background:#f0faf5; border:1px solid rgba(4,120,87,.25); border-radius:10px; color:var(--em); font-size:12.5px; font-weight:600; text-align:center; }
 
@@ -216,71 +215,71 @@ input,select{ font-family:'JetBrains Mono',monospace; }
    tank actually being counted (the most recently logged one) shows green;
    a tapped-but-not-yet-logged tank shows amber as a "pending" cue. */
 .tankBar{ display:flex; flex-direction:column; gap:3px; padding:6px 10px; background:var(--surface); border-bottom:1px solid var(--border); overflow:hidden; }
-.tankLiveTop{ text-align:center; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:15px; letter-spacing:.03em; color:var(--em); background:rgba(4,120,87,.08); border-radius:6px; padding:3px 0; margin-bottom:2px; }
+.tankLiveTop{ text-align:center; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:15px; letter-spacing:.03em; color:var(--em); background:rgba(4,120,87,.08); border-radius:6px; padding:3px 0; margin-bottom:2px; }
 .tankSinceChange{ display:block; font-size:11px; font-weight:700; color:var(--amber); letter-spacing:normal; margin-top:1px; }
 .tankBarRow{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; row-gap:6px; }
 .tankBarLbl{ font-size:13px; flex-shrink:0; }
-.tankBtn{ flex:0 0 60px; height:44px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px; background:var(--surface); color:var(--muted); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:15px; cursor:pointer; white-space:nowrap; text-align:center; }
-.tankLogBtn{ flex:0 0 auto; height:44px; padding:0 18px; border:none; border-radius:8px; background:var(--amber); color:#fff; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:14px; cursor:pointer; white-space:nowrap; }
-.tankUnitBtn{ flex:0 0 auto; margin-left:auto; height:44px; padding:0 14px; border:1.5px solid var(--sky); border-radius:8px; background:var(--surface); color:var(--sky); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:13px; cursor:pointer; white-space:nowrap; }
-.slotTimerInline{ flex:0 0 auto; margin-left:6px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; color:var(--em); white-space:nowrap; }
+.tankBtn{ flex:0 0 60px; height:44px; padding:0 10px; border:1.5px solid var(--border); border-radius:8px; background:var(--surface); color:var(--muted); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:15px; cursor:pointer; white-space:nowrap; text-align:center; }
+.tankLogBtn{ flex:0 0 auto; height:44px; padding:0 18px; border:none; border-radius:8px; background:var(--amber); color:#fff; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:14px; cursor:pointer; white-space:nowrap; }
+.tankUnitBtn{ flex:0 0 auto; margin-left:auto; height:44px; padding:0 14px; border:1.5px solid var(--sky); border-radius:8px; background:var(--surface); color:var(--sky); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:13px; cursor:pointer; white-space:nowrap; }
+.slotTimerInline{ flex:0 0 auto; margin-left:6px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:12px; color:var(--em); white-space:nowrap; }
 .slotTimerInline.amber{ color:var(--amber); }
 .slotTimerInline.overdue{ color:var(--rose); }
 .tankBtn.sel{ border-color:var(--amber); color:var(--amber); }
 .tankBtn.active{ background:var(--em); border-color:var(--em); color:#fff; }
 .tankStats{ display:flex; flex-direction:column; gap:1px; }
-.tankStatRow{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tankStatRow{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:10px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .tankStatLetter{ display:inline-block; width:12px; font-weight:800; color:var(--text); }
 .tankStatDim{ font-style:italic; opacity:.8; }
 .enduranceBar{ width:100%; flex-shrink:0; display:flex; align-items:baseline; gap:8px; white-space:nowrap; overflow:hidden; background:rgba(3,105,161,.05); border:1px solid rgba(3,105,161,.25); border-radius:8px; padding:5px 10px; margin-bottom:8px; }
-.enduranceLbl{ font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--sky); flex-shrink:0; }
-.enduranceVal{ font-family:'Syne',sans-serif; font-weight:700; font-size:16px; color:var(--sky); flex-shrink:0; }
+.enduranceLbl{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:9px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--sky); flex-shrink:0; }
+.enduranceVal{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:16px; color:var(--sky); flex-shrink:0; }
 .enduranceSub{ font-size:10px; color:var(--muted); min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .dapaBox{ margin-bottom:12px; flex-shrink:0; border:2px solid var(--border); border-radius:12px; padding:14px; background:rgba(255,255,255,.85); }
 .dapaGrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:12px; }
-.dapaGrid label{ display:block; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:900; letter-spacing:.03em; text-transform:uppercase; color:var(--text); margin-bottom:5px; line-height:1.2; }
-.dapaGrid input{ width:100%; box-sizing:border-box; padding:12px 10px; font-size:22px; font-weight:800; font-family:'JetBrains Mono',monospace; border-radius:10px; border:2px solid var(--border); }
+.dapaGrid label{ display:block; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:12px; font-weight:900; letter-spacing:.03em; text-transform:uppercase; color:var(--text); margin-bottom:5px; line-height:1.2; }
+.dapaGrid input{ width:100%; box-sizing:border-box; padding:12px 10px; font-size:22px; font-weight:800; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; border-radius:10px; border:2px solid var(--border); }
 .dapaSentence{ font-weight:900; font-size:19px; line-height:1.25; margin:6px 0 10px; }
-.dapaOut{ display:flex; gap:20px; flex-wrap:wrap; font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:900; }
+.dapaOut{ display:flex; gap:20px; flex-wrap:wrap; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:22px; font-weight:900; }
 .dapaNote{ font-size:12px; font-weight:700; color:var(--muted); margin-top:10px; }
 .clrBox{ margin-bottom:10px; flex-shrink:0; }
 .clrHead{ display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
-.clrHead label{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
-.clrQnhBtn{ border:1px solid var(--sky); background:var(--surface); color:var(--sky); border-radius:6px; padding:3px 8px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11px; cursor:pointer; }
+.clrHead label{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.clrQnhBtn{ border:1px solid var(--sky); background:var(--surface); color:var(--sky); border-radius:6px; padding:3px 8px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:11px; cursor:pointer; }
 .clrBox textarea{ width:100%; box-sizing:border-box; }
 
 /* ===== Fuel Plan (brought over from FlightDeck) ===== */
 .fuelUnitToggle{ display:inline-flex; flex-shrink:0; margin-bottom:14px; border-radius:8px; overflow:hidden; border:1px solid var(--border); }
-.fuelUnitToggle button{ padding:7px 16px; border:none; background:var(--surface); color:var(--muted); font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; cursor:pointer; }
+.fuelUnitToggle button{ padding:7px 16px; border:none; background:var(--surface); color:var(--muted); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:12px; cursor:pointer; }
 .fuelUnitToggle button.on{ background:var(--sky); color:#fff; }
 .fpTotalFob{ width:100%; background:rgba(14,165,233,.06); border:1px solid rgba(14,165,233,.25); border-radius:10px; padding:12px 14px; margin-bottom:14px; }
-.fpTotalFobLbl{ font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--sky); }
-.fpTotalFobVal{ font-family:'Syne',sans-serif; font-weight:700; font-size:26px; color:var(--sky); margin-top:2px; }
+.fpTotalFobLbl{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--sky); }
+.fpTotalFobVal{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:26px; color:var(--sky); margin-top:2px; }
 .fpTotalFobSub{ font-size:11px; color:var(--muted); font-style:italic; margin-top:2px; }
 .fpFieldsRow{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; width:100%; margin-bottom:16px; }
-.fpField label{ display:block; font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:5px; }
-.fpField input{ width:100%; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:9px 8px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px; text-align:right; color:var(--text); }
-.fpFieldBtn{ width:100%; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:9px 8px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px; text-align:right; color:var(--text); cursor:pointer; }
+.fpField label{ display:block; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:5px; }
+.fpField input{ width:100%; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:9px 8px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:16px; text-align:right; color:var(--text); }
+.fpFieldBtn{ width:100%; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:9px 8px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:16px; text-align:right; color:var(--text); cursor:pointer; }
 .fpTtcafe{ display:flex; flex-direction:column; gap:8px; width:100%; margin-bottom:14px; }
 .fpRow{ display:flex; align-items:center; gap:8px; background:rgba(180,83,9,.04); border:1px solid rgba(180,83,9,.2); border-radius:9px; padding:8px 10px; }
-.fpLetter{ flex:0 0 24px; height:24px; display:flex; align-items:center; justify-content:center; background:var(--amber); color:#fff; border-radius:6px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; }
-.fpName{ flex:1; font-family:'JetBrains Mono',monospace; font-size:11.5px; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:.02em; text-align:left; min-width:0; }
-.fpMins{ flex:0 0 52px; width:52px; padding:6px 4px; font-size:16px; text-align:center; background:var(--surface); border:1px solid var(--border); border-radius:6px; font-family:'JetBrains Mono',monospace; }
+.fpLetter{ flex:0 0 24px; height:24px; display:flex; align-items:center; justify-content:center; background:var(--amber); color:#fff; border-radius:6px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:12px; }
+.fpName{ flex:1; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:11.5px; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:.02em; text-align:left; min-width:0; }
+.fpMins{ flex:0 0 52px; width:52px; padding:6px 4px; font-size:16px; text-align:center; background:var(--surface); border:1px solid var(--border); border-radius:6px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; }
 .fpNumBtn{ cursor:pointer; color:var(--text); }
 .fpMinsGap{ flex:0 0 52px; }
-.fpAmt{ flex:0 0 58px; width:58px; padding:6px 4px; font-size:16px; text-align:right; background:var(--surface); border:1px solid var(--border); border-radius:6px; font-family:'JetBrains Mono',monospace; font-weight:700; }
-.fpU{ flex:0 0 auto; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); font-weight:700; }
-.fpContPct{ flex:0 0 52px; width:52px; padding:6px 4px; font-size:16px; text-align:right; background:var(--surface); border:1px solid var(--border); border-radius:6px; font-family:'JetBrains Mono',monospace; font-weight:700; }
-.fpContOut{ flex:1; text-align:right; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--amber); font-weight:700; }
+.fpAmt{ flex:0 0 58px; width:58px; padding:6px 4px; font-size:16px; text-align:right; background:var(--surface); border:1px solid var(--border); border-radius:6px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; }
+.fpU{ flex:0 0 auto; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:11px; color:var(--muted); font-weight:700; }
+.fpContPct{ flex:0 0 52px; width:52px; padding:6px 4px; font-size:16px; text-align:right; background:var(--surface); border:1px solid var(--border); border-radius:6px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; }
+.fpContOut{ flex:1; text-align:right; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:12px; color:var(--amber); font-weight:700; }
 .fpSummary{ width:100%; background:rgba(180,83,9,.05); border:1px solid rgba(180,83,9,.2); border-radius:10px; padding:12px 14px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
-.fpSumLbl{ font-family:'JetBrains Mono',monospace; font-size:9.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
-.fpSumVal{ font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:800; color:var(--amber); margin-top:3px; }
+.fpSumLbl{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:9.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+.fpSumVal{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:14px; font-weight:800; color:var(--amber); margin-top:3px; }
 .fpSumVal.pos{ color:var(--em); }
 .fpSumVal.neg{ color:var(--rose); }
 .fpTableWrap{ width:100%; margin-top:12px; }
-.fpTableTitle{ font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.fpTableTitle{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:10.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
 .fpTable{ max-height:180px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; }
-.fpTableRow{ display:flex; align-items:center; gap:8px; padding:5px 10px; font-family:'JetBrains Mono',monospace; font-size:11.5px; white-space:nowrap; border-bottom:1px solid var(--border); }
+.fpTableRow{ display:flex; align-items:center; gap:8px; padding:5px 10px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:11.5px; white-space:nowrap; border-bottom:1px solid var(--border); }
 .fpTableRow:last-child{ border-bottom:none; }
 .fpTableRow.out{ background:rgba(190,18,60,.06); }
 .fpTT{ flex:0 0 56px; font-weight:800; color:var(--text); }
@@ -288,24 +287,24 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .fpTE{ flex:1; color:var(--muted); text-align:right; }
 .fpTableRow.out .fpTF{ color:var(--rose); }
 .fpTableEmpty{ padding:12px 10px; font-size:11.5px; color:var(--muted); font-style:italic; text-align:center; }
-.fpSumSub{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); margin-top:2px; }
+.fpSumSub{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:10px; color:var(--muted); margin-top:2px; }
 .fpBlock{ width:100%; border-radius:10px; padding:12px 14px; margin-top:12px; }
 .fpBlock.amber{ background:rgba(180,83,9,.05); border:1px solid rgba(180,83,9,.25); }
 .fpBlock.violet{ background:rgba(109,40,217,.05); border:1px solid rgba(109,40,217,.25); }
-.fpBlockTitle{ font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--amber); margin-bottom:6px; }
+.fpBlockTitle{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--amber); margin-bottom:6px; }
 .fpBlock.violet .fpBlockTitle{ color:var(--violet); }
-.fpBlockVal{ font-family:'Syne',sans-serif; font-weight:700; font-size:22px; color:var(--amber); }
-.fpBlockVal.small{ font-size:14px; font-family:'JetBrains Mono',monospace; }
+.fpBlockVal{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:22px; color:var(--amber); }
+.fpBlockVal.small{ font-size:14px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; }
 .fpBlockVal.pos{ color:var(--em); }
 .fpBlockVal.warn{ color:var(--amber); }
 .fpBlockVal.neg{ color:var(--rose); }
 .fpBlockNote{ font-size:11px; color:var(--muted); font-style:italic; margin-top:4px; line-height:1.4; }
 .fpBlockNote a{ color:var(--violet); }
 .fpVarianceRow{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-top:4px; }
-#fpActualLanding{ width:100%; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:9px 10px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px; text-align:right; color:var(--text); }
+#fpActualLanding{ width:100%; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:9px 10px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:16px; text-align:right; color:var(--text); }
 .groupList{ display:flex; flex-direction:column; gap:8px; width:100%; }
 .groupRow{ background:rgba(255,255,255,.7); border:1px solid var(--border); border-radius:10px; padding:11px 12px; }
-.groupDivider{ display:flex; align-items:center; gap:10px; margin:14px 2px 4px; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.groupDivider{ display:flex; align-items:center; gap:10px; margin:14px 2px 4px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
 .groupDivider::before, .groupDivider::after{ content:''; flex:1; height:1px; background:var(--border); }
 .groupDivider span{ flex:0 0 auto; }
 /* "Paper checklist" prompts — the same idea as the bold black reminder rows
@@ -320,12 +319,12 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 @keyframes flashRedRow{ 0%,100%{ background:rgba(220,38,38,.08);} 50%{ background:rgba(220,38,38,.5);} }
 .groupRow.promptRow{ background:rgba(180,83,9,.06); border-color:rgba(180,83,9,.3); border-left:3px solid var(--amber); }
 .grTop{ display:flex; align-items:center; gap:10px; }
-.grLabel{ flex:1; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; color:var(--text); line-height:1.4; }
+.grLabel{ flex:1; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:13px; font-weight:600; color:var(--text); line-height:1.4; }
 .grLabel.prompt{ font-weight:800; font-size:14px; text-transform:uppercase; letter-spacing:.02em; color:var(--amber); }
 .grNote{ margin-top:5px; font-size:11px; color:var(--muted); font-weight:500; line-height:1.4; }
 .grLaw{ display:inline-block; margin-left:6px; padding:2px 7px; border-radius:5px; background:var(--violet); color:#fff; font-size:9px; font-weight:800; letter-spacing:.08em; cursor:pointer; }
 .grBtns{ display:flex; gap:5px; flex-shrink:0; }
-.grBtn{ border:1px solid var(--border); background:transparent; border-radius:7px; padding:7px 11px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; cursor:pointer; color:var(--muted); }
+.grBtn{ border:1px solid var(--border); background:transparent; border-radius:7px; padding:7px 11px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:12px; cursor:pointer; color:var(--muted); }
 .grBtn.go{ color:var(--em); border-color:var(--em); }
 .grBtn.go.on{ background:var(--em); color:#fff; }
 .grBtn.na{ color:var(--amber); border-color:var(--amber); }
@@ -333,53 +332,53 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .grBtn.later{ color:var(--sky); border-color:var(--sky); }
 .grBtn.later.on{ background:var(--sky); color:#fff; }
 .customDel{ border:1px solid #dc2626; background:transparent; border-radius:7px; padding:7px 9px; font-size:13px; cursor:pointer; color:#dc2626; }
-.grNowBtn{ flex-shrink:0; border:1px solid rgba(3,105,161,.35); background:rgba(14,165,233,.1); color:var(--sky); border-radius:7px; padding:7px 12px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; cursor:pointer; white-space:nowrap; }
+.grNowBtn{ flex-shrink:0; border:1px solid rgba(3,105,161,.35); background:rgba(14,165,233,.1); color:var(--sky); border-radius:7px; padding:7px 12px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:11.5px; cursor:pointer; white-space:nowrap; }
 .grTimeBtns{ display:flex; gap:5px; align-items:center; flex-shrink:0; }
 .grEditTimeBtn{ flex-shrink:0; border:1px solid var(--border); background:var(--surface); color:var(--muted); border-radius:7px; width:30px; height:30px; font-size:13px; cursor:pointer; }
 .grKeypad{ width:100%; margin-top:8px; padding:9px 10px; font-size:16px; border-radius:8px; }
-.grKeypadUnit{ width:100%; padding:9px 10px; font-size:16px; border-radius:8px; font-family:'JetBrains Mono',monospace; font-weight:700; text-align:right; background:var(--card); border:1px solid var(--border); color:var(--text); }
+.grKeypadUnit{ width:100%; padding:9px 10px; font-size:16px; border-radius:8px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; text-align:right; background:var(--card); border:1px solid var(--border); color:var(--text); }
 #kpInput{ font-size:16px; }
 .grDaVisRow{ display:flex; gap:8px; margin-top:8px; }
 /* .grDa/.grVis/.grTacho/.grHobbs/.grEtob/.grCtot all share this row —
    without flex:1 + min-width:0 they fall back to the browser's native
    default input width (~230px), which doesn't shrink on a phone-width
    screen and pushes the second field off the right edge entirely. */
-.grDaVisRow input, .grDaVisRow button{ flex:1; min-width:0; padding:9px 10px; font-size:15px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text); font-family:'JetBrains Mono',monospace; font-weight:700; cursor:pointer; }
+.grDaVisRow input, .grDaVisRow button{ flex:1; min-width:0; padding:9px 10px; font-size:15px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; cursor:pointer; }
 .grCodeRow{ display:flex; gap:6px; margin-top:8px; align-items:center; }
-.grCodeSelect{ flex:1; min-width:0; background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:9px 8px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px; }
-.grCodeAddBtn{ flex-shrink:0; border:1px solid var(--border); background:var(--surface); color:var(--muted); border-radius:8px; padding:9px 10px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:11px; cursor:pointer; white-space:nowrap; }
+.grCodeSelect{ flex:1; min-width:0; background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:9px 8px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:16px; }
+.grCodeAddBtn{ flex-shrink:0; border:1px solid var(--border); background:var(--surface); color:var(--muted); border-radius:8px; padding:9px 10px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:11px; cursor:pointer; white-space:nowrap; }
 .grFuelQtyRow{ display:flex; gap:8px; margin-top:8px; }
-.grFuelQty{ flex:1; min-width:0; padding:9px 10px; font-size:14px; border-radius:8px; background:var(--card); color:var(--text); border:1px solid var(--border); font-family:'JetBrains Mono',monospace; font-weight:700; text-align:right; }
-.grFuelUnitBtn{ flex-shrink:0; width:56px; border:1px solid var(--sky); background:var(--surface); color:var(--sky); border-radius:8px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; cursor:pointer; }
-.grWeightQty{ flex:1; min-width:0; padding:9px 10px; font-size:14px; border-radius:8px; background:var(--card); color:var(--text); border:1px solid var(--border); font-family:'JetBrains Mono',monospace; font-weight:700; text-align:right; }
-.grWeightUnitBtn{ flex-shrink:0; width:56px; border:1px solid var(--violet); background:var(--surface); color:var(--violet); border-radius:8px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; cursor:pointer; }
+.grFuelQty{ flex:1; min-width:0; padding:9px 10px; font-size:14px; border-radius:8px; background:var(--card); color:var(--text); border:1px solid var(--border); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; text-align:right; }
+.grFuelUnitBtn{ flex-shrink:0; width:56px; border:1px solid var(--sky); background:var(--surface); color:var(--sky); border-radius:8px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:12px; cursor:pointer; }
+.grWeightQty{ flex:1; min-width:0; padding:9px 10px; font-size:14px; border-radius:8px; background:var(--card); color:var(--text); border:1px solid var(--border); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; text-align:right; }
+.grWeightUnitBtn{ flex-shrink:0; width:56px; border:1px solid var(--violet); background:var(--surface); color:var(--violet); border-radius:8px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:12px; cursor:pointer; }
 .grCodeManageBtn{ flex-shrink:0; width:34px; height:38px; border:1px solid var(--border); background:var(--surface); color:var(--muted); border-radius:8px; font-size:15px; cursor:pointer; }
 .manageCodesList{ max-height:280px; overflow-y:auto; margin-bottom:16px; display:flex; flex-direction:column; gap:8px; }
 .manageCodeItem{ display:flex; align-items:center; gap:10px; background:#f5f7fa; border:1px solid #e2e8f0; border-radius:9px; padding:9px 12px; }
-.manageCodeText{ flex:1; min-width:0; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#0f172a; overflow:hidden; text-overflow:ellipsis; }
+.manageCodeText{ flex:1; min-width:0; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:13px; font-weight:700; color:#0f172a; overflow:hidden; text-overflow:ellipsis; }
 .manageCodeText small{ display:block; font-weight:500; color:#3f4c5e; font-size:11px; margin-top:1px; }
-.manageCodeDelBtn{ flex-shrink:0; border:1px solid #be123c; background:#fff; color:#be123c; border-radius:7px; padding:6px 10px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11px; cursor:pointer; }
+.manageCodeDelBtn{ flex-shrink:0; border:1px solid #be123c; background:#fff; color:#be123c; border-radius:7px; padding:6px 10px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:11px; cursor:pointer; }
 .manageCodesEmpty{ text-align:center; color:#3f4c5e; font-size:13px; padding:16px 0; }
 .codePresetsBlock{ border-top:1px solid #e2e8f0; margin-top:14px; padding-top:14px; }
-.codePresetsLbl{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#3f4c5e; margin-bottom:8px; }
+.codePresetsLbl{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#3f4c5e; margin-bottom:8px; }
 @keyframes digCursorBlink{ 0%,50%{ opacity:1; } 51%,100%{ opacity:.15; } }
 .dig-active{ animation:digCursorBlink 1s step-end infinite; }
 .codePresetsList{ display:flex; flex-direction:column; gap:6px; }
 .codePresetsEmpty{ font-size:12px; color:#3f4c5e; font-style:italic; }
 .codePresetItem{ display:flex; align-items:center; gap:8px; background:#f5f7fa; border:1px solid #e2e8f0; border-radius:8px; padding:7px 10px; }
-.codePresetName{ flex:1; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#0f172a; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.codePresetLoadBtn{ flex-shrink:0; border:1px solid #0369a1; background:#fff; color:#0369a1; border-radius:6px; padding:5px 9px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11px; cursor:pointer; }
-.codePresetDelBtn{ flex-shrink:0; border:1px solid #be123c; background:#fff; color:#be123c; border-radius:6px; padding:5px 9px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11px; cursor:pointer; }
+.codePresetName{ flex:1; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:13px; font-weight:700; color:#0f172a; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.codePresetLoadBtn{ flex-shrink:0; border:1px solid #0369a1; background:#fff; color:#0369a1; border-radius:6px; padding:5px 9px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:11px; cursor:pointer; }
+.codePresetDelBtn{ flex-shrink:0; border:1px solid #be123c; background:#fff; color:#be123c; border-radius:6px; padding:5px 9px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:11px; cursor:pointer; }
 .savedFlightItem{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px; text-align:left; }
-.savedFlightName{ font-family:'JetBrains Mono',monospace; font-weight:800; font-size:14px; color:var(--text); }
+.savedFlightName{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:14px; color:var(--text); }
 .savedFlightSub{ font-size:12px; color:var(--muted); margin-top:2px; margin-bottom:10px; }
 .savedFlightBtns{ display:flex; gap:6px; }
-.savedFlightBtns button{ flex:1; border-radius:7px; padding:7px 0; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11.5px; cursor:pointer; }
+.savedFlightBtns button{ flex:1; border-radius:7px; padding:7px 0; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:11.5px; cursor:pointer; }
 .savedFlightDelBtn{ border:1px solid var(--rose); background:var(--surface); color:var(--rose); }
 .savedFlightTopBtns{ display:flex; gap:8px; width:100%; }
 .addItemRow{ display:flex; gap:8px; margin-top:4px; }
-.addItemRow input{ flex:1; background:var(--surface); border:1px dashed var(--border); border-radius:10px; padding:10px 12px; font-family:'JetBrains Mono',monospace; font-size:16px; color:var(--text); }
-.addItemRow button{ flex-shrink:0; border:1px solid var(--em); background:rgba(16,185,129,.08); color:var(--em); border-radius:10px; padding:10px 16px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; cursor:pointer; }
+.addItemRow input{ flex:1; background:var(--surface); border:1px dashed var(--border); border-radius:10px; padding:10px 12px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:16px; color:var(--text); }
+.addItemRow button{ flex-shrink:0; border:1px solid var(--em); background:rgba(16,185,129,.08); color:var(--em); border-radius:10px; padding:10px 16px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:12px; cursor:pointer; }
 .grDaVisRow input{ flex:1; padding:9px 10px; font-size:16px; border-radius:8px; }
 
 /* Scroll indicator — a bold, unmissable cue that a card's content (usually
@@ -387,7 +386,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
    scrollbar alone is exactly the kind of thing that gets missed outdoors. */
 .scrollHint{
   position:absolute; bottom:16px; left:50%; transform:translateX(-50%);
-  background:var(--rose); color:#fff; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11px;
+  background:var(--rose); color:#fff; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:11px;
   letter-spacing:.08em; padding:8px 16px; border-radius:999px; box-shadow:0 4px 16px rgba(190,18,60,.35);
   animation:pulseHint 1.15s ease-in-out infinite; z-index:8; pointer-events:none; display:none; white-space:nowrap;
 }
@@ -406,11 +405,11 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .interstitial .sectEntries .resRow{ border-bottom-color:var(--border); }
 .interstitial .sectEntries .rt, .interstitial .sectEntries .rv{ color:var(--text); }
 .interstitial.phase{ background:#eff6fc; box-shadow:0 2px 6px rgba(15,23,42,.06); justify-content:center; }
-.interstitial .big{ font-family:'Syne',sans-serif; font-weight:700; font-size:clamp(22px,6vw,36px); }
+.interstitial .big{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:clamp(22px,6vw,36px); }
 .interstitial.sect .big{ color:var(--em); }
 .interstitial.phase .big{ color:var(--sky); }
 .interstitial .sub{ color:var(--muted); font-size:12.5px; max-width:320px; }
-.interstitial button{ margin-top:8px; padding:12px 24px; border-radius:10px; border:none; cursor:pointer; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12.5px; letter-spacing:.06em; }
+.interstitial button{ margin-top:8px; padding:12px 24px; border-radius:10px; border:none; cursor:pointer; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:12.5px; letter-spacing:.06em; }
 .interstitial.sect button{ background:var(--em); color:#fff; }
 .interstitial.phase button{ background:var(--sky); color:#fff; }
 .interstitial.phase #phaseNext{ background:var(--em); }
@@ -418,7 +417,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 
 /* Switch bank */
 .switchBank{ flex-shrink:0; display:flex; gap:8px; padding:8px 12px calc(10px + env(safe-area-inset-bottom)); }
-.rocker{ flex:1; border:none; cursor:pointer; border-radius:12px; padding:0; height:min(9vh, 64px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-family:'JetBrains Mono',monospace; }
+.rocker{ flex:1; border:none; cursor:pointer; border-radius:12px; padding:0; height:min(9vh, 64px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; }
 .rocker .ic{ font-size:17px; line-height:1; }
 .rocker .lb{ font-size:10px; font-weight:800; letter-spacing:.08em; }
 .rocker.go{ background:var(--em); color:#fff; }
@@ -437,24 +436,24 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .fdGrid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-top:8px; }
 .fdField{ display:flex; flex-direction:column; gap:5px; }
 .fdField.full{ margin-top:12px; }
-.fdField label{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#3f4c5e; }
-.fdField input, .fdField textarea{ padding:9px 10px; border:1px solid #cbd5e1; border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:16px; color:#0f172a; background:#f8fafc; width:100%; }
-.cloudPickBtn{ padding:9px 10px; border:1px solid #cbd5e1; border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:14px; color:#0f172a; background:#f8fafc; width:100%; text-align:left; cursor:pointer; }
+.fdField label{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#3f4c5e; }
+.fdField input, .fdField textarea{ padding:9px 10px; border:1px solid #cbd5e1; border-radius:8px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:16px; color:#0f172a; background:#f8fafc; width:100%; }
+.cloudPickBtn{ padding:9px 10px; border:1px solid #cbd5e1; border-radius:8px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:14px; color:#0f172a; background:#f8fafc; width:100%; text-align:left; cursor:pointer; }
 .cloudPickBtn:empty, .cloudPickBtn.placeholder{ color:#94a3b8; }
 .fdCheckRow{ display:flex; align-items:center; gap:8px; padding:9px 10px; border:1px solid #cbd5e1; border-radius:8px; background:#f8fafc; cursor:pointer; }
 .fdCheckRow input{ width:auto; }
-.fdCheckRow span{ font-family:'JetBrains Mono',monospace; font-size:14px; color:#0f172a; }
-.fdField textarea{ resize:vertical; font-family:'DM Sans',sans-serif; font-size:16px; }
+.fdCheckRow span{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:14px; color:#0f172a; }
+.fdField textarea{ resize:vertical; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:16px; }
 .fdDateRow{ display:flex; gap:6px; }
 .fdDateRow input{ flex:1; min-width:0; }
-.fdTodayBtn{ flex-shrink:0; padding:9px 12px; border:1px solid #0369a1; border-radius:8px; background:#fff; color:#0369a1; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; cursor:pointer; }
-.calcCard .ck{ font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#0369a1; margin-bottom:10px; }
-.calcCard .legs{ display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:#475569; margin-bottom:10px; }
+.fdTodayBtn{ flex-shrink:0; padding:9px 12px; border:1px solid #0369a1; border-radius:8px; background:#fff; color:#0369a1; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:12px; cursor:pointer; }
+.calcCard .ck{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#0369a1; margin-bottom:10px; }
+.calcCard .legs{ display:flex; justify-content:space-between; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:12.5px; color:#475569; margin-bottom:10px; }
 .calcCard .legs b{ color:#0f172a; }
-.calcCard .cv{ font-family:'JetBrains Mono',monospace; font-size:30px; font-weight:800; color:#047857; }
+.calcCard .cv{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:30px; font-weight:800; color:#047857; }
 .calcCard .cv.pending{ color:#94a3b8; font-size:20px; font-weight:600; }
 .calcCard .cv small{ font-size:14px; color:#64748b; font-weight:600; margin-left:6px; }
-.timesTable{ width:100%; border-collapse:collapse; font-family:'JetBrains Mono',monospace; }
+.timesTable{ width:100%; border-collapse:collapse; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; }
 .timesTable th{ text-align:left; font-size:9.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#94a3b8; padding:0 6px 6px 0; border-bottom:1.5px solid #e2e8f0; }
 .timesTable td{ padding:9px 6px 9px 0; border-bottom:1px solid #eef1f5; font-size:12.5px; color:#475569; white-space:nowrap; }
 .timesTable tr:last-child td{ border-bottom:none; }
@@ -464,9 +463,9 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .timesTable .ttPending{ color:#94a3b8; font-style:italic; font-weight:600; }
 .resWrap{ max-width:720px; margin:0 auto; padding:18px 16px 60px; }
 .resHead{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
-.resHead h2{ font-family:'JetBrains Mono',monospace; font-size:16px; }
-.printBtn{ padding:10px 18px; border-radius:9px; border:none; background:#0369a1; color:#fff; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; cursor:pointer; }
-.resetBtn{ padding:10px 18px; border-radius:9px; border:1.5px solid #be123c; background:#fff; color:#be123c; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; cursor:pointer; }
+.resHead h2{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:16px; }
+.printBtn{ padding:10px 18px; border-radius:9px; border:none; background:#0369a1; color:#fff; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:12px; cursor:pointer; }
+.resetBtn{ padding:10px 18px; border-radius:9px; border:1.5px solid #be123c; background:#fff; color:#be123c; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:12px; cursor:pointer; }
 .calcActions{ display:flex; gap:8px; flex-wrap:wrap; }
 .calcActions button{ flex:1 1 auto; white-space:nowrap; }
 /* Custom confirm — window.confirm() is unreliable (often silently blocked)
@@ -480,15 +479,15 @@ input,select{ font-family:'JetBrains Mono',monospace; }
    could leave the prompt visually underneath and unclickable. */
 #promptModal, #codePromptModal{ z-index:200; }
 .confirmBox{ background:#fff; border-radius:16px; padding:24px 22px; max-width:340px; width:100%; box-shadow:0 20px 50px rgba(0,0,0,.3); }
-.confirmMsg{ font-family:'DM Sans',sans-serif; font-size:15px; color:#0f172a; line-height:1.5; margin-bottom:20px; text-align:center; white-space:pre-line; }
+.confirmMsg{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:15px; color:#0f172a; line-height:1.5; margin-bottom:20px; text-align:center; white-space:pre-line; }
 .confirmBtns{ display:flex; gap:10px; }
-.confirmBtns button{ flex:1; padding:12px 0; border-radius:10px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:13px; cursor:pointer; }
+.confirmBtns button{ flex:1; padding:12px 0; border-radius:10px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:13px; cursor:pointer; }
 .confirmCancel{ border:1.5px solid #cbd5e1; background:#fff; color:#3f4c5e; }
 .confirmOk{ border:none; background:#be123c; color:#fff; }
-.promptInput{ width:100%; padding:11px 12px; border:1.5px solid #cbd5e1; border-radius:9px; font-family:'JetBrains Mono',monospace; font-size:16px; margin-bottom:16px; text-align:center; }
-.codePromptLbl{ display:block; font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#3f4c5e; margin-bottom:5px; }
-.resPhase{ font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#0369a1; margin:22px 0 8px; padding-bottom:4px; border-bottom:2px solid #0369a1; }
-.resSect{ font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:.06em; margin:14px 0 6px; }
+.promptInput{ width:100%; padding:11px 12px; border:1.5px solid #cbd5e1; border-radius:9px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:16px; margin-bottom:16px; text-align:center; }
+.codePromptLbl{ display:block; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#3f4c5e; margin-bottom:5px; }
+.resPhase{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:12px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#0369a1; margin:22px 0 8px; padding-bottom:4px; border-bottom:2px solid #0369a1; }
+.resSect{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:11px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:.06em; margin:14px 0 6px; }
 .resRow{ display:flex; justify-content:space-between; gap:10px; padding:7px 10px; border-bottom:1px solid #e2e8f0; font-size:12.5px; }
 .resRow .rt{ flex:1; }
 .resRow .rv{ font-weight:700; white-space:nowrap; }
@@ -525,7 +524,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 #homeView{ display:none; flex-direction:column; gap:8px; grid-template-columns:none; }
 #homeView[style*="grid"]{ display:flex !important; }
 .homeBand{ display:flex; flex-direction:column; min-height:0; gap:5px; }
-.homeBandHead{ flex:0 0 auto; font-family:'Syne',sans-serif; font-weight:900; font-size:14px; letter-spacing:.12em; text-transform:uppercase; padding:3px 10px; border-radius:7px; color:#fff; align-self:flex-start; }
+.homeBandHead{ flex:0 0 auto; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:900; font-size:14px; letter-spacing:.12em; text-transform:uppercase; padding:3px 10px; border-radius:7px; color:#fff; align-self:flex-start; }
 .homeBand.b0 .homeBandHead{ background:#0369a1; } .homeBand.b1 .homeBandHead{ background:#7c3aed; } .homeBand.b2 .homeBandHead{ background:#0f172a; }
 .homeBand .homeGrid{ flex:1; min-height:0; display:grid; grid-template-columns:repeat(2,1fr); grid-auto-rows:1fr; gap:9px; }
 @media (min-width:700px){ .homeBand .homeGrid{ grid-template-columns:repeat(3,1fr); gap:12px; } #homeView{ gap:10px; } }
@@ -542,18 +541,18 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .atCloudWrap{ display:contents; }
 .atBox{ display:flex; flex-direction:column; align-items:stretch; text-align:center; background:#fff; border:2px solid var(--border); border-radius:12px; padding:6px 8px; min-height:0; min-width:0; }
 .atBox.w2{ grid-column:span 2; }
-.atBox label{ font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
-.atBig{ flex:1; min-height:0; width:100%; border:none; background:transparent; text-align:center; font-family:'Syne',sans-serif; font-weight:900; font-size:clamp(20px,3.4vw,40px); color:var(--text); padding:0; }
+.atBox label{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.atBig{ flex:1; min-height:0; width:100%; border:none; background:transparent; text-align:center; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:900; font-size:clamp(20px,3.4vw,40px); color:var(--text); padding:0; }
 .atNotes{ font-family:inherit; font-weight:600; font-size:clamp(14px,1.8vw,20px); text-align:left; resize:none; padding:4px; }
 .cavokBox{ justify-content:center; align-items:center; gap:8px; }
 .cavokBox .fdCheckRow{ font-size:18px; font-weight:800; }
 .cavokBox input[type=checkbox]{ width:24px; height:24px; }
-.atSmallBtn{ border:2px solid var(--sky); background:#fff; color:var(--sky); border-radius:9px; padding:8px 14px; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:15px; }
+.atSmallBtn{ border:2px solid var(--sky); background:#fff; color:var(--sky); border-radius:9px; padding:8px 14px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:15px; }
 .atBox.w3{ grid-column:span 3; }
 .atActions{ grid-column:span 4; display:flex; gap:8px; }
-.atSubmit{ flex:1; border:none; background:var(--em); color:#fff; border-radius:12px; font-family:'Syne',sans-serif; font-weight:900; font-size:clamp(18px,2.6vw,28px); }
-.atClear{ flex:0 0 28%; border:2px solid var(--rose); background:#fff; color:var(--rose); border-radius:12px; font-family:'Syne',sans-serif; font-weight:800; font-size:clamp(14px,2vw,20px); }
-.atSubmitted{ flex:0 0 auto; font-family:'JetBrains Mono',monospace; font-size:12px; }
+.atSubmit{ flex:1; border:none; background:var(--em); color:#fff; border-radius:12px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:900; font-size:clamp(18px,2.6vw,28px); }
+.atClear{ font-size:clamp(34px,6vw,56px) !important; flex:0 0 28%; border:2px solid var(--rose); background:#fff; color:var(--rose); border-radius:12px; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:clamp(14px,2vw,20px); }
+.atSubmitted{ flex:0 0 auto; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:12px; }
 .atSubRow{ display:flex; align-items:center; gap:8px; padding:3px 8px; border-bottom:1px solid var(--border); }
 .atSubRow span{ flex:1; }
 .atSubRow .atisDelBtn{ border:1px solid var(--rose); background:#fff; color:var(--rose); border-radius:6px; padding:2px 8px; }
@@ -586,7 +585,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 #calcMode .calcCard textarea{ font-size:17px; text-align:left; }
 #calcMode .resHead h2{ font-size:22px; }
 
-/* v129 fit fixes: text must fit inside its box on iPad */
+/* v134 fit fixes: text must fit inside its box on iPad */
 .homeTile .hT{ font-size:clamp(13px,3.2vw,22px); overflow-wrap:normal; word-break:normal; hyphens:none; }
 .homeTile .hMain{ padding:0 4px; }
 .fdDateRow{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:stretch; }
@@ -598,19 +597,35 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 .fpFieldBtn, .fdField input{ font-size:clamp(12px,2vw,15px); min-width:0; }
 .fdField label{ white-space:nowrap; }
 
-/* v129 progress bars */
+/* v134 progress bars */
 .homeTile .hBar{ display:block; align-self:stretch; width:auto; min-width:60%; height:7px; border-radius:4px; background:#e2e8f0; overflow:hidden; margin:3px 6px 0; }
 .homeTile .hBar i{ display:block; height:100%; background:#f59e0b; border-radius:4px; transition:width .25s; }
 .homeTile.done .hBar i{ background:#059669; }
 .secBar{ height:8px; margin:0 12px 2px; border-radius:4px; background:#e2e8f0; overflow:hidden; flex:0 0 auto; }
 .secBar i{ display:block; height:100%; width:0; background:#0369a1; border-radius:4px; transition:width .25s; }
 .secBar.full i{ background:#059669; }
+
+/* v134 touch responsiveness */
+button, [role=button], .homeTile, .groupRow, .rocker, .mnemToggle, label, select, summary, a{ touch-action:manipulation; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; cursor:pointer; }
+input, textarea{ touch-action:manipulation; -webkit-user-select:text; user-select:text; }
+button:active, [role=button]:active, .homeTile:active, .rocker:active, .mnemToggle:active{ transform:scale(.96); filter:brightness(.92); transition:none !important; }
+.homeTile:active{ background:#e0f2fe; }
+.groupRow button:active{ transform:scale(.9); }
+.card.flash-go, .card.flash-na{ animation-duration:.2s; }
+
+/* v134 system font (San Francisco on iPad/iPhone): clearest, instant, works offline */
+html,body,button,input,select,textarea{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; }
+body, button, input, select, textarea{ font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; letter-spacing:0; }
+body{ font-weight:500; }
+#calcMode .timesTable th{ font-size:clamp(8px,1.4vw,11px) !important; letter-spacing:0 !important; padding-left:0 !important; }
+
+.atCavokBtn.on{ background:#059669 !important; color:#fff !important; border-color:#059669 !important; }
 </style>
 </head>
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v129</div>
+  <div id="versionBadge">v134</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="minAltBar" id="minAltBar"></div>
@@ -705,7 +720,7 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <div id="notesModal" class="confirmModal" style="display:none">
   <div class="confirmBox">
     <div class="confirmMsg">Notes</div>
-    <textarea id="notesModalText" class="promptInput" rows="6" placeholder="Quick note&hellip;" autocomplete="off" autocorrect="off" style="text-align:left;font-size:16px;height:auto;font-family:'DM Sans',sans-serif"></textarea>
+    <textarea id="notesModalText" class="promptInput" rows="6" placeholder="Quick note&hellip;" autocomplete="off" autocorrect="off" style="text-align:left;font-size:16px;height:auto;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif"></textarea>
     <div class="confirmBtns">
       <button type="button" id="notesModalCloseBtn" class="confirmOk" style="background:#0369a1;flex:1">Done</button>
     </div>
@@ -715,9 +730,9 @@ input,select{ font-family:'JetBrains Mono',monospace; }
 <div id="dsModal" class="confirmModal" style="display:none">
   <div class="confirmBox">
     <div class="confirmMsg">Defects</div>
-    <textarea id="dsDefects" class="promptInput" rows="4" placeholder="Defect&hellip;" autocomplete="off" autocorrect="off" style="text-align:left;font-size:16px;height:auto;font-family:'DM Sans',sans-serif"></textarea>
+    <textarea id="dsDefects" class="promptInput" rows="4" placeholder="Defect&hellip;" autocomplete="off" autocorrect="off" style="text-align:left;font-size:16px;height:auto;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif"></textarea>
     <div class="confirmMsg" style="margin-top:10px">Safety Report</div>
-    <textarea id="dsSafety" class="promptInput" rows="4" placeholder="Safety report&hellip;" autocomplete="off" autocorrect="off" style="text-align:left;font-size:16px;height:auto;font-family:'DM Sans',sans-serif"></textarea>
+    <textarea id="dsSafety" class="promptInput" rows="4" placeholder="Safety report&hellip;" autocomplete="off" autocorrect="off" style="text-align:left;font-size:16px;height:auto;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif"></textarea>
     <div class="confirmBtns">
       <button type="button" id="dsCloseBtn" class="confirmOk" style="background:#0369a1;flex:1">Done</button>
     </div>
@@ -2279,7 +2294,7 @@ function renderCard(card){
             '<div class="unitToggle" data-i="'+i+'"><button data-u="ft" class="'+(unit==='ft'?'on':'')+'">FT</button><button data-u="FL" class="'+(unit==='FL'?'on':'')+'">FL</button></div>'+
             '<input type="text" inputmode="numeric" class="grKeypadUnit" data-i="'+i+'" placeholder="'+(unit==='FL'?'e.g. 035':'e.g. 3500')+'" value="'+(dispVal===''?'':dispVal)+'" style="margin-top:8px"/>';
         })() : '')+
-        (child.keypad && !child.unitToggle ? '<button type="button" class="grKeypadBtn" data-i="'+i+'" style="width:100%;margin-top:8px;padding:9px 10px;font-size:16px;border-radius:8px;text-align:right;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:var(--card);border:1px solid var(--border);color:var(--text);cursor:pointer">'+(((STATE.values[card.id+'.'+i]||{}).val) ? escapeHtml((STATE.values[card.id+'.'+i]||{}).val)+' '+child.unit : 'value ('+child.unit+')')+'</button>' : '')+
+        (child.keypad && !child.unitToggle ? '<button type="button" class="grKeypadBtn" data-i="'+i+'" style="width:100%;margin-top:8px;padding:9px 10px;font-size:16px;border-radius:8px;text-align:right;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-weight:700;background:var(--card);border:1px solid var(--border);color:var(--text);cursor:pointer">'+(((STATE.values[card.id+'.'+i]||{}).val) ? escapeHtml((STATE.values[card.id+'.'+i]||{}).val)+' '+child.unit : 'value ('+child.unit+')')+'</button>' : '')+
         (child.textEntry ? '<input type="text" class="grKeypad" data-i="'+i+'" placeholder="value" value="'+escapeHtml((STATE.values[card.id+'.'+i]||{}).val||'')+'"/>' : '')+
         (child.davis ? '<div class="grDaVisRow">'+
           '<button type="button" class="grDa grDaVisBtn" data-i="'+i+'" data-kind="da">'+((STATE.values[card.id+'.'+i]||{}).da||'DA (ft)')+'</button>'+
@@ -2385,7 +2400,7 @@ function renderCard(card){
         elDoneCount.textContent = st.done;
         renderResults(); renderCalculations();
         if(cardResolved(card)){
-          setTimeout(function(){ advanceAfterAction(); }, 260);
+          setTimeout(function(){ advanceAfterAction(); }, 120);
         }
       });
     });
@@ -2428,7 +2443,7 @@ function renderCard(card){
       }
       buildAnnunFor(curSection()); updateGroupProgress();
       var st = sectionTotals(curSection()); elDoneCount.textContent = st.done;
-      if(cardResolved(card)){ setTimeout(function(){ advanceAfterAction(); }, 500); }
+      if(cardResolved(card)){ setTimeout(function(){ advanceAfterAction(); }, 160); }
     }
     elCard.querySelectorAll('.grKeypad').forEach(function(inp){
       inp.addEventListener('input', function(){
@@ -2645,7 +2660,7 @@ function renderCard(card){
             setMode('card');
           }, 400);
         } else if(cardResolved(card)){
-          setTimeout(function(){ advanceAfterAction(); }, 400);
+          setTimeout(function(){ advanceAfterAction(); }, 140);
         }
         });
       });
@@ -2706,7 +2721,7 @@ function renderCard(card){
           elDoneCount.textContent = st.done;
           renderResults(); renderCalculations();
           if(cardResolved(card)){
-            setTimeout(function(){ advanceAfterAction(); }, 260);
+            setTimeout(function(){ advanceAfterAction(); }, 120);
           }
         });
       });
@@ -2747,7 +2762,7 @@ function renderCard(card){
       elDoneCount.textContent = st.done;
       renderResults(); renderCalculations(); renderPhaseRow();
       if(fpCompleteBox.checked && cardResolved(card)){
-        setTimeout(function(){ advanceAfterAction(); }, 400);
+        setTimeout(function(){ advanceAfterAction(); }, 140);
       }
     });
     elCard.querySelectorAll('.fuelUnitToggle button').forEach(function(b){
@@ -2933,7 +2948,7 @@ function renderCard(card){
         // advanceAfterAction (not nextCard) — it correctly falls through to
         // section-complete for a single-card section instead of wrapping
         // curCardIdx back onto the same card and looping forever.
-        setTimeout(advanceAfterAction, 500);
+        setTimeout(advanceAfterAction, 160);
       });
     });
   }
@@ -3590,6 +3605,7 @@ function fuelTableHtml(c){
 // entered with CheckDeck's normal text/numeric inputs rather than a
 // separate custom picker-widget system. One in-progress draft at a time;
 // Submit locks it into the list below and starts a fresh draft.
+var atisHist = [];
 function atisDraftDefault(){
   return { icao:'', time:'', info:'', rwy:'', wind:'', cavok:false, vis:'', qnh:'', tempDew:'', cloud1:'', cloud2:'', cloud3:'', notes:'' };
 }
@@ -3625,8 +3641,7 @@ function renderAtisHtml(){
     box('Wind (DDD/SS[GXX])', pick('atisWindBtn', d.wind?escapeHtml(d.wind):'—'), 'w2')+
     box('QNH', pick('atisQnhBtn', dispQnh(d.qnh)))+
     box('Temp / Dewpoint', pick('atisTempDewBtn', dispTempDew(d.tempDew)))+
-    '<div class="atBox cavokBox"><label class="fdCheckRow" style="width:auto"><input type="checkbox" id="atisCavok"'+(d.cavok?' checked':'')+'/> <span>CAVOK</span></label>'+
-      '<button type="button" id="atisVis10Btn" class="atSmallBtn">10km+</button></div>'+
+    box('CAVOK', '<button type="button" class="cloudPickBtn atBig atCavokBtn'+(d.cavok?' on':'')+'" id="atisCavok">'+(d.cavok?'\u2713 ON':'OFF')+'</button>')+
     '<div id="atisVisCloudFields" class="atCloudWrap" style="'+(d.cavok?'display:none':'')+'">'+
       box('Visibility', pick('atisVisBtn', dispVis(d.vis)))+
       box('Cloud 1', pick('atisCloud1Btn', d.cloud1?escapeHtml(d.cloud1):'—', 'data-slot="1"'))+
@@ -3636,7 +3651,7 @@ function renderAtisHtml(){
     box('Notes', '<textarea id="atisNotes" class="atBig atNotes" placeholder="Remarks, NOTAMs…" autocomplete="off" autocorrect="off">'+escapeHtml(d.notes||'')+'</textarea>', 'w3')+
     '<div class="atActions">'+
       '<button type="button" id="atisSubmitBtn" class="atSubmit">✓ Submit ATIS</button>'+
-      '<button type="button" id="atisClearBtn" class="atClear">Clear</button>'+
+      '<button type="button" id="atisClearBtn" class="atClear" aria-label="Backspace">\u232B</button>'+
     '</div>'+
   '</div>';
   if(STATE.atisEntries.length){
@@ -3686,15 +3701,15 @@ function openTimeKeypad(currentValue, onDone){
     document.body.removeChild(ov);
   }
   box.innerHTML =
-    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace">Time (UTC)</div>'+
-    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;font-size:32px;font-weight:700"><span id="tk-display">'+fmt()+'</span></div>'+
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif">Time (UTC)</div>'+
+    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-size:32px;font-weight:700"><span id="tk-display">'+fmt()+'</span></div>'+
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">'+
       '<button class="tk-k" data-k="1">1</button><button class="tk-k" data-k="2">2</button><button class="tk-k" data-k="3">3</button>'+
       '<button class="tk-k" data-k="4">4</button><button class="tk-k" data-k="5">5</button><button class="tk-k" data-k="6">6</button>'+
       '<button class="tk-k" data-k="7">7</button><button class="tk-k" data-k="8">8</button><button class="tk-k" data-k="9">9</button>'+
       '<span></span><button class="tk-k" data-k="0">0</button><span></span>'+
     '</div>'+
-    '<div id="tk-status" style="font-size:12px;text-align:center;min-height:16px;margin-bottom:10px;font-family:\'JetBrains Mono\',monospace;color:var(--muted)">&nbsp;</div>'+
+    '<div id="tk-status" style="font-size:12px;text-align:center;min-height:16px;margin-bottom:10px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;color:var(--muted)">&nbsp;</div>'+
     '<div style="display:flex;gap:8px">'+
       '<button type="button" id="tk-clear" style="flex:1;padding:14px;font-size:13px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>'+
       '<button type="button" id="tk-ok" style="flex:2;padding:14px;font-size:15px;font-weight:700;border-radius:9px;border:none;cursor:pointer;background:rgba(4,120,87,.15);color:#047857">Enter</button>'+
@@ -3702,7 +3717,7 @@ function openTimeKeypad(currentValue, onDone){
   ov.appendChild(box);
   document.body.appendChild(ov);
   var tkCss = document.createElement('style');
-  tkCss.textContent = '.tk-k{padding:22px 0;font-size:26px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.tk-k:active{background:var(--border)}';
+  tkCss.textContent = '.tk-k{padding:22px 0;font-size:26px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;color:var(--text);-webkit-tap-highlight-color:transparent}.tk-k:active{background:var(--border)}';
   box.appendChild(tkCss);
   function refresh(){
     var d = box.querySelector('#tk-display'); if(d) d.innerHTML = fmt();
@@ -3740,11 +3755,11 @@ function openLetterPicker(title, currentValue, onDone){
   box.style.cssText = 'background:var(--surface);border-radius:14px;padding:20px;max-width:440px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)';
   var letters = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
   box.innerHTML =
-    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace">'+title+'</div>'+
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif">'+title+'</div>'+
     '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">'+
       letters.map(function(l){
         var isSel = l === currentValue;
-        return '<button type="button" class="lp-key" data-l="'+l+'" style="padding:18px 0;font-size:22px;font-weight:700;font-family:\'JetBrains Mono\',monospace;background:'+(isSel?'#1e3a8a':'var(--card)')+';color:'+(isSel?'#fff':'var(--text)')+';border:1px solid var(--border);border-radius:8px;cursor:pointer">'+l+'</button>';
+        return '<button type="button" class="lp-key" data-l="'+l+'" style="padding:18px 0;font-size:22px;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;background:'+(isSel?'#1e3a8a':'var(--card)')+';color:'+(isSel?'#fff':'var(--text)')+';border:1px solid var(--border);border-radius:8px;cursor:pointer">'+l+'</button>';
       }).join('')+
     '</div>';
   ov.appendChild(box);
@@ -3794,26 +3809,26 @@ function openRunwayPicker(currentValue, onDone){
     });
   }
   box.innerHTML =
-    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:\'JetBrains Mono\',monospace">Runway In Use</div>'+
-    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;font-size:36px;font-weight:700"><span id="rp-display">'+fmt()+'</span></div>'+
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif">Runway In Use</div>'+
+    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-size:36px;font-weight:700"><span id="rp-display">'+fmt()+'</span></div>'+
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">'+
       '<button class="rp-num" data-k="1">1</button><button class="rp-num" data-k="2">2</button><button class="rp-num" data-k="3">3</button>'+
       '<button class="rp-num" data-k="4">4</button><button class="rp-num" data-k="5">5</button><button class="rp-num" data-k="6">6</button>'+
       '<button class="rp-num" data-k="7">7</button><button class="rp-num" data-k="8">8</button><button class="rp-num" data-k="9">9</button>'+
       '<span></span><button class="rp-num" data-k="0">0</button><span></span>'+
     '</div>'+
-    '<div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px;font-family:\'JetBrains Mono\',monospace">Pick suffix to submit</div>'+
+    '<div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif">Pick suffix to submit</div>'+
     '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">'+
-      '<button type="button" class="rp-suffix" data-s="" style="padding:22px 0;font-size:18px;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:rgba(4,120,87,.1);color:#047857;border:1px solid rgba(4,120,87,.3);border-radius:8px;cursor:pointer">Enter</button>'+
-      '<button type="button" class="rp-suffix" data-s="L" style="padding:22px 0;font-size:20px;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:rgba(3,105,161,.1);color:#0369a1;border:1px solid rgba(3,105,161,.3);border-radius:8px;cursor:pointer">L</button>'+
-      '<button type="button" class="rp-suffix" data-s="C" style="padding:22px 0;font-size:20px;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:rgba(3,105,161,.1);color:#0369a1;border:1px solid rgba(3,105,161,.3);border-radius:8px;cursor:pointer">C</button>'+
-      '<button type="button" class="rp-suffix" data-s="R" style="padding:22px 0;font-size:20px;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:rgba(3,105,161,.1);color:#0369a1;border:1px solid rgba(3,105,161,.3);border-radius:8px;cursor:pointer">R</button>'+
+      '<button type="button" class="rp-suffix" data-s="" style="padding:22px 0;font-size:18px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-weight:700;background:rgba(4,120,87,.1);color:#047857;border:1px solid rgba(4,120,87,.3);border-radius:8px;cursor:pointer">Enter</button>'+
+      '<button type="button" class="rp-suffix" data-s="L" style="padding:22px 0;font-size:20px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-weight:700;background:rgba(3,105,161,.1);color:#0369a1;border:1px solid rgba(3,105,161,.3);border-radius:8px;cursor:pointer">L</button>'+
+      '<button type="button" class="rp-suffix" data-s="C" style="padding:22px 0;font-size:20px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-weight:700;background:rgba(3,105,161,.1);color:#0369a1;border:1px solid rgba(3,105,161,.3);border-radius:8px;cursor:pointer">C</button>'+
+      '<button type="button" class="rp-suffix" data-s="R" style="padding:22px 0;font-size:20px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-weight:700;background:rgba(3,105,161,.1);color:#0369a1;border:1px solid rgba(3,105,161,.3);border-radius:8px;cursor:pointer">R</button>'+
     '</div>'+
     '<button type="button" id="rp-clear" style="width:100%;padding:12px;font-size:13px;font-weight:700;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Clear</button>';
   ov.appendChild(box);
   document.body.appendChild(ov);
   var rpCss = document.createElement('style');
-  rpCss.textContent = '.rp-num{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.rp-num:active{background:var(--border)}';
+  rpCss.textContent = '.rp-num{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;color:var(--text);-webkit-tap-highlight-color:transparent}.rp-num:active{background:var(--border)}';
   box.appendChild(rpCss);
   refresh();
   box.querySelectorAll('.rp-num').forEach(function(k){
@@ -3898,8 +3913,8 @@ function openWindKeypad(currentValue, onDone){
     return true;
   }
   box.innerHTML =
-    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:\'JetBrains Mono\',monospace">Wind \u00b7 DDD/SS [GXX] [+ vvvVvvv]</div>'+
-    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;font-size:30px;font-weight:700;line-height:1.6"><span id="wk-display">'+fmt()+'</span></div>'+
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif">Wind \u00b7 DDD/SS [GXX] [+ vvvVvvv]</div>'+
+    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-size:30px;font-weight:700;line-height:1.6"><span id="wk-display">'+fmt()+'</span></div>'+
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">'+
       '<button class="wk-k" data-k="1">1</button><button class="wk-k" data-k="2">2</button><button class="wk-k" data-k="3">3</button>'+
       '<button class="wk-k" data-k="4">4</button><button class="wk-k" data-k="5">5</button><button class="wk-k" data-k="6">6</button>'+
@@ -3913,7 +3928,7 @@ function openWindKeypad(currentValue, onDone){
   ov.appendChild(box);
   document.body.appendChild(ov);
   var wkCss = document.createElement('style');
-  wkCss.textContent = '.wk-k{padding:22px 0;font-size:26px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.wk-k:active{background:var(--border)}.wk-k-gust{background:rgba(180,83,9,.1);color:#b45309;border-color:rgba(180,83,9,.3)}.wk-k-gust:active{background:rgba(180,83,9,.25)}.wk-k-var{background:rgba(3,105,161,.1);color:#0369a1;border-color:rgba(3,105,161,.3)}.wk-k-var:active{background:rgba(3,105,161,.25)}';
+  wkCss.textContent = '.wk-k{padding:22px 0;font-size:26px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;color:var(--text);-webkit-tap-highlight-color:transparent}.wk-k:active{background:var(--border)}.wk-k-gust{background:rgba(180,83,9,.1);color:#b45309;border-color:rgba(180,83,9,.3)}.wk-k-gust:active{background:rgba(180,83,9,.25)}.wk-k-var{background:rgba(3,105,161,.1);color:#0369a1;border-color:rgba(3,105,161,.3)}.wk-k-var:active{background:rgba(3,105,161,.25)}';
   box.appendChild(wkCss);
   function refresh(){
     var d = box.querySelector('#wk-display'); if(d) d.innerHTML = fmt();
@@ -4004,8 +4019,8 @@ function openTempDewKeypad(currentValue, onDone){
   }
   function complete(){ return tempDigits.length>=1 && dewDigits.length>=1; }
   box.innerHTML =
-    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:\'JetBrains Mono\',monospace">Temperature / Dewpoint</div>'+
-    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;font-size:32px;font-weight:700"><span id="td-display">'+fmt()+'</span></div>'+
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif">Temperature / Dewpoint</div>'+
+    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-size:32px;font-weight:700"><span id="td-display">'+fmt()+'</span></div>'+
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">'+
       '<button class="td-k" data-k="1">1</button><button class="td-k" data-k="2">2</button><button class="td-k" data-k="3">3</button>'+
       '<button class="td-k" data-k="4">4</button><button class="td-k" data-k="5">5</button><button class="td-k" data-k="6">6</button>'+
@@ -4019,7 +4034,7 @@ function openTempDewKeypad(currentValue, onDone){
   ov.appendChild(box);
   document.body.appendChild(ov);
   var tdCss = document.createElement('style');
-  tdCss.textContent = '.td-k{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.td-k:active{background:var(--border)}.td-k-neg{background:rgba(190,18,60,.08);color:#be123c;border-color:rgba(190,18,60,.25)}.td-k-neg:active{background:rgba(190,18,60,.18)}.td-k-next{background:rgba(3,105,161,.1);color:#0369a1;border-color:rgba(3,105,161,.3);font-size:16px}.td-k-next:active{background:rgba(3,105,161,.2)}';
+  tdCss.textContent = '.td-k{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;color:var(--text);-webkit-tap-highlight-color:transparent}.td-k:active{background:var(--border)}.td-k-neg{background:rgba(190,18,60,.08);color:#be123c;border-color:rgba(190,18,60,.25)}.td-k-neg:active{background:rgba(190,18,60,.18)}.td-k-next{background:rgba(3,105,161,.1);color:#0369a1;border-color:rgba(3,105,161,.3);font-size:16px}.td-k-next:active{background:rgba(3,105,161,.2)}';
   box.appendChild(tdCss);
   function doSet(){
     var a = assembled();
@@ -4133,9 +4148,9 @@ function openNumericKeypad(config, currentValue, onDone){
     return '';
   }
   box.innerHTML =
-    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:\'JetBrains Mono\',monospace">'+cfg.title+'</div>'+
-    '<div style="display:flex;align-items:baseline;justify-content:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:8px;font-family:\'JetBrains Mono\',monospace;font-size:32px;font-weight:700"><span id="fnk-display">'+fmtDisplay()+'</span></div>'+
-    '<div id="fnk-status" style="font-size:12px;text-align:center;min-height:16px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;color:var(--muted)">'+(cfg.help||'&nbsp;')+'</div>'+
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif">'+cfg.title+'</div>'+
+    '<div style="display:flex;align-items:baseline;justify-content:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:8px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-size:32px;font-weight:700"><span id="fnk-display">'+fmtDisplay()+'</span></div>'+
+    '<div id="fnk-status" style="font-size:12px;text-align:center;min-height:16px;margin-bottom:14px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;color:var(--muted)">'+(cfg.help||'&nbsp;')+'</div>'+
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">'+
       '<button class="nk-k" data-k="1">1</button><button class="nk-k" data-k="2">2</button><button class="nk-k" data-k="3">3</button>'+
       '<button class="nk-k" data-k="4">4</button><button class="nk-k" data-k="5">5</button><button class="nk-k" data-k="6">6</button>'+
@@ -4151,7 +4166,7 @@ function openNumericKeypad(config, currentValue, onDone){
   ov.appendChild(box);
   document.body.appendChild(ov);
   var nkCss = document.createElement('style');
-  nkCss.textContent = '.nk-k{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.nk-k:active{background:var(--border)}.nk-k-neg{background:rgba(190,18,60,.08);color:#be123c;border-color:rgba(190,18,60,.25)}.nk-k-neg:active{background:rgba(190,18,60,.18)}.nk-k-dot{background:rgba(3,105,161,.1);color:#0369a1;border-color:rgba(3,105,161,.3)}.nk-k-dot:active{background:rgba(3,105,161,.2)}';
+  nkCss.textContent = '.nk-k{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;color:var(--text);-webkit-tap-highlight-color:transparent}.nk-k:active{background:var(--border)}.nk-k-neg{background:rgba(190,18,60,.08);color:#be123c;border-color:rgba(190,18,60,.25)}.nk-k-neg:active{background:rgba(190,18,60,.18)}.nk-k-dot{background:rgba(3,105,161,.1);color:#0369a1;border-color:rgba(3,105,161,.3)}.nk-k-dot:active{background:rgba(3,105,161,.2)}';
   box.appendChild(nkCss);
   function doSet(){
     if(!validate()){ onDone(assembled()); document.body.removeChild(ov); }
@@ -4244,13 +4259,13 @@ function showCloudPicker(slot, card){
     }
   }
   box.innerHTML =
-    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace">Cloud Layer '+slot+'</div>'+
+    '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif">Cloud Layer '+slot+'</div>'+
     '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">'+
       types.map(function(t){
-        return '<button type="button" class="cp-type" data-t="'+t+'" style="padding:22px 0;font-size:18px;font-family:\'JetBrains Mono\',monospace;font-weight:700;background:'+(t===type?'#1e3a8a':'var(--card)')+';color:'+(t===type?'#fff':'var(--text)')+';border:1px solid var(--border);border-radius:8px;cursor:pointer">'+t+'</button>';
+        return '<button type="button" class="cp-type" data-t="'+t+'" style="padding:22px 0;font-size:18px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-weight:700;background:'+(t===type?'#1e3a8a':'var(--card)')+';color:'+(t===type?'#fff':'var(--text)')+';border:1px solid var(--border);border-radius:8px;cursor:pointer">'+t+'</button>';
       }).join('')+
     '</div>'+
-    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:\'JetBrains Mono\',monospace;font-size:30px;font-weight:700"><span id="cp-display">'+fmtDigits()+'</span></div>'+
+    '<div style="text-align:center;padding:18px 12px;background:rgba(30,58,138,.05);border-radius:9px;margin-bottom:14px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-size:30px;font-weight:700"><span id="cp-display">'+fmtDigits()+'</span></div>'+
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">'+
       '<button class="cp-k" data-k="1">1</button><button class="cp-k" data-k="2">2</button><button class="cp-k" data-k="3">3</button>'+
       '<button class="cp-k" data-k="4">4</button><button class="cp-k" data-k="5">5</button><button class="cp-k" data-k="6">6</button>'+
@@ -4264,7 +4279,7 @@ function showCloudPicker(slot, card){
   ov.appendChild(box);
   document.body.appendChild(ov);
   var cpCss = document.createElement('style');
-  cpCss.textContent = '.cp-k{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:"JetBrains Mono",monospace;color:var(--text);-webkit-tap-highlight-color:transparent}.cp-k:active{background:var(--border)}';
+  cpCss.textContent = '.cp-k{padding:24px 0;font-size:28px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;color:var(--text);-webkit-tap-highlight-color:transparent}.cp-k:active{background:var(--border)}';
   box.appendChild(cpCss);
   function refresh(){
     var d = box.querySelector('#cp-display');
@@ -4317,6 +4332,7 @@ function wireAtis(card){
       }
       saveState();
     });
+    el.addEventListener('change', function(){ var c = JSON.stringify(STATE.atisDraft); if(atisHist[atisHist.length-1] !== c) atisHist.push(c); });
   }
   bindDraft('atisIcao', 'icao', function(v){ return v.toUpperCase(); });
   bindDraft('atisNotes', 'notes', sentenceCaseStr);
@@ -4365,16 +4381,12 @@ function wireAtis(card){
       STATE.atisDraft.vis = v; saveState(); renderCard(card);
     });
   });
-  var vis10Btn = document.getElementById('atisVis10Btn');
-  if(vis10Btn) vis10Btn.addEventListener('click', function(){
-    STATE.atisDraft.vis = '10'; saveState(); renderCard(card);
-  });
   document.querySelectorAll('[data-slot]').forEach(function(b){
     b.addEventListener('click', function(){ showCloudPicker(b.getAttribute('data-slot'), card); });
   });
   var cavokBox = document.getElementById('atisCavok');
-  if(cavokBox) cavokBox.addEventListener('change', function(){
-    STATE.atisDraft.cavok = cavokBox.checked;
+  if(cavokBox) cavokBox.addEventListener('click', function(){
+    STATE.atisDraft.cavok = !STATE.atisDraft.cavok;
     saveState();
     renderCard(card);
   });
@@ -4386,14 +4398,25 @@ function wireAtis(card){
       return;
     }
     STATE.atisEntries.push(JSON.parse(JSON.stringify(d)));
-    STATE.atisDraft = atisDraftDefault();
+    STATE.atisDraft = atisDraftDefault(); atisHist = [];
     saveState();
     renderCard(card);
     renderCalculations();
   });
+  // Backspace: steps the draft back one change at a time (last field filled
+  // is the first to go). History is rebuilt from every render of this page.
+  var _cur = JSON.stringify(STATE.atisDraft);
+  if(atisHist[atisHist.length-1] !== _cur){ atisHist.push(_cur); if(atisHist.length > 60) atisHist.shift(); }
   var clearBtn = document.getElementById('atisClearBtn');
   if(clearBtn) clearBtn.addEventListener('click', function(){
-    STATE.atisDraft = atisDraftDefault();
+    var now = JSON.stringify(STATE.atisDraft);
+    if(atisHist.length && atisHist[atisHist.length-1] !== now){
+      // Typed text since the last render: drop that first.
+    } else {
+      if(atisHist.length > 1) atisHist.pop();
+    }
+    var prev = atisHist.length ? atisHist[atisHist.length-1] : JSON.stringify(atisDraftDefault());
+    STATE.atisDraft = JSON.parse(prev);
     saveState();
     renderCard(card);
   });
@@ -4550,7 +4573,7 @@ function markAllGroup(card, m){
   elDoneCount.textContent = st.done;
   renderResults(); renderCalculations();
   renderHeadingRow();
-  setTimeout(function(){ advanceAfterAction(); }, 260);
+  setTimeout(function(){ advanceAfterAction(); }, 120);
 }
 
 /* ============================================================
@@ -5909,7 +5932,7 @@ var touchX = null, touchY = null;
 elStage.addEventListener('touchstart', function(e){
   touchX = e.touches[0].clientX;
   touchY = e.touches[0].clientY;
-});
+}, {passive:true});
 elStage.addEventListener('touchend', function(e){
   if(touchX === null) return;
   var dx = e.changedTouches[0].clientX - touchX;
@@ -5919,7 +5942,7 @@ elStage.addEventListener('touchend', function(e){
     if(dx > 0) prevCard(); else nextCard();
   }
   touchX = null; touchY = null;
-});
+}, {passive:true});
 
 /* ============================================================
    RESULTS / PRINT
@@ -6315,13 +6338,26 @@ function fitCard(){
   }
   layout(maxCols, min);
 }
+// Flight Summary zoom is "sticky": it is worked out when the page is opened
+// and then only ever shrinks while you type, so entering data no longer makes
+// the whole page jump between sizes. Reopened pages start fresh.
+var calcStickyZoom = 1, calcWasOn = false;
 function fitCalc(){
   var cm = document.getElementById('calcMode');
-  if(!cm || !cm.classList.contains('on')) return;
-  fitInto(cm, Array.prototype.slice.call(cm.children));
+  if(!cm || !cm.classList.contains('on')){ calcWasOn = false; return; }
+  if(!calcWasOn){ calcWasOn = true; calcStickyZoom = 1; }
+  var kids = Array.prototype.slice.call(cm.children);
+  var min = window.innerWidth >= 600 ? 0.4 : 0.75;
+  var z = calcStickyZoom;
+  kids.forEach(function(k){ k.style.zoom = z; });
+  while(cm.scrollHeight > cm.clientHeight + 1 && z > min){
+    z = Math.round((z - 0.04) * 100) / 100;
+    kids.forEach(function(k){ k.style.zoom = z; });
+  }
+  calcStickyZoom = z;
 }
 function refitAll(){ fitCard(); fitCalc(); }
-window.addEventListener('resize', function(){ refitAll(); if(homeOpen) renderHome(); });
+window.addEventListener('resize', function(){ calcStickyZoom = 1; refitAll(); if(homeOpen) renderHome(); });
 window.addEventListener('orientationchange', function(){ setTimeout(function(){ syncHeaderOffset(); }, 250); });
 function syncHeaderOffset(){
   var h = document.querySelector('.topStrip').getBoundingClientRect().height;
@@ -6555,7 +6591,8 @@ function renderCalculations(){
 
   var html = '';
   var fd = STATE.flightDetails;
-  html += '<div class="calcCard flightDetailsCard"><div class="ck">Flight Details</div>'+
+  var flightIdNum = null; chronologicalHistory().forEach(function(h){ if(STATE.currentHistoryId && h.id === STATE.currentHistoryId) flightIdNum = h.__flightNum; });
+  html += '<div class="calcCard flightDetailsCard"><div class="ck" style="display:flex;justify-content:space-between;align-items:center">Flight Details<span id="fdFlightId" style="font-weight:800;color:'+(flightIdNum?'var(--em)':'var(--amber)')+'">'+(flightIdNum?'\uD83D\uDD17 Flight #'+flightIdNum:'Not saved')+'</span></div>'+
     '<div class="fdGrid">'+
       '<div class="fdField" style="grid-column:1/-1"><label>Date</label><div class="fdDateRow"><input type="date" id="fdDate" value="'+escapeHtml(fd.date||'')+'"/><button type="button" id="fdTodayBtn">Today</button></div></div>'+
       '<div class="fdField"><label>Slot From (UTC)</label><button type="button" class="fpFieldBtn" id="fdSlotFrom" style="text-align:left">'+(fd.slotFrom?escapeHtml(fd.slotFrom):'Tap to set')+'</button></div>'+
@@ -6614,7 +6651,7 @@ function renderCalculations(){
       // hold or shutdown mid-flight that shouldn't count against fuel
       // burned. Has no effect once Landing is set, since the clock stops
       // on its own at that point anyway.
-      '<button type="button" id="fuelTimerPauseBtn" style="width:100%;margin-top:10px;border:1px solid '+(STATE.fuelTimerPaused?'#b45309':'var(--muted)')+';background:'+(STATE.fuelTimerPaused?'#b45309':'var(--surface)')+';color:'+(STATE.fuelTimerPaused?'#fff':'var(--muted)')+';border-radius:8px;padding:9px 0;font-family:\'JetBrains Mono\',monospace;font-weight:800;font-size:12px;cursor:pointer">'+(STATE.fuelTimerPaused?'\u25b6 Resume Fuel Timer':'\u23f8 Pause Fuel Timer')+'</button>'+
+      '<button type="button" id="fuelTimerPauseBtn" style="width:100%;margin-top:10px;border:1px solid '+(STATE.fuelTimerPaused?'#b45309':'var(--muted)')+';background:'+(STATE.fuelTimerPaused?'#b45309':'var(--surface)')+';color:'+(STATE.fuelTimerPaused?'#fff':'var(--muted)')+';border-radius:8px;padding:9px 0;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-weight:800;font-size:12px;cursor:pointer">'+(STATE.fuelTimerPaused?'\u25b6 Resume Fuel Timer':'\u23f8 Pause Fuel Timer')+'</button>'+
       (STATE.fuelTimerPaused?'<div class="grNote" style="padding:6px 2px 0;color:#b45309">Fuel timer paused \u2014 Time on L/R and fuel-remaining figures are frozen until resumed.</div>':'');
     if(ts.fob!==null && ts.burn>0){
       html += '<div class="legs" style="margin-top:6px"><span>L remaining <b>'+fmtFuel(ts.L.qty)+'</b></span><span>R remaining <b>'+fmtFuel(ts.R.qty)+'</b></span></div>';
@@ -6643,7 +6680,7 @@ function renderCalculations(){
     html += '<div class="calcCard"><div class="ck">ATIS</div>';
     STATE.atisEntries.forEach(function(e, idx){
       html += '<div class="resRow" style="'+(idx>0?'border-top:1px solid #e2e8f0;':'')+'flex-direction:column;align-items:flex-start;padding:8px 2px">'+
-        '<span class="rt" style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escapeHtml(atisEntryString(e))+'</span>'+
+        '<span class="rt" style="font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-size:12px">'+escapeHtml(atisEntryString(e))+'</span>'+
         (e.notes ? '<span style="font-size:11px;color:var(--muted);margin-top:3px">'+escapeHtml(e.notes)+'</span>' : '')+
       '</div>';
     });
@@ -6672,7 +6709,11 @@ function renderCalculations(){
   // it," and, critically, an actual way to remove a single flight
   // rather than only ever all of them at once.
   html += '<div class="calcCard"><div class="ck">Flight History</div>';
-  html += '<button type="button" id="saveToHistoryBtn" style="width:100%;border:1px solid var(--em);background:var(--em);color:#fff;border-radius:8px;padding:11px 0;font-family:\'JetBrains Mono\',monospace;font-weight:800;font-size:13px;cursor:pointer;margin-bottom:12px">+ Save Current Flight to History</button>';
+  var linkedNow = STATE.flightHistory.some(function(h){ return h.id === STATE.currentHistoryId; });
+  html += '<div style="display:flex;gap:8px;margin-bottom:12px">'+
+    '<button type="button" id="saveCurrentBtn"'+(linkedNow?'':' disabled')+' style="flex:1;border:1px solid var(--em);background:var(--em);color:#fff;border-radius:8px;padding:11px 0;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-weight:800;font-size:13px;cursor:pointer;'+(linkedNow?'':'opacity:.4;')+'">Save as Current</button>'+
+    '<button type="button" id="saveNewBtn" style="flex:1;border:1px solid var(--sky);background:var(--sky);color:#fff;border-radius:8px;padding:11px 0;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-weight:800;font-size:13px;cursor:pointer">Save as New</button>'+
+  '</div>';
   if(hasUnsavedChanges() && !STATE.flightHistory.some(function(h){ return h.id === STATE.currentHistoryId; })){
     html += '<div class="grNote" style="margin:-6px 0 10px;color:var(--amber);font-weight:700">\u2605 Current flight not saved yet</div>';
   }
@@ -6682,7 +6723,6 @@ function renderCalculations(){
   if(STATE.flightHistory.length){
     html += '<div class="grNote" style="margin:-4px 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
       '<span>'+(linkedH ? '\uD83D\uDD17 Linked to flight #'+linkedH.__flightNum : 'Not linked to a History entry')+'</span>'+
-      '<button type="button" id="linkHistoryBtn" style="border:1px solid var(--border);background:var(--surface);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer">'+(linkedH?'Change link':'Link to entry')+'</button>'+
       '</div>';
   }
   if(!STATE.flightHistory.length){
@@ -6951,52 +6991,26 @@ function wireFlightDetails(){
       });
     });
   });
-  var saveToHistoryBtn = document.getElementById('saveToHistoryBtn');
-  if(saveToHistoryBtn) saveToHistoryBtn.addEventListener('click', function(){
+  function doSaveHistory(forceNew, btnId, doneLabel){
     var fd = STATE.flightDetails;
     if(!fd.date && !fd.registration && !fd.student){
       showConfirm('Enter at least a date, registration, or student before saving to history.', 'OK', function(){});
       return;
     }
-    archiveCurrentFlightToHistory();
+    archiveCurrentFlightToHistory(forceNew);
     saveState();
     renderCalculations();
-    // renderCalculations() just rebuilt the whole card (including this
-    // button) from scratch, so the original element reference above is
-    // now detached — grab the fresh one before showing the confirmation.
-    var freshBtn = document.getElementById('saveToHistoryBtn');
-    if(freshBtn){
-      var original = freshBtn.textContent;
-      freshBtn.textContent = '\u2713 Saved to History';
-      setTimeout(function(){
-        var stillThere = document.getElementById('saveToHistoryBtn');
-        if(stillThere) stillThere.textContent = original;
-      }, 1600);
+    var fresh = document.getElementById(btnId);
+    if(fresh){
+      var original = fresh.textContent;
+      fresh.textContent = doneLabel;
+      setTimeout(function(){ var again = document.getElementById(btnId); if(again) again.textContent = original; }, 1600);
     }
-  });
-  var linkHistoryBtn = document.getElementById('linkHistoryBtn');
-  if(linkHistoryBtn) linkHistoryBtn.addEventListener('click', function(){
-    showPrompt('Enter the flight number (#) from the list below, or an entry ID, to link the current flight to. Save Current will then update that entry. Leave blank to unlink (next save creates a new entry).', '', function(v){
-      v = (v||'').trim();
-      if(!v){
-        STATE.currentHistoryId = null; saveState(); renderCalculations(); return;
-      }
-      var list = chronologicalHistory(), target = null;
-      var n = v.replace(/^#/, '');
-      if(/^\d+$/.test(n)){
-        list.forEach(function(h){ if(h.__flightNum === parseInt(n, 10)) target = h; });
-      }
-      if(!target) list.forEach(function(h){ if(h.id === v) target = h; });
-      if(!target){
-        showConfirm('No History entry matches "'+v+'".', 'OK', function(){});
-        return;
-      }
-      var desc = '#'+target.__flightNum+' ('+[target.date, target.registration, target.student].filter(Boolean).join(' \u00b7 ')+')';
-      showConfirm('Link the current flight to '+desc+'? Save Current will overwrite that entry.', 'Link', function(){
-        STATE.currentHistoryId = target.id; saveState(); renderCalculations();
-      });
-    });
-  });
+  }
+  var saveCurrentBtn = document.getElementById('saveCurrentBtn');
+  if(saveCurrentBtn) saveCurrentBtn.addEventListener('click', function(){ if(!saveCurrentBtn.disabled) doSaveHistory(false, 'saveCurrentBtn', '\u2713 Updated'); });
+  var saveNewBtn = document.getElementById('saveNewBtn');
+  if(saveNewBtn) saveNewBtn.addEventListener('click', function(){ doSaveHistory(true, 'saveNewBtn', '\u2713 Saved as new'); });
   var exportTimesBtn = document.getElementById('exportTimesBtn');
   if(exportTimesBtn) exportTimesBtn.addEventListener('click', function(){ shareFlightHistoryPdf(); });
   var exportAllBtn = document.getElementById('exportAllHistoryPdfBtn');
@@ -7040,6 +7054,7 @@ function wireFlightDetails(){
    MODE SWITCH
    ============================================================ */
 function setMode(mode){
+  calcWasOn = false;
   curMode = mode;
   curHeading = mode==='card' ? headingFor(curPhase) : 'PostFlight';
   document.getElementById('cardMode').style.display = mode==='card' ? 'flex' : 'none';
