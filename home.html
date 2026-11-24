@@ -17,15 +17,15 @@
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--text)}
   body{
-    font-family:'DM Sans',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif;
     padding:max(20px,env(safe-area-inset-top)) 18px max(28px,env(safe-area-inset-bottom));
     max-width:880px;margin:0 auto;
   }
   header{margin:8px 0 22px}
-  h1{font-family:'Syne','DM Sans',system-ui,sans-serif;font-size:30px;margin:0;letter-spacing:-.3px}
+  h1{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif;font-size:30px;margin:0;letter-spacing:-.3px}
   .sub{color:var(--muted);margin-top:4px;font-size:15px}
   h2{
-    font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif;
     font-size:12px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;
     color:var(--muted);margin:26px 0 10px;
   }
@@ -41,13 +41,19 @@
   a.app:active{transform:scale(.98)}
   .ico{
     flex:none;width:46px;height:46px;border-radius:11px;background:var(--c);color:#fff;
-    display:grid;place-items:center;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif;
     font-weight:700;font-size:15px;overflow:hidden;
   }
   .ico img{width:100%;height:100%;object-fit:cover;display:block}
   .name{font-weight:700;font-size:17px}
   .desc{color:var(--muted);font-size:13.5px;margin-top:2px;line-height:1.3}
   footer{margin-top:30px;color:var(--muted);font-size:12px;text-align:center}
+
+  /* touch responsiveness + system font (as index.html v134) */
+  body, button, input, select, textarea{ font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; }
+  body{ touch-action:manipulation; }
+  a, button, .app{ touch-action:manipulation; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; cursor:pointer; }
+  .app:active{ transform:scale(.96); filter:brightness(.92); background:#e0f2fe; transition:none !important; }
 </style>
 </head>
 <body>
