@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v143 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v147 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -585,7 +585,7 @@ input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro
 #calcMode .calcCard textarea{ font-size:17px; text-align:left; }
 #calcMode .resHead h2{ font-size:22px; }
 
-/* v143 fit fixes: text must fit inside its box on iPad */
+/* v147 fit fixes: text must fit inside its box on iPad */
 .homeTile .hT{ font-size:clamp(13px,3.2vw,22px); overflow-wrap:normal; word-break:normal; hyphens:none; }
 .homeTile .hMain{ padding:0 4px; }
 .fdDateRow{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:stretch; }
@@ -597,7 +597,7 @@ input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro
 .fpFieldBtn, .fdField input{ font-size:clamp(12px,2vw,15px); min-width:0; }
 .fdField label{ white-space:nowrap; }
 
-/* v143 progress bars */
+/* v147 progress bars */
 .homeTile .hBar{ display:block; align-self:stretch; width:auto; min-width:60%; height:7px; border-radius:4px; background:#e2e8f0; overflow:hidden; margin:3px 6px 0; }
 .homeTile .hBar i{ display:block; height:100%; background:#f59e0b; border-radius:4px; transition:width .25s; }
 .homeTile.done .hBar i{ background:#059669; }
@@ -605,7 +605,7 @@ input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro
 .secBar i{ display:block; height:100%; width:0; background:#0369a1; border-radius:4px; transition:width .25s; }
 .secBar.full i{ background:#059669; }
 
-/* v143 touch responsiveness */
+/* v147 touch responsiveness */
 button, [role=button], .homeTile, .groupRow, .rocker, .mnemToggle, label, select, summary, a{ touch-action:manipulation; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; cursor:pointer; }
 input, textarea{ touch-action:manipulation; -webkit-user-select:text; user-select:text; }
 button:active, [role=button]:active, .homeTile:active, .rocker:active, .mnemToggle:active{ transform:scale(.96); filter:brightness(.92); transition:none !important; }
@@ -613,7 +613,7 @@ button:active, [role=button]:active, .homeTile:active, .rocker:active, .mnemTogg
 .groupRow button:active{ transform:scale(.9); }
 .card.flash-go, .card.flash-na{ animation-duration:.2s; }
 
-/* v143 system font (San Francisco on iPad/iPhone): clearest, instant, works offline */
+/* v147 system font (San Francisco on iPad/iPhone): clearest, instant, works offline */
 html,body,button,input,select,textarea{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; }
 body, button, input, select, textarea{ font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; letter-spacing:0; }
 body{ font-weight:500; }
@@ -624,7 +624,7 @@ body{ font-weight:500; }
 .atClear{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:clamp(14px,2.2vw,20px) !important; font-weight:800; color:var(--rose); }
 .atClear svg{ width:clamp(44px,8vw,72px); height:auto; }
 
-/* v143 IFR-chart altitude limits */
+/* v147 IFR-chart altitude limits */
 .altStack{ display:inline-flex; flex-direction:column; align-items:center; gap:3px; line-height:1.1; }
 .altV{ font-weight:800; font-size:13px; padding:1px 4px; }
 .altMax{ border-top:3px solid currentColor; }
@@ -637,7 +637,7 @@ body{ font-weight:500; }
 .alBtn{ flex:1; padding:14px; font-size:15px; font-weight:800; border-radius:10px; border:1px solid var(--border); background:var(--card); color:var(--text); cursor:pointer; }
 .alOk{ background:rgba(4,120,87,.15); color:#047857; border:none; }
 
-/* v143 winds aloft in dock */
+/* v147 winds aloft in dock */
 .windBtn{ flex:2.4 1 0 !important; padding:2px 4px !important; }
 .wGrid{ display:grid; grid-template-columns:1fr 1fr; gap:1px 10px; width:100%; }
 .wCell{ font-size:12px; font-weight:800; white-space:nowrap; text-align:left; }
@@ -646,12 +646,35 @@ body{ font-weight:500; }
 #calcMode .timesTable th:nth-child(1), #calcMode .timesTable td:nth-child(1){ width:27% !important; }
 #calcMode .timesTable th:nth-child(2), #calcMode .timesTable td:nth-child(2), #calcMode .timesTable th:nth-child(3), #calcMode .timesTable td:nth-child(3){ width:22% !important; }
 #calcMode .timesTable th:nth-child(4), #calcMode .timesTable td:nth-child(4){ width:29% !important; }
+/* v147 Flight Summary: compact, flows column to column, never zooms */
+@media (min-width:760px){ #calcBody{ column-count:3 !important; column-gap:10px; } }
+#calcMode .calcCard{ padding:10px 12px; margin-bottom:8px; }
+#calcMode .calcCard .ck{ margin-bottom:8px; }
+#calcMode .fdField input, #calcMode .fdField button, #calcMode .fdField select{ font-size:16px; padding:8px; }
+#calcMode .calcCard textarea{ font-size:15px; min-height:0; height:52px; }
+#calcMode .timesTable td{ padding:7px 2px; }
+#calcMode .hItem, #calcMode .histItem{ padding:6px 8px; margin-bottom:5px; }
+#calcMode .calcCard button{ min-height:0; }
+
+@media (min-width:1000px){ #calcBody{ column-count:4 !important; } }
+#calcMode .flightDetailsCard .ck{ flex-wrap:wrap; justify-content:center !important; gap:2px 8px; font-size:13px; }
+#fdFlightId{ font-size:12px; white-space:nowrap; }
+#calcBody > .calcCard.histCard{ break-inside:auto; }
+#calcMode .savedFlightItem{ break-inside:avoid; padding:7px 9px !important; margin-bottom:6px !important; }
+#calcMode .savedFlightItem button{ padding:6px 2px !important; font-size:12px !important; }
+
+/* v147 small ATIS submit/back */
+.atActions{ justify-content:flex-end; align-items:center; gap:8px; }
+.atSubmit{ flex:0 0 auto !important; padding:0 18px !important; height:42px; font-size:15px !important; border-radius:10px !important; }
+.atClear{ flex:0 0 auto !important; width:64px; height:42px; padding:0 !important; flex-direction:row !important; gap:4px !important; border-radius:10px !important; font-size:11px !important; }
+.atClear svg{ width:22px !important; height:auto; }
+.atClear .atClearTxt{ display:none; }
 </style>
 </head>
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v143</div>
+  <div id="versionBadge">v147</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="minAltBar" id="minAltBar"></div>
@@ -3704,7 +3727,7 @@ function atisEntryString(e){
   if(e.wind) parts.push(e.wind);
   if(e.cavok) parts.push('CAVOK');
   else {
-    if(e.vis) parts.push(e.vis + (e.visUnit === 'm' ? 'M' : 'KM'));
+    if(e.vis) parts.push(e.visUnit === 'x' ? String(e.vis).toUpperCase() : e.vis + (e.visUnit === 'm' ? 'M' : 'KM'));
     [e.cloud1,e.cloud2,e.cloud3].forEach(function(c){ if(c) parts.push(c.toUpperCase()); });
   }
   if(e.tempDew) parts.push(e.tempDew);
@@ -3714,7 +3737,7 @@ function atisEntryString(e){
 }
 function renderAtisHtml(){
   var d = STATE.atisDraft;
-  function dispVis(v){ return v ? v+(d.visUnit === 'm' ? ' m' : ' km') : '--'; }
+  function dispVis(v){ return v ? (d.visUnit === 'x' ? v : v+(d.visUnit === 'm' ? ' m' : ' km')) : '--'; }
   function dispQnh(v){ return v ? v+' hPa' : '--'; }
   function dispTempDew(v){ return v ? v.replace(/M/g,'-')+' \u00b0C' : '--'; }
   var html = '';
@@ -4481,13 +4504,13 @@ function wireAtis(card){
   function openVisPicker(unit){
     var cur = (STATE.atisDraft.visUnit === unit) ? (STATE.atisDraft.vis || '') : '';
     var cfg = unit === 'm'
-      ? { title:'Visibility', digits:4, suffix:'m', min:0, max:9999, help:'metres', altLabel:'km', onAlt:function(){ openVisPicker('km'); } }
-      : { title:'Visibility', digits:2, decimalPlaces:1, suffix:'km', min:0, max:99, help:'kilometres', altLabel:'m', onAlt:function(){ openVisPicker('m'); } };
+      ? { title:'Visibility', digits:4, suffix:'m', min:0, max:9999, help:'metres', altLabel:'>10km', onAlt:function(){ STATE.atisDraft.vis = '>10km'; STATE.atisDraft.visUnit = 'x'; saveState(); renderCard(card); } }
+      : { title:'Visibility', digits:4, suffix:'m', min:0, max:9999, help:'metres', altLabel:'>10km', onAlt:function(){ STATE.atisDraft.vis = '>10km'; STATE.atisDraft.visUnit = 'x'; saveState(); renderCard(card); } };
     openNumericKeypad(cfg, cur, function(v){
       STATE.atisDraft.vis = v; STATE.atisDraft.visUnit = unit; saveState(); renderCard(card);
     });
   }
-  if(visBtn) visBtn.addEventListener('click', function(){ openVisPicker(STATE.atisDraft.visUnit === 'km' ? 'km' : 'm'); });
+  if(visBtn) visBtn.addEventListener('click', function(){ openVisPicker('m'); });
   document.querySelectorAll('[data-slot]').forEach(function(b){
     b.addEventListener('click', function(){ showCloudPicker(b.getAttribute('data-slot'), card); });
   });
@@ -6451,12 +6474,21 @@ function fitCard(){
 // the whole page jump between sizes. Reopened pages start fresh.
 var calcStickyZoom = 1, calcWasOn = false;
 function fitCalc(){
-  // Flight Summary never zooms: a constant size means entering data can't
-  // make it jump around. If the content is ever taller than the screen the
-  // page simply scrolls.
-  var cm = document.getElementById('calcMode');
-  if(!cm) return;
+  // Flight Summary: constant size, never zoomed. Cards fill the first column
+  // top to bottom and then wrap into the next column (2 columns from 600px,
+  // 3 from 900px). Only if even that can't hold everything does the page
+  // fall back to scrolling.
+  var cm = document.getElementById('calcMode'), body = document.getElementById('calcBody');
+  if(!cm || !body) return;
   Array.prototype.forEach.call(cm.children, function(k){ if(k.style.zoom) k.style.zoom = ''; });
+  if(!cm.classList.contains('on')) return;
+  if(typeof typingNow === 'function' && typingNow() && body.style.height) return;
+  body.style.height = ''; body.style.columnFill = '';
+  if(window.innerWidth < 600) return;
+  var avail = cm.clientHeight - (body.getBoundingClientRect().top - cm.getBoundingClientRect().top) - 14;
+  if(avail < 200) return;
+  body.style.height = avail + 'px'; body.style.columnFill = 'auto';
+  if(body.scrollWidth > body.clientWidth + 2){ body.style.height = ''; body.style.columnFill = ''; }
 }
 function refitAll(){ fitCard(); fitCalc(); }
 // Ignore the on-screen keyboard: it changes the visible height but not the
@@ -6714,8 +6746,8 @@ function renderCalculations(){
       '<div class="fdField" style="grid-column:1/-1"><label>Flight Detail</label><input type="text" id="fdFlightDetail" placeholder="e.g. Circuits, Nav to EGSS" value="'+escapeHtml(fd.flightDetail !== undefined ? fd.flightDetail : legacyFlightDetail(fd))+'"/></div>'+
     '</div>'+
   '</div>';
-  html += '<div class="calcCard"><div class="ck">Times</div>'+
-    '<table class="timesTable"><thead><tr><th></th><th>From (UTC)</th><th>To (UTC)</th><th>Total</th></tr></thead><tbody>'+
+  html += '<div class="calcCard"><div class="ck">Times (UTC)</div>'+
+    '<table class="timesTable"><thead><tr><th></th><th>From</th><th>To</th><th>Total</th></tr></thead><tbody>'+
     timeRow('Block', chocksOff||null, chocksOn||null, blockTime)+
     timeRow('Air', takeoff||null, landing||null, airTime)+
     timeRow('Tacho', tachoStartV.tacho, tachoEndV.tacho, tachoTime)+
@@ -6822,7 +6854,7 @@ function renderCalculations(){
   // explicit buttons — no more "tap the row and hope you meant to load
   // it," and, critically, an actual way to remove a single flight
   // rather than only ever all of them at once.
-  html += '<div class="calcCard"><div class="ck">Flight History</div>';
+  html += '<div class="calcCard histCard"><div class="ck">Flight History</div>';
   var linkedNow = STATE.flightHistory.some(function(h){ return h.id === STATE.currentHistoryId; });
   html += '<div style="display:flex;gap:8px;margin-bottom:12px">'+
     '<button type="button" id="saveCurrentBtn"'+(linkedNow?'':' disabled')+' style="flex:1;border:1px solid var(--em);background:var(--em);color:#fff;border-radius:8px;padding:11px 0;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-weight:800;font-size:13px;cursor:pointer;'+(linkedNow?'':'opacity:.4;')+'">Save as Current</button>'+
