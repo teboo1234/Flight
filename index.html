@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v137 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v140 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -585,7 +585,7 @@ input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro
 #calcMode .calcCard textarea{ font-size:17px; text-align:left; }
 #calcMode .resHead h2{ font-size:22px; }
 
-/* v137 fit fixes: text must fit inside its box on iPad */
+/* v140 fit fixes: text must fit inside its box on iPad */
 .homeTile .hT{ font-size:clamp(13px,3.2vw,22px); overflow-wrap:normal; word-break:normal; hyphens:none; }
 .homeTile .hMain{ padding:0 4px; }
 .fdDateRow{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:stretch; }
@@ -597,7 +597,7 @@ input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro
 .fpFieldBtn, .fdField input{ font-size:clamp(12px,2vw,15px); min-width:0; }
 .fdField label{ white-space:nowrap; }
 
-/* v137 progress bars */
+/* v140 progress bars */
 .homeTile .hBar{ display:block; align-self:stretch; width:auto; min-width:60%; height:7px; border-radius:4px; background:#e2e8f0; overflow:hidden; margin:3px 6px 0; }
 .homeTile .hBar i{ display:block; height:100%; background:#f59e0b; border-radius:4px; transition:width .25s; }
 .homeTile.done .hBar i{ background:#059669; }
@@ -605,7 +605,7 @@ input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro
 .secBar i{ display:block; height:100%; width:0; background:#0369a1; border-radius:4px; transition:width .25s; }
 .secBar.full i{ background:#059669; }
 
-/* v137 touch responsiveness */
+/* v140 touch responsiveness */
 button, [role=button], .homeTile, .groupRow, .rocker, .mnemToggle, label, select, summary, a{ touch-action:manipulation; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; cursor:pointer; }
 input, textarea{ touch-action:manipulation; -webkit-user-select:text; user-select:text; }
 button:active, [role=button]:active, .homeTile:active, .rocker:active, .mnemToggle:active{ transform:scale(.96); filter:brightness(.92); transition:none !important; }
@@ -613,7 +613,7 @@ button:active, [role=button]:active, .homeTile:active, .rocker:active, .mnemTogg
 .groupRow button:active{ transform:scale(.9); }
 .card.flash-go, .card.flash-na{ animation-duration:.2s; }
 
-/* v137 system font (San Francisco on iPad/iPhone): clearest, instant, works offline */
+/* v140 system font (San Francisco on iPad/iPhone): clearest, instant, works offline */
 html,body,button,input,select,textarea{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; }
 body, button, input, select, textarea{ font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; letter-spacing:0; }
 body{ font-weight:500; }
@@ -623,12 +623,25 @@ body{ font-weight:500; }
 
 .atClear{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:clamp(14px,2.2vw,20px) !important; font-weight:800; color:var(--rose); }
 .atClear svg{ width:clamp(44px,8vw,72px); height:auto; }
+
+/* v140 IFR-chart altitude limits */
+.altStack{ display:inline-flex; flex-direction:column; align-items:center; gap:3px; line-height:1.1; }
+.altV{ font-weight:800; font-size:13px; padding:1px 4px; }
+.altMax{ border-top:3px solid currentColor; }
+.altMin{ border-bottom:3px solid currentColor; }
+.altAt{ border-top:3px solid currentColor; border-bottom:3px solid currentColor; }
+.altBtn{ display:flex !important; flex-direction:column; align-items:center; justify-content:center; padding:2px 4px !important; }
+.alRow{ display:flex; width:100%; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; margin-bottom:8px; border:1px solid var(--border); background:var(--card); border-radius:10px; cursor:pointer; color:var(--text); }
+.alTxt{ font-size:28px; font-weight:800; padding:2px 8px; }
+.alSub{ font-size:12px; font-weight:800; letter-spacing:.06em; color:var(--muted); text-align:right; }
+.alBtn{ flex:1; padding:14px; font-size:15px; font-weight:800; border-radius:10px; border:1px solid var(--border); background:var(--card); color:var(--text); cursor:pointer; }
+.alOk{ background:rgba(4,120,87,.15); color:#047857; border:none; }
 </style>
 </head>
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v137</div>
+  <div id="versionBadge">v140</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="minAltBar" id="minAltBar"></div>
@@ -1552,6 +1565,7 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     // Minimum altitude is app-wide: kept across all flights until changed by hand.
     if(STATE.wind === undefined) STATE.wind = '';
     if(STATE.maxDrift === undefined) STATE.maxDrift = '';
+    if(STATE.maxAlt === undefined) STATE.maxAlt = '';
     if(STATE.minAlt === undefined) STATE.minAlt = ((STATE.values && STATE.values['dapa.dapagrp.calc']) || {}).minAlt || '';
     if(!STATE.studentsSeeded){
       STATE.flightHistory.forEach(function(h){
@@ -3430,6 +3444,39 @@ function renderAtisPin(){
   el.style.display = 'block';
   if(wasHidden) syncHeaderOffset();
 }
+// Altitude limits, drawn the IFR-chart way: line under the figure = not below,
+// line over = not above, lines above and below = at.
+function showAltLimitsModal(){
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:14px;padding:18px;max-width:420px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)';
+  function close(){ if(ov.parentNode) document.body.removeChild(ov); }
+  function f(v){ return v ? Number(String(v).replace(/,/g,'')).toLocaleString() : '\u2014'; }
+  function draw(){
+    box.innerHTML =
+      '<div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Altitude limits AMSL (ft)</div>'+
+      '<button type="button" id="alMax" class="alRow"><span class="alTxt altMax">'+f(STATE.maxAlt)+'</span><span class="alSub">NOT ABOVE</span></button>'+
+      '<button type="button" id="alMin" class="alRow"><span class="alTxt altMin">'+f(STATE.minAlt)+'</span><span class="alSub">NOT BELOW</span></button>'+
+      '<button type="button" id="alAt" class="alRow"><span class="alTxt altAt">AT</span><span class="alSub">SET BOTH TO ONE ALTITUDE</span></button>'+
+      '<div style="display:flex;gap:8px;margin-top:6px"><button type="button" id="alClear" class="alBtn">Clear both</button><button type="button" id="alDone" class="alBtn alOk">Done</button></div>';
+    box.querySelector('#alMax').addEventListener('click', function(){ ask('Not above (max) altitude AMSL (ft)', STATE.maxAlt, function(v){ STATE.maxAlt = v; }); });
+    box.querySelector('#alMin').addEventListener('click', function(){ ask('Not below (min) altitude AMSL (ft)', STATE.minAlt, function(v){ STATE.minAlt = v; }); });
+    box.querySelector('#alAt').addEventListener('click', function(){ ask('AT altitude AMSL (ft)', STATE.minAlt === STATE.maxAlt ? STATE.minAlt : '', function(v){ STATE.minAlt = v; STATE.maxAlt = v; }); });
+    box.querySelector('#alClear').addEventListener('click', function(){ STATE.minAlt = ''; STATE.maxAlt = ''; saveState(); draw(); });
+    box.querySelector('#alDone').addEventListener('click', close);
+  }
+  function ask(title, cur, set){
+    close();
+    openNumericKeypad({ title:title, digits:5, suffix:'ft', allowEmpty:true, help:'Now '+(cur||'\u2014')+' \u00b7 Enter blank = clear' }, '', function(v){
+      set(v ? String(v) : ''); saveState();
+      if(curSection && curSection() && curSection().id === 'dapa') renderCard(ALLCARDS['dapa.dapagrp']);
+      document.body.appendChild(ov); draw();
+    });
+  }
+  ov.appendChild(box); document.body.appendChild(ov); draw();
+  ov.addEventListener('click', function(e){ if(e.target === ov) close(); });
+}
 function renderMinAltBar(){
   var el = document.getElementById('minAltBar');
   if(!el) return;
@@ -3444,7 +3491,12 @@ function renderMinAltBar(){
   var topHtml = '<div class="mabRow"><button type="button" class="mabIcon" id="mabNotes" title="Notes">Notes'+(nN?' '+nN:'')+'</button>'+
     '<button type="button" class="mabIcon" id="mabDS" title="Defects and Safety Report">Defects/Safety'+(dsN?' '+dsN:'')+'</button>'+
     '<button type="button" class="mabIcon" id="mabTasks" title="Tasks">Tasks'+(openTasks>0?' '+openTasks:'')+'</button></div>';
-  var dockHtml = '<button type="button" id="minAltBtn" title="Minimum altitude AMSL (ft)"><small>MIN</small>'+escapeHtml(minTxt)+'</button>'+
+  var fmtAlt = function(v){ return v ? Number(String(v).replace(/,/g,'')).toLocaleString() : ''; };
+  var mnV = fmtAlt(STATE.minAlt), mxV = fmtAlt(STATE.maxAlt), altInner;
+  if(mnV && mxV && String(STATE.minAlt).replace(/,/g,'') === String(STATE.maxAlt).replace(/,/g,'')) altInner = '<span class="altV altAt">'+escapeHtml(mnV)+'</span>';          // AT: lines above and below
+  else if(mnV || mxV) altInner = (mxV ? '<span class="altV altMax">'+escapeHtml(mxV)+'</span>' : '') + (mnV ? '<span class="altV altMin">'+escapeHtml(mnV)+'</span>' : '');
+  else altInner = '<span class="altV">\u2014</span>';
+  var dockHtml = '<button type="button" id="minAltBtn" class="altBtn" title="Altitude limits AMSL (ft): line under = not below, line over = not above, both = at"><span class="altStack">'+altInner+'</span></button>'+
     '<button type="button" id="windBtn" title="Wind (direction/speed)"><small>WIND</small>'+escapeHtml(windTxt)+'</button>'+
     '<button type="button" id="driftBtn" title="Maximum drift (degrees)"><small>DRIFT</small>'+escapeHtml(driftTxt)+'</button>'+
     '<button type="button" id="topQnhBtn" title="Current QNH (hPa)"><small>QNH</small>'+escapeHtml(q.val||'\u2014')+(q.manual?' \u270E':'')+'</button>';
@@ -3469,15 +3521,7 @@ function renderMinAltBar(){
     });
   });
   document.getElementById('mabTasks').addEventListener('click', showTasksModal);
-  document.getElementById('minAltBtn').addEventListener('click', function(){
-    var cur = STATE.minAlt || '';
-    openNumericKeypad({ title:'Minimum altitude AMSL (ft)', digits:5, suffix:'ft', allowEmpty:true, help:'Now '+(cur||'\u2014')+' \u00b7 Enter blank = clear' }, '', function(v){
-      var cc = STATE.values[DAPA_KEY] = Object.assign({ qnh:latestAtisQnh()||'', oat:atisOatSeed(), height:'' }, STATE.values[DAPA_KEY] || {});
-      STATE.minAlt = v ? String(v) : '';
-      saveState();
-      if(curSection && curSection() && curSection().id === 'dapa') renderCard(ALLCARDS['dapa.dapagrp']);
-    });
-  });
+  document.getElementById('minAltBtn').addEventListener('click', showAltLimitsModal);
   document.getElementById('topQnhBtn').addEventListener('click', function(){
     var cur = topQnh();
     openNumericKeypad({ title:'Current QNH (hPa)', digits:4, suffix:'hPa', allowEmpty:true, help:'Now '+(cur.val||'\u2014')+' \u00b7 Enter blank = use ATIS' }, '', function(v){
@@ -6327,6 +6371,7 @@ function fitInto(scroller, kids){
 function fitCard(){
   if(curMode !== 'card' || homeOpen) return;
   if(elCard.style.display === 'none') return;
+  if(typeof typingNow === 'function' && typingNow() && elCard.style.zoom !== undefined && elCard.children[0] && elCard.children[0].style.zoom) return;
   var L = elCard.querySelector('.groupList, .colsInner');
   var kids = Array.prototype.slice.call(elCard.children);
   var w = window.innerWidth;
@@ -6371,6 +6416,7 @@ function fitCalc(){
   var kids = Array.prototype.slice.call(cm.children);
   var min = window.innerWidth >= 600 ? 0.4 : 0.75;
   var z = calcStickyZoom;
+  if(typeof typingNow === 'function' && typingNow()){ kids.forEach(function(k){ k.style.zoom = z; }); return; }
   kids.forEach(function(k){ k.style.zoom = z; });
   while(cm.scrollHeight > cm.clientHeight + 1 && z > min){
     z = Math.round((z - 0.04) * 100) / 100;
@@ -6379,7 +6425,17 @@ function fitCalc(){
   calcStickyZoom = z;
 }
 function refitAll(){ fitCard(); fitCalc(); }
-window.addEventListener('resize', function(){ calcStickyZoom = 1; refitAll(); if(homeOpen) renderHome(); });
+// Ignore the on-screen keyboard: it changes the visible height but not the
+// layout, and must never trigger a re-fit (that was the "random resize").
+var lastFitW = window.innerWidth, lastFitH = window.innerHeight;
+function typingNow(){ var a = document.activeElement; return !!(a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable)); }
+window.addEventListener('resize', function(){
+  var w = window.innerWidth, h = window.innerHeight;
+  if(typingNow() && w === lastFitW) return;               // keyboard opening/closing
+  if(w === lastFitW && Math.abs(h - lastFitH) < 120) return; // tiny toolbar/URL-bar change
+  lastFitW = w; lastFitH = h;
+  calcStickyZoom = 1; refitAll(); if(homeOpen) renderHome();
+});
 window.addEventListener('orientationchange', function(){ setTimeout(function(){ syncHeaderOffset(); }, 250); });
 function syncHeaderOffset(){
   var h = document.querySelector('.topStrip').getBoundingClientRect().height;
