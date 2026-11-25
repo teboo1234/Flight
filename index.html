@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v155 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v156 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -585,7 +585,7 @@ input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro
 #calcMode .calcCard textarea{ font-size:17px; text-align:left; }
 #calcMode .resHead h2{ font-size:22px; }
 
-/* v155 fit fixes: text must fit inside its box on iPad */
+/* v156 fit fixes: text must fit inside its box on iPad */
 .homeTile .hT{ font-size:clamp(13px,3.2vw,22px); overflow-wrap:normal; word-break:normal; hyphens:none; }
 .homeTile .hMain{ padding:0 4px; }
 .fdDateRow{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:stretch; }
@@ -597,7 +597,7 @@ input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro
 .fpFieldBtn, .fdField input{ font-size:clamp(12px,2vw,15px); min-width:0; }
 .fdField label{ white-space:nowrap; }
 
-/* v155 progress bars */
+/* v156 progress bars */
 .homeTile .hBar{ display:block; align-self:stretch; width:auto; min-width:60%; height:7px; border-radius:4px; background:#e2e8f0; overflow:hidden; margin:3px 6px 0; }
 .homeTile .hBar i{ display:block; height:100%; background:#f59e0b; border-radius:4px; transition:width .25s; }
 .homeTile.done .hBar i{ background:#059669; }
@@ -605,7 +605,7 @@ input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro
 .secBar i{ display:block; height:100%; width:0; background:#0369a1; border-radius:4px; transition:width .25s; }
 .secBar.full i{ background:#059669; }
 
-/* v155 touch responsiveness */
+/* v156 touch responsiveness */
 button, [role=button], .homeTile, .groupRow, .rocker, .mnemToggle, label, select, summary, a{ touch-action:manipulation; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; cursor:pointer; }
 input, textarea{ touch-action:manipulation; -webkit-user-select:text; user-select:text; }
 button:active, [role=button]:active, .homeTile:active, .rocker:active, .mnemToggle:active{ transform:scale(.96); filter:brightness(.92); transition:none !important; }
@@ -613,7 +613,7 @@ button:active, [role=button]:active, .homeTile:active, .rocker:active, .mnemTogg
 .groupRow button:active{ transform:scale(.9); }
 .card.flash-go, .card.flash-na{ animation-duration:.2s; }
 
-/* v155 system font (San Francisco on iPad/iPhone): clearest, instant, works offline */
+/* v156 system font (San Francisco on iPad/iPhone): clearest, instant, works offline */
 html,body,button,input,select,textarea{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; }
 body, button, input, select, textarea{ font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; letter-spacing:0; }
 body{ font-weight:500; }
@@ -624,7 +624,7 @@ body{ font-weight:500; }
 .atClear{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:clamp(14px,2.2vw,20px) !important; font-weight:800; color:var(--rose); }
 .atClear svg{ width:clamp(44px,8vw,72px); height:auto; }
 
-/* v155 IFR-chart altitude limits */
+/* v156 IFR-chart altitude limits */
 .altStack{ display:inline-flex; flex-direction:column; align-items:center; gap:3px; line-height:1.1; }
 .altV{ font-weight:800; font-size:13px; padding:1px 4px; }
 .altMax{ border-top:3px solid currentColor; }
@@ -637,7 +637,7 @@ body{ font-weight:500; }
 .alBtn{ flex:1; padding:14px; font-size:15px; font-weight:800; border-radius:10px; border:1px solid var(--border); background:var(--card); color:var(--text); cursor:pointer; }
 .alOk{ background:rgba(4,120,87,.15); color:#047857; border:none; }
 
-/* v155 winds aloft in dock */
+/* v156 winds aloft in dock */
 .windBtn{ flex:2.4 1 0 !important; padding:2px 4px !important; }
 .wGrid{ display:grid; grid-template-columns:1fr 1fr; gap:1px 10px; width:100%; }
 .wCell{ font-size:12px; font-weight:800; white-space:nowrap; text-align:left; }
@@ -646,7 +646,7 @@ body{ font-weight:500; }
 #calcMode .timesTable th:nth-child(1), #calcMode .timesTable td:nth-child(1){ width:27% !important; }
 #calcMode .timesTable th:nth-child(2), #calcMode .timesTable td:nth-child(2), #calcMode .timesTable th:nth-child(3), #calcMode .timesTable td:nth-child(3){ width:22% !important; }
 #calcMode .timesTable th:nth-child(4), #calcMode .timesTable td:nth-child(4){ width:29% !important; }
-/* v155 Flight Summary: compact, flows column to column, never zooms */
+/* v156 Flight Summary: compact, flows column to column, never zooms */
 @media (min-width:760px){ #calcBody{ column-count:3 !important; column-gap:10px; } }
 #calcMode .calcCard{ padding:10px 12px; margin-bottom:8px; }
 #calcMode .calcCard .ck{ margin-bottom:8px; }
@@ -663,14 +663,14 @@ body{ font-weight:500; }
 #calcMode .savedFlightItem{ break-inside:avoid; padding:7px 9px !important; margin-bottom:6px !important; }
 #calcMode .savedFlightItem button{ padding:6px 2px !important; font-size:12px !important; }
 
-/* v155 small ATIS submit/back */
+/* v156 small ATIS submit/back */
 .atActions{ justify-content:flex-end; align-items:center; gap:8px; }
 .atSubmit{ flex:0 0 auto !important; padding:0 18px !important; height:42px; font-size:15px !important; border-radius:10px !important; }
 .atClear{ flex:0 0 auto !important; width:64px; height:42px; padding:0 !important; flex-direction:row !important; gap:4px !important; border-radius:10px !important; font-size:11px !important; }
 .atClear svg{ width:22px !important; height:auto; }
 .atClear .atClearTxt{ display:none; }
 
-/* v155 home info panel */
+/* v156 home info panel */
 .homeInfo{ grid-column:span 2; display:flex; flex-direction:column; justify-content:center; gap:3px; padding:8px 12px; background:#fff; border:1px solid #cbd5e1; border-radius:14px; overflow:hidden; min-height:0; }
 .hiRow{ display:flex; justify-content:space-between; gap:10px; font-size:clamp(11px,1.7vw,14px); line-height:1.25; }
 .hiK{ font-weight:800; color:#64748b; letter-spacing:.04em; font-size:.82em; white-space:nowrap; }
@@ -681,7 +681,7 @@ body{ font-weight:500; }
 .homeInfo .hiRow:first-child{ grid-column:1 / -1; }
 @media (max-width:699px){ .homeInfo{ grid-template-columns:1fr; } .hiRow:nth-child(n+5){ display:none; } }
 
-/* v155 finish flight */
+/* v156 finish flight */
 .finishFlightBtn{ width:100%; margin:0 0 10px; padding:14px; font-size:18px; font-weight:900; letter-spacing:.04em; color:#fff; background:var(--em); border:none; border-radius:12px; cursor:pointer; }
 .fsGrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
 .fsCell{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:8px; text-align:center; }
@@ -690,7 +690,7 @@ body{ font-weight:500; }
 .fsBlock{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:8px 10px; margin-bottom:10px; }
 .fsText{ font-size:16px; white-space:pre-wrap; margin-top:2px; }
 
-/* v155 home info */
+/* v156 home info */
 .homeInfo .hiWide{ grid-column:1 / -1; }
 .hiWx{ cursor:pointer; }
 .hiWxV{ font-family:ui-monospace,Menlo,monospace; font-size:.9em; text-align:left; }
@@ -702,7 +702,7 @@ body{ font-weight:500; }
   .hiRow:nth-child(n+6){ display:flex !important; } .hiWide .hiV{ white-space:normal; } }
 @media (max-width:699px){ .homeBand:last-child{ overflow-y:auto; } .homeBand:last-child .homeGrid{ grid-auto-rows:auto; } .homeInfo{ overflow:visible !important; } }
 
-/* v155 */
+/* v156 */
 .homeInfo{ gap:0 !important; padding:0 !important; border:1.5px solid #64748b !important; align-content:stretch !important; }
 .homeInfo .hiRow{ border:1px solid #94a3b8; margin:-.5px; padding:3px 8px; align-items:center; }
 .homeInfo .hiRow:first-child{ background:#f1f5f9; }
@@ -714,7 +714,7 @@ body{ font-weight:500; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v155</div>
+  <div id="versionBadge">v156</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="minAltBar" id="minAltBar"></div>
@@ -2047,10 +2047,28 @@ function fetchWx(force, done){
   if(!stale.length){ if(done) done(true); return; }
   if(wxBusy || navigator.onLine === false){ if(done) done(false); return; }
   wxBusy = true;
+  // aviationweather.gov does not allow browser (cross-origin) requests, so the
+  // direct call is tried first and then public CORS relays as fallbacks.
   function get(kind, ic){
-    return fetch('https://aviationweather.gov/api/data/'+kind+'?ids='+ic+'&format=raw', {cache:'no-store'})
-      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
-      .then(function(t){ return t.trim(); });
+    var target = 'https://aviationweather.gov/api/data/'+kind+'?ids='+ic+'&format=raw';
+    var routes = [
+      target,
+      'https://api.allorigins.win/raw?url='+encodeURIComponent(target),
+      'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(target),
+      'https://corsproxy.io/?'+encodeURIComponent(target)
+    ];
+    var i = 0;
+    function next(){
+      if(i >= routes.length) return Promise.reject(new Error('all routes failed'));
+      var u = routes[i++];
+      var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      var to = setTimeout(function(){ if(ctl) ctl.abort(); }, 8000);
+      return fetch(u, ctl ? {cache:'no-store', signal:ctl.signal} : {cache:'no-store'})
+        .then(function(r){ clearTimeout(to); if(!r.ok) throw new Error(r.status); return r.text(); })
+        .then(function(t){ t = t.trim(); if(/^<(!doctype|html)/i.test(t)) throw new Error('html'); return t; })
+        .catch(function(){ clearTimeout(to); return next(); });
+    }
+    return next();
   }
   var anyOk = false;
   Promise.all(stale.map(function(ic){
