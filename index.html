@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>CheckDeck Flight v160 — Flight-Day Checklist</title>
+<title>CheckDeck Flight v157 — Flight-Day Checklist</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369a1"/>
 <!-- iOS specifically needs its own tags — Safari's support for the plain
@@ -585,7 +585,7 @@ input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro
 #calcMode .calcCard textarea{ font-size:17px; text-align:left; }
 #calcMode .resHead h2{ font-size:22px; }
 
-/* v160 fit fixes: text must fit inside its box on iPad */
+/* v157 fit fixes: text must fit inside its box on iPad */
 .homeTile .hT{ font-size:clamp(13px,3.2vw,22px); overflow-wrap:normal; word-break:normal; hyphens:none; }
 .homeTile .hMain{ padding:0 4px; }
 .fdDateRow{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:stretch; }
@@ -597,7 +597,7 @@ input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro
 .fpFieldBtn, .fdField input{ font-size:clamp(12px,2vw,15px); min-width:0; }
 .fdField label{ white-space:nowrap; }
 
-/* v160 progress bars */
+/* v157 progress bars */
 .homeTile .hBar{ display:block; align-self:stretch; width:auto; min-width:60%; height:7px; border-radius:4px; background:#e2e8f0; overflow:hidden; margin:3px 6px 0; }
 .homeTile .hBar i{ display:block; height:100%; background:#f59e0b; border-radius:4px; transition:width .25s; }
 .homeTile.done .hBar i{ background:#059669; }
@@ -605,7 +605,7 @@ input,select{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro
 .secBar i{ display:block; height:100%; width:0; background:#0369a1; border-radius:4px; transition:width .25s; }
 .secBar.full i{ background:#059669; }
 
-/* v160 touch responsiveness */
+/* v157 touch responsiveness */
 button, [role=button], .homeTile, .groupRow, .rocker, .mnemToggle, label, select, summary, a{ touch-action:manipulation; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; cursor:pointer; }
 input, textarea{ touch-action:manipulation; -webkit-user-select:text; user-select:text; }
 button:active, [role=button]:active, .homeTile:active, .rocker:active, .mnemToggle:active{ transform:scale(.96); filter:brightness(.92); transition:none !important; }
@@ -613,7 +613,7 @@ button:active, [role=button]:active, .homeTile:active, .rocker:active, .mnemTogg
 .groupRow button:active{ transform:scale(.9); }
 .card.flash-go, .card.flash-na{ animation-duration:.2s; }
 
-/* v160 system font (San Francisco on iPad/iPhone): clearest, instant, works offline */
+/* v157 system font (San Francisco on iPad/iPhone): clearest, instant, works offline */
 html,body,button,input,select,textarea{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif; }
 body, button, input, select, textarea{ font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; letter-spacing:0; }
 body{ font-weight:500; }
@@ -624,7 +624,7 @@ body{ font-weight:500; }
 .atClear{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:clamp(14px,2.2vw,20px) !important; font-weight:800; color:var(--rose); }
 .atClear svg{ width:clamp(44px,8vw,72px); height:auto; }
 
-/* v160 IFR-chart altitude limits */
+/* v157 IFR-chart altitude limits */
 .altStack{ display:inline-flex; flex-direction:column; align-items:center; gap:3px; line-height:1.1; }
 .altV{ font-weight:800; font-size:13px; padding:1px 4px; }
 .altMax{ border-top:3px solid currentColor; }
@@ -637,7 +637,7 @@ body{ font-weight:500; }
 .alBtn{ flex:1; padding:14px; font-size:15px; font-weight:800; border-radius:10px; border:1px solid var(--border); background:var(--card); color:var(--text); cursor:pointer; }
 .alOk{ background:rgba(4,120,87,.15); color:#047857; border:none; }
 
-/* v160 winds aloft in dock */
+/* v157 winds aloft in dock */
 .windBtn{ flex:2.4 1 0 !important; padding:2px 4px !important; }
 .wGrid{ display:grid; grid-template-columns:1fr 1fr; gap:1px 10px; width:100%; }
 .wCell{ font-size:12px; font-weight:800; white-space:nowrap; text-align:left; }
@@ -646,7 +646,7 @@ body{ font-weight:500; }
 #calcMode .timesTable th:nth-child(1), #calcMode .timesTable td:nth-child(1){ width:27% !important; }
 #calcMode .timesTable th:nth-child(2), #calcMode .timesTable td:nth-child(2), #calcMode .timesTable th:nth-child(3), #calcMode .timesTable td:nth-child(3){ width:22% !important; }
 #calcMode .timesTable th:nth-child(4), #calcMode .timesTable td:nth-child(4){ width:29% !important; }
-/* v160 Flight Summary: compact, flows column to column, never zooms */
+/* v157 Flight Summary: compact, flows column to column, never zooms */
 @media (min-width:760px){ #calcBody{ column-count:3 !important; column-gap:10px; } }
 #calcMode .calcCard{ padding:10px 12px; margin-bottom:8px; }
 #calcMode .calcCard .ck{ margin-bottom:8px; }
@@ -663,14 +663,14 @@ body{ font-weight:500; }
 #calcMode .savedFlightItem{ break-inside:avoid; padding:7px 9px !important; margin-bottom:6px !important; }
 #calcMode .savedFlightItem button{ padding:6px 2px !important; font-size:12px !important; }
 
-/* v160 small ATIS submit/back */
+/* v157 small ATIS submit/back */
 .atActions{ justify-content:flex-end; align-items:center; gap:8px; }
 .atSubmit{ flex:0 0 auto !important; padding:0 18px !important; height:42px; font-size:15px !important; border-radius:10px !important; }
 .atClear{ flex:0 0 auto !important; width:64px; height:42px; padding:0 !important; flex-direction:row !important; gap:4px !important; border-radius:10px !important; font-size:11px !important; }
 .atClear svg{ width:22px !important; height:auto; }
 .atClear .atClearTxt{ display:none; }
 
-/* v160 home info panel */
+/* v157 home info panel */
 .homeInfo{ grid-column:span 2; display:flex; flex-direction:column; justify-content:center; gap:3px; padding:8px 12px; background:#fff; border:1px solid #cbd5e1; border-radius:14px; overflow:hidden; min-height:0; }
 .hiRow{ display:flex; justify-content:space-between; gap:10px; font-size:clamp(11px,1.7vw,14px); line-height:1.25; }
 .hiK{ font-weight:800; color:#64748b; letter-spacing:.04em; font-size:.82em; white-space:nowrap; }
@@ -681,7 +681,7 @@ body{ font-weight:500; }
 .homeInfo .hiRow:first-child{ grid-column:1 / -1; }
 @media (max-width:699px){ .homeInfo{ grid-template-columns:1fr; } .hiRow:nth-child(n+5){ display:none; } }
 
-/* v160 finish flight */
+/* v157 finish flight */
 .finishFlightBtn{ width:100%; margin:0 0 10px; padding:14px; font-size:18px; font-weight:900; letter-spacing:.04em; color:#fff; background:var(--em); border:none; border-radius:12px; cursor:pointer; }
 .fsGrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
 .fsCell{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:8px; text-align:center; }
@@ -690,14 +690,14 @@ body{ font-weight:500; }
 .fsBlock{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:8px 10px; margin-bottom:10px; }
 .fsText{ font-size:16px; white-space:pre-wrap; margin-top:2px; }
 
-/* v160 home info */
+/* v157 home info */
 @media (max-width:699px){ .hiRow:nth-child(n+5){ display:flex; } .hiRow:nth-child(n+6){ display:none; } }
 @media (max-width:699px){ .homeInfo{ grid-column:1 / -1 !important; grid-template-columns:1fr 1fr !important; gap:2px 10px !important; padding:6px 8px !important; }
   .homeInfo .hiRow{ flex-direction:row !important; justify-content:space-between; font-size:10.5px; }
   .hiRow:nth-child(n+6){ display:flex !important; } .hiWide .hiV{ white-space:normal; } }
 @media (max-width:699px){ .homeBand:last-child{ overflow-y:auto; } .homeBand:last-child .homeGrid{ grid-auto-rows:auto; } .homeInfo{ overflow:visible !important; } }
 
-/* v160 */
+/* v157 */
 .homeInfo{ gap:0 !important; padding:0 !important; border:1.5px solid #64748b !important; align-content:stretch !important; }
 .homeInfo .hiRow{ border:1px solid #94a3b8; margin:-.5px; padding:3px 8px; align-items:center; }
 .homeInfo .hiRow:first-child{ background:#f1f5f9; }
@@ -708,7 +708,7 @@ body{ font-weight:500; }
 <body>
 
 <div class="topStrip">
-  <div id="versionBadge">v160</div>
+  <div id="versionBadge">v157</div>
   <div class="countdownRow" id="countdownRow" style="display:none"></div>
   <div class="headingRow" id="headingRow"></div>
   <div class="minAltBar" id="minAltBar"></div>
@@ -900,17 +900,6 @@ body{ font-weight:500; }
 </div>
 
 <script>
-// jsPDF (~420 KB) is only needed for PDF export, so it ships as inert text and is
-// compiled on first use instead of on every launch. window.jspdf keeps working unchanged.
-Object.defineProperty(window, 'jspdf', { configurable:true, get:function(){
-  delete window.jspdf;
-  var sc = document.createElement('script');
-  sc.textContent = document.getElementById('jspdfSrc').textContent;
-  document.head.appendChild(sc);
-  return window.jspdf;
-}});
-</script>
-<script type="text/plain" id="jspdfSrc">
 /** @license
  *
  * jsPDF - PDF Document creation from JavaScript
@@ -1577,19 +1566,6 @@ var ALLCARDS = {}; // cardId -> card spec (for lookups)
 /* ============================================================
    STATE
    ============================================================ */
-// On-screen error banner (diagnostics on devices without a console). Tap to dismiss.
-(function(){
-  function show(msg){
-    var b = document.getElementById('errBanner');
-    if(!b){ b = document.createElement('div'); b.id = 'errBanner';
-      b.style.cssText = 'position:fixed;left:8px;right:8px;bottom:70px;z-index:9999;background:#b91c1c;color:#fff;font:12px/1.3 ui-monospace,Menlo,monospace;padding:8px 10px;border-radius:8px;white-space:pre-wrap;word-break:break-word';
-      b.addEventListener('click', function(){ b.style.display = 'none'; }); document.body.appendChild(b); }
-    b.style.display = 'block'; b.textContent = 'Error: ' + msg;
-  }
-  window.addEventListener('error', function(e){ show((e.message||'') + (e.lineno ? ' (line '+e.lineno+')' : '')); });
-  window.addEventListener('unhandledrejection', function(e){ show(String(e.reason && e.reason.message || e.reason)); });
-  var ce = console.error; console.error = function(){ try{ show(Array.prototype.map.call(arguments, function(a){ return a && a.message || String(a); }).join(' ')); }catch(_){} return ce.apply(console, arguments); };
-})();
 var STORE_KEY = 'checkdeck_state_v1';
 // Builds a Flight Detail string from the retired Departure / Destination /
 // Land Away fields (used for old saved state and old history snapshots).
@@ -1824,22 +1800,7 @@ var STATE = { checked:{}, values:{}, global:{ etob:'', ctot:'', transponderCode:
     }
   }catch(e){}
 })();
-// Writes are coalesced: a burst of taps costs one JSON.stringify + localStorage write
-// (and one bar refresh) instead of one per call. Flushed whenever the page is hidden/closed.
-var __saveTimer = null;
-function flushSave(){
-  if(__saveTimer){ clearTimeout(__saveTimer); __saveTimer = null; }
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); }catch(e){}
-}
-function saveState(){
-  if(__saveTimer) return;
-  __saveTimer = setTimeout(function(){
-    flushSave();
-    try{ renderMinAltBar(); }catch(e){} try{ renderTankHeaderBar(); }catch(e){} try{ updateSecBar(); }catch(e){}
-  }, 60);
-}
-window.addEventListener('pagehide', flushSave);
-document.addEventListener('visibilitychange', function(){ if(document.hidden) flushSave(); });
+function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); }catch(e){} try{ renderMinAltBar(); }catch(e){} try{ renderTankHeaderBar(); }catch(e){} try{ setTimeout(updateSecBar,0); }catch(e){} }
 
 // Is a single child of a grouplist card resolved? Most types need an
 // explicit tick (matching the plain-item convention), but timenow/hobbstacho
@@ -1916,6 +1877,23 @@ function sectionTotals(sec){
   sec.cards.forEach(function(c){ if(cardResolved(c)) done++; });
   return { total:total, done:done };
 }
+// True once every card across every phase under this heading is
+// resolved (go or n/a) — used to turn the top tab itself green, at a
+// glance, without opening it. A heading with no checklist phases at
+// all (Post Flight) or with nothing yet entered never counts as
+// "complete" — there's nothing to have finished.
+function headingComplete(heading){
+  if(!heading.phases.length) return false;
+  var anyTotal = false;
+  for(var i=0;i<heading.phases.length;i++){
+    var t = phaseTotals(heading.phases[i]);
+    if(t.total === 0) continue;
+    anyTotal = true;
+    if(t.done < t.total) return false;
+  }
+  return anyTotal;
+}
+
 /* ============================================================
    RENDER — phase row
    ============================================================ */
@@ -3303,6 +3281,14 @@ function wireClearances(){
     ta.value = (cur && cur !== '\u2022' ? cur+'\n' : '')+line;
     STATE.values[CLR_KEY] = ta.value; saveState();
   });
+}
+function renderEnduranceBarHtml(){
+  var er = enduranceRemainingCalc();
+  return '<div class="enduranceBar">'+
+    '<div class="enduranceLbl">Endurance</div>'+
+    '<div class="enduranceVal" id="enduranceVal">'+(er.val===null ? '\u2014' : (er.val<0?'\u2212':'')+secsToHMS(Math.abs(er.val)*3600))+'</div>'+
+    '<div class="enduranceSub" id="enduranceSub">'+(er.val===null ? 'Needs Take Off + Fuel Plan' : '\u23f1 <span id="enduranceElapsed">'+secsToHMS(er.elapsedSecs)+'</span> \u00b7 '+fmtFuel(er.fuelRemaining))+'</div>'+
+  '</div>';
 }
 // Compact, single-line Tank Log bar — lives in the persistent header, right
 // below the AIRBOURNE heading, so it's visible on Ground and Airborne alike
@@ -5705,17 +5691,15 @@ function loadFlightFromHistory(idx){
   if(!h) return;
   var outChecked = STATE.checked, outDate = STATE.flightDetails.date, outReg = STATE.flightDetails.registration;
   if(h.full){
-    // Tolerant copy: a snapshot missing any part (older/other-device saves) must not abort the load.
-    var cl = function(v, d){ try{ return (v === undefined || v === null) ? d : JSON.parse(JSON.stringify(v)); }catch(e){ return d; } };
-    STATE.checked = cl(h.full.checked, {});
-    STATE.values = cl(h.full.values, {});
-    STATE.global = cl(h.full.global, { etob:'', ctot:'', transponderCode:'' });
-    STATE.fuel = cl(h.full.fuel, STATE.fuel);
-    STATE.tankLog = cl(h.full.tankLog, []);
-    STATE.flightDetails = cl(h.full.flightDetails, { date:h.date||'', slotFrom:'', slotTo:'', registration:h.registration||'', student:h.student||'', flightDetail:'', defects:'', safetyReport:'', notes:'' });
-    STATE.atisEntries = cl(h.full.atisEntries, []);
+    STATE.checked = JSON.parse(JSON.stringify(h.full.checked));
+    STATE.values = JSON.parse(JSON.stringify(h.full.values));
+    STATE.global = JSON.parse(JSON.stringify(h.full.global));
+    STATE.fuel = JSON.parse(JSON.stringify(h.full.fuel));
+    STATE.tankLog = JSON.parse(JSON.stringify(h.full.tankLog));
+    STATE.flightDetails = JSON.parse(JSON.stringify(h.full.flightDetails));
+    STATE.atisEntries = JSON.parse(JSON.stringify(h.full.atisEntries));
     // Tasks belong to the flight they were made on.
-    STATE.manualTasks = cl(h.full.manualTasks, []);
+    STATE.manualTasks = JSON.parse(JSON.stringify(h.full.manualTasks || []));
   } else {
     STATE.manualTasks = [];
     // Archived before full snapshots existed — restore what the
@@ -6007,6 +5991,24 @@ function wireTitleCaseInput(el){
   el.addEventListener('input', function(){
     var pos = el.selectionStart;
     var capped = el.value.replace(/(^|\s)([a-z])/g, function(m, p1, p2){ return p1 + p2.toUpperCase(); });
+    if(capped !== el.value){ el.value = capped; el.setSelectionRange(pos, pos); }
+  });
+}
+function wireUppercaseInput(el){
+  if(!el) return;
+  el.addEventListener('input', function(){
+    var pos = el.selectionStart;
+    var upper = el.value.toUpperCase();
+    if(upper !== el.value){ el.value = upper; el.setSelectionRange(pos, pos); }
+  });
+}
+function wireSentenceCaseInput(el){
+  if(!el) return;
+  el.addEventListener('input', function(){
+    var pos = el.selectionStart;
+    var capped = el.value.replace(/(^|[.!?]\s+|\n)(\s*(?:\u2022\s*)?)([a-z])/g, function(m, p1, p2, p3){
+      return p1 + p2 + p3.toUpperCase();
+    });
     if(capped !== el.value){ el.value = capped; el.setSelectionRange(pos, pos); }
   });
 }
@@ -6544,6 +6546,18 @@ function secsToHMS(totalSecs){
    whether this row is showing, so the content area's offset is kept
    in sync via JS rather than a fixed CSS number.
    ============================================================ */
+// Shrinks a page's content (CSS zoom) just enough that it fits without
+// scrolling. Wide screens (iPad) may shrink further than phones.
+function fitInto(scroller, kids){
+  if(!scroller) return;
+  var min = window.innerWidth >= 600 ? 0.4 : 0.75;
+  kids.forEach(function(k){ k.style.zoom = 1; });
+  var z = 1;
+  while(scroller.scrollHeight > scroller.clientHeight + 1 && z > min){
+    z = Math.round((z - 0.04) * 100) / 100;
+    kids.forEach(function(k){ k.style.zoom = z; });
+  }
+}
 function fitCard(){
   if(curMode !== 'card' || homeOpen) return;
   if(elCard.style.display === 'none') return;
@@ -6795,12 +6809,12 @@ function updateEnduranceLive(){
 // Session-only (not persisted) — a pause deliberately resets on reload
 // rather than silently freezing a future session's live figures.
 var liveUpdatesPaused = false;
-setInterval(function(){ if(!liveUpdatesPaused && !document.hidden) updateCountdown(); }, 1000);
+setInterval(function(){ if(!liveUpdatesPaused) updateCountdown(); }, 1000);
 // Ticks the active tank's live stopwatch AND Endurance Remaining every
 // second — lightweight text updates, not re-renders, so neither disturbs
 // anything else on screen (or steals focus) while counting.
 setInterval(function(){
-  if(liveUpdatesPaused || document.hidden) return;
+  if(liveUpdatesPaused) return;
   updateEnduranceLive();
   ['tankLiveSecs','tankLiveSecsTop','tankSinceChangeTop','airTimeCountUp','blockTimeCountUp'].forEach(function(id){
     var el = document.getElementById(id);
@@ -7090,8 +7104,6 @@ function sentenceCaseStr(s){
   });
 }
 function wireFlightDetails(){
-  // Each wiring group is isolated so one failure can never leave the rest of the page's buttons dead.
-  try{
   function bind(id, key, formatter){
     var el = document.getElementById(id);
     if(!el) return;
@@ -7177,8 +7189,6 @@ function wireFlightDetails(){
   });
   var fuelTimerPauseBtn = document.getElementById('fuelTimerPauseBtn');
   if(fuelTimerPauseBtn) fuelTimerPauseBtn.addEventListener('click', toggleFuelTimerPause);
-  }catch(e){ try{ console.error('summary wiring A', e); }catch(_){} }
-  try{
   document.querySelectorAll('.historyPreviewBtn').forEach(function(btn){
     btn.addEventListener('click', function(){
       var idx = parseInt(btn.getAttribute('data-idx'), 10);
@@ -7217,7 +7227,7 @@ function wireFlightDetails(){
       var warning = hasUnsavedChanges()
         ? 'The flight currently open has changes that haven\u2019t been saved \u2014 loading "'+label+'" will discard them. Load anyway?'
         : 'Load "'+label+'"? This replaces everything currently entered in the app with this saved flight.';
-      showConfirm(warning, 'Load Flight', function(){ try{ loadFlightFromHistory(idx); }catch(err){ showConfirm('Could not load this flight: '+(err && err.message || err), 'OK', function(){}); } });
+      showConfirm(warning, 'Load Flight', function(){ loadFlightFromHistory(idx); });
     });
   });
   document.querySelectorAll('.historyArchiveBtn').forEach(function(btn){
@@ -7253,8 +7263,6 @@ function wireFlightDetails(){
       });
     });
   });
-  }catch(e){ try{ console.error('summary wiring history', e); }catch(_){} }
-  try{
   function doSaveHistory(forceNew, btnId, doneLabel){
     var fd = STATE.flightDetails;
     if(!fd.date && !fd.registration && !fd.student){
@@ -7312,7 +7320,6 @@ function wireFlightDetails(){
       });
     });
   });
-  }catch(e){ try{ console.error('summary wiring B', e); }catch(_){} }
 }
 
 /* ============================================================
